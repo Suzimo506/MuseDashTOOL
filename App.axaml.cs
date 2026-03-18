@@ -69,6 +69,8 @@ public partial class App : Application
         services.AddSingleton<ChartDownloadViewModel>();
         services.AddTransient<DownloadManagerViewModel>();
         services.AddTransient<AccountViewModel>();
+        services.AddSingleton<AlbumCollectionViewModel>();
+        services.AddTransient<AlbumDetailViewModel>();
 
         // Services (will be added here later)
         services.AddSingleton<MdModManager.Services.IConfigService, MdModManager.Services.ConfigService>();
@@ -85,6 +87,7 @@ public partial class App : Application
         services.AddSingleton<MdModManager.Services.ModStagingService>();
         services.AddSingleton<MdModManager.Services.IUpdateService, MdModManager.Services.UpdateService>();
         services.AddSingleton<MdModManager.Services.IAnnouncementService, MdModManager.Services.AnnouncementService>();
+        services.AddSingleton<MdModManager.Services.IAlbumCollectionService, MdModManager.Services.AlbumCollectionService>();
 
         Ioc.Default.ConfigureServices(services.BuildServiceProvider());
     }

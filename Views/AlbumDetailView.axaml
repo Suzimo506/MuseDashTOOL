@@ -1,0 +1,139 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:models="using:MdModManager.Models"
+             xmlns:controls="using:MdModManager.Views.Controls"
+             xmlns:helpers="using:MdModManager.Helpers"
+             x:Class="MdModManager.Views.AlbumDetailView"
+             x:DataType="vm:AlbumDetailViewModel">
+
+    <UserControl.Resources>
+        <!-- 小型圆角按钮主题 (返回按钮) -->
+        <ControlTheme x:Key="SmallRoundBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBg" Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBg"><Setter Property="Opacity" Value="0.8"/></Style>
+            <Style Selector="^:pressed /template/ Border#RootBg"><Setter Property="Opacity" Value="0.6"/><Setter Property="RenderTransform" Value="scale(0.96)"/></Style>
+        </ControlTheme>
+
+        <!-- 图标按键主题 -->
+        <ControlTheme x:Key="RobustIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBorder"><Setter Property="Opacity" Value="0.8"/></Style>
+            <Style Selector="^:pressed"><Setter Property="RenderTransform" Value="scale(0.92)"/></Style>
+            <Style Selector="^:pressed /template/ Border#RootBorder"><Setter Property="Opacity" Value="0.6"/></Style>
+        </ControlTheme>
+
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- 卡片悬浮效果 -->
+        <Style Selector="Border.Card:pointerover">
+            <Setter Property="Background" Value="{DynamicResource CardHoverBgBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- 顶部栏：返回按钮 + 标题 -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="10,10,0,14">
+            <Button Grid.Column="0" Command="{Binding GoBackCommand}" Theme="{StaticResource SmallRoundBtn}" ToolTip.Tip="返回上方极简菜单">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
+                          Fill="{DynamicResource SvgIconBrush}" Stretch="Uniform" Width="22" Height="22" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0">
+                <TextBlock Text="{Binding Category.Name}" FontSize="22" FontWeight="Bold">
+                    <TextBlock.Foreground>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Color="#FF00FF" Offset="0"/>
+                            <GradientStop Color="#FF69B4" Offset="1"/>
+                        </LinearGradientBrush>
+                    </TextBlock.Foreground>
+                </TextBlock>
+                <TextBlock Text="{Binding Category.Description}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="Wrap" Margin="0,4,0,0" IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 卡片网格 -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Charts}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="4" HorizontalAlignment="Stretch"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="models:MdmcChart">
+                        <Border Classes="Card" Background="{DynamicResource CardBgBrush}" CornerRadius="10" Width="208" Margin="2,0,2,16" VerticalAlignment="Top" ClipToBounds="True">
+                            <Grid RowDefinitions="Auto,*">
+                                <!-- 封面图区域 -->
+                                <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
+                                    <Panel>
+                                        <Border Background="#333333" CornerRadius="10,10,0,0" IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNull}}">
+                                            <TextBlock Text="🎵" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555"/>
+                                        </Border>
+                                        <Image Source="{Binding CoverImage}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                        <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0">
+                                            <TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </Panel>
+                                </Border>
+                                
+                                <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="5">
+                                    <controls:MarqueeText Text="{Binding Title}" HighlightText="" SearchText="" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" IsScrollingEnabled="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).EnableMarquee}" ToolTip.Tip="{Binding Title}"/>
+                                    <TextBlock Text="{Binding SubInfo}" IsVisible="{Binding SubInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                                    
+                                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
+                                        <ItemsControl ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center">
+                                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate><DataTemplate><Border Background="#331a3a1a" CornerRadius="3" Padding="4,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/></Border></DataTemplate></ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                    
+                                    <Grid ColumnDefinitions="*,*" Margin="0,6,0,0">
+                                        <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="试听 / 停止">
+                                            <Panel>
+                                                <PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                                                <PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                                            </Panel>
+                                        </Button>
+                                        <Button Grid.Column="1" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="下载到 Custom_Albums">
+                                            <PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

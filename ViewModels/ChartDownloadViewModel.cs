@@ -212,6 +212,16 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private async Task OpenAlbumCollectionAsync()
+    {
+        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
+        {
+            mainVm.NavigateToAlbumCollectionCommand.Execute(null);
+        }
+        await Task.CompletedTask;
+    }
+
+    [RelayCommand]
     private void ToggleSortOrder()
     {
         IsAscending = !IsAscending;

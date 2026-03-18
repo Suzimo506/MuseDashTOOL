@@ -58,11 +58,24 @@ public partial class MdmcChart : ObservableObject
     [JsonPropertyName("uploadedAt")]
     public DateTime? UploadedAt { get; set; }
 
+    // Custom URLs for Album Collection support
+    [property: JsonIgnore]
+    public string? CustomCoverUrl { get; set; }
+    
+    [property: JsonIgnore]
+    public string? CustomDemoUrl { get; set; }
+    
+    [property: JsonIgnore]
+    public string? CustomDemoMp3Url { get; set; }
+    
+    [property: JsonIgnore]
+    public string? CustomDownloadUrl { get; set; }
+
     // Derived URLs
-    public string CoverUrl => $"https://cdn.mdmc.moe/charts/{Id}/cover.png";
-    public string DemoUrl  => $"https://cdn.mdmc.moe/charts/{Id}/demo.ogg";
-    public string DemoMp3Url => $"https://cdn.mdmc.moe/charts/{Id}/demo.mp3";
-    public string DownloadUrl => $"https://api.mdmc.moe/v3/charts/{Id}/download";
+    public string CoverUrl => CustomCoverUrl ?? $"https://cdn.mdmc.moe/charts/{Id}/cover.png";
+    public string DemoUrl  => CustomDemoUrl ?? $"https://cdn.mdmc.moe/charts/{Id}/demo.ogg";
+    public string DemoMp3Url => CustomDemoMp3Url ?? $"https://cdn.mdmc.moe/charts/{Id}/demo.mp3";
+    public string DownloadUrl => CustomDownloadUrl ?? $"https://api.mdmc.moe/v3/charts/{Id}/download";
 
     /// <summary>副标题：曲 + 谱</summary>
     public string SubInfo

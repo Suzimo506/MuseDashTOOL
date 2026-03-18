@@ -801,6 +801,16 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task NavigateToAlbumCollectionAsync()
+    {
+        CleanupCurrentPage();
+
+        var vm = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
+        CurrentPage = vm;
+        await vm.InitializeAsync();
+    }
+
+    [RelayCommand]
     private async Task GenerateLogAsync()
     {
         try
