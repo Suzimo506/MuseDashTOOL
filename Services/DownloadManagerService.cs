@@ -135,6 +135,8 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             {
                 item.DestinationPath = Path.Combine(albumsDir, fileName);
             }
+
+            RuntimeLog.Write("DownloadManager", $"Download start: title='{item.Chart.Title}', url='{item.Chart.DownloadUrl}', dest='{item.DestinationPath}'");
             
             var fileMode = item.DownloadedBytes > 0 ? FileMode.Append : FileMode.Create;
             using var dst = new FileStream(item.DestinationPath, fileMode, FileAccess.Write, FileShare.None, 81920, true);
@@ -146,6 +148,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             }
 
             using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+            RuntimeLog.Write("DownloadManager", $"Download response: title='{item.Chart.Title}', status={(int)response.StatusCode} {response.StatusCode}");
             response.EnsureSuccessStatusCode();
 
             // Try to get total size from headers
@@ -196,6 +199,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         {
             item.Status = DownloadStatus.Error;
             item.ErrorMessage = ex.Message;
+            RuntimeLog.Write("DownloadManager", $"Download failed: title='{item.Chart.Title}', error='{ex}'");
             _notificationService.ShowFailure("下载失败", ex.Message);
         }
         finally

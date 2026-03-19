@@ -94,10 +94,9 @@ public partial class AlbumCollectionViewModel : ObservableObject
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
             var detailVm = Ioc.Default.GetRequiredService<AlbumDetailViewModel>();
-            detailVm.Initialize(item.Category);
             mainVm.CurrentPage = detailVm;
+            await detailVm.InitializeAsync(item.Category);
         }
-        await Task.CompletedTask;
     }
 
     [RelayCommand]

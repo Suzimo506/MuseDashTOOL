@@ -457,20 +457,23 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         try
         {
             // 默认优先尝试 .ogg
-            string url = chart.DemoUrl;
-            bool isMp3 = false;
+            string url = !string.IsNullOrWhiteSpace(chart.DemoUrl) ? chart.DemoUrl : chart.DemoMp3Url;
+            string ext = Path.GetExtension(url ?? string.Empty);
+            RuntimeLog.Write("ChartDownloadVM", $"Preview start: title='{chart.Title}', demo='{chart.DemoUrl}', mp3='{chart.DemoMp3Url}', chosen='{url}', ext='{ext}'");
 
             // 先探测文件状态
             var response = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            RuntimeLog.Write("ChartDownloadVM", $"Preview response for '{chart.Title}': {(int)response.StatusCode} {response.StatusCode}");
             
             // 如果 .ogg 不存在 (404) 或失效，尝试回退到 .mp3
-            if (!response.IsSuccessStatusCode && !ct.IsCancellationRequested)
+            if (!response.IsSuccessStatusCode && !ct.IsCancellationRequested && !string.IsNullOrWhiteSpace(chart.DemoMp3Url))
             {
-                Console.WriteLine($"[ChartDownloadVM] .ogg missing (HTTP {(int)response.StatusCode}), trying fallback to .mp3: {chart.DemoMp3Url}");
                 url = chart.DemoMp3Url;
+                ext = Path.GetExtension(url ?? string.Empty);
                 response.Dispose();
+                RuntimeLog.Write("ChartDownloadVM", $"Preview fallback to mp3 for '{chart.Title}': '{url}'");
                 response = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-                isMp3 = true;
+                RuntimeLog.Write("ChartDownloadVM", $"Preview fallback response for '{chart.Title}': {(int)response.StatusCode} {response.StatusCode}");
             }
 
             if (!response.IsSuccessStatusCode)
@@ -492,20 +495,12 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
             var bytes = await response.Content.ReadAsByteArrayAsync(ct);
             response.Dispose();
+            RuntimeLog.Write("ChartDownloadVM", $"Preview download complete for '{chart.Title}', bytes={bytes.Length}");
 
             if (ct.IsCancellationRequested) return;
 
             var ms = new MemoryStream(bytes);
-            IWaveProvider waveProvider;
-            
-            if (isMp3)
-            {
-                waveProvider = new Mp3FileReader(ms);
-            }
-            else
-            {
-                waveProvider = new VorbisWaveReader(ms);
-            }
+            IWaveProvider waveProvider = CreateWaveProvider(ms, ext);
 
             _waveOut = new WaveOutEvent();
             _waveOut.Init(waveProvider);
@@ -534,10 +529,21 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         catch (OperationCanceledException) { /* 用户取消，忽略 */ }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ChartDownloadVM] Preview error: {ex.Message}");
+            RuntimeLog.Write("ChartDownloadVM", $"Preview error: {ex}");
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 StatusMessage = $"试听出错: {ex.Message}");
         }
+    }
+
+    private static IWaveProvider CreateWaveProvider(Stream stream, string ext)
+    {
+        if (string.Equals(ext, ".mp3", StringComparison.OrdinalIgnoreCase))
+            return new Mp3FileReader(stream);
+
+        if (string.Equals(ext, ".wav", StringComparison.OrdinalIgnoreCase))
+            return new WaveFileReader(stream);
+
+        return new VorbisWaveReader(stream);
     }
 
     private void StopPlayback()

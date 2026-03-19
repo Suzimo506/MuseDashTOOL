@@ -28,6 +28,7 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+        RuntimeLog.Reset();
         ConfigureServices();
         
         // 软件启动时后台静默预获取账号与成绩数据
