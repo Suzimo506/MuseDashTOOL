@@ -105,3 +105,4 @@ public partial class App : Application
         }
     }
 }
+/* v1.1.0 */
