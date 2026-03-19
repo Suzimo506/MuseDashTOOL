@@ -26,6 +26,9 @@ public class AppConfig
     /// <summary>启动游戏时不再显示确认弹窗</summary>
     public bool SuppressLaunchGameConfirmation { get; set; } = false;
 
+    /// <summary>进入整合包页面时不再显示提示弹窗</summary>
+    public bool SuppressAlbumCollectionIntro { get; set; } = false;
+
     /// <summary>谱面试听音量</summary>
     public double ChartPreviewVolume { get; set; } = 0.5;
 

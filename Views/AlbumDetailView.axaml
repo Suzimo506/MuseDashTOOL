@@ -61,7 +61,7 @@
 
     <Grid RowDefinitions="Auto,*">
         <!-- 顶部栏：返回按钮 + 标题 -->
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="10,10,0,14">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="10,10,10,14">
             <Button Grid.Column="0" Command="{Binding GoBackCommand}" Theme="{StaticResource SmallRoundBtn}" ToolTip.Tip="返回上方极简菜单">
                 <StackPanel Orientation="Horizontal" Spacing="4">
                     <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
@@ -79,6 +79,21 @@
                 </TextBlock>
                 <TextBlock Text="{Binding Category.Description}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="Wrap" Margin="0,4,0,0" IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
             </StackPanel>
+            <Button Grid.Column="2"
+                    Command="{Binding DownloadAllCommand}"
+                    Theme="{StaticResource SmallRoundBtn}"
+                    ToolTip.Tip="一键下载当前文件夹全部谱面"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Right">
+                <Viewbox Width="24" Height="24">
+                    <Canvas Width="1024" Height="1024">
+                        <Path Data="M967.06 312.92c-31.4 0-56.9 25.5-56.9 56.9v512h-796.4v-512c0.7-31.4-24.2-57.4-55.6-58.1-31.4-0.7-57.4 24.2-58.1 55.6v571.3c0 31.4 25.5 56.9 56.9 56.9h910.2c31.4 0 56.9-25.5 56.9-56.9v-568.8c-0.1-31.4-25.5-56.9-57-56.9z"
+                              Fill="{DynamicResource SvgIconBrush}"/>
+                        <Path Data="M284.46 768.02h455.1c31.4-0.7 56.3-26.7 55.6-58.1-0.7-30.5-25.2-55-55.6-55.6h-455.1c-31.4 0.7-56.3 26.7-55.6 58.1 0.6 30.4 25.1 55 55.6 55.6z m187.1-244c5.2 5.1 11.4 9.2 18.2 12 2.5 1.4 5.2 2.1 8 2.3 9.3 2.8 19.2 2.8 28.5 0 2.8-0.2 5.5-1 8-2.3 6.8-2.8 13-6.8 18.2-12l161-161c22.3-22.3 22.3-58.5 0-80.8-22.3-22.3-58.5-22.3-80.8 0l-63.7 64.3V85.32c0-31.4-25.5-56.9-56.9-56.9s-56.9 25.5-56.9 56.9v261.1l-63.6-64.3c-21.9-22.8-58-23.5-80.8-1.6-22.8 21.9-23.5 58-1.6 80.8l1.6 1.6 160.8 161.1z"
+                              Fill="{DynamicResource SvgIconBrush}"/>
+                    </Canvas>
+                </Viewbox>
+            </Button>
         </Grid>
 
         <!-- 卡片网格 -->
@@ -111,6 +126,11 @@
                                     <TextBlock Text="{Binding SubInfo}" IsVisible="{Binding SubInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
                                     
                                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
+                                        <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}"
+                                                   IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                                   VerticalAlignment="Center"/>
                                         <ItemsControl ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center">
                                             <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate><DataTemplate><Border Background="#331a3a1a" CornerRadius="3" Padding="4,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/></Border></DataTemplate></ItemsControl.ItemTemplate>

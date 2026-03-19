@@ -7,14 +7,21 @@ using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using MdModManager.Models;
 using MdModManager.Services;
+using MdModManager.Views;
+using System.Globalization;
+using System.Text.RegularExpressions;
+using System.Linq;
+using MdModManager.Helpers;
 
 namespace MdModManager.ViewModels;
 
 public partial class AlbumDetailViewModel : ObservableObject
 {
-    private const string ProxyPrefix = "https://ghproxy.net/";
     private readonly ChartDownloadViewModel _chartDownloadViewModel;
     private readonly IAlbumCollectionService _collectionService;
+    private readonly IConfigService _configService;
+    private readonly IDownloadManagerService _downloadManagerService;
+    private readonly INotificationService _notificationService;
 
     [ObservableProperty]
     private DesignerCategory? _category;
@@ -34,10 +41,16 @@ public partial class AlbumDetailViewModel : ObservableObject
 
     public AlbumDetailViewModel(
         ChartDownloadViewModel chartDownloadViewModel,
-        IAlbumCollectionService collectionService)
+        IAlbumCollectionService collectionService,
+        IConfigService configService,
+        IDownloadManagerService downloadManagerService,
+        INotificationService notificationService)
     {
         _chartDownloadViewModel = chartDownloadViewModel;
         _collectionService = collectionService;
+        _configService = configService;
+        _downloadManagerService = downloadManagerService;
+        _notificationService = notificationService;
     }
 
     public async Task InitializeAsync(DesignerCategory category)
@@ -54,15 +67,12 @@ public partial class AlbumDetailViewModel : ObservableObject
 
         foreach (var c in charts)
         {
-            string levelText = "?";
             var urlDecoded = System.Net.WebUtility.UrlDecode(c.DownloadUrl);
             var match = System.Text.RegularExpressions.Regex.Match(
                 urlDecoded,
                 @"\[Lv\.(.*?)\]",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-            if (match.Success)
-                levelText = match.Groups[1].Value;
+            var difficultyLabels = ExtractDifficultyLabels(match);
 
             Charts.Add(new MdmcChart
             {
@@ -70,11 +80,14 @@ public partial class AlbumDetailViewModel : ObservableObject
                 Title = c.Title,
                 Artist = c.Artist,
                 Charter = c.Author,
-                CustomCoverUrl = ToAccessibleUrl(c.CoverUrl),
-                CustomDownloadUrl = ToAccessibleUrl(c.DownloadUrl),
-                CustomDemoUrl = ToAccessibleUrl(c.DemoUrl),
-                CustomDemoMp3Url = ToAccessibleUrl(c.DemoMp3Url),
-                Sheets = new List<MdmcSheet> { new MdmcSheet { Difficulty = levelText } }
+                Bpm = NormalizeBpm(c.Bpm),
+                CustomCoverUrl = ResolveResourceUrl(c.CoverUrl),
+                CustomDownloadUrl = ResolveResourceUrl(c.DownloadUrl),
+                CustomDemoUrl = ResolveResourceUrl(c.DemoUrl),
+                CustomDemoMp3Url = ResolveResourceUrl(c.DemoMp3Url),
+                Sheets = difficultyLabels
+                    .Select(label => new MdmcSheet { Difficulty = label })
+                    .ToList()
             });
 
             Log($"Chart view item: title='{c.Title}', cover='{c.CoverUrl}', demo='{c.DemoUrl}', mp3='{c.DemoMp3Url}', download='{c.DownloadUrl}'");
@@ -86,21 +99,83 @@ public partial class AlbumDetailViewModel : ObservableObject
         _ = LoadCoversAsync();
     }
 
-    private static string ToAccessibleUrl(string? url)
+    [RelayCommand]
+    private async Task DownloadAllAsync()
     {
-        if (string.IsNullOrWhiteSpace(url))
-            return string.Empty;
+        if (Charts.Count == 0)
+            return;
 
-        if (url.StartsWith(ProxyPrefix, StringComparison.OrdinalIgnoreCase))
-            return url;
-
-        if (url.StartsWith("https://raw.githubusercontent.com/", StringComparison.OrdinalIgnoreCase) ||
-            url.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
+        if (!IsDotNet6Installed())
         {
-            return ProxyPrefix + url;
+            var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.MainWindow as MainWindow
+                : null;
+
+            if (mainWindow != null)
+            {
+                await mainWindow.ShowMessageBoxAsync("请先在Mod列表顶部下载.net6运行环境！");
+            }
+
+            return;
         }
 
-        return url;
+        var queued = 0;
+        foreach (var chart in Charts)
+        {
+            if (string.IsNullOrWhiteSpace(chart.DownloadUrl))
+                continue;
+
+            _downloadManagerService.EnqueueDownload(chart);
+            queued++;
+        }
+
+        if (queued > 0)
+        {
+            _notificationService.ShowSuccess($"已添加当前整合包的 {queued} 张谱面到下载列表");
+            Log($"Queued {queued} charts for category '{Category?.Name}'.");
+        }
+    }
+
+    private bool IsDotNet6Installed()
+    {
+        var gamePath = _configService.Config.GamePath;
+        if (string.IsNullOrEmpty(gamePath))
+            return false;
+
+        var net6Path = System.IO.Path.Combine(gamePath, "MelonLoader", "net6", "MelonLoader.dll");
+        return System.IO.File.Exists(net6Path);
+    }
+
+    private static List<string> ExtractDifficultyLabels(Match match)
+    {
+        if (!match.Success)
+            return ["?"];
+
+        var raw = match.Groups[1].Value;
+        var labels = raw
+            .Split([',', '，'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(label => !string.IsNullOrWhiteSpace(label))
+            .ToList();
+
+        return labels.Count > 0 ? labels : ["?"];
+    }
+
+    private static string NormalizeBpm(string? bpm)
+    {
+        if (string.IsNullOrWhiteSpace(bpm))
+            return string.Empty;
+
+        return Regex.Replace(bpm.Trim(), @"\d+(\.\d+)?", match =>
+        {
+            return decimal.TryParse(match.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
+                ? value.ToString("0.000", CultureInfo.InvariantCulture)
+                : match.Value;
+        });
+    }
+
+    private string ResolveResourceUrl(string? url)
+    {
+        return GitHubMirrorHelper.ApplyMirror(url, _configService.Config.DownloadSource);
     }
 
     private async Task LoadCoversAsync()

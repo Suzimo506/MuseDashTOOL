@@ -5,7 +5,6 @@
              x:DataType="vm:AlbumCollectionViewModel">
 
     <UserControl.Resources>
-        <!-- 小型圆角按钮主题 (返回按钮) -->
         <ControlTheme x:Key="SmallRoundBtn" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -35,18 +34,15 @@
                 <Setter Property="RenderTransform" Value="scale(0.96)"/>
             </Style>
         </ControlTheme>
-
     </UserControl.Resources>
 
     <UserControl.Styles>
-        <!-- 卡片悬浮效果 -->
         <Style Selector="Border.Card:pointerover">
             <Setter Property="Background" Value="{DynamicResource CardHoverBgBrush}"/>
         </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*">
-        <!-- 顶部栏：返回按钮 + 标题 -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="10,10,0,14">
             <Button Grid.Column="0"
                     Command="{Binding GoBackCommand}"
@@ -55,10 +51,19 @@
                     VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="4">
                     <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
-                          Fill="{DynamicResource SvgIconBrush}" Stretch="Uniform" Width="22" Height="22" VerticalAlignment="Center"/>
+                          Fill="{DynamicResource SvgIconBrush}"
+                          Stretch="Uniform"
+                          Width="22"
+                          Height="22"
+                          VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
-            <TextBlock Grid.Column="1" Text="整合包" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0">
+            <TextBlock Grid.Column="1"
+                       Text="整合包"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       VerticalAlignment="Center"
+                       Margin="15,0,0,0">
                 <TextBlock.Foreground>
                     <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                         <GradientStop Color="#FF00FF" Offset="0"/>
@@ -68,72 +73,154 @@
             </TextBlock>
         </Grid>
 
-        <!-- 主体结构 -->
         <Grid Grid.Row="1">
-            <StackPanel IsVisible="{Binding IsLoading}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
-                <TextBlock Text="正在加载整合包…" FontSize="18" Foreground="#888888" HorizontalAlignment="Center"/>
+            <StackPanel IsVisible="{Binding IsLoading}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="16">
+                <TextBlock Text="正在加载整合包..."
+                           FontSize="18"
+                           Foreground="#888888"
+                           HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <StackPanel IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="15">
-                <TextBlock Text="暂时没有整合包" FontSize="18" Foreground="Gray" HorizontalAlignment="Center"/>
+            <StackPanel IsVisible="{Binding IsEmpty}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="15">
+                <TextBlock Text="暂时没有整合包"
+                           FontSize="18"
+                           Foreground="Gray"
+                           HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <!-- 网格布局 -->
-            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding Categories}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Columns="3" HorizontalAlignment="Stretch"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).OpenCategoryCommand}" 
-                                    CommandParameter="{Binding}"
-                                    Background="Transparent" 
-                                    BorderThickness="0" 
-                                    Padding="0" 
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Top"
-                                    Margin="8,8,8,16"
-                                    Cursor="Hand">
-                                <Button.Styles>
-                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
-                                        <Setter Property="Background" Value="Transparent"/>
-                                    </Style>
-                                </Button.Styles>
-                                <Border Classes="Card"
-                                        Background="{DynamicResource CardBgBrush}"
-                                        CornerRadius="10"
-                                        ClipToBounds="True">
-                                    <Grid RowDefinitions="180,*">
-                                        <!-- 上部：封面图片 -->
-                                        <Border Grid.Row="0" ClipToBounds="True" Background="#333333">
-                                            <Panel>
-                                                <TextBlock Text="📁" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555" IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNull}}"/>
-                                                <Image Source="{Binding CoverImage}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                                            </Panel>
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <ItemsControl ItemsSource="{Binding Categories}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="3" HorizontalAlignment="Stretch"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).OpenCategoryCommand}"
+                                        CommandParameter="{Binding}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="0"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Top"
+                                        Margin="8,8,8,16"
+                                        ToolTip.Tip="{Binding Category.Description}"
+                                        Cursor="Hand">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <Border Classes="Card"
+                                            Background="{DynamicResource CardBgBrush}"
+                                            CornerRadius="10"
+                                            ClipToBounds="True">
+                                        <Grid RowDefinitions="180,*">
+                                            <Border Grid.Row="0" ClipToBounds="True" Background="#333333">
+                                                <Panel>
+                                                    <TextBlock Text="馃搧"
+                                                               FontSize="56"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="#555555"
+                                                               IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNull}}"/>
+                                                    <Image Source="{Binding CoverImage}"
+                                                           Stretch="UniformToFill"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                                </Panel>
+                                            </Border>
+
+                                            <StackPanel Grid.Row="1" Margin="12,12,12,14" Spacing="6">
+                                                <TextBlock Text="{Binding Category.Name}"
+                                                           FontSize="16"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                           TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel Margin="8,4,8,24" Spacing="14">
+                        <Border Height="1"
+                                Background="{DynamicResource ThemeTextTertiaryBrush}"
+                                Opacity="0.25"/>
+                        <TextBlock Text="群友自制谱面"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Left"
+                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                        <ItemsControl ItemsSource="{Binding CommunityCategories}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="3" HorizontalAlignment="Stretch"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).OpenCommunityCategoryCommand}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Top"
+                                            Margin="8,0,8,16"
+                                            Cursor="Hand">
+                                        <Button.Styles>
+                                            <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                            </Style>
+                                        </Button.Styles>
+                                        <Border Classes="Card"
+                                                Background="{DynamicResource CardBgBrush}"
+                                                CornerRadius="10"
+                                                ClipToBounds="True">
+                                            <Grid RowDefinitions="180,*">
+                                                <Border Grid.Row="0" ClipToBounds="True" Background="#333333">
+                                                    <Panel>
+                                                        <TextBlock Text="馃搧"
+                                                                   FontSize="56"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="#555555"
+                                                                   IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNull}}"/>
+                                                        <Image Source="{Binding CoverImage}"
+                                                               Stretch="UniformToFill"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                                    </Panel>
+                                                </Border>
+                                                <StackPanel Grid.Row="1" Margin="12,12,12,14" Spacing="6">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontSize="16"
+                                                               FontWeight="Bold"
+                                                               Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Grid>
                                         </Border>
-                                        
-                                        <!-- 下部：标题和描述 -->
-                                        <StackPanel Grid.Row="1" Margin="12,12,12,14" Spacing="6">
-                                            <TextBlock Text="{Binding Category.Name}" 
-                                                       FontSize="16" 
-                                                       FontWeight="Bold" 
-                                                       Foreground="{DynamicResource ThemeTextMainBrush}"
-                                                       TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding Category.Description}" 
-                                                       FontSize="12" 
-                                                       Foreground="{DynamicResource ThemeTextSubBrush}"
-                                                       TextWrapping="Wrap"
-                                                       IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
             </ScrollViewer>
         </Grid>
     </Grid>

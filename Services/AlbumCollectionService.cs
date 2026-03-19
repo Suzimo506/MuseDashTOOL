@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using MdModManager.Models;
+using MdModManager.Helpers;
 
 namespace MdModManager.Services;
 
@@ -24,7 +25,6 @@ public class AlbumCollectionService : IAlbumCollectionService
     private const string Repo = "CustomAlbums_Collection";
     private const string Branch = "main";
     private const string GitHubApiBase = $"https://api.github.com/repos/{Owner}/{Repo}/contents";
-    private const string ProxyPrefix = "https://ghproxy.net/";
     private const string RemoteIndexUrl = $"https://raw.githubusercontent.com/{Owner}/{Repo}/{Branch}/designers.json";
 
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -130,7 +130,7 @@ public class AlbumCollectionService : IAlbumCollectionService
 
             var ext = Path.GetExtension(item.Name);
             var stem = Path.GetFileNameWithoutExtension(item.Name);
-            var url = ToAccessibleUrl(item.DownloadUrl ?? BuildRawUrl(item.Path));
+            var url = NormalizeResourceUrl(item.DownloadUrl ?? BuildRawUrl(item.Path));
 
             if (string.Equals(ext, ".mdm", StringComparison.OrdinalIgnoreCase))
             {
@@ -252,23 +252,6 @@ public class AlbumCollectionService : IAlbumCollectionService
         }
     }
 
-    private static string ToAccessibleUrl(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return url;
-
-        if (url.StartsWith(ProxyPrefix, StringComparison.OrdinalIgnoreCase))
-            return url;
-
-        if (url.StartsWith("https://raw.githubusercontent.com/", StringComparison.OrdinalIgnoreCase) ||
-            url.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
-        {
-            return ProxyPrefix + url;
-        }
-
-        return url;
-    }
-
     private async Task<List<DesignerCategory>> GetCollectionsFromJsonFallbackAsync()
     {
         var collections = await GetMetadataIndexAsync();
@@ -378,11 +361,13 @@ public class AlbumCollectionService : IAlbumCollectionService
         if (string.IsNullOrWhiteSpace(url))
             return string.Empty;
 
-        return url
+        var normalized = url
             .Replace("YourUsername/YourRepo", $"{Owner}/{Repo}", StringComparison.OrdinalIgnoreCase)
             .Replace($"/{Branch}/SongRepository/", $"/{Branch}/", StringComparison.OrdinalIgnoreCase)
             .Replace("/main/SongRepository/", "/main/", StringComparison.OrdinalIgnoreCase)
             .Replace("/master/SongRepository/", "/master/", StringComparison.OrdinalIgnoreCase);
+
+        return GitHubMirrorHelper.NormalizeCanonicalUrl(normalized);
     }
 
     private static string? FindLocalIndexPath()

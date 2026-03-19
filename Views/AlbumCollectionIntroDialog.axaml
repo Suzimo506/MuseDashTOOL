@@ -1,0 +1,139 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MdModManager.Views.AlbumCollectionIntroDialog"
+        Title="整合包提示"
+        Width="760"
+        Height="620"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E"
+        Foreground="White">
+
+    <Window.Styles>
+        <Style Selector="Button.LinkBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#FF69B4"/>
+        </Style>
+        <Style Selector="Button.LinkBtn:pointerover">
+            <Setter Property="Opacity" Value="0.8"/>
+        </Style>
+        <Style Selector="Button.LinkBtn:pressed">
+            <Setter Property="Opacity" Value="0.6"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="*,Auto" Margin="24">
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="14">
+                <TextBlock Text="请仔细阅读该文本，避免不必要的问题发生！！！！"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           TextWrapping="Wrap"
+                           Foreground="#FFFFFF"/>
+
+                <WrapPanel ItemSpacing="0" LineSpacing="0">
+                    <TextBlock Text="该整合包来源于"
+                               FontSize="15"
+                               TextWrapping="Wrap"
+                               Foreground="#E0E0E0"/>
+                    <Button Classes="LinkBtn"
+                            Click="OnOpenFeishuClick"
+                            Content="https://my.feishu.cn/wiki/FMmsw2JswiGTdRk9YwecoMAhnrf"/>
+                </WrapPanel>
+
+                <WrapPanel ItemSpacing="0" LineSpacing="0">
+                    <TextBlock Text="更多零散的谱面请关注B站"
+                               FontSize="15"
+                               TextWrapping="Wrap"
+                               Foreground="#E0E0E0"/>
+                    <Button Classes="LinkBtn"
+                            Click="OnOpenGreenHubClick"
+                            Content="GreenHub"/>
+                    <TextBlock Text="并且加入粉丝群获取"
+                               FontSize="15"
+                               TextWrapping="Wrap"
+                               Foreground="#E0E0E0"/>
+                </WrapPanel>
+
+                <TextBlock Text="由于整合包存放地址在github，如果加载缓慢请尝试去设置切换下载源，耐心等待！"
+                           FontSize="15"
+                           TextWrapping="Wrap"
+                           Foreground="#E0E0E0"/>
+
+                <TextBlock Text="PS：不需要等待图片加载出来，可以直接下载"
+                           FontSize="15"
+                           TextWrapping="Wrap"
+                           Foreground="#E0E0E0"/>
+
+                <Border Height="1" Background="#55FFFFFF" Margin="0,4,0,4"/>
+
+                <TextBlock Text="群友自制谱面由于量大，点击下载后会自动跳转蓝奏云链接。请前往蓝奏云下载。"
+                           FontSize="15"
+                           TextWrapping="Wrap"
+                           Foreground="#E0E0E0"/>
+
+                <TextBlock Text="下载之后的zip拖进最底下的自动打包即可变为mdm自动放入谱面文件夹。"
+                           FontSize="15"
+                           TextWrapping="Wrap"
+                           Foreground="#E0E0E0"/>
+
+                <TextBlock Text="可以选择打包完成后自动删除zip。"
+                           FontSize="15"
+                           TextWrapping="Wrap"
+                           Foreground="#E0E0E0"/>
+
+                <Border Height="1" Background="#55FFFFFF" Margin="0,4,0,4"/>
+
+                <WrapPanel ItemSpacing="0" LineSpacing="0">
+                    <TextBlock Text="本页谱面全部由"
+                               FontSize="15"
+                               TextWrapping="Wrap"
+                               Foreground="#E0E0E0"/>
+                    <Button Classes="LinkBtn"
+                            Click="OnOpenGreenHubClick"
+                            Content="GreenHub"/>
+                    <TextBlock Text="和"
+                               FontSize="15"
+                               TextWrapping="Wrap"
+                               Foreground="#E0E0E0"/>
+                    <Button Classes="LinkBtn"
+                            Click="OnOpenMayflycmdClick"
+                            Content="Mayflycmd"/>
+                    <TextBlock Text="整理。"
+                               FontSize="15"
+                               TextWrapping="Wrap"
+                               Foreground="#E0E0E0"/>
+                    <Button Classes="LinkBtn"
+                            Click="OnOpenSuZimoClick"
+                            Content="其实我叫苏子沫"/>
+                    <TextBlock Text="搬运。"
+                               FontSize="15"
+                               TextWrapping="Wrap"
+                               Foreground="#E0E0E0"/>
+                </WrapPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,18,0,0">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <CheckBox x:Name="DontShowAgainCheckBox"
+                          VerticalAlignment="Center"/>
+                <TextBlock Text="不再显示该弹窗"
+                           FontSize="13"
+                           Foreground="Gray"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <Button Grid.Column="2"
+                    Content="确定"
+                    Width="100"
+                    HorizontalContentAlignment="Center"
+                    Background="#FF00FF"
+                    Foreground="White"
+                    Click="OnConfirmClick"/>
+        </Grid>
+    </Grid>
+</Window>

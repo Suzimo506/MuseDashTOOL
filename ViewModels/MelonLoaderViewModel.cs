@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MdModManager.Models;
 using MdModManager.Services;
+using MdModManager.Helpers;
 
 namespace MdModManager.ViewModels;
 
@@ -83,16 +84,9 @@ public partial class MelonLoaderViewModel : ObservableObject
         try
         {
             var progress = new Progress<double>(p => DownloadProgress = p);
-            var downloadUrl = asset.DownloadUrl;
-            
-            if (_configService.Config.DownloadSource.Contains("ghproxy.net"))
-            {
-                downloadUrl = $"https://ghproxy.net/{downloadUrl}";
-            }
-            else if (_configService.Config.DownloadSource.Contains("kkgithub.com"))
-            {
-                downloadUrl = downloadUrl.Replace("github.com", "kkgithub.com");
-            }
+            var downloadUrl = GitHubMirrorHelper.ApplyMirror(
+                asset.DownloadUrl,
+                _configService.Config.DownloadSource);
 
             await _melonLoaderService.InstallAsync(downloadUrl, progress);
             RefreshCurrentVersion();

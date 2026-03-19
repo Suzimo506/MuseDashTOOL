@@ -171,6 +171,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     public async Task InitializeAsync(CancellationToken ct = default)
     {
         CurrentPage = 1;
+        _currentScrollY = 0;
         _ = UpdateTodayUpdatesCountAsync(); // 异步更新今日数量
         await ReloadAsync(false, ct);
     }
@@ -201,6 +202,8 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task Refresh() 
     {
+        CurrentPage = 1;
+        _currentScrollY = 0;
         _ = UpdateTodayUpdatesCountAsync();
         await ReloadAsync(false);
     }
@@ -216,9 +219,8 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     {
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
-            mainVm.NavigateToAlbumCollectionCommand.Execute(null);
+            await mainVm.NavigateToAlbumCollectionCommand.ExecuteAsync(null);
         }
-        await Task.CompletedTask;
     }
 
     [RelayCommand]
@@ -303,11 +305,6 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
         StatusMessage = append ? "正在加载更多…" : "正在加载谱面列表…";
         
-        if (!append)
-        {
-            Charts.Clear();
-        }
-
         int myId = Interlocked.Increment(ref _currentLoadId);
 
         try
@@ -315,6 +312,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             var sort  = SortOptions[SelectedSortIndex].Value;
             var order = IsAscending ? "asc" : "desc";
             var query = SearchText.Trim();
+            RuntimeLog.Write("ChartDownloadVM", $"Reload start: append={append}, sort={sort}, order={order}, page={CurrentPage}, query='{query}', rankedOnly={!ShowUnranked}, loadId={myId}");
 
             IList<MdmcChart> charts;
             int totalPages;
@@ -331,6 +329,16 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                     CurrentPage, sort, order, query, !ShowUnranked, ct);
                 charts = result.charts;
                 totalPages = result.totalPages;
+                if (!append && charts.Count == 0 && string.IsNullOrWhiteSpace(query))
+                {
+                    var recovered = await TryRecoverEmptyResultAsync(sort, order, ct);
+                    if (recovered != null)
+                    {
+                        charts = recovered.Value.charts;
+                        totalPages = recovered.Value.totalPages;
+                        result = recovered.Value;
+                    }
+                }
                 
                 // 如果是第一页的正向请求结果，存入缓存以供后续秒开
                 if (!append && CurrentPage == 1 && !IsAscending && string.IsNullOrEmpty(query))
@@ -344,6 +352,11 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             TotalPages = Math.Max(1, totalPages);
             OnPropertyChanged(nameof(CanLoadMore));
 
+            if (!append)
+            {
+                Charts.Clear();
+            }
+
             foreach (var c in charts)
             {
                 Charts.Add(c);
@@ -351,6 +364,12 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
             IsEmpty = Charts.Count == 0;
             UpdateStatusMessage();
+            RuntimeLog.Write("ChartDownloadVM", $"Reload end: sort={sort}, page={CurrentPage}, visible={Charts.Count}, fetched={charts.Count}, totalPages={TotalPages}, isEmpty={IsEmpty}, loadId={myId}");
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore canceled reloads. A newer request is usually already in flight.
+            RuntimeLog.Write("ChartDownloadVM", $"Reload canceled: page={CurrentPage}, loadId={myId}");
         }
         catch (Exception ex)
         {
@@ -370,6 +389,33 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>由 View 调用，更新当前滚动位置并触发内存管理</summary>
+    private async Task<(IList<MdmcChart> charts, int totalPages)?> TryRecoverEmptyResultAsync(string sort, string order, CancellationToken ct)
+    {
+        if (CurrentPage > 1)
+        {
+            RuntimeLog.Write("ChartDownloadVM", $"Empty result on page {CurrentPage} for sort={sort}, reset to page 1.");
+            CurrentPage = 1;
+        }
+
+        if (CurrentPage == 1 && !IsAscending && _firstPageCache.TryGetValue(sort, out var cached) && cached.charts.Count > 0)
+        {
+            RuntimeLog.Write("ChartDownloadVM", $"Recovered empty result from cache for sort={sort}, count={cached.charts.Count}.");
+            return cached;
+        }
+
+        var retry = await _downloadService.FetchChartsAsync(1, sort, order, string.Empty, !ShowUnranked, ct);
+        if (retry.charts.Count > 0)
+        {
+            RuntimeLog.Write("ChartDownloadVM", $"Recovered empty result by retry for sort={sort}, count={retry.charts.Count}.");
+            if (!IsAscending)
+                _firstPageCache[sort] = retry;
+            return retry;
+        }
+
+        RuntimeLog.Write("ChartDownloadVM", $"Retry still empty for sort={sort}.");
+        return null;
+    }
+
     public void UpdateScrollPosition(double yOffset)
     {
         _currentScrollY = yOffset;
@@ -568,7 +614,16 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
+        _searchCts = null;
+
+        _listCts?.Cancel();
+        _listCts?.Dispose();
+        _listCts = null;
+
         StopPlayback();
+        _currentScrollY = 0;
         Charts.Clear(); // 释放内存：移除对所有谱面对象极其封面图片的引用
     }
 }

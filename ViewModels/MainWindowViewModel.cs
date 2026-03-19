@@ -723,8 +723,18 @@ public partial class MainWindowViewModel : ObservableObject
         await vm.InitializeAsync(_currentPageCts.Token);
     }
 
+    private static bool IsAlbumCollectionSectionPage(object? page)
+    {
+        return page is AlbumCollectionViewModel
+            or AlbumDetailViewModel
+            or CommunityCategoryDetailViewModel;
+    }
+
     private void CleanupCurrentPage()
     {
+        var isLeavingAlbumCollectionSection = IsAlbumCollectionSectionPage(CurrentPage);
+        if (isLeavingAlbumCollectionSection)
+            Ioc.Default.GetRequiredService<AlbumCollectionViewModel>().ReleaseResources();
         _currentPageCts?.Cancel();
         _currentPageCts = new CancellationTokenSource();
         
@@ -804,6 +814,13 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task NavigateToAlbumCollectionAsync()
     {
         CleanupCurrentPage();
+
+        if (_configService != null &&
+            Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
+            desktop.MainWindow != null)
+        {
+            await MdModManager.Views.AlbumCollectionIntroDialog.ShowDialogAsync(desktop.MainWindow, _configService);
+        }
 
         var vm = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
         CurrentPage = vm;

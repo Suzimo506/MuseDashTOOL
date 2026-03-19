@@ -46,6 +46,10 @@ public class ChartDownloadService : IChartDownloadService
             if (result != null)
                 return (result.Charts, result.TotalPages);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"[ChartDownloadService] FetchCharts error: {ex.Message}");

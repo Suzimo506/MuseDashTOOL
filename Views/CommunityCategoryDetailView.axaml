@@ -1,0 +1,169 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MdModManager.ViewModels"
+             x:Class="MdModManager.Views.CommunityCategoryDetailView"
+             x:DataType="vm:CommunityCategoryDetailViewModel">
+
+    <UserControl.Resources>
+        <ControlTheme x:Key="SmallRoundBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBg"
+                            Background="Transparent"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBg">
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBg">
+                <Setter Property="Opacity" Value="0.6"/>
+                <Setter Property="RenderTransform" Value="scale(0.96)"/>
+            </Style>
+        </ControlTheme>
+
+        <ControlTheme x:Key="DateTabBtn" TargetType="RadioButton">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextMainBrush}"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBg"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBg">
+                <Setter Property="Opacity" Value="0.85"/>
+            </Style>
+            <Style Selector="^:checked /template/ Border#RootBg">
+                <Setter Property="Background" Value="{DynamicResource SvgIconBrush}"/>
+            </Style>
+            <Style Selector="^:checked">
+                <Setter Property="Foreground" Value="White"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBg">
+                <Setter Property="Opacity" Value="0.65"/>
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="10,10,0,14">
+            <Button Grid.Column="0"
+                    Command="{Binding GoBackCommand}"
+                    Theme="{StaticResource SmallRoundBtn}"
+                    ToolTip.Tip="返回整合包">
+                <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
+                      Fill="{DynamicResource SvgIconBrush}"
+                      Stretch="Uniform"
+                      Width="22"
+                      Height="22"
+                      VerticalAlignment="Center"/>
+            </Button>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0">
+                <TextBlock Text="{Binding CategoryName}"
+                           FontSize="22"
+                           FontWeight="Bold">
+                    <TextBlock.Foreground>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Color="#FF00FF" Offset="0"/>
+                            <GradientStop Color="#FF69B4" Offset="1"/>
+                        </LinearGradientBrush>
+                    </TextBlock.Foreground>
+                </TextBlock>
+                <TextBlock Text="选择上方日期后切换对应列表"
+                           Margin="0,4,0,0"
+                           FontSize="12"
+                           Foreground="{DynamicResource ThemeTextSubBrush}"/>
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="10,0,10,18">
+            <RadioButton Theme="{StaticResource DateTabBtn}"
+                         GroupName="CommunityDates"
+                         IsChecked="{Binding IsDate202311Selected, Mode=OneWay}"
+                         Command="{Binding SelectDateCommand}"
+                         CommandParameter="2023-11"
+                         Content="2023-11"/>
+            <RadioButton Theme="{StaticResource DateTabBtn}"
+                         GroupName="CommunityDates"
+                         IsChecked="{Binding IsDate202406Selected, Mode=OneWay}"
+                         Command="{Binding SelectDateCommand}"
+                         CommandParameter="2024-6"
+                         Content="2024-6"/>
+            <RadioButton Theme="{StaticResource DateTabBtn}"
+                         GroupName="CommunityDates"
+                         IsChecked="{Binding IsDate202501Selected, Mode=OneWay}"
+                         Command="{Binding SelectDateCommand}"
+                         CommandParameter="2025-1"
+                         Content="2025-1"/>
+            <RadioButton Theme="{StaticResource DateTabBtn}"
+                         GroupName="CommunityDates"
+                         IsChecked="{Binding IsDate202508Selected, Mode=OneWay}"
+                         Command="{Binding SelectDateCommand}"
+                         CommandParameter="2025-8"
+                         Content="2025-8"/>
+        </StackPanel>
+
+        <Border Grid.Row="2"
+                Margin="10,0,10,10"
+                Background="{DynamicResource CardBgBrush}"
+                CornerRadius="12"
+                Padding="18">
+            <Grid>
+                <ItemsControl ItemsSource="{Binding CurrentEntries}" IsVisible="{Binding HasEntries}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{DynamicResource ControlBgBrush}"
+                                    CornerRadius="8"
+                                    Margin="0,0,0,10"
+                                    Padding="14,12">
+                                <TextBlock Text="{Binding}"
+                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel IsVisible="{Binding IsEmpty}"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="8">
+                    <TextBlock Text="{Binding SelectedDate}"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource SvgIconBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding EmptyMessage}"
+                               FontSize="14"
+                               Foreground="{DynamicResource ThemeTextSubBrush}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -198,7 +198,7 @@
 
                         <!-- 6. 下载源 -->
                         <TextBlock Grid.Row="7" Grid.Column="0"
-                                   Text="MelonLoader 下载源"
+                                   Text="整合包与MelonLoader下载源"
                                    FontSize="18" VerticalAlignment="Center"
                                    Foreground="{DynamicResource ThemeTextMainBrush}"/>
                         <ComboBox Grid.Row="7" Grid.Column="2"

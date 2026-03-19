@@ -45,7 +45,14 @@ public partial class ChartDownloadView : UserControl
             && int.TryParse(tagStr, out var idx)
             && DataContext is ChartDownloadViewModel vm)
         {
-            vm.SelectedSortIndex = idx;
+            if (vm.SelectedSortIndex == idx)
+            {
+                vm.RefreshCommand.Execute(null);
+            }
+            else
+            {
+                vm.SelectedSortIndex = idx;
+            }
         }
     }
 

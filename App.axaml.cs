@@ -72,6 +72,7 @@ public partial class App : Application
         services.AddTransient<AccountViewModel>();
         services.AddSingleton<AlbumCollectionViewModel>();
         services.AddTransient<AlbumDetailViewModel>();
+        services.AddTransient<CommunityCategoryDetailViewModel>();
 
         // Services (will be added here later)
         services.AddSingleton<MdModManager.Services.IConfigService, MdModManager.Services.ConfigService>();
