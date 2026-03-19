@@ -10,6 +10,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
+using System.Reflection;
 using MdModManager.Services;
 
 namespace MdModManager.ViewModels;
@@ -97,13 +98,58 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject
         }
         catch (System.Exception ex)
         {
-            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to load entries: {ex.Message}");
+            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to load entries: {ex.Message}. Trying embedded fallback...");
+        }
+
+        if (CurrentEntries.Count == 0)
+        {
+            TryLoadEmbeddedEntries();
         }
 
         OnPropertyChanged(nameof(HasEntries));
         OnPropertyChanged(nameof(IsEmpty));
         
         LoadLanzouLink();
+    }
+
+    private void TryLoadEmbeddedEntries()
+    {
+        try
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            // Resource name convention: DefaultNamespace.Folder.Subfolder.Filename
+            // Note: .NET might replace '-' with '_' and prepend '_' if segment starts with digit
+            var datePart = SelectedDate.Replace("-", "_");
+            if (char.IsDigit(datePart[0])) datePart = "_" + datePart;
+            
+            var resourceName = $"MdModManager.SongRepository.{CategoryName}.{datePart}.list.txt";
+            
+            var resStream = assembly.GetManifestResourceStream(resourceName);
+            if (resStream == null)
+            {
+                // Try alternate if naming differs
+                resourceName = $"MdModManager.SongRepository.{CategoryName}.{SelectedDate}.list.txt";
+                resStream = assembly.GetManifestResourceStream(resourceName);
+            }
+
+            if (resStream != null)
+            {
+                using (resStream)
+                using (var reader = new StreamReader(resStream))
+                {
+                    while (reader.ReadLine() is string line)
+                    {
+                        if (!string.IsNullOrWhiteSpace(line))
+                            CurrentEntries.Add(line.Trim());
+                    }
+                }
+                RuntimeLog.Write("CommunityCategoryDetailVM", $"Loaded embedded entries for {CategoryName} {SelectedDate}");
+            }
+        }
+        catch (Exception ex)
+        {
+            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to load embedded entries: {ex.Message}");
+        }
     }
 
     private void LoadLanzouLink()
@@ -135,11 +181,44 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to load link data: {ex.Message}");
+            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to load link data from local: {ex.Message}. Trying embedded...");
+        }
+
+        if (string.IsNullOrEmpty(LanzouUrl))
+        {
+            TryLoadEmbeddedLanzouLink();
         }
 
         OnPropertyChanged(nameof(HasLanzouLink));
         OnPropertyChanged(nameof(LanzouTooltip));
+    }
+
+    private void TryLoadEmbeddedLanzouLink()
+    {
+        try
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = "MdModManager.SongRepository.community_links.json";
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream != null)
+            {
+                using var reader = new StreamReader(stream);
+                var json = reader.ReadToEnd();
+                var data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, CommunityLink>>>(json);
+
+                if (data != null && data.TryGetValue(CategoryName, out var categoryData) &&
+                    categoryData.TryGetValue(SelectedDate, out var linkInfo))
+                {
+                    LanzouUrl = linkInfo.Url;
+                    LanzouPassword = linkInfo.Password;
+                    RuntimeLog.Write("CommunityCategoryDetailVM", $"Loaded embedded link for {CategoryName} {SelectedDate}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to load embedded link: {ex.Message}");
+        }
     }
 
     [RelayCommand]

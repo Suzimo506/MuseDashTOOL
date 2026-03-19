@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Reflection;
 using MdModManager.Models;
 using MdModManager.Helpers;
 
@@ -279,6 +280,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         if (_metadataCache != null)
             return _metadataCache;
 
+        // 1. Try Local Folder (for development/overrides)
         try
         {
             var localPath = FindLocalIndexPath();
@@ -289,14 +291,44 @@ public class AlbumCollectionService : IAlbumCollectionService
                 Log($"Loaded {_metadataCache.Count} album folders from local metadata: {localPath}");
                 return _metadataCache;
             }
-
-            var remoteJson = await _http.GetStringAsync(RemoteIndexUrl);
-            _metadataCache = JsonSerializer.Deserialize<List<DesignerCategory>>(remoteJson) ?? new List<DesignerCategory>();
-            Log($"Loaded {_metadataCache.Count} album folders from remote metadata.");
         }
         catch (Exception ex)
         {
-            Log($"Failed to load metadata index: {ex}");
+            Log($"Failed to load local metadata: {ex.Message}");
+        }
+
+        // 2. Try Embedded Resource (Primary source for standalone EXE)
+        try
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = "MdModManager.SongRepository.designers.json";
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream != null)
+            {
+                using var reader = new StreamReader(stream);
+                var json = await reader.ReadToEndAsync();
+                _metadataCache = JsonSerializer.Deserialize<List<DesignerCategory>>(json) ?? new List<DesignerCategory>();
+                Log($"Loaded {_metadataCache.Count} album folders from embedded resources.");
+                return _metadataCache;
+            }
+        }
+        catch (Exception innerEx)
+        {
+            Log($"Failed to load embedded metadata: {innerEx.Message}");
+        }
+
+        // 3. Remote Fallback (As a last resort if user explicitly deleted local and something is wrong with assembly)
+        try
+        {
+            Log("Attempting remote metadata fallback...");
+            var remoteJson = await _http.GetStringAsync(RemoteIndexUrl);
+            _metadataCache = JsonSerializer.Deserialize<List<DesignerCategory>>(remoteJson) ?? new List<DesignerCategory>();
+            Log($"Loaded {_metadataCache.Count} album folders from remote metadata fallback.");
+            return _metadataCache;
+        }
+        catch (Exception ex)
+        {
+            Log($"All metadata sources failed: {ex.Message}");
             _metadataCache = new List<DesignerCategory>();
         }
 

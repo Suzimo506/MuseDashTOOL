@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
@@ -37,14 +38,16 @@ public partial class DesignerCategoryItemViewModel : ObservableObject
         var picturesPath = FindPicturesPath();
         if (picturesPath == null)
         {
-            Log($"Pictures directory not found for '{Category.Name}'.");
+            Log($"Pictures directory not found for '{Category.Name}'. Trying embedded fallback...");
+            TryLoadEmbeddedNormalCover();
             return;
         }
 
         var filePath = FindBestCoverPath(picturesPath, Category.Name);
         if (filePath == null)
         {
-            Log($"No folder cover matched for '{Category.Name}' in '{picturesPath}'.");
+            Log($"No folder cover matched for '{Category.Name}' in '{picturesPath}'. Trying embedded fallback...");
+            TryLoadEmbeddedNormalCover();
             return;
         }
 
@@ -56,7 +59,27 @@ public partial class DesignerCategoryItemViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Log($"Failed to load folder cover for '{Category.Name}' from '{filePath}': {ex.Message}");
+            Log($"Failed to load folder cover for '{Category.Name}' from '{filePath}': {ex.Message}. Trying embedded fallback...");
+            TryLoadEmbeddedNormalCover();
+        }
+    }
+
+    private void TryLoadEmbeddedNormalCover()
+    {
+        try
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = "MdModManager.Pictures.Normal.jpg";
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream != null)
+            {
+                CoverImage = new Bitmap(stream);
+                Log($"Loaded embedded Normal cover for '{Category.Name}'");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Failed to load embedded Normal cover: {ex.Message}");
         }
     }
 
@@ -70,15 +93,9 @@ public partial class DesignerCategoryItemViewModel : ObservableObject
     {
         var candidates = new List<string>
         {
-            Path.Combine(Environment.CurrentDirectory, "Pictures"),
-            Path.Combine(AppContext.BaseDirectory, "Pictures")
+            Path.Combine(AppContext.BaseDirectory, "Pictures"),
+            Path.Combine(Environment.CurrentDirectory, "Pictures")
         };
-
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-        for (var depth = 0; depth < 6 && current != null; depth++, current = current.Parent)
-        {
-            candidates.Add(Path.Combine(current.FullName, "Pictures"));
-        }
 
         return candidates.FirstOrDefault(Directory.Exists);
     }
@@ -232,7 +249,8 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
         var picturesPath = DesignerCategoryItemViewModel.ResolvePicturesPath();
         if (picturesPath == null)
         {
-            RuntimeLog.Write("AlbumCollectionVM", $"Pictures directory not found for community item '{Name}'.");
+            RuntimeLog.Write("AlbumCollectionVM", $"Pictures directory not found for community item '{Name}'. Trying embedded...");
+            TryLoadEmbeddedResource();
             return;
         }
 
@@ -242,7 +260,8 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
 
         if (filePath == null)
         {
-            RuntimeLog.Write("AlbumCollectionVM", $"No community cover matched for '{Name}' in '{picturesPath}'.");
+            RuntimeLog.Write("AlbumCollectionVM", $"No community cover matched for '{Name}' in '{picturesPath}'. Trying embedded...");
+            TryLoadEmbeddedResource();
             return;
         }
 
@@ -254,7 +273,40 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            RuntimeLog.Write("AlbumCollectionVM", $"Failed to load community cover for '{Name}' from '{filePath}': {ex.Message}");
+            RuntimeLog.Write("AlbumCollectionVM", $"Failed to load community cover for '{Name}' from '{filePath}': {ex.Message}. Trying embedded...");
+            TryLoadEmbeddedResource();
+        }
+    }
+
+    private void TryLoadEmbeddedResource()
+    {
+        try
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            // Try specific resource name based on community category name
+            var ext = Name == "令人生草" ? ".jpg" : ".png";
+            var resourceName = $"MdModManager.Pictures.{Name}{ext}";
+            
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream != null)
+            {
+                CoverImage = new Bitmap(stream);
+                RuntimeLog.Write("AlbumCollectionVM", $"Loaded embedded community cover for {Name}");
+            }
+            else
+            {
+                // Fallback to Normal.jpg if specific not found
+                var fallbackName = "MdModManager.Pictures.Normal.jpg";
+                using var fallbackStream = assembly.GetManifestResourceStream(fallbackName);
+                if (fallbackStream != null)
+                {
+                    CoverImage = new Bitmap(fallbackStream);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            RuntimeLog.Write("AlbumCollectionVM", $"Failed to load embedded community cover: {ex.Message}");
         }
     }
 
