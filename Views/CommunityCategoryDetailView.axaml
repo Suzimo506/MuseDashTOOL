@@ -17,7 +17,7 @@
             <Setter Property="Template">
                 <ControlTemplate>
                     <Border Name="RootBg"
-                            Background="Transparent"
+                            Background="{TemplateBinding Background}"
                             CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter Content="{TemplateBinding Content}"
@@ -95,7 +95,7 @@
                         </LinearGradientBrush>
                     </TextBlock.Foreground>
                 </TextBlock>
-                <TextBlock Text="选择上方日期后切换对应列表"
+                <TextBlock Text="点击跳转下载后密码自动复制"
                            Margin="0,4,0,0"
                            FontSize="12"
                            Foreground="{DynamicResource ThemeTextSubBrush}"/>
@@ -127,6 +127,22 @@
                          Command="{Binding SelectDateCommand}"
                          CommandParameter="2025-8"
                          Content="2025-8"/>
+
+            <Button Theme="{StaticResource SmallRoundBtn}"
+                    IsVisible="{Binding HasLanzouLink}"
+                    Command="{Binding OpenLanzouCommand}"
+                    ToolTip.Tip="{Binding LanzouTooltip}"
+                    Margin="10,0,0,0"
+                    Padding="10"
+                    Background="Transparent"
+                    VerticalAlignment="Center">
+                <Path Data="M652.8 473.6l-51.2-51.2-84.8 83.2V116.8h-72v388.8l-83.2-83.2-51.2 51.2 168 168 174.4-168z M188.8 833.6V427.2h72v-72h-72c-40 0-72 32-72 72v408c0 40 32 70.4 72 70.4h345.6v-72H188.8z m646.4-406.4c0-40-32-72-72-72h-72v72h72v121.6h72v-121.6zM942.4 728l-163.2-126.4c-3.2-3.2-8-4.8-12.8-4.8-11.2 0-20.8 8-20.8 19.2v60.8c-94.4 9.6-168 78.4-168 161.6 0 24 11.2 48 14.4 54.4l14.4 27.2 8-27.2c14.4-43.2 57.6-73.6 118.4-83.2h1.6c3.2 0 6.4 0 9.6-1.6v60.8c0 4.8 1.6 9.6 6.4 14.4 8 6.4 19.2 8 27.2 1.6 163.2-128 164.8-128 166.4-128l1.6-1.6c3.2-3.2 4.8-8 3.2-14.4 0-4.8-3.2-9.6-6.4-12.8z m-185.6 30.4c-9.6 0-19.2 1.6-28.8 1.6h-3.2c-27.2 4.8-52.8 12.8-75.2 24 22.4-33.6 62.4-56 110.4-57.6l40-1.6v-41.6l76.8 59.2-76.8 59.2v-44.8l-43.2 1.6z"
+                      Fill="{DynamicResource SvgIconBrush}"
+                      Stretch="Uniform"
+                      Width="22"
+                      Height="22"
+                      VerticalAlignment="Center"/>
+            </Button>
         </StackPanel>
 
         <Border Grid.Row="2"
@@ -135,19 +151,21 @@
                 CornerRadius="12"
                 Padding="18">
             <Grid>
-                <ItemsControl ItemsSource="{Binding CurrentEntries}" IsVisible="{Binding HasEntries}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="{DynamicResource ControlBgBrush}"
-                                    CornerRadius="8"
-                                    Margin="0,0,0,10"
-                                    Padding="14,12">
-                                <TextBlock Text="{Binding}"
-                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <ScrollViewer IsVisible="{Binding HasEntries}">
+                    <ItemsControl ItemsSource="{Binding CurrentEntries}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource ControlBgBrush}"
+                                        CornerRadius="8"
+                                        Margin="0,0,0,10"
+                                        Padding="14,12">
+                                    <TextBlock Text="{Binding}"
+                                               Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
 
                 <StackPanel IsVisible="{Binding IsEmpty}"
                             VerticalAlignment="Center"

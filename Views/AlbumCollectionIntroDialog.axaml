@@ -75,12 +75,7 @@
                            TextWrapping="Wrap"
                            Foreground="#E0E0E0"/>
 
-                <TextBlock Text="下载之后的zip拖进最底下的自动打包即可变为mdm自动放入谱面文件夹。"
-                           FontSize="15"
-                           TextWrapping="Wrap"
-                           Foreground="#E0E0E0"/>
-
-                <TextBlock Text="可以选择打包完成后自动删除zip。"
+                <TextBlock Text="下载之后的zip直接拖进谱面管理界面会自动打包成mdm。"
                            FontSize="15"
                            TextWrapping="Wrap"
                            Foreground="#E0E0E0"/>

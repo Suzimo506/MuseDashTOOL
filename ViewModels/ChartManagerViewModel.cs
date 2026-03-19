@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MdModManager.Models;
 using MdModManager.Services;
+using System.IO.Compression;
 using NAudio.Vorbis;
 using NAudio.Wave;
 
@@ -250,9 +251,34 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             if (!System.IO.Directory.Exists(albumsDir))
                 System.IO.Directory.CreateDirectory(albumsDir);
 
-            var destFile = System.IO.Path.Combine(albumsDir, System.IO.Path.GetFileName(sourceFile));
+            string destFileName = System.IO.Path.GetFileName(sourceFile);
+            
+            // Handle ZIP conversion
+            if (sourceFile.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                // Validate ZIP content
+                bool isValidChart = false;
+                using (var zip = ZipFile.OpenRead(sourceFile))
+                {
+                    isValidChart = zip.Entries.Any(e => 
+                        e.Name.Equals("info.json", StringComparison.OrdinalIgnoreCase) || 
+                        e.Name.Equals("map.json", StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!isValidChart)
+                {
+                    StatusMessage = "导入失败: 该压缩包内未找到谱面信息 (info.json/map.json)";
+                    return;
+                }
+
+                // Change extension to .mdm
+                destFileName = System.IO.Path.GetFileNameWithoutExtension(sourceFile) + ".mdm";
+            }
+
+            var destFile = System.IO.Path.Combine(albumsDir, destFileName);
             System.IO.File.Copy(sourceFile, destFile, true);
 
+            StatusMessage = $"导入成功: {destFileName}";
             Reload();
         }
         catch (Exception ex)

@@ -20,6 +20,6 @@
 
 ## 屏幕截图
 
-![模组管理](image-1.png)
-![谱面预览](image-2.png)
-![设置界面](image-3.png)
+![模组管理](Pictures/image-1.png)
+![谱面预览](Pictures/image-2.png)
+![设置界面](Pictures/image-3.png)

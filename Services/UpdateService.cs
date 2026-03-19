@@ -16,7 +16,7 @@ public interface IUpdateService
 
 public class UpdateService : IUpdateService
 {
-    private const string CurrentVersion = "v1.0.0";
+    private const string CurrentVersion = "v1.1.0";
     private const string GitHubApiUrl = "https://api.github.com/repos/KuoKing506/-MuseDashTOOL/releases/latest";
     private const string ProxyUrl = "https://mirror.ghproxy.com/";
     private readonly HttpClient _httpClient;
@@ -118,9 +118,16 @@ public class UpdateService : IUpdateService
 
         if (string.IsNullOrEmpty(downloadUrl)) return;
 
-        // 使用代理下载
+        // 优先使用镜像下载
         string proxiedUrl = ProxyUrl + downloadUrl;
         var response = await _httpClient.GetAsync(proxiedUrl);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            // 如果镜像失败，尝试直接从 GitHub 下载
+            response = await _httpClient.GetAsync(downloadUrl);
+        }
+
         if (!response.IsSuccessStatusCode) return;
 
         var tempFile = Path.Combine(Path.GetTempPath(), "MuseDashTOOL_New" + Path.GetExtension(fileName));

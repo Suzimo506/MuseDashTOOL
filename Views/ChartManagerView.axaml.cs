@@ -43,7 +43,8 @@ public partial class ChartManagerView : UserControl
 #pragma warning disable CS0618
         var files = e.Data.GetFiles();
 #pragma warning restore CS0618
-        if (files != null && files.Any(f => f.Path.LocalPath.EndsWith(".mdm", StringComparison.OrdinalIgnoreCase)))
+        if (files != null && files.Any(f => f.Path.LocalPath.EndsWith(".mdm", StringComparison.OrdinalIgnoreCase) || 
+                                           f.Path.LocalPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)))
         {
             e.DragEffects = DragDropEffects.Copy;
         }
@@ -63,7 +64,8 @@ public partial class ChartManagerView : UserControl
             foreach (var file in files)
             {
                 var filePath = file.Path.LocalPath;
-                if (filePath.EndsWith(".mdm", StringComparison.OrdinalIgnoreCase))
+                if (filePath.EndsWith(".mdm", StringComparison.OrdinalIgnoreCase) || 
+                    filePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                 {
                     await cvm.ImportChartAsync(filePath);
                 }
@@ -107,7 +109,7 @@ public partial class ChartManagerView : UserControl
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Muse Dash 谱面") { Patterns = new[] { "*.mdm" } }
+                new FilePickerFileType("Muse Dash 谱面 (.mdm, .zip)") { Patterns = new[] { "*.mdm", "*.zip" } }
             }
         });
 
@@ -116,7 +118,8 @@ public partial class ChartManagerView : UserControl
         var file = result[0];
         var filePath = file.Path.LocalPath;
 
-        if (!filePath.EndsWith(".mdm", StringComparison.OrdinalIgnoreCase))
+        if (!filePath.EndsWith(".mdm", StringComparison.OrdinalIgnoreCase) && 
+            !filePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
             var notificationService = Ioc.Default.GetRequiredService<INotificationService>();
             notificationService.ShowFailure("导入失败", "此文件格式错误！");
