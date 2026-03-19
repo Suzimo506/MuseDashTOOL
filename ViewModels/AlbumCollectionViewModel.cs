@@ -281,6 +281,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isEmpty;
+    
+    [ObservableProperty]
+    private double _scrollOffset;
+
 
     public AlbumCollectionViewModel(IAlbumCollectionService collectionService)
     {
@@ -337,7 +341,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
         _isInitialized = false;
         IsLoading = false;
         IsEmpty = false;
-        RuntimeLog.Write("AlbumCollectionVM", "Released album collection folder cache.");
+        ScrollOffset = 0; // 同时也重置位置缓存
+        RuntimeLog.Write("AlbumCollectionVM", "Released album collection folder and scroll position cache.");
     }
 
     [RelayCommand]

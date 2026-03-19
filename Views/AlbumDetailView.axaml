@@ -77,7 +77,7 @@
                         </LinearGradientBrush>
                     </TextBlock.Foreground>
                 </TextBlock>
-                <TextBlock Text="{Binding Category.Description}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="Wrap" Margin="0,4,0,0" IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                <!-- <TextBlock Text="{Binding Category.Description}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="Wrap" Margin="0,4,0,0" IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/> -->
             </StackPanel>
             <Button Grid.Column="2"
                     Command="{Binding DownloadAllCommand}"

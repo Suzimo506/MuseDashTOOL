@@ -1,0 +1,129 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\MuseDashModTool\\MuseDashTOOL\\MuseDashTOOL.csproj": {}
+  },
+  "projects": {
+    "D:\\MuseDashModTool\\MuseDashTOOL\\MuseDashTOOL.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\MuseDashModTool\\MuseDashTOOL\\MuseDashTOOL.csproj",
+        "projectName": "MuseDashTOOL",
+        "projectPath": "D:\\MuseDashModTool\\MuseDashTOOL\\MuseDashTOOL.csproj",
+        "packagesPath": "C:\\Users\\19758\\.nuget\\packages\\",
+        "outputPath": "D:\\MuseDashModTool\\MuseDashTOOL\\.\\artifacts\\objverify\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "D:\\MuseDashModTool\\MuseDashTOOL\\NuGet.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0-windows"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0-windows7.0": {
+            "targetAlias": "net9.0-windows",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
+      },
+      "frameworks": {
+        "net9.0-windows7.0": {
+          "targetAlias": "net9.0-windows",
+          "dependencies": {
+            "AsmResolver.DotNet": {
+              "target": "Package",
+              "version": "[5.5.1, )"
+            },
+            "AssetsTools.NET": {
+              "target": "Package",
+              "version": "[3.0.0, )"
+            },
+            "AsyncImageLoader.Avalonia": {
+              "target": "Package",
+              "version": "[3.7.0, )"
+            },
+            "Avalonia": {
+              "target": "Package",
+              "version": "[11.3.12, )"
+            },
+            "Avalonia.Desktop": {
+              "target": "Package",
+              "version": "[11.3.12, )"
+            },
+            "Avalonia.Diagnostics": {
+              "target": "Package",
+              "version": "[11.3.12, )"
+            },
+            "Avalonia.Fonts.Inter": {
+              "target": "Package",
+              "version": "[11.3.12, )"
+            },
+            "Avalonia.Themes.Fluent": {
+              "target": "Package",
+              "version": "[11.3.12, )"
+            },
+            "CommunityToolkit.Mvvm": {
+              "target": "Package",
+              "version": "[8.4.0, )"
+            },
+            "Microsoft.Extensions.DependencyInjection": {
+              "target": "Package",
+              "version": "[10.0.3, )"
+            },
+            "Microsoft.Win32.Registry": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "NAudio": {
+              "target": "Package",
+              "version": "[2.2.1, )"
+            },
+            "NAudio.Vorbis": {
+              "target": "Package",
+              "version": "[1.5.0, )"
+            },
+            "SharpZipLib": {
+              "target": "Package",
+              "version": "[1.4.2, )"
+            },
+            "System.Reactive": {
+              "target": "Package",
+              "version": "[6.1.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

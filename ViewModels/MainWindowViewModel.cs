@@ -732,9 +732,13 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void CleanupCurrentPage()
     {
+        Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
         var isLeavingAlbumCollectionSection = IsAlbumCollectionSectionPage(CurrentPage);
         if (isLeavingAlbumCollectionSection)
+        {
             Ioc.Default.GetRequiredService<AlbumCollectionViewModel>().ReleaseResources();
+            ViewLocator.ClearCache(); // 彻底清理视图单例，释放内存
+        }
         _currentPageCts?.Cancel();
         _currentPageCts = new CancellationTokenSource();
         

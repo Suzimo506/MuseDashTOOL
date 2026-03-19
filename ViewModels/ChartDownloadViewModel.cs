@@ -592,7 +592,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         return new VorbisWaveReader(stream);
     }
 
-    private void StopPlayback()
+    public void StopPlayback()
     {
         // 如果正在加载音频，取消加载
         _loadCts?.Cancel();

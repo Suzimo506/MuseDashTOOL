@@ -94,7 +94,8 @@
                            HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+            <ScrollViewer x:Name="AlbumScrollViewer"
+                          HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <ItemsControl ItemsSource="{Binding Categories}">
