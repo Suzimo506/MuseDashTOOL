@@ -275,6 +275,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject
         if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
             desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
+            Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
             var vm = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
             mainVm.CurrentPage = vm;
         }

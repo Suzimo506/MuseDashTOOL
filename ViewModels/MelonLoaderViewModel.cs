@@ -31,6 +31,7 @@ public partial class MelonLoaderViewModel : ObservableObject
     private bool _isActionProgressing;
 
 
+    private CancellationTokenSource? _installCts;
     private readonly IConfigService _configService;
     private readonly INotificationService _notificationService;
 
@@ -68,6 +69,12 @@ public partial class MelonLoaderViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void Stop()
+    {
+        _installCts?.Cancel();
+    }
+
+    [RelayCommand]
     private async Task InstallAsync()
     {
         if (SelectedRelease == null) return;
@@ -80,6 +87,7 @@ public partial class MelonLoaderViewModel : ObservableObject
 
         IsActionProgressing = true;
         DownloadProgress = 0;
+        _installCts = new CancellationTokenSource();
 
         try
         {
@@ -88,9 +96,13 @@ public partial class MelonLoaderViewModel : ObservableObject
                 asset.DownloadUrl,
                 _configService.Config.DownloadSource);
 
-            await _melonLoaderService.InstallAsync(downloadUrl, progress);
+            await _melonLoaderService.InstallAsync(downloadUrl, progress, _installCts.Token);
             RefreshCurrentVersion();
             _notificationService.ShowSuccess("MelonLoader 安装成功");
+        }
+        catch (OperationCanceledException)
+        {
+            _notificationService.ShowInfo("已中止下载");
         }
         catch (Exception ex)
         {
@@ -101,6 +113,8 @@ public partial class MelonLoaderViewModel : ObservableObject
         {
             IsActionProgressing = false;
             DownloadProgress = 0;
+            _installCts?.Dispose();
+            _installCts = null;
         }
     }
 

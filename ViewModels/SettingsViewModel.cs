@@ -18,7 +18,7 @@ public partial class SettingsViewModel : ObservableObject
 
     // 可用的下载源列表
     [ObservableProperty]
-    private string[] _downloadSources = new[] { "ghproxy.net", "kkgithub.com", "github.com" };
+    private string[] _downloadSources = new[] { "Suzimo", "kkgithub.com", "github.com" };
 
     // 控制主设置面板与颜色子面板的切换
     [ObservableProperty]
@@ -51,12 +51,19 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>当前选定的下载源，与 ConfigService 同步</summary>
     public string SelectedDownloadSource
     {
-        get => _configService.Config.DownloadSource;
+        get
+        {
+            var val = _configService.Config.DownloadSource;
+            if (val == "ghproxy.net") return "github.com";
+            if (val == "suzimo.online") return "Suzimo";
+            return val;
+        }
         set
         {
-            if (_configService.Config.DownloadSource != value)
+            var newVal = value == "Suzimo" ? "suzimo.online" : value;
+            if (_configService.Config.DownloadSource != newVal)
             {
-                _configService.Config.DownloadSource = value;
+                _configService.Config.DownloadSource = newVal;
                 OnPropertyChanged();
                 _ = _configService.SaveAsync();
             }

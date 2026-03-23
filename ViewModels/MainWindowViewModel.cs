@@ -730,7 +730,7 @@ public partial class MainWindowViewModel : ObservableObject
             or CommunityCategoryDetailViewModel;
     }
 
-    private void CleanupCurrentPage()
+    public void CleanupCurrentPage()
     {
         Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
         var isLeavingAlbumCollectionSection = IsAlbumCollectionSectionPage(CurrentPage);

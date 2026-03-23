@@ -7,7 +7,7 @@
              x:Class="MdModManager.Views.MelonLoaderView"
              x:DataType="vm:MelonLoaderViewModel">
     <UserControl.Resources>
-        <!-- 纯图标按钮主题 (无边距、无背景) -->
+        <!-- 纯图标按钮主题 (无背景、悬停半透明) -->
         <ControlTheme x:Key="RobustPlainIconBtn" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -34,27 +34,29 @@
     <Grid RowDefinitions="*">
         <!-- 内容区域 -->
         <StackPanel Grid.Row="0" Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-20,0,0">
-            <!-- MelonLoader 官方 Logo 改为居中放在顶部 -->
-            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0">
+            <!-- MelonLoader 官方 Logo -->
+            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Image Height="35" RenderOptions.BitmapInterpolationMode="HighQuality" Source="avares://MuseDashTOOL/Assets/ML_Icon.png" />
                 <Image Height="28" RenderOptions.BitmapInterpolationMode="HighQuality" Source="avares://MuseDashTOOL/Assets/ML_Text.png" />
             </StackPanel>
 
-        
+            <!-- 版本信息 -->
             <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
                 <TextBlock Text="当前版本: " FontSize="16" VerticalAlignment="Center" Foreground="{DynamicResource ThemeTextMainBrush}"/>
                 <TextBlock Text="{Binding CurrentVersionText}" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" Foreground="{DynamicResource ThemeTextMainBrush}"/>
             </StackPanel>
 
             <TextBlock Text="可用版本" FontSize="16" HorizontalAlignment="Center" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+            
             <StackPanel Spacing="15" HorizontalAlignment="Center">
                 <Panel Width="120" HorizontalAlignment="Center">
+                    <!-- 下拉选择：非下载状态显示 -->
                     <ComboBox ItemsSource="{Binding Releases}" 
-                              SelectedItem="{Binding SelectedRelease}"
-                              IsVisible="{Binding !IsActionProgressing}"
-                              Width="120" HorizontalAlignment="Center"
-                              HorizontalContentAlignment="Center"
-                              Padding="30,0,0,0">
+                               SelectedItem="{Binding SelectedRelease}"
+                               IsVisible="{Binding !IsActionProgressing}"
+                               Width="120" HorizontalAlignment="Center"
+                               HorizontalContentAlignment="Center"
+                               Padding="30,0,0,0">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding DisplayName}" HorizontalAlignment="Center" Foreground="{DynamicResource ThemeTextMainBrush}"/>
@@ -62,18 +64,19 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                     
+                    <!-- 进度条：下载状态显示 -->
                     <ProgressBar Value="{Binding DownloadProgress}" 
-                                 IsVisible="{Binding IsActionProgressing}"
-                                 Foreground="{DynamicResource SvgIconBrush}"
-                                 Background="#333333"
-                                 ShowProgressText="True"
-                                 Height="32" Width="120" CornerRadius="4" 
-                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                  IsVisible="{Binding IsActionProgressing}"
+                                  Foreground="{DynamicResource SvgIconBrush}"
+                                  Background="#333333"
+                                  ShowProgressText="True"
+                                  Height="32" Width="120" CornerRadius="4" 
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Panel>
 
                 <StackPanel Spacing="10">
                     <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center">
-                        <!-- 安装按钮：SVG -->
+                        <!-- 安装按钮 -->
                         <Button Command="{Binding InstallCommand}" 
                                 IsEnabled="{Binding !IsActionProgressing}"
                                 Theme="{StaticResource RobustPlainIconBtn}"
@@ -82,12 +85,21 @@
                                       Foreground="{DynamicResource SvgIconBrush}" Width="24" Height="24"/>
                         </Button>
 
-                        <!-- 卸载按钮：SVG -->
+                        <!-- 卸载按钮：常规状态 -->
                         <Button Command="{Binding UninstallCommand}" 
-                                IsEnabled="{Binding !IsActionProgressing}"
+                                IsVisible="{Binding !IsActionProgressing}"
                                 Theme="{StaticResource RobustPlainIconBtn}"
                                 ToolTip.Tip="卸载">
                             <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341z m0 0" 
+                                      Foreground="{DynamicResource SvgIconBrush}" Width="24" Height="24"/>
+                        </Button>
+
+                        <!-- 中止按钮：仅在下载时显示，替换卸载按钮位置 -->
+                        <Button Command="{Binding StopCommand}" 
+                                IsVisible="{Binding IsActionProgressing}"
+                                Theme="{StaticResource RobustPlainIconBtn}"
+                                ToolTip.Tip="中止安装">
+                            <PathIcon Data="M512 928A416 416 0 1 1 928 512 416 416 0 0 1 512 928z m0-768A352 352 0 1 0 864 512 352 352 0 0 0 512 160z m96 512h-192a64 64 0 0 1-64-64v-192a64 64 0 0 1 64-64h192a64 64 0 0 1 64 64v192a64 64 0 0 1-64 64z" 
                                       Foreground="{DynamicResource SvgIconBrush}" Width="24" Height="24"/>
                         </Button>
                     </StackPanel>

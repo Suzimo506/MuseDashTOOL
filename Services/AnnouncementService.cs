@@ -13,7 +13,7 @@ public interface IAnnouncementService
 
 public class AnnouncementService : IAnnouncementService
 {
-    private const string AnnouncementUrl = "https://ghproxy.net/https://raw.githubusercontent.com/KuoKing506/-MuseDashTOOL/refs/heads/main/announcement.json";
+    private const string AnnouncementUrl = "https://raw.githubusercontent.com/KuoKing506/-MuseDashTOOL/refs/heads/main/announcement.json";
     private readonly HttpClient _httpClient;
 
     public AnnouncementService()

@@ -9,7 +9,7 @@ public class AppConfig
     public string ModLinksUrl { get; set; } =
         "https://gitee.com/lxymahatma/ModLinks/raw/dev/Mods.json";
         
-    public string DownloadSource { get; set; } = "ghproxy.net";
+    public string DownloadSource { get; set; } = "github.com";
 
     /// <summary>永久关闭"下载不兼容 mod"的二次确认弹窗</summary>
     public bool SuppressIncompatibleModWarning { get; set; } = false;

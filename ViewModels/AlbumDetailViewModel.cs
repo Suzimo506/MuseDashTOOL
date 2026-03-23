@@ -213,6 +213,7 @@ public partial class AlbumDetailViewModel : ObservableObject
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
             desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
+            Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
             var collectionVm = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
             mainVm.CurrentPage = collectionVm;
         }

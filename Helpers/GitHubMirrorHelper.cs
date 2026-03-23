@@ -4,7 +4,6 @@ namespace MdModManager.Helpers;
 
 public static class GitHubMirrorHelper
 {
-    private const string GhProxyPrefix = "https://ghproxy.net/";
     private const string KkGitHubHost = "kkgithub.com";
     private const string KkRawHost = "raw.kkgithub.com";
     private const string GitHubHost = "github.com";
@@ -25,11 +24,11 @@ public static class GitHubMirrorHelper
             return canonicalUrl;
         }
 
-        if (downloadSource.Contains("ghproxy.net", StringComparison.OrdinalIgnoreCase))
+        // Suzimo 选项：固定使用 suzimo.online
+        if (downloadSource.Equals("Suzimo", StringComparison.OrdinalIgnoreCase) || 
+            downloadSource.Equals("suzimo.online", StringComparison.OrdinalIgnoreCase))
         {
-            return canonicalUrl.StartsWith(GhProxyPrefix, StringComparison.OrdinalIgnoreCase)
-                ? canonicalUrl
-                : GhProxyPrefix + canonicalUrl;
+            return ApplyCustomMirror(canonicalUrl, "suzimo.online");
         }
 
         if (downloadSource.Contains(KkGitHubHost, StringComparison.OrdinalIgnoreCase))
@@ -44,15 +43,42 @@ public static class GitHubMirrorHelper
         return canonicalUrl;
     }
 
+    public static string ApplyCustomMirror(string url, string customHost)
+    {
+        if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(customHost))
+            return url;
+
+        var canonical = NormalizeCanonicalUrl(url);
+        if (!Uri.TryCreate(canonical, UriKind.Absolute, out var uri))
+            return canonical;
+
+        var host = customHost.Replace("https://", "").Replace("http://", "").TrimEnd('/');
+        
+        // 特殊处理 kkgithub 的 raw 域名
+        if (host.Equals("kkgithub.com", StringComparison.OrdinalIgnoreCase) && 
+            uri.Host.Equals("raw.githubusercontent.com", StringComparison.OrdinalIgnoreCase))
+        {
+            host = "raw.kkgithub.com";
+        }
+        
+        var scheme = uri.Scheme;
+        var pathAndQuery = uri.GetComponents(UriComponents.PathAndQuery, UriFormat.UriEscaped).TrimStart('/');
+        var fragment = uri.GetComponents(UriComponents.Fragment, UriFormat.UriEscaped);
+        
+        var result = $"{scheme}://{host}/{pathAndQuery}";
+        if (!string.IsNullOrEmpty(fragment))
+        {
+            result += "#" + fragment;
+        }
+        return result;
+    }
+
     public static string NormalizeCanonicalUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url))
             return string.Empty;
 
         var trimmed = url.Trim();
-
-        if (trimmed.StartsWith(GhProxyPrefix, StringComparison.OrdinalIgnoreCase))
-            return trimmed[GhProxyPrefix.Length..];
 
         if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
             return trimmed;

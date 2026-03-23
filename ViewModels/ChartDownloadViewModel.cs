@@ -508,7 +508,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             RuntimeLog.Write("ChartDownloadVM", $"Preview start: title='{chart.Title}', demo='{chart.DemoUrl}', mp3='{chart.DemoMp3Url}', chosen='{url}', ext='{ext}'");
 
             // 先探测文件状态
-            var response = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            using var response = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
             RuntimeLog.Write("ChartDownloadVM", $"Preview response for '{chart.Title}': {(int)response.StatusCode} {response.StatusCode}");
             
             // 如果 .ogg 不存在 (404) 或失效，尝试回退到 .mp3
@@ -516,61 +516,40 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             {
                 url = chart.DemoMp3Url;
                 ext = Path.GetExtension(url ?? string.Empty);
-                response.Dispose();
                 RuntimeLog.Write("ChartDownloadVM", $"Preview fallback to mp3 for '{chart.Title}': '{url}'");
-                response = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-                RuntimeLog.Write("ChartDownloadVM", $"Preview fallback response for '{chart.Title}': {(int)response.StatusCode} {response.StatusCode}");
+                
+                // 注意：由于 response 是 using 模式，所以这里不能简单 re-assign。
+                // 方案是在 response 块外处理或 nested using。
+                // 为了简单起见，我们对 fallback 使用独立逻辑（原代码此处逻辑略显冗余，我们直接重试）
+                using var fallbackRes = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+                RuntimeLog.Write("ChartDownloadVM", $"Preview fallback response for '{chart.Title}': {(int)fallbackRes.StatusCode} {fallbackRes.StatusCode}");
+                
+                if (fallbackRes.IsSuccessStatusCode)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    var fallbackBytes = await fallbackRes.Content.ReadAsByteArrayAsync(ct);
+                    await StartAudioStreamAsync(fallbackBytes, ext, chart, ct);
+                    return;
+                }
             }
 
             if (!response.IsSuccessStatusCode)
             {
-                // 如果回退后依然失效，给出提示
+                // 如果原始/回退依然失效，给出提示
                 Console.WriteLine($"[ChartDownloadVM] No demo available for {chart.Title}: HTTP {(int)response.StatusCode}");
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     StatusMessage = $"《{chart.Title}》暂无试听文件");
-                response.Dispose();
                 return;
             }
 
             // 如果加载期间用户已取消或切换到其他谱面，无需继续播放
-            if (ct.IsCancellationRequested) 
-            {
-                response.Dispose();
-                return;
-            }
+            if (ct.IsCancellationRequested) return;
 
             var bytes = await response.Content.ReadAsByteArrayAsync(ct);
-            response.Dispose();
             RuntimeLog.Write("ChartDownloadVM", $"Preview download complete for '{chart.Title}', bytes={bytes.Length}");
 
             if (ct.IsCancellationRequested) return;
-
-            var ms = new MemoryStream(bytes);
-            IWaveProvider waveProvider = CreateWaveProvider(ms, ext);
-
-            _waveOut = new WaveOutEvent();
-            _waveOut.Init(waveProvider);
-            _waveOut.Volume = (float)_configService.Config.ChartPreviewVolume;
-
-            _stopCts = new CancellationTokenSource();
-            var cts = _stopCts;
-            var provider = waveProvider;
-
-            _waveOut.PlaybackStopped += (_, _) =>
-            {
-                if (!cts.IsCancellationRequested)
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    {
-                        if (_playingChart == chart) _playingChart = null;
-                        chart.IsPlaying = false;
-                    });
-                if (provider is IDisposable d) d.Dispose();
-                ms.Dispose();
-            };
-
-            _waveOut.Play();
-            _playingChart = chart;
-            chart.IsPlaying = true;
+            await StartAudioStreamAsync(bytes, ext, chart, ct);
         }
         catch (OperationCanceledException) { /* 用户取消，忽略 */ }
         catch (Exception ex)
@@ -579,6 +558,38 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 StatusMessage = $"试听出错: {ex.Message}");
         }
+    }
+
+    private async Task StartAudioStreamAsync(byte[] bytes, string ext, MdmcChart chart, CancellationToken ct)
+    {
+        if (ct.IsCancellationRequested) return;
+
+        var ms = new MemoryStream(bytes);
+        IWaveProvider waveProvider = CreateWaveProvider(ms, ext);
+
+        _waveOut = new WaveOutEvent();
+        _waveOut.Init(waveProvider);
+        _waveOut.Volume = (float)_configService.Config.ChartPreviewVolume;
+
+        var cts = _stopCts = new CancellationTokenSource();
+        var provider = waveProvider;
+
+        _waveOut.PlaybackStopped += (_, _) =>
+        {
+            if (!cts.IsCancellationRequested)
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    if (_playingChart == chart) _playingChart = null;
+                    chart.IsPlaying = false;
+                });
+            if (provider is IDisposable d) d.Dispose();
+            ms.Dispose();
+        };
+
+        _waveOut.Play();
+        _playingChart = chart;
+        chart.IsPlaying = true;
+        await Task.CompletedTask;
     }
 
     private static IWaveProvider CreateWaveProvider(Stream stream, string ext)
@@ -594,7 +605,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
     public void StopPlayback()
     {
-        // 如果正在加载音频，取消加载
+        // 如果正在加载音频，立刻取消加载以释放 HTTP 连接
         _loadCts?.Cancel();
         _loadCts = null;
 
@@ -607,9 +618,24 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             _playingChart = null;
         }
 
-        _waveOut?.Stop();
-        _waveOut?.Dispose();
+        var waveOut = _waveOut;
         _waveOut = null;
+        if (waveOut != null)
+        {
+            // 将停止和释放放到后台，避免音频驱动延迟导致 UI 卡死
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    waveOut.Stop();
+                    waveOut.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    RuntimeLog.Write("ChartDownloadVM", $"Error disposing WaveOut: {ex.Message}");
+                }
+            });
+        }
     }
 
     public void Dispose()

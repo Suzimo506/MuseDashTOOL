@@ -707,8 +707,7 @@ public partial class ModManagerViewModel : ObservableObject
             var mirror = _configService.Config.DownloadSource;
             if (!string.IsNullOrEmpty(mirror) && mirror != "官方源")
             {
-                if (mirror == "ghproxy.net") downloadUrl = $"https://ghproxy.net/{downloadUrl}";
-                else if (mirror == "moeyy.cn") downloadUrl = $"https://github.moeyy.xyz/{downloadUrl}";
+                // 注意：旧版的硬编码镜像判断逻辑已移除，由核心镜像逻辑统一处理或直接使用原始链接
             }
         }
         else

@@ -402,6 +402,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
     {
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
+            Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
             var detailVm = Ioc.Default.GetRequiredService<AlbumDetailViewModel>();
             mainVm.CurrentPage = detailVm;
             await detailVm.InitializeAsync(item.Category);
@@ -414,6 +415,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
             desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
+            Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
             var detailVm = Ioc.Default.GetRequiredService<CommunityCategoryDetailViewModel>();
             mainVm.CurrentPage = detailVm;
             await detailVm.InitializeAsync(item.Name);
