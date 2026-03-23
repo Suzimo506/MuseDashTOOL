@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MdModManager.Services;
+using MdModManager.Helpers;
 using ICSharpCode.SharpZipLib.Zip;
 using System.IO;
 using System.Linq;
@@ -18,7 +19,7 @@ public partial class SettingsViewModel : ObservableObject
 
     // 可用的下载源列表
     [ObservableProperty]
-    private string[] _downloadSources = new[] { "Suzimo", "kkgithub.com", "github.com" };
+    private string[] _downloadSources = new[] { "高速 DNS", "Suzimo", "kkgithub.com", "github.com" };
 
     // 控制主设置面板与颜色子面板的切换
     [ObservableProperty]
@@ -54,26 +55,61 @@ public partial class SettingsViewModel : ObservableObject
         get
         {
             var val = _configService.Config.DownloadSource;
+            if (_configService.Config.UseOptimizedDns && val == "suzimo.online") return "高速 DNS";
             if (val == "ghproxy.net") return "github.com";
             if (val == "suzimo.online") return "Suzimo";
             return val;
         }
         set
         {
-            var newVal = value == "Suzimo" ? "suzimo.online" : value;
+            string newVal;
+            bool useOpt = false;
+
+            if (value == "高速 DNS")
+            {
+                newVal = "suzimo.online";
+                useOpt = true;
+            }
+            else if (value == "Suzimo")
+            {
+                newVal = "suzimo.online";
+                useOpt = false;
+            }
+            else
+            {
+                newVal = value;
+                useOpt = false;
+            }
+
+            bool changed = false;
             if (_configService.Config.DownloadSource != newVal)
             {
                 _configService.Config.DownloadSource = newVal;
+                changed = true;
+            }
+            if (_configService.Config.UseOptimizedDns != useOpt)
+            {
+                _configService.Config.UseOptimizedDns = useOpt;
+                HttpHelper.UseOptimizedIps = useOpt;
+                OnPropertyChanged(nameof(UseOptimizedDns));
+                changed = true;
+            }
+
+            if (changed)
+            {
                 OnPropertyChanged();
                 _ = _configService.SaveAsync();
             }
         }
     }
 
-    public SettingsViewModel(IConfigService configService, INotificationService notificationService = null)
+    public SettingsViewModel(IConfigService configService, INotificationService? notificationService = null)
     {
         _configService = configService;
         _notificationService = notificationService ?? CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default.GetService<INotificationService>();
+        
+        // 初始化静态帮助类的优选状态
+        HttpHelper.UseOptimizedIps = _configService.Config.UseOptimizedDns;
     }
 
     /// <summary>永久关闭"下载不兼容 mod 确认弹窗"的开关</summary>
@@ -900,6 +936,21 @@ public partial class SettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedFontIndex)); // Update Selection
             OnPropertyChanged(nameof(AvailableFonts)); // Update UI just in case
         });
+    }
+
+    public bool UseOptimizedDns
+    {
+        get => _configService.Config.UseOptimizedDns;
+        set
+        {
+            if (_configService.Config.UseOptimizedDns != value)
+            {
+                _configService.Config.UseOptimizedDns = value;
+                HttpHelper.UseOptimizedIps = value;
+                OnPropertyChanged();
+                _ = _configService.SaveAsync();
+            }
+        }
     }
 
     // ─────────────────────────────── 内部辅助 ───────────────────────────────

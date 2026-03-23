@@ -122,8 +122,17 @@ public partial class AlbumDetailViewModel : ObservableObject
         var queued = 0;
         foreach (var chart in Charts)
         {
-            if (string.IsNullOrWhiteSpace(chart.DownloadUrl))
+            var url = chart.DownloadUrl;
+            if (string.IsNullOrWhiteSpace(url))
                 continue;
+
+            // 特例：修复调色盘等特殊路径在批量下载时的镜像识别问题
+            if (url.Contains("~%23FFFFFF~") || url.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true))
+            {
+                var manualUrl = url.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
+                url = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
+                chart.CustomDownloadUrl = url;
+            }
 
             _downloadManagerService.EnqueueDownload(chart);
             queued++;
@@ -180,7 +189,9 @@ public partial class AlbumDetailViewModel : ObservableObject
 
     private async Task LoadCoversAsync()
     {
-        using var http = new System.Net.Http.HttpClient();
+        // 使用优化客户端以享受高速 DNS 竞速（如果开启了的话）
+        using var http = MdModManager.Helpers.HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(15));
+        http.DefaultRequestHeaders.Remove("User-Agent");
         http.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0");
 
         foreach (var chart in Charts)
@@ -193,8 +204,17 @@ public partial class AlbumDetailViewModel : ObservableObject
 
             try
             {
-                Log($"Loading cover for '{chart.Title}': {chart.CoverUrl}");
-                var bytes = await http.GetByteArrayAsync(chart.CoverUrl);
+                var fetchUrl = chart.CoverUrl;
+                // 特例处理：调色盘谱面因特殊符号 # (%23) 在重定向时易断链，此处强制进行特例修正
+                if (!string.IsNullOrEmpty(fetchUrl) && (fetchUrl.Contains("~%23FFFFFF~") || fetchUrl.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true)))
+                {
+                    // 确保使用 raw 链接且纠正可能存在的 #
+                    var manualUrl = fetchUrl.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
+                    fetchUrl = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
+                }
+
+                Log($"Loading cover for '{chart.Title}': {fetchUrl}");
+                var bytes = await http.GetByteArrayAsync(fetchUrl);
                 using var ms = new System.IO.MemoryStream(bytes);
                 var bmp = new Avalonia.Media.Imaging.Bitmap(ms);
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.CoverImage = bmp);

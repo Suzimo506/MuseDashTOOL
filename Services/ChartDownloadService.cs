@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MdModManager.Models;
+using MdModManager.Helpers;
 
 namespace MdModManager.Services;
 
@@ -24,10 +25,7 @@ public interface IChartDownloadService
 
 public class ChartDownloadService : IChartDownloadService
 {
-    private static readonly HttpClient _http = new()
-    {
-        Timeout = TimeSpan.FromSeconds(30)
-    };
+    private static readonly HttpClient _http = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(30));
 
     public async Task<(IList<MdmcChart> charts, int totalPages)> FetchChartsAsync(
         int page, string sort, string order,

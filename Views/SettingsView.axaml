@@ -130,7 +130,7 @@
 
                     <!-- 设置列表 -->
                     <Grid ColumnDefinitions="Auto, 20, *"
-                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                           RowSpacing="15">
 
                         <!-- 1. 自动翻译 -->

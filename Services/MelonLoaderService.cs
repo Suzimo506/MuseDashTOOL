@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MdModManager.Models;
+using MdModManager.Helpers;
 
 namespace MdModManager.Services;
 
@@ -28,8 +29,7 @@ public class MelonLoaderService : IMelonLoaderService
     public MelonLoaderService(IConfigService configService)
     {
         _configService = configService;
-        _httpClient = new HttpClient();
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "MdModManager");
+        _httpClient = HttpHelper.CreateOptimizedClient(TimeSpan.FromMinutes(5));
     }
 
     public async Task<List<GitHubRelease>> GetReleasesAsync(CancellationToken cancellationToken = default)

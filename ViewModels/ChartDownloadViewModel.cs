@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using MdModManager.Models;
 using MdModManager.Services;
 using MdModManager.Views;
+using MdModManager.Helpers;
 using NAudio.Vorbis;
 using NAudio.Wave;
 
@@ -21,13 +22,11 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     private readonly IConfigService _configService;
     private readonly INotificationService _notificationService;
     private readonly IDownloadManagerService _downloadManagerService;
-    private static readonly HttpClient _coverHttp = new() 
-    { 
-        Timeout = TimeSpan.FromSeconds(15) 
-    };
+    private static readonly HttpClient _coverHttp = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(15));
 
     static ChartDownloadViewModel()
     {
+        _coverHttp.DefaultRequestHeaders.Remove("User-Agent");
         _coverHttp.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
     }
 
@@ -280,6 +279,16 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             }
         }
 
+        var url = chart.DownloadUrl;
+        // 特例修正：调色盘等特殊路径下载直连
+        if (!string.IsNullOrEmpty(url) && (url.Contains("~%23FFFFFF~") || url.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true)))
+        {
+            var manualUrl = url.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
+            url = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
+            // 顺便同步给界面引用的 CustomDownloadUrl
+            chart.CustomDownloadUrl = url;
+        }
+
         _downloadManagerService.EnqueueDownload(chart);
         _notificationService.ShowSuccess($"已添加到下载列表: 《{chart.Title}》");
     }
@@ -504,6 +513,14 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         {
             // 默认优先尝试 .ogg
             string url = !string.IsNullOrWhiteSpace(chart.DemoUrl) ? chart.DemoUrl : chart.DemoMp3Url;
+            
+            // 特例修正：调色盘等特殊路径试听
+            if (!string.IsNullOrEmpty(url) && (url.Contains("~%23FFFFFF~") || url.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true)))
+            {
+                var manualUrl = url.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
+                url = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
+            }
+
             string ext = Path.GetExtension(url ?? string.Empty);
             RuntimeLog.Write("ChartDownloadVM", $"Preview start: title='{chart.Title}', demo='{chart.DemoUrl}', mp3='{chart.DemoMp3Url}', chosen='{url}', ext='{ext}'");
 

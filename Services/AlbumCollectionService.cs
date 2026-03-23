@@ -38,13 +38,14 @@ public class AlbumCollectionService : IAlbumCollectionService
         ".ogg", ".mp3", ".wav", ".flac"
     };
 
-    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(15) };
+    private readonly HttpClient _http = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(15));
     private List<DesignerCategory>? _categoryCache;
     private List<DesignerCategory>? _metadataCache;
     private readonly Dictionary<string, List<DesignerChart>> _chartsCache = new(StringComparer.OrdinalIgnoreCase);
 
     public AlbumCollectionService()
     {
+        _http.DefaultRequestHeaders.Remove("User-Agent");
         _http.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL-AlbumCollection");
     }
 

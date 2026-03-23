@@ -26,7 +26,9 @@ public static class GitHubMirrorHelper
 
         // Suzimo 选项：固定使用 suzimo.online
         if (downloadSource.Equals("Suzimo", StringComparison.OrdinalIgnoreCase) || 
-            downloadSource.Equals("suzimo.online", StringComparison.OrdinalIgnoreCase))
+            downloadSource.Equals("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
+            downloadSource.Equals("高速DNS", StringComparison.OrdinalIgnoreCase) ||
+            downloadSource.Equals("Suzimo优化", StringComparison.OrdinalIgnoreCase))
         {
             return ApplyCustomMirror(canonicalUrl, "suzimo.online");
         }
@@ -94,10 +96,16 @@ public static class GitHubMirrorHelper
 
     private static string ReplaceHost(Uri uri, string host)
     {
-        var builder = new UriBuilder(uri)
+        // 安全替换 Host，避免 UriBuilder 破坏已编码的特殊字符如 %23
+        var scheme = uri.Scheme;
+        var pathAndQuery = uri.GetComponents(UriComponents.PathAndQuery, UriFormat.UriEscaped).TrimStart('/');
+        var fragment = uri.GetComponents(UriComponents.Fragment, UriFormat.UriEscaped);
+        
+        var result = $"{scheme}://{host}/{pathAndQuery}";
+        if (!string.IsNullOrEmpty(fragment))
         {
-            Host = host
-        };
-        return builder.Uri.AbsoluteUri;
+            result += "#" + fragment;
+        }
+        return result;
     }
 }

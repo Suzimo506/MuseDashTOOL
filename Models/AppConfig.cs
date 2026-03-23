@@ -11,6 +11,9 @@ public class AppConfig
         
     public string DownloadSource { get; set; } = "github.com";
 
+    /// <summary>启用高速 DNS 优选 (Cloudflare 节点竞速)</summary>
+    public bool UseOptimizedDns { get; set; } = false;
+
     /// <summary>永久关闭"下载不兼容 mod"的二次确认弹窗</summary>
     public bool SuppressIncompatibleModWarning { get; set; } = false;
 
