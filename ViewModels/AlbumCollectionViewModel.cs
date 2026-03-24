@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -320,6 +321,7 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
 public partial class AlbumCollectionViewModel : ObservableObject
 {
     private readonly IAlbumCollectionService _collectionService;
+    private static readonly SemaphoreSlim _coverSemaphore = new(7);
     private bool _isInitialized;
 
     [ObservableProperty]
@@ -359,21 +361,49 @@ public partial class AlbumCollectionViewModel : ObservableObject
         Categories.Clear();
         CommunityCategories.Clear();
 
+        var communityTasks = new List<Task>();
         foreach (var name in new[] { "通过审议", "令人生草", "待定或存在小问题" })
         {
             var item = new CommunityCategoryItemViewModel(name);
-            item.LoadCoverImage();
             CommunityCategories.Add(item);
+            
+            communityTasks.Add(Task.Run(async () =>
+            {
+                await _coverSemaphore.WaitAsync();
+                try
+                {
+                    item.LoadCoverImage();
+                }
+                finally
+                {
+                    _coverSemaphore.Release();
+                }
+            }));
         }
 
         var collections = await _collectionService.GetCollectionsAsync();
         
+        var designerTasks = new List<Task>();
         foreach (var category in collections)
         {
             var item = new DesignerCategoryItemViewModel(category);
-            item.LoadCoverImage();
             Categories.Add(item);
+            
+            designerTasks.Add(Task.Run(async () =>
+            {
+                await _coverSemaphore.WaitAsync();
+                try
+                {
+                    item.LoadCoverImage();
+                }
+                finally
+                {
+                    _coverSemaphore.Release();
+                }
+            }));
         }
+
+        await Task.WhenAll(communityTasks.Concat(designerTasks));
 
         IsEmpty = !Categories.Any();
         IsLoading = false;

@@ -22,7 +22,7 @@ public partial class DownloadTaskItem : ObservableObject
     private double _progress;
 
     [ObservableProperty]
-    private string _fileSizeInfo = "0 MB / 0 MB";
+    private string _downloadInfo = "0 MB / 0 MB";
 
     [ObservableProperty]
     private DownloadStatus _status = DownloadStatus.Waiting;

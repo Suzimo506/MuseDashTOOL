@@ -23,6 +23,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     private readonly INotificationService _notificationService;
     private readonly IDownloadManagerService _downloadManagerService;
     private static readonly HttpClient _coverHttp = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(15));
+    private static readonly SemaphoreSlim _coverSemaphore = new(7);
 
     static ChartDownloadViewModel()
     {
@@ -36,6 +37,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _isLoading = false;
     [ObservableProperty] private bool _isLoadingMore = false;
     [ObservableProperty] private string _statusMessage = "正在初始化…";
+    [ObservableProperty] private string _previewStatusText = string.Empty;
     [ObservableProperty] private bool _isEmpty = true;
     [ObservableProperty] private int _todayUpdatesCount = 0;
 
@@ -436,6 +438,12 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
     private void UpdateStatusMessage()
     {
+        if (!string.IsNullOrEmpty(PreviewStatusText))
+        {
+            StatusMessage = PreviewStatusText;
+            return;
+        }
+
         if (IsLoading)
         {
             StatusMessage = "正在加载谱面列表…";
@@ -475,7 +483,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         // 这里暂时只处理上方的释放，以满足用户“滚动超过60个释放上方”的要求
     }
 
-    /// <summary>异步逐一加载封面图 (恢复为简单的顺序加载)</summary>
+    /// <summary>异步并行加载封面图 (限制并发数为 7)</summary>
     private async Task LoadCoversAsync()
     {
         // 计算当前窗口及缓冲区内的索引范围
@@ -483,22 +491,41 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         int startIndex = Math.Max(0, (firstVisibleRow - 1) * Columns);
         int endIndex = Math.Min(Charts.Count, (firstVisibleRow + 5) * Columns);
 
+        var tasks = new List<Task>();
+
         for (int i = startIndex; i < endIndex; i++)
         {
             var chart = Charts[i];
             if (chart.CoverImage != null) continue;
 
-            try
+            tasks.Add(Task.Run(async () =>
             {
-                var bytes = await _coverHttp.GetByteArrayAsync(chart.CoverUrl);
-                using var ms = new MemoryStream(bytes);
-                var bmp = new Bitmap(ms);
-                
-                Avalonia.Threading.Dispatcher.UIThread.Post(() => {
-                    chart.CoverImage = bmp;
-                });
-            }
-            catch { /* cover unavailable */ }
+                await _coverSemaphore.WaitAsync();
+                try
+                {
+                    // 再次检查，防止并发重复加载
+                    if (chart.CoverImage != null) return;
+
+                    var bytes = await _coverHttp.GetByteArrayAsync(chart.CoverUrl);
+                    using var ms = new MemoryStream(bytes);
+                    var bmp = new Bitmap(ms);
+
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        chart.CoverImage = bmp;
+                    });
+                }
+                catch { /* cover unavailable */ }
+                finally
+                {
+                    _coverSemaphore.Release();
+                }
+            }));
+        }
+
+        if (tasks.Count > 0)
+        {
+            await Task.WhenAll(tasks);
         }
     }
 
@@ -509,71 +536,71 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         _loadCts = new CancellationTokenSource();
         var ct = _loadCts.Token;
 
-        try
+        int retryCount = 0;
+        while (retryCount < 2)
         {
-            // 默认优先尝试 .ogg
-            string url = !string.IsNullOrWhiteSpace(chart.DemoUrl) ? chart.DemoUrl : chart.DemoMp3Url;
-            
-            // 特例修正：调色盘等特殊路径试听
-            if (!string.IsNullOrEmpty(url) && (url.Contains("~%23FFFFFF~") || url.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true)))
+            try
             {
-                var manualUrl = url.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
-                url = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
-            }
-
-            string ext = Path.GetExtension(url ?? string.Empty);
-            RuntimeLog.Write("ChartDownloadVM", $"Preview start: title='{chart.Title}', demo='{chart.DemoUrl}', mp3='{chart.DemoMp3Url}', chosen='{url}', ext='{ext}'");
-
-            // 先探测文件状态
-            using var response = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-            RuntimeLog.Write("ChartDownloadVM", $"Preview response for '{chart.Title}': {(int)response.StatusCode} {response.StatusCode}");
-            
-            // 如果 .ogg 不存在 (404) 或失效，尝试回退到 .mp3
-            if (!response.IsSuccessStatusCode && !ct.IsCancellationRequested && !string.IsNullOrWhiteSpace(chart.DemoMp3Url))
-            {
-                url = chart.DemoMp3Url;
-                ext = Path.GetExtension(url ?? string.Empty);
-                RuntimeLog.Write("ChartDownloadVM", $"Preview fallback to mp3 for '{chart.Title}': '{url}'");
+                // 默认优先尝试 .ogg
+                string url = !string.IsNullOrWhiteSpace(chart.DemoUrl) ? chart.DemoUrl : chart.DemoMp3Url;
                 
-                // 注意：由于 response 是 using 模式，所以这里不能简单 re-assign。
-                // 方案是在 response 块外处理或 nested using。
-                // 为了简单起见，我们对 fallback 使用独立逻辑（原代码此处逻辑略显冗余，我们直接重试）
-                using var fallbackRes = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-                RuntimeLog.Write("ChartDownloadVM", $"Preview fallback response for '{chart.Title}': {(int)fallbackRes.StatusCode} {fallbackRes.StatusCode}");
-                
-                if (fallbackRes.IsSuccessStatusCode)
+                // 特例修正：调色盘等特殊路径试听
+                if (!string.IsNullOrEmpty(url) && (url.Contains("~%23FFFFFF~") || url.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true)))
                 {
-                    if (ct.IsCancellationRequested) return;
-                    var fallbackBytes = await fallbackRes.Content.ReadAsByteArrayAsync(ct);
-                    await StartAudioStreamAsync(fallbackBytes, ext, chart, ct);
-                    return;
+                    var manualUrl = url.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
+                    url = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
                 }
-            }
 
-            if (!response.IsSuccessStatusCode)
-            {
-                // 如果原始/回退依然失效，给出提示
-                Console.WriteLine($"[ChartDownloadVM] No demo available for {chart.Title}: HTTP {(int)response.StatusCode}");
+                string ext = Path.GetExtension(url ?? string.Empty);
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    StatusMessage = $"《{chart.Title}》暂无试听文件");
+                {
+                    PreviewStatusText = $"正在缓冲 {chart.Title} 试听文件";
+                    UpdateStatusMessage();
+                });
+
+                using var response = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+                
+                // 如果 .ogg 不存在 (404) 或失效，尝试回退到 .mp3
+                if (!response.IsSuccessStatusCode && !ct.IsCancellationRequested && !string.IsNullOrWhiteSpace(chart.DemoMp3Url) && !url.Equals(chart.DemoMp3Url))
+                {
+                    url = chart.DemoMp3Url;
+                    ext = Path.GetExtension(url ?? string.Empty);
+                    RuntimeLog.Write("ChartDownloadVM", $"Preview fallback to mp3: '{url}'");
+                    
+                    using var fallbackRes = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+                    if (fallbackRes.IsSuccessStatusCode)
+                    {
+                        var fallbackBytes = await fallbackRes.Content.ReadAsByteArrayAsync(ct);
+                        await StartAudioStreamAsync(fallbackBytes, ext, chart, ct);
+                        return;
+                    }
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"HTTP {(int)response.StatusCode}");
+                }
+
+                var bytes = await response.Content.ReadAsByteArrayAsync(ct);
+                await StartAudioStreamAsync(bytes, ext, chart, ct);
                 return;
             }
+            catch (OperationCanceledException) { return; }
+            catch (Exception ex)
+            {
+                retryCount++;
+                RuntimeLog.Write("ChartDownloadVM", $"Preview attempt {retryCount} failed: {ex.Message}");
+                if (retryCount < 2 && HttpHelper.UseOptimizedIps)
+                {
+                    HttpHelper.InvalidateFastestIp();
+                    await Task.Delay(500, ct);
+                    continue;
+                }
 
-            // 如果加载期间用户已取消或切换到其他谱面，无需继续播放
-            if (ct.IsCancellationRequested) return;
-
-            var bytes = await response.Content.ReadAsByteArrayAsync(ct);
-            RuntimeLog.Write("ChartDownloadVM", $"Preview download complete for '{chart.Title}', bytes={bytes.Length}");
-
-            if (ct.IsCancellationRequested) return;
-            await StartAudioStreamAsync(bytes, ext, chart, ct);
-        }
-        catch (OperationCanceledException) { /* 用户取消，忽略 */ }
-        catch (Exception ex)
-        {
-            RuntimeLog.Write("ChartDownloadVM", $"Preview error: {ex}");
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                StatusMessage = $"试听出错: {ex.Message}");
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    StatusMessage = $"试听音频加载失败: {ex.Message}");
+                break;
+            }
         }
     }
 
@@ -596,7 +623,12 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             if (!cts.IsCancellationRequested)
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    if (_playingChart == chart) _playingChart = null;
+                    if (_playingChart == chart)
+                    {
+                        _playingChart = null;
+                        PreviewStatusText = string.Empty;
+                        UpdateStatusMessage();
+                    }
                     chart.IsPlaying = false;
                 });
             if (provider is IDisposable d) d.Dispose();
@@ -606,6 +638,13 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         _waveOut.Play();
         _playingChart = chart;
         chart.IsPlaying = true;
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            PreviewStatusText = $"正在播放 {chart.Title} 试听";
+            UpdateStatusMessage();
+        });
+
         await Task.CompletedTask;
     }
 
@@ -634,6 +673,9 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             _playingChart.IsPlaying = false;
             _playingChart = null;
         }
+
+        PreviewStatusText = string.Empty;
+        UpdateStatusMessage();
 
         var waveOut = _waveOut;
         _waveOut = null;

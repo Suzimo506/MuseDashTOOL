@@ -23,9 +23,117 @@ public static class HttpHelper
     private static readonly SemaphoreSlim _lock = new(1, 1);
     
     // 控制是否启用内置的 Cloudflare IP 优选机制
-    public static bool UseOptimizedIps { get; set; } = false;
+    private static bool _useOptimizedIps = false;
+    public static bool UseOptimizedIps 
+    { 
+        get => _useOptimizedIps; 
+        set 
+        {
+            if (_useOptimizedIps == value) return;
+            _useOptimizedIps = value;
+            if (value) StartBackgroundRacing();
+            else StopBackgroundRacing();
+        }
+    }
     private static readonly HashSet<string> _blacklistedIps = new();
     private static readonly object _blacklistLock = new();
+
+    private static CancellationTokenSource? _racingCts;
+    private static readonly object _racingLock = new();
+
+    private static void StartBackgroundRacing()
+    {
+        lock (_racingLock)
+        {
+            if (_racingCts != null) return;
+            _racingCts = new CancellationTokenSource();
+            var token = _racingCts.Token;
+
+            _ = Task.Run(async () =>
+            {
+                RuntimeLog.Write("HttpHelper", "Background IP racing started.");
+                while (!token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        // 每 10 秒竞速一次
+                        await Task.Delay(TimeSpan.FromSeconds(10), token);
+                        
+                        if (!UseOptimizedIps) break;
+
+                        // 执行静默竞速
+                        var newIp = await PerformSilentRaceAsync(token);
+                        if (newIp != null)
+                        {
+                            _fastestIp = newIp;
+                            RuntimeLog.Write("HttpHelper", $"Background race selected new IP: {newIp}");
+                        }
+                    }
+                    catch (OperationCanceledException) { break; }
+                    catch (Exception ex)
+                    {
+                        RuntimeLog.Write("HttpHelper", $"Background race error: {ex.Message}");
+                    }
+                }
+                RuntimeLog.Write("HttpHelper", "Background IP racing stopped.");
+            }, token);
+        }
+    }
+
+    private static void StopBackgroundRacing()
+    {
+        lock (_racingLock)
+        {
+            _racingCts?.Cancel();
+            _racingCts?.Dispose();
+            _racingCts = null;
+        }
+    }
+
+    private static async Task<string?> PerformSilentRaceAsync(CancellationToken ct)
+    {
+        try
+        {
+            using var raceCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            raceCts.CancelAfter(TimeSpan.FromSeconds(3));
+            
+            var tcs = new TaskCompletionSource<string?>();
+            List<string> ipsToTest;
+            lock (_blacklistLock)
+            {
+                ipsToTest = OptimizedIps.Where(ip => !_blacklistedIps.Contains(ip)).ToList();
+                if (ipsToTest.Count == 0)
+                {
+                    _blacklistedIps.Clear();
+                    ipsToTest = OptimizedIps.ToList();
+                }
+            }
+
+            int remaining = ipsToTest.Count;
+            foreach (var ip in ipsToTest)
+            {
+                _ = Task.Run(async () =>
+                {
+                    using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    try
+                    {
+                        await socket.ConnectAsync(IPAddress.Parse(ip), 443, raceCts.Token);
+                        tcs.TrySetResult(ip);
+                    }
+                    catch
+                    {
+                        if (Interlocked.Decrement(ref remaining) == 0)
+                        {
+                            tcs.TrySetResult(null);
+                        }
+                    }
+                }, raceCts.Token);
+            }
+
+            return await tcs.Task;
+        }
+        catch { return null; }
+    }
 
     private static async Task<string> GetFastestIpAsync()
     {

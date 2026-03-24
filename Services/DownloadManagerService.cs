@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using MdModManager.Helpers;
 using MdModManager.Models;
 using System.Collections.Generic; // Added for HashSet
 
@@ -16,7 +17,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 {
     private readonly IConfigService _configService;
     private readonly INotificationService _notificationService;
-    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(30) };
+    private readonly HttpClient _http = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(60));
 
     public ObservableCollection<DownloadTaskItem> Tasks { get; } = new();
     public HashSet<string> SessionDownloadedFiles { get; } = new(StringComparer.OrdinalIgnoreCase); // Added property
@@ -108,118 +109,179 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
     private async Task ProcessDownloadAsync(DownloadTaskItem item)
     {
-        try
+        int retryCount = 0;
+        const int maxRetries = 10;
+
+        while (retryCount < maxRetries)
         {
-            if (item.Status == DownloadStatus.Canceled) return;
-
-            item.Status = DownloadStatus.Downloading;
-            item.Cts = new CancellationTokenSource();
-            
-            var ct = item.Cts.Token;
-            
-            var gamePath = _configService.Config.GamePath;
-            if (string.IsNullOrEmpty(gamePath))
+            try
             {
-                throw new Exception("游戏路径未设置，请先在设置中配置游戏目录");
-            }
+                if (item.Status == DownloadStatus.Canceled) return;
 
-            var albumsDir = Path.Combine(gamePath, "Custom_Albums");
-            if (!Directory.Exists(albumsDir))
-            {
-                Directory.CreateDirectory(albumsDir);
-            }
-
-            static string Safe(string s) => string.Join("_", s.Split(Path.GetInvalidFileNameChars()));
-            var fileName = $"{Safe(item.Chart.Title)} - {Safe(item.Chart.Artist)}.mdm";
-            if (string.IsNullOrEmpty(item.DestinationPath))
-            {
-                item.DestinationPath = Path.Combine(albumsDir, fileName);
-            }
-
-            RuntimeLog.Write("DownloadManager", $"Download start: title='{item.Chart.Title}', url='{item.Chart.DownloadUrl}', dest='{item.DestinationPath}'");
-            
-            var fileMode = item.DownloadedBytes > 0 ? FileMode.Append : FileMode.Create;
-            using var dst = new FileStream(item.DestinationPath, fileMode, FileAccess.Write, FileShare.None, 81920, true);
-
-            using var request = new HttpRequestMessage(HttpMethod.Get, item.Chart.DownloadUrl);
-            if (item.DownloadedBytes > 0)
-            {
-                request.Headers.Range = new RangeHeaderValue(item.DownloadedBytes, null);
-            }
-
-            using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
-            RuntimeLog.Write("DownloadManager", $"Download response: title='{item.Chart.Title}', status={(int)response.StatusCode} {response.StatusCode}");
-            response.EnsureSuccessStatusCode();
-
-            // Try to get total size from headers
-            if (item.TotalBytes == 0)
-            {
-                item.TotalBytes = response.Content.Headers.ContentLength ?? 0;
-                if (item.DownloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.PartialContent)
-                {
-                    item.TotalBytes += item.DownloadedBytes;
-                }
-            }
-            
-            UpdateFileSizeInfo(item);
-
-            using var src = await response.Content.ReadAsStreamAsync(ct);
-            var buf = new byte[81920];
-            int n;
-            while ((n = await src.ReadAsync(buf, ct)) > 0)
-            {
-                await dst.WriteAsync(buf.AsMemory(0, n), ct);
-                item.DownloadedBytes += n;
+                item.Status = DownloadStatus.Downloading;
+                item.Cts = new CancellationTokenSource();
                 
-                if (item.TotalBytes > 0)
+                var ct = item.Cts.Token;
+                
+                var gamePath = _configService.Config.GamePath;
+                if (string.IsNullOrEmpty(gamePath))
                 {
-                    item.Progress = (double)item.DownloadedBytes / item.TotalBytes * 100;
+                    throw new Exception("游戏路径未设置，请先在设置中配置游戏目录");
                 }
-                UpdateFileSizeInfo(item);
+
+                var albumsDir = Path.Combine(gamePath, "Custom_Albums");
+                if (!Directory.Exists(albumsDir))
+                {
+                    Directory.CreateDirectory(albumsDir);
+                }
+
+                static string Safe(string s) => string.Join("_", s.Split(Path.GetInvalidFileNameChars()));
+                var fileName = $"{Safe(item.Chart.Title)} - {Safe(item.Chart.Artist)}.mdm";
+                if (string.IsNullOrEmpty(item.DestinationPath))
+                {
+                    item.DestinationPath = Path.Combine(albumsDir, fileName);
+                }
+
+                RuntimeLog.Write("DownloadManager", $"Download start/resume: title='{item.Chart.Title}', url='{item.Chart.DownloadUrl}', downloaded={item.DownloadedBytes}, retry={retryCount}");
+                
+                var fileMode = item.DownloadedBytes > 0 ? FileMode.Append : FileMode.Create;
+                // Use FileShare.Write to allow resuming even if something else has it open for reading (though unlikely here)
+                using var dst = new FileStream(item.DestinationPath, fileMode, FileAccess.Write, FileShare.None, 81920, true);
+
+                using var request = new HttpRequestMessage(HttpMethod.Get, item.Chart.DownloadUrl);
+                if (item.DownloadedBytes > 0)
+                {
+                    request.Headers.Range = new RangeHeaderValue(item.DownloadedBytes, null);
+                }
+
+                using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+                RuntimeLog.Write("DownloadManager", $"Download response: title='{item.Chart.Title}', status={(int)response.StatusCode} {response.StatusCode}");
+                
+                // If we requested a range but got 200 OK instead of 206 Partial Content, 
+                // it means the server doesn't support range or ignored it. We must restart from 0.
+                if (item.DownloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    RuntimeLog.Write("DownloadManager", $"Server returned 200 OK instead of 206, resetting download progress for '{item.Chart.Title}'");
+                    item.DownloadedBytes = 0;
+                    dst.SetLength(0);
+                    dst.Seek(0, SeekOrigin.Begin);
+                }
+                
+                response.EnsureSuccessStatusCode();
+
+                // Try to get total size from headers
+                if (item.TotalBytes == 0)
+                {
+                    item.TotalBytes = response.Content.Headers.ContentLength ?? 0;
+                    if (item.DownloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.PartialContent)
+                    {
+                        item.TotalBytes += item.DownloadedBytes;
+                    }
+                }
+                
+                UpdateDownloadInfo(item);
+
+                using var src = await response.Content.ReadAsStreamAsync(ct);
+                var buf = new byte[81920];
+                int n;
+
+                var lastTime = DateTime.UtcNow;
+                var lastBytes = item.DownloadedBytes;
+
+                while ((n = await src.ReadAsync(buf, ct).AsTask().WaitAsync(TimeSpan.FromSeconds(5), ct)) > 0)
+                {
+                    await dst.WriteAsync(buf.AsMemory(0, n), ct);
+                    item.DownloadedBytes += n;
+                    
+                    if (item.TotalBytes > 0)
+                    {
+                        item.Progress = (double)item.DownloadedBytes / item.TotalBytes * 100;
+                    }
+
+                    var now = DateTime.UtcNow;
+                    var elapsed = (now - lastTime).TotalSeconds;
+                    if (elapsed >= 1.0)
+                    {
+                        var speed = (item.DownloadedBytes - lastBytes) / elapsed;
+                        UpdateDownloadInfo(item, speed);
+                        lastTime = now;
+                        lastBytes = item.DownloadedBytes;
+                    }
+                }
+
+                item.Status = DownloadStatus.Completed;
+                item.Progress = 100;
+                _notificationService.ShowSuccess($"《{item.Chart.Title}》下载完成");
+                
+                // Add to session downloaded files list
+                SessionDownloadedFiles.Add(Path.GetFullPath(item.DestinationPath));
+
+                // Auto remove after completion
+                Dispatcher.UIThread.Post(() => Tasks.Remove(item));
+                return; // Successfully finished
             }
-
-            item.Status = DownloadStatus.Completed;
-            item.Progress = 100;
-            _notificationService.ShowSuccess($"《{item.Chart.Title}》下载完成");
-            
-            // Add to session downloaded files list
-            SessionDownloadedFiles.Add(Path.GetFullPath(item.DestinationPath));
-
-            // Auto remove after completion
-            Dispatcher.UIThread.Post(() => Tasks.Remove(item));
-        }
-        catch (OperationCanceledException)
-        {
-            if (item.Status != DownloadStatus.Canceled)
+            catch (OperationCanceledException)
             {
-                item.Status = DownloadStatus.Paused;
+                if (item.Status != DownloadStatus.Canceled)
+                {
+                    item.Status = DownloadStatus.Paused;
+                    UpdateDownloadInfo(item); // 暂停时切换回文件大小
+                }
+                return; // User canceled or paused
             }
-        }
-        catch (Exception ex)
-        {
-            item.Status = DownloadStatus.Error;
-            item.ErrorMessage = ex.Message;
-            RuntimeLog.Write("DownloadManager", $"Download failed: title='{item.Chart.Title}', error='{ex}'");
-            _notificationService.ShowFailure("下载失败", ex.Message);
-        }
-        finally
-        {
-            item.Cts?.Dispose();
-            item.Cts = null;
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                retryCount++;
+                RuntimeLog.Write("DownloadManager", $"Download attempt {retryCount} failed: title='{item.Chart.Title}', error='{ex.Message}'");
+
+                // 如果启用了高速 DNS，尝试换 IP
+                if (HttpHelper.UseOptimizedIps)
+                {
+                    HttpHelper.InvalidateFastestIp();
+                    // 等待 1 秒给新竞速一点时间
+                    await Task.Delay(1000);
+                    continue;
+                }
+
+                item.Status = DownloadStatus.Error;
+                item.ErrorMessage = ex.Message;
+                UpdateDownloadInfo(item);
+                _notificationService.ShowFailure("下载失败", ex.Message);
+                return;
+            }
+            finally
+            {
+                item.Cts?.Dispose();
+                item.Cts = null;
+            }
         }
     }
 
-    private void UpdateFileSizeInfo(DownloadTaskItem item)
+    private void UpdateDownloadInfo(DownloadTaskItem item, double speedBps = -1)
     {
-        double downloadedMb = item.DownloadedBytes / 1024.0 / 1024.0;
-        if (item.TotalBytes > 0)
+        if (item.Status == DownloadStatus.Downloading)
         {
-            double totalMb = item.TotalBytes / 1024.0 / 1024.0;
-            item.FileSizeInfo = $"{downloadedMb:F2} MB / {totalMb:F2} MB";
+            // 开始下载且还没计算出速度时，默认显示 0 KB/s 而非文件大小
+            double speed = speedBps < 0 ? 0 : speedBps;
+            if (speed < 1024)
+                item.DownloadInfo = $"{speed:F0} B/s";
+            else if (speed < 1024 * 1024)
+                item.DownloadInfo = $"{speed / 1024:F1} KB/s";
+            else
+                item.DownloadInfo = $"{speed / 1024 / 1024:F2} MB/s";
         }
         else
         {
-            item.FileSizeInfo = $"{downloadedMb:F2} MB / 未知大小";
+            double downloadedMb = item.DownloadedBytes / 1024.0 / 1024.0;
+            if (item.TotalBytes > 0)
+            {
+                double totalMb = item.TotalBytes / 1024.0 / 1024.0;
+                item.DownloadInfo = $"{downloadedMb:F2} MB / {totalMb:F2} MB";
+            }
+            else
+            {
+                item.DownloadInfo = $"{downloadedMb:F2} MB / 未知大小";
+            }
         }
     }
 

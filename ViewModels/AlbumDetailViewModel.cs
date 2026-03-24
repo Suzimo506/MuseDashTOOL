@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
@@ -15,8 +16,13 @@ using MdModManager.Helpers;
 
 namespace MdModManager.ViewModels;
 
-public partial class AlbumDetailViewModel : ObservableObject
+public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 {
+    private string _chartCountText = string.Empty;
+    private static readonly SemaphoreSlim _coverSemaphore = new(7);
+
+    [ObservableProperty]
+    private string _statusMessage = string.Empty;
     private readonly ChartDownloadViewModel _chartDownloadViewModel;
     private readonly IAlbumCollectionService _collectionService;
     private readonly IConfigService _configService;
@@ -51,6 +57,33 @@ public partial class AlbumDetailViewModel : ObservableObject
         _configService = configService;
         _downloadManagerService = downloadManagerService;
         _notificationService = notificationService;
+
+        _chartDownloadViewModel.PropertyChanged += OnChartDownloadViewModelPropertyChanged;
+    }
+
+    private void OnChartDownloadViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ChartDownloadViewModel.PreviewStatusText))
+        {
+            UpdateStatusMessage();
+        }
+    }
+
+    public void Dispose()
+    {
+        _chartDownloadViewModel.PropertyChanged -= OnChartDownloadViewModelPropertyChanged;
+    }
+
+    private void UpdateStatusMessage()
+    {
+        if (!string.IsNullOrEmpty(_chartDownloadViewModel.PreviewStatusText))
+        {
+            StatusMessage = _chartDownloadViewModel.PreviewStatusText;
+        }
+        else
+        {
+            StatusMessage = _chartCountText;
+        }
     }
 
     public async Task InitializeAsync(DesignerCategory category)
@@ -95,6 +128,10 @@ public partial class AlbumDetailViewModel : ObservableObject
 
         IsEmpty = Charts.Count == 0;
         IsLoading = false;
+        
+        _chartCountText = $"当前页面 {Charts.Count} 张谱面";
+        UpdateStatusMessage();
+
         Log($"Album detail initialized. Visible charts: {Charts.Count}");
         _ = LoadCoversAsync();
     }
@@ -194,6 +231,8 @@ public partial class AlbumDetailViewModel : ObservableObject
         http.DefaultRequestHeaders.Remove("User-Agent");
         http.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0");
 
+        var tasks = new List<Task>();
+
         foreach (var chart in Charts)
         {
             if (string.IsNullOrWhiteSpace(chart.CoverUrl))
@@ -202,28 +241,44 @@ public partial class AlbumDetailViewModel : ObservableObject
                 continue;
             }
 
-            try
-            {
-                var fetchUrl = chart.CoverUrl;
-                // 特例处理：调色盘谱面因特殊符号 # (%23) 在重定向时易断链，此处强制进行特例修正
-                if (!string.IsNullOrEmpty(fetchUrl) && (fetchUrl.Contains("~%23FFFFFF~") || fetchUrl.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true)))
-                {
-                    // 确保使用 raw 链接且纠正可能存在的 #
-                    var manualUrl = fetchUrl.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
-                    fetchUrl = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
-                }
+            if (chart.CoverImage != null) continue;
 
-                Log($"Loading cover for '{chart.Title}': {fetchUrl}");
-                var bytes = await http.GetByteArrayAsync(fetchUrl);
-                using var ms = new System.IO.MemoryStream(bytes);
-                var bmp = new Avalonia.Media.Imaging.Bitmap(ms);
-                Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.CoverImage = bmp);
-                Log($"Cover loaded for '{chart.Title}', bytes={bytes.Length}");
-            }
-            catch (Exception ex)
+            tasks.Add(Task.Run(async () =>
             {
-                Log($"Cover load failed for '{chart.Title}': {ex.Message}");
-            }
+                await _coverSemaphore.WaitAsync();
+                try
+                {
+                    if (chart.CoverImage != null) return;
+
+                    var fetchUrl = chart.CoverUrl;
+                    // 特例处理：调色盘谱面因特殊符号 # (%23) 在重定向时易断链，此处强制进行特例修正
+                    if (!string.IsNullOrEmpty(fetchUrl) && (fetchUrl.Contains("~%23FFFFFF~") || fetchUrl.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true)))
+                    {
+                        var manualUrl = fetchUrl.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
+                        fetchUrl = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
+                    }
+
+                    Log($"Loading cover for '{chart.Title}': {fetchUrl}");
+                    var bytes = await http.GetByteArrayAsync(fetchUrl);
+                    using var ms = new System.IO.MemoryStream(bytes);
+                    var bmp = new Avalonia.Media.Imaging.Bitmap(ms);
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.CoverImage = bmp);
+                    Log($"Cover loaded for '{chart.Title}', bytes={bytes.Length}");
+                }
+                catch (Exception ex)
+                {
+                    Log($"Cover load failed for '{chart.Title}': {ex.Message}");
+                }
+                finally
+                {
+                    _coverSemaphore.Release();
+                }
+            }));
+        }
+
+        if (tasks.Count > 0)
+        {
+            await Task.WhenAll(tasks);
         }
     }
 

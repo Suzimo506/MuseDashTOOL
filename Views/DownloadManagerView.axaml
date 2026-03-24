@@ -82,12 +82,12 @@
                                 
                                 <!-- 进度条 -->
                                 <ProgressBar Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding Progress}" 
-                                             Foreground="#d4237a" Background="#333333" Height="6" Margin="0,8,15,0" VerticalAlignment="Top"/>
+                                             Foreground="{DynamicResource SvgIconBrush}" Background="#333333" Height="6" Margin="0,8,15,0" VerticalAlignment="Top"/>
                                 
                                 <!-- 状态和大小 -->
                                 <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" VerticalAlignment="Center" Margin="0,0,20,0" Width="120">
                                     <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="13" TextAlignment="Right"/>
-                                    <TextBlock Text="{Binding FileSizeInfo}" Foreground="{DynamicResource ThemeTextTertiaryBrush}" FontSize="11" TextAlignment="Right"/>
+                                    <TextBlock Text="{Binding DownloadInfo}" Foreground="{DynamicResource ThemeTextTertiaryBrush}" FontSize="11" TextAlignment="Right"/>
                                     <!-- 错误文本 -->
                                     <TextBlock Text="{Binding ErrorMessage}" Foreground="#FF7043" FontSize="11" TextAlignment="Right" IsVisible="{Binding IsError}" TextWrapping="Wrap" MaxWidth="150" Height="30" TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>

@@ -65,7 +65,7 @@
                                     </LinearGradientBrush>
                                 </TextBlock.Foreground>
                             </TextBlock>
-                            <TextBlock Text="v1.1.0" FontSize="12" Foreground="White" Margin="5,0,0,2" VerticalAlignment="Bottom"/>
+                            <TextBlock Text="v1.1.1" FontSize="12" Foreground="White" Margin="5,0,0,2" VerticalAlignment="Bottom"/>
                         </StackPanel>
                     </Button>
                     
