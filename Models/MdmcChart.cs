@@ -41,10 +41,14 @@ public partial class MdmcChart : ObservableObject
     [property: JsonIgnore]
     private Avalonia.Media.Imaging.Bitmap? _coverImage;
 
-    /// <summary>是否正在试听中</summary>
     [ObservableProperty]
     [property: JsonIgnore]
     private bool _isPlaying;
+
+    /// <summary>搜索关键词，用于高亮显示</summary>
+    [ObservableProperty]
+    [property: JsonIgnore]
+    private string _searchText = string.Empty;
 
     [JsonPropertyName("ranked")]
     public bool Ranked { get; set; }

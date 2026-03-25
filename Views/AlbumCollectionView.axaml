@@ -1,10 +1,12 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:helpers="using:MdModManager.Helpers"
              x:Class="MdModManager.Views.AlbumCollectionView"
              x:DataType="vm:AlbumCollectionViewModel">
 
     <UserControl.Resources>
+        <!-- 通用按钮主题 (带圆角和基本的悬浮缩放效果) -->
         <ControlTheme x:Key="SmallRoundBtn" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -34,6 +36,30 @@
                 <Setter Property="RenderTransform" Value="scale(0.96)"/>
             </Style>
         </ControlTheme>
+
+        <!-- 纯图标按钮主题 (无边距、无背景、彻底隔离系统悬停灰色背景) -->
+        <!-- 注意：此处不使用 PART_ContentPresenter 以避免 Avalonia 默认样式的干扰 -->
+        <ControlTheme x:Key="RobustPlainIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent">
+                        <ContentPresenter Content="{TemplateBinding Content}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBorder">
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBorder">
+                <Setter Property="Opacity" Value="0.6"/>
+            </Style>
+        </ControlTheme>
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -43,7 +69,7 @@
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*">
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="10,10,0,14">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="10,10,10,14">
             <Button Grid.Column="0"
                     Command="{Binding GoBackCommand}"
                     Theme="{StaticResource SmallRoundBtn}"
@@ -71,9 +97,32 @@
                     </LinearGradientBrush>
                 </TextBlock.Foreground>
             </TextBlock>
+            
+            <!-- 搜索框 (样式同步自谱面下载界面) -->
+            <TextBox Grid.Column="2" 
+                     Width="300"
+                     Text="{Binding SearchText}"
+                     Watermark="搜索整合包内的谱面名称、作者..."
+                     VerticalAlignment="Center"
+                     Padding="10,8">
+                <TextBox.InnerLeftContent>
+                    <PathIcon Data="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1C567.2 143.9 492.3 112 413 112s-154.2 31.9-211.1 88.9C145.5 257.5 114 332.7 114 412c0 79.3 31.3 154.5 88 211.4C259.3 680.3 334.4 712 413 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0 0 11.6 0l42.6-42.6a8.2 8.2 0 0 0 0-11.5zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z"
+                               Foreground="#888888" Width="16" Height="16" Margin="4,0,0,0"/>
+                </TextBox.InnerLeftContent>
+                <TextBox.InnerRightContent>
+                    <!-- 这里的 Theme 已改为 StaticResource RobustPlainIconBtn 以消除悬停灰色背景 -->
+                    <Button Command="{Binding ClearSearchCommand}"
+                            IsVisible="{Binding SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            Theme="{StaticResource RobustPlainIconBtn}" 
+                            Margin="0,0,10,0">
+                        <TextBlock Text="清空" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource SvgIconBrush}"/>
+                    </Button>
+                </TextBox.InnerRightContent>
+            </TextBox>
         </Grid>
 
         <Grid Grid.Row="1">
+            <!-- 正在加载提示 -->
             <StackPanel IsVisible="{Binding IsLoading}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -84,6 +133,7 @@
                            HorizontalAlignment="Center"/>
             </StackPanel>
 
+            <!-- 空列表提示 -->
             <StackPanel IsVisible="{Binding IsEmpty}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -94,10 +144,12 @@
                            HorizontalAlignment="Center"/>
             </StackPanel>
 
+            <!-- 这里移除了 IsVisible="{Binding !IsSearching}"，确保搜索时文件夹列表依然可见 -->
             <ScrollViewer x:Name="AlbumScrollViewer"
-                          HorizontalScrollBarVisibility="Disabled"
-                          VerticalScrollBarVisibility="Auto">
+                           HorizontalScrollBarVisibility="Disabled"
+                           VerticalScrollBarVisibility="Auto">
                 <StackPanel>
+                    <!-- 官方/设计师分类列表 -->
                     <ItemsControl ItemsSource="{Binding Categories}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -128,7 +180,7 @@
                                         <Grid RowDefinitions="180,*">
                                             <Border Grid.Row="0" ClipToBounds="True" Background="#333333">
                                                 <Panel>
-                                                    <TextBlock Text="馃搧"
+                                                    <TextBlock Text="📁"
                                                                FontSize="56"
                                                                HorizontalAlignment="Center"
                                                                VerticalAlignment="Center"
@@ -156,7 +208,8 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <StackPanel Margin="8,4,8,24" Spacing="14">
+                    <!-- 群友自制谱面区域：仅当集合不为空时显示（解决搜索时显示多余标题和线的问题） -->
+                    <StackPanel Margin="8,4,8,24" Spacing="14" IsVisible="{Binding CommunityCategories.Count}">
                         <Border Height="1"
                                 Background="{DynamicResource ThemeTextTertiaryBrush}"
                                 Opacity="0.25"/>
@@ -194,7 +247,7 @@
                                             <Grid RowDefinitions="180,*">
                                                 <Border Grid.Row="0" ClipToBounds="True" Background="#333333">
                                                     <Panel>
-                                                        <TextBlock Text="馃搧"
+                                                        <TextBlock Text="📁"
                                                                    FontSize="56"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center"

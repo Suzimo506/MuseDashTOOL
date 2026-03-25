@@ -15,6 +15,44 @@ public partial class ChartDownloadView : UserControl
         {
             scrollViewer.ScrollChanged += OnScrollChanged;
         }
+
+        // 监听 ViewModel 的属性变化，处理平滑滚动请求
+        this.DataContextChanged += (s, e) =>
+        {
+            if (DataContext is ChartDownloadViewModel vm)
+            {
+                vm.PropertyChanged += (sender, args) =>
+                {
+                    if (args.PropertyName == nameof(ChartDownloadViewModel.RequestedScrollY) 
+                        && vm.RequestedScrollY.HasValue)
+                    {
+                        var y = vm.RequestedScrollY.Value;
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            if (scrollViewer != null)
+                            {
+                                scrollViewer.Offset = new Avalonia.Vector(scrollViewer.Offset.X, y);
+                            }
+                        });
+                        // 重置请求，防止重复触发
+                        vm.RequestedScrollY = null;
+                    }
+                    if (args.PropertyName == nameof(ChartDownloadViewModel.IsEditingPageNumber) 
+                        && vm.IsEditingPageNumber)
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            var tb = this.FindControl<TextBox>("PageJumpTextBox");
+                            if (tb != null)
+                            {
+                                tb.Focus();
+                                tb.SelectAll();
+                            }
+                        }, Avalonia.Threading.DispatcherPriority.Loaded);
+                    }
+                };
+            }
+        };
     }
 
     /// <summary>处理滚动事件 – 到底部时自动加载更多</summary>
@@ -25,15 +63,7 @@ public partial class ChartDownloadView : UserControl
             // 传给 VM 进行内存管理
             vm.UpdateScrollPosition(scrollViewer.Offset.Y);
 
-            // 如果垂直偏移量 + 视口高度 接近 总体高度（例如在 200 像素内），则触发加载
-            var threshold = 200;
-            if (scrollViewer.Offset.Y + scrollViewer.Viewport.Height >= scrollViewer.Extent.Height - threshold)
-            {
-                if (vm.LoadNextPageCommand.CanExecute(null))
-                {
-                    vm.LoadNextPageCommand.Execute(null);
-                }
-            }
+            // 翻页模式下不再自动触发加载更多
         }
     }
 
@@ -72,6 +102,22 @@ public partial class ChartDownloadView : UserControl
                 vm.ClearSearchCommand.Execute(null);
             }
             e.Handled = true;
+        }
+    }
+
+    private void OnPageNumberClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        if (DataContext is ChartDownloadViewModel vm)
+        {
+            vm.StartEditPageCommand.Execute(null);
+        }
+    }
+
+    private void OnPageJumpLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is ChartDownloadViewModel vm)
+        {
+            vm.CancelEditPageCommand.Execute(null);
         }
     }
 }

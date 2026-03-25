@@ -41,6 +41,9 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isEmpty;
 
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
     public IAsyncRelayCommand<MdmcChart> TogglePreviewCommand => _chartDownloadViewModel.TogglePreviewCommand;
     public IAsyncRelayCommand<MdmcChart> DownloadChartCommand => _chartDownloadViewModel.DownloadChartCommand;
     public bool EnableMarquee => _chartDownloadViewModel.EnableMarquee;
@@ -86,10 +89,11 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         }
     }
 
-    public async Task InitializeAsync(DesignerCategory category)
+    public async Task InitializeAsync(DesignerCategory category, string searchText = "")
     {
-        Log($"Initializing album detail for '{category.Name}'.");
+        Log($"Initializing album detail for '{category.Name}' with search query '{searchText}'.");
         Category = category;
+        SearchText = searchText;
         Charts.Clear();
         IsLoading = true;
         IsEmpty = false;
@@ -98,7 +102,21 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         Category.Charts = charts;
         Log($"Category '{category.Name}' returned {charts.Count} chart records.");
 
-        foreach (var c in charts)
+        // 之前在这里过滤了谱面，导致只显示一个谱面。
+        // 根据要求，现在即使有搜索词也显示全部谱面（"不要只显示这一个谱面，而是打开这个谱面所在的文件夹"）。
+        // 匹配到的谱面依然会由前端通过 SearchText 属性进行粉色高亮。
+        // var filteredCharts = charts;
+        // if (!string.IsNullOrWhiteSpace(searchText))
+        // {
+        //     var normalizedQuery = searchText.Trim().ToLowerInvariant();
+        //     filteredCharts = charts.Where(c => 
+        //         c.Title?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+        //         c.Author?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+        //         c.Artist?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true
+        //     ).ToList();
+        // }
+
+        foreach (var c in charts) // Iterate over all charts, not filteredCharts
         {
             var urlDecoded = System.Net.WebUtility.UrlDecode(c.DownloadUrl);
             var match = System.Text.RegularExpressions.Regex.Match(
@@ -120,7 +138,8 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                 CustomDemoMp3Url = ResolveResourceUrl(c.DemoMp3Url),
                 Sheets = difficultyLabels
                     .Select(label => new MdmcSheet { Difficulty = label })
-                    .ToList()
+                    .ToList(),
+                SearchText = searchText // 传递当前搜索关键词用于高亮
             });
 
             Log($"Chart view item: title='{c.Title}', cover='{c.CoverUrl}', demo='{c.DemoUrl}', mp3='{c.DemoMp3Url}', download='{c.DownloadUrl}'");

@@ -18,6 +18,7 @@ public interface IAlbumCollectionService
 {
     Task<List<DesignerCategory>> GetCollectionsAsync();
     Task<List<DesignerChart>> GetChartsAsync(string categoryName);
+    Task<List<(DesignerCategory Category, DesignerChart Chart)>> SearchChartsAsync(string query);
 }
 
 public class AlbumCollectionService : IAlbumCollectionService
@@ -107,6 +108,32 @@ public class AlbumCollectionService : IAlbumCollectionService
             _chartsCache[categoryName] = fallback;
             return fallback;
         }
+    }
+
+    public async Task<List<(DesignerCategory Category, DesignerChart Chart)>> SearchChartsAsync(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return new List<(DesignerCategory Category, DesignerChart Chart)>();
+
+        var collections = await GetMetadataIndexAsync();
+        var results = new List<(DesignerCategory Category, DesignerChart Chart)>();
+        var normalizedQuery = query.Trim().ToLowerInvariant();
+
+        foreach (var category in collections)
+        {
+            foreach (var chart in category.Charts)
+            {
+                // 搜索条件：标题、作者或艺术家
+                if (chart.Title?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+                    chart.Author?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+                    chart.Artist?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    results.Add((category, chart));
+                }
+            }
+        }
+
+        return results;
     }
 
     private async Task<List<GitHubContentItem>> GetRepoContentsAsync(string path)

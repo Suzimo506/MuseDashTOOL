@@ -13,6 +13,8 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using MdModManager.Models;
 using MdModManager.Services;
+using MdModManager.Helpers;
+using System.Globalization;
 
 namespace MdModManager.ViewModels;
 
@@ -335,10 +337,121 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isEmpty;
-    
+
     [ObservableProperty]
     private double _scrollOffset;
+    
+    // ── 搜索功能 ────────────────────────────────────────────────────────────
+    [ObservableProperty]
+    private string _searchText = string.Empty;
 
+    // 是否正在由于搜索而过滤
+    [ObservableProperty]
+    private bool _isSearching;
+
+    // 原始集合备份，用于恢复
+    private readonly List<DesignerCategoryItemViewModel> _allCategoriesBackup = new();
+    private readonly List<CommunityCategoryItemViewModel> _allCommunityCategoriesBackup = new();
+
+    // 搜索时的取消令牌
+    private CancellationTokenSource? _searchCts;
+
+    partial void OnSearchTextChanged(string value)
+    {
+        _ = SearchAndFilterAsync(value);
+    }
+
+    private async Task SearchAndFilterAsync(string query)
+    {
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var ct = _searchCts.Token;
+
+        try
+        {
+            await Task.Delay(300, ct); // 300ms 防抖，避免频繁请求
+            
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                IsSearching = false;
+                RestoreOriginalCollections();
+                return;
+            }
+
+            IsSearching = true;
+            
+            // 确保备份集合已初始化（防止搜索触发过早）
+            if (_allCategoriesBackup.Count == 0 && Categories.Count > 0) _allCategoriesBackup.AddRange(Categories);
+            if (_allCommunityCategoriesBackup.Count == 0 && CommunityCategories.Count > 0) _allCommunityCategoriesBackup.AddRange(CommunityCategories);
+
+            var normalizedQuery = query.Trim().ToLowerInvariant();
+
+            // 调用服务端搜索接口，获取所有匹配的 (分类, 谱面) 对
+            var searchResults = await _collectionService.SearchChartsAsync(normalizedQuery);
+            if (ct.IsCancellationRequested) return;
+
+            // 提取所有匹配谱面所在的分类名称
+            var matchingCategoryNames = searchResults
+                .Select(r => r.Category.Name)
+                .Where(name => !string.IsNullOrEmpty(name))
+                .Distinct()
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // 过滤逻辑：
+            // 1. 分类本身的名称匹配搜索词
+            // 2. 分类下的任何谱面匹配搜索词（通过 matchingCategoryNames 判断）
+            var filteredCats = _allCategoriesBackup.Where(catVM => 
+                catVM.Category.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+                matchingCategoryNames.Contains(catVM.Category.Name ?? string.Empty)
+            ).ToList();
+
+            // 群友分类暂不支持深度搜索，仅按分类名过滤
+            var filteredCommCats = _allCommunityCategoriesBackup.Where(catVM => 
+                catVM.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true
+            ).ToList();
+
+            if (ct.IsCancellationRequested) return;
+
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                Categories.Clear();
+                foreach (var cat in filteredCats) Categories.Add(cat);
+                
+                CommunityCategories.Clear();
+                foreach (var cat in filteredCommCats) CommunityCategories.Add(cat);
+            });
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            RuntimeLog.Write("AlbumCollectionVM", $"Search filtering failed: {ex.Message}");
+        }
+    }
+
+    private void RestoreOriginalCollections()
+    {
+        if (_allCategoriesBackup.Count > 0)
+        {
+            Categories.Clear();
+            foreach (var cat in _allCategoriesBackup) Categories.Add(cat);
+        }
+        if (_allCommunityCategoriesBackup.Count > 0)
+        {
+            CommunityCategories.Clear();
+            foreach (var cat in _allCommunityCategoriesBackup) CommunityCategories.Add(cat);
+        }
+    }
+
+
+    [RelayCommand]
+    public void ClearSearch() => SearchText = string.Empty;
+
+    // ── 试听与下载命令 (转发自 ChartDownloadViewModel) ───────────────────
+    public IAsyncRelayCommand<MdmcChart> TogglePreviewCommand => 
+        Ioc.Default.GetRequiredService<ChartDownloadViewModel>().TogglePreviewCommand;
+    
+    public IAsyncRelayCommand<MdmcChart> DownloadChartCommand => 
+        Ioc.Default.GetRequiredService<ChartDownloadViewModel>().DownloadChartCommand;
 
     public AlbumCollectionViewModel(IAlbumCollectionService collectionService)
     {
@@ -405,6 +518,12 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
         await Task.WhenAll(communityTasks.Concat(designerTasks));
 
+        // 初始化备份集合，用于搜索过滤恢复
+        _allCategoriesBackup.Clear();
+        _allCategoriesBackup.AddRange(Categories);
+        _allCommunityCategoriesBackup.Clear();
+        _allCommunityCategoriesBackup.AddRange(CommunityCategories);
+
         IsEmpty = !Categories.Any();
         IsLoading = false;
         _isInitialized = true;
@@ -435,7 +554,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
             var detailVm = Ioc.Default.GetRequiredService<AlbumDetailViewModel>();
             mainVm.CurrentPage = detailVm;
-            await detailVm.InitializeAsync(item.Category);
+            await detailVm.InitializeAsync(item.Category, SearchText);
         }
     }
 

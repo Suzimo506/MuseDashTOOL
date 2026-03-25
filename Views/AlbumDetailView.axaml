@@ -122,8 +122,8 @@
                                 </Border>
                                 
                                 <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="5">
-                                    <controls:MarqueeText Text="{Binding Title}" HighlightText="" SearchText="" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" IsScrollingEnabled="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).EnableMarquee}" ToolTip.Tip="{Binding Title}"/>
-                                    <TextBlock Text="{Binding SubInfo}" IsVisible="{Binding SubInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                                    <controls:MarqueeText Text="{Binding Title}" HighlightText="{Binding Title}" SearchText="{Binding SearchText}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" IsScrollingEnabled="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).EnableMarquee}" ToolTip.Tip="{Binding Title}"/>
+                                    <TextBlock helpers:TextBlockHelper.HighlightText="{Binding SubInfo}" helpers:TextBlockHelper.SearchText="{Binding SearchText}" IsVisible="{Binding SubInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
                                     
                                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
                                         <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}"

@@ -12,7 +12,7 @@ namespace MdModManager.Helpers;
 
 public static class HttpHelper
 {
-    // Cloudflare Optimized IPs (Domain Fronting / Direct IP Connect)
+    // 优选IP
     private static readonly string[] OptimizedIps = { 
         "104.18.39.141", "172.67.220.100", "104.21.22.100", 
         "104.28.14.20", "104.16.132.229", "104.16.212.44", 

@@ -34,7 +34,11 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     // ── Charts list ───────────────────────────────────────────────────────────
     public ObservableCollection<MdmcChart> Charts { get; } = new();
 
-    [ObservableProperty] private bool _isLoading = false;
+    [ObservableProperty] 
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    private bool _isLoading = false;
+
     [ObservableProperty] private bool _isLoadingMore = false;
     [ObservableProperty] private string _statusMessage = "正在初始化…";
     [ObservableProperty] private string _previewStatusText = string.Empty;
@@ -54,7 +58,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     _searchCts?.Cancel();
-                    _ = ReloadAsync(false);
+                    _ = ReloadAsync();
                 }
                 else
                 {
@@ -79,7 +83,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             await Task.Delay(500, ct); // 500ms 延迟，避免输入过快频繁请求
             if (!ct.IsCancellationRequested)
             {
-                await ReloadAsync(false, ct);
+                await ReloadAsync(ct);
             }
         }
         catch (TaskCanceledException) { /* ignored */ }
@@ -120,18 +124,36 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _showUnranked = true;   // 显示未评级
 
     // ── Pagination ────────────────────────────────────────────────────────────
-    [ObservableProperty] private int _currentPage = 1;
-    [ObservableProperty] private int _totalPages = 1;
+    [ObservableProperty] 
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    private int _currentPage = 1;
+
+    [ObservableProperty] 
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    private int _totalPages = 1;
+
+    [ObservableProperty] private string _jumpPageText = string.Empty; // 跳转页码文本
+    [ObservableProperty] private bool _isEditingPageNumber = false; // 是否处于页码编辑状态
+
+    partial void OnCurrentPageChanged(int value)
+    {
+        JumpPageText = value.ToString();
+    }
+    
+    // 信号量：用于通知 View 需要滚动到哪个 Y 坐标
+    [ObservableProperty] private double? _requestedScrollY;
+    
     private int _currentLoadId = 0;
     
     private double _currentScrollY = 0;
     private const int CleanupThreshold = 60; // 滚动过远清理阈值
-    private const int ItemHeightApprox = 260; // 单行大概高度 (包含边距)
     private const int Columns = 4;
     private const int PageSize = 20;
-    private const int RowsPerPage = PageSize / Columns; // 5
 
-    public bool CanLoadMore => CurrentPage < TotalPages && !IsLoading && !IsLoadingMore;
+    public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
+    public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
 
     // ── Audio playback ────────────────────────────────────────────────────────
     private WaveOutEvent? _waveOut;
@@ -174,7 +196,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         CurrentPage = 1;
         _currentScrollY = 0;
         _ = UpdateTodayUpdatesCountAsync(); // 异步更新今日数量
-        await ReloadAsync(false, ct);
+        await ReloadAsync(ct);
     }
 
     private async Task UpdateTodayUpdatesCountAsync()
@@ -206,7 +228,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         CurrentPage = 1;
         _currentScrollY = 0;
         _ = UpdateTodayUpdatesCountAsync();
-        await ReloadAsync(false);
+        await ReloadAsync();
     }
 
     [RelayCommand]
@@ -229,16 +251,73 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     {
         IsAscending = !IsAscending;
         CurrentPage = 1;
-        _ = ReloadAsync(false);
+        _ = ReloadAsync();
     }
 
     [RelayCommand]
     private async Task LoadNextPage()
     {
-        if (CanLoadMore)
+        if (CanLoadNext)
         {
             CurrentPage++;
-            await ReloadAsync(true);
+            await ReloadAsync();
+        }
+    }
+
+    [RelayCommand]
+    private async Task LoadPrevPage()
+    {
+        if (CanLoadPrev)
+        {
+            CurrentPage--;
+            await ReloadAsync();
+        }
+    }
+
+    [RelayCommand]
+    private async Task LoadFirstPageAsync()
+    {
+        CurrentPage = 1;
+        await ReloadAsync();
+    }
+
+    [RelayCommand]
+    private async Task LoadLastPageAsync()
+    {
+        CurrentPage = TotalPages;
+        await ReloadAsync();
+    }
+
+    /// <summary>跳转到指定页码</summary>
+    [RelayCommand]
+    private void StartEditPage()
+    {
+        JumpPageText = CurrentPage.ToString();
+        IsEditingPageNumber = true;
+    }
+
+    [RelayCommand]
+    private void CancelEditPage()
+    {
+        JumpPageText = CurrentPage.ToString();
+        IsEditingPageNumber = false;
+    }
+
+    [RelayCommand]
+    private async Task JumpPageAsync()
+    {
+        var text = JumpPageText; // 先捕获输入，防止 LostFocus 覆盖重置
+        IsEditingPageNumber = false;
+
+        if (string.IsNullOrWhiteSpace(text)) return;
+
+        if (int.TryParse(text, out int targetPage))
+        {
+            // 限制页码范围在 1 到 TotalPages 之间
+            targetPage = Math.Clamp(targetPage, 1, TotalPages);
+            
+            CurrentPage = targetPage;
+            await ReloadAsync();
         }
     }
 
@@ -297,24 +376,18 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private async Task ReloadAsync(bool append = false, CancellationToken externalCt = default)
+    private async Task ReloadAsync(CancellationToken externalCt = default)
     {
-        if (!append)
-        {
-            _listCts?.Cancel();
-            _listCts = new CancellationTokenSource();
-            StopPlayback();
-        }
+        _listCts?.Cancel();
+        _listCts = new CancellationTokenSource();
+        StopPlayback();
 
-        // 这里的 ct 综合了内部 _listCts 和外部传入的 ct
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-            _listCts?.Token ?? CancellationToken.None, externalCt);
+            _listCts.Token, externalCt);
         var ct = linkedCts.Token;
 
-        if (append) IsLoadingMore = true;
-        else IsLoading = true;
-
-        StatusMessage = append ? "正在加载更多…" : "正在加载谱面列表…";
+        IsLoading = true;
+        StatusMessage = "正在加载谱面列表…";
         
         int myId = Interlocked.Increment(ref _currentLoadId);
 
@@ -323,13 +396,12 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             var sort  = SortOptions[SelectedSortIndex].Value;
             var order = IsAscending ? "asc" : "desc";
             var query = SearchText.Trim();
-            RuntimeLog.Write("ChartDownloadVM", $"Reload start: append={append}, sort={sort}, order={order}, page={CurrentPage}, query='{query}', rankedOnly={!ShowUnranked}, loadId={myId}");
 
             IList<MdmcChart> charts;
             int totalPages;
 
             // 只有在第 1 页、降序且没有搜索词时，尝试使用缓存
-            if (!append && CurrentPage == 1 && !IsAscending && string.IsNullOrEmpty(query) && _firstPageCache.TryGetValue(sort, out var cached))
+            if (CurrentPage == 1 && !IsAscending && string.IsNullOrEmpty(query) && _firstPageCache.TryGetValue(sort, out var cached))
             {
                 charts = cached.charts;
                 totalPages = cached.totalPages;
@@ -340,7 +412,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                     CurrentPage, sort, order, query, !ShowUnranked, ct);
                 charts = result.charts;
                 totalPages = result.totalPages;
-                if (!append && charts.Count == 0 && string.IsNullOrWhiteSpace(query))
+                if (charts.Count == 0 && string.IsNullOrWhiteSpace(query))
                 {
                     var recovered = await TryRecoverEmptyResultAsync(sort, order, ct);
                     if (recovered != null)
@@ -351,22 +423,16 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                     }
                 }
                 
-                // 如果是第一页的正向请求结果，存入缓存以供后续秒开
-                if (!append && CurrentPage == 1 && !IsAscending && string.IsNullOrEmpty(query))
+                if (CurrentPage == 1 && !IsAscending && string.IsNullOrEmpty(query))
                 {
                     _firstPageCache[sort] = result;
                 }
             }
 
-            if (myId != _currentLoadId) return; // 已有更新的请求
+            if (myId != _currentLoadId) return;
 
             TotalPages = Math.Max(1, totalPages);
-            OnPropertyChanged(nameof(CanLoadMore));
-
-            if (!append)
-            {
-                Charts.Clear();
-            }
+            Charts.Clear(); // 翻页模式下，每次加载前都清空列表
 
             foreach (var c in charts)
             {
@@ -374,27 +440,20 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             }
 
             IsEmpty = Charts.Count == 0;
+            RuntimeLog.Write("ChartDownloadVM", $"Page loaded: {Charts.Count} items on page {CurrentPage}/{TotalPages}");
             UpdateStatusMessage();
-            RuntimeLog.Write("ChartDownloadVM", $"Reload end: sort={sort}, page={CurrentPage}, visible={Charts.Count}, fetched={charts.Count}, totalPages={TotalPages}, isEmpty={IsEmpty}, loadId={myId}");
+
+            // 翻页或加载后，通知 View 回到顶部
+            RequestedScrollY = 0;
         }
-        catch (OperationCanceledException)
-        {
-            // Ignore canceled reloads. A newer request is usually already in flight.
-            RuntimeLog.Write("ChartDownloadVM", $"Reload canceled: page={CurrentPage}, loadId={myId}");
-        }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            if (myId == _currentLoadId)
-                StatusMessage = "加载失败：" + ex.Message;
+            if (myId == _currentLoadId) StatusMessage = "加载失败：" + ex.Message;
         }
         finally
         {
-            if (myId == _currentLoadId)
-            {
-                IsLoading = false;
-                IsLoadingMore = false;
-            }
-            // Start lazy loading covers after list is updated
+            if (myId == _currentLoadId) IsLoading = false;
             _ = LoadCoversAsync();
         }
     }
@@ -430,10 +489,8 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     public void UpdateScrollPosition(double yOffset)
     {
         _currentScrollY = yOffset;
-        CheckMemoryCleanup();
         UpdateStatusMessage();
-        
-        _ = LoadCoversAsync(); // 恢复为直接触发加载，不再防抖
+        _ = LoadCoversAsync();
     }
 
     private void UpdateStatusMessage()
@@ -456,48 +513,21 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             return;
         }
 
-        // 根据滚动位置计算当前所处的页码
-        int visibleRow = (int)(_currentScrollY / ItemHeightApprox);
-        int currentPage = (visibleRow / RowsPerPage) + 1;
-        // 限制在已加载的页数范围内
-        currentPage = Math.Clamp(currentPage, 1, CurrentPage);
-
-        StatusMessage = $"第 {currentPage} / {TotalPages} 页，今日更新 {TodayUpdatesCount} 张谱面";
+        StatusMessage = $"第 {CurrentPage} / {TotalPages} 页，今日更新 {TodayUpdatesCount} 张谱面";
     }
 
-    private void CheckMemoryCleanup()
-    {
-        // 计算当前可见的第一行索引
-        int firstVisibleIndex = (int)(_currentScrollY / ItemHeightApprox) * Columns;
-        
-        // 往下滚：清理上方过远的封面 (超过阈值 60 个)
-        for (int i = 0; i < firstVisibleIndex - CleanupThreshold; i++)
-        {
-            if (i >= 0 && i < Charts.Count && Charts[i].CoverImage != null)
-            {
-                Charts[i].CoverImage = null;
-            }
-        }
 
-        // 往上滚：清理下方过远的封面 (比如距离当前视图下方 100 个以外，可选，主要保上方)
-        // 这里暂时只处理上方的释放，以满足用户“滚动超过60个释放上方”的要求
-    }
-
+    /// <summary>异步并行加载封面图 (限制并发数为 7)</summary>
     /// <summary>异步并行加载封面图 (限制并发数为 7)</summary>
     private async Task LoadCoversAsync()
     {
-        // 计算当前窗口及缓冲区内的索引范围
-        int firstVisibleRow = (int)(_currentScrollY / ItemHeightApprox);
-        int startIndex = Math.Max(0, (firstVisibleRow - 1) * Columns);
-        int endIndex = Math.Min(Charts.Count, (firstVisibleRow + 5) * Columns);
+        // 翻页模式下直接加载全页封面（由于每页只有 20 个项，直接全部并行加载即可）
+        var tasks = new System.Collections.Generic.List<Task>();
 
-        var tasks = new List<Task>();
-
-        for (int i = startIndex; i < endIndex; i++)
+        foreach (var chart in Charts)
         {
-            var chart = Charts[i];
             if (chart.CoverImage != null) continue;
-
+            
             tasks.Add(Task.Run(async () =>
             {
                 await _coverSemaphore.WaitAsync();
