@@ -33,7 +33,7 @@ public partial class ChartDownloadView : UserControl
                             {
                                 scrollViewer.Offset = new Avalonia.Vector(scrollViewer.Offset.X, y);
                             }
-                        });
+                        }, Avalonia.Threading.DispatcherPriority.Background); // 使用 Background 优先级确保在布局完成后执行
                         // 重置请求，防止重复触发
                         vm.RequestedScrollY = null;
                     }
