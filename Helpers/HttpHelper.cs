@@ -28,7 +28,31 @@ public static class HttpHelper
 
     private static string? _fastestIp;
     private static readonly SemaphoreSlim _lock = new(1, 1);
+
+    private static string? _staticIp;
+    /// <summary>用户自定义的静态 IP，若不为 null 则跳过竞速直接使用</summary>
+    public static string? StaticIp 
+    {
+        get => _staticIp;
+        set 
+        {
+            if (_staticIp == value) return;
+            _staticIp = value;
+            // 如果清空了静态 IP 且开启了优选，则重新触发测速
+            if (string.IsNullOrEmpty(value) && UseOptimizedIps)
+            {
+                StartBackgroundRacing();
+            }
+        }
+    }
     
+    /// <summary>获取当前生效的 IP（静态 IP 优先，其次为竞速出的最快 IP）</summary>
+    public static string? GetEffectiveIp()
+    {
+        if (!string.IsNullOrEmpty(StaticIp)) return StaticIp;
+        return _fastestIp;
+    }
+
     // 控制是否启用内置的 Cloudflare IP 优选机制
     private static bool _useOptimizedIps = false;
     public static bool UseOptimizedIps 
@@ -42,7 +66,8 @@ public static class HttpHelper
             else StopBackgroundRacing();
         }
     }
-    private static readonly HashSet<string> _blacklistedIps = new();
+    // 黑名单 IP 及其拉黑时间 (UTC)
+    private static readonly Dictionary<string, DateTime> _blacklistedIps = new();
     private static readonly object _blacklistLock = new();
 
     private static CancellationTokenSource? _racingCts;
@@ -66,13 +91,16 @@ public static class HttpHelper
                         // 每 5 秒竞速一次
                         await Task.Delay(TimeSpan.FromSeconds(5), token);
                         
-                        if (!UseOptimizedIps) break;
+                        if (!UseOptimizedIps || !string.IsNullOrEmpty(StaticIp)) break;
 
                         // 执行静默竞速
                         var newIp = await PerformSilentRaceAsync(token);
                         if (newIp != null)
                         {
-                            _fastestIp = newIp;
+                            lock (_blacklistLock)
+                            {
+                                _fastestIp = newIp;
+                            }
                             RuntimeLog.Write("HttpHelper", $"Background race selected new IP: {newIp}");
                         }
                     }
@@ -108,7 +136,12 @@ public static class HttpHelper
             List<string> ipsToTest;
             lock (_blacklistLock)
             {
-                ipsToTest = OptimizedIps.Where(ip => !_blacklistedIps.Contains(ip)).ToList();
+                // 自动释放：移除拉黑超过 3 分钟的 IP
+                var now = DateTime.UtcNow;
+                var expired = _blacklistedIps.Where(x => (now - x.Value).TotalMinutes >= 3).Select(x => x.Key).ToList();
+                foreach (var key in expired) _blacklistedIps.Remove(key);
+
+                ipsToTest = OptimizedIps.Where(ip => !_blacklistedIps.ContainsKey(ip)).ToList();
                 if (ipsToTest.Count == 0)
                 {
                     _blacklistedIps.Clear();
@@ -144,6 +177,7 @@ public static class HttpHelper
 
     private static async Task<string> GetFastestIpAsync()
     {
+        if (!string.IsNullOrEmpty(StaticIp)) return StaticIp;
         if (_fastestIp != null) return _fastestIp;
         await _lock.WaitAsync();
         try
@@ -156,7 +190,12 @@ public static class HttpHelper
             List<string> ipsToTest;
             lock (_blacklistLock)
             {
-                ipsToTest = OptimizedIps.Where(ip => !_blacklistedIps.Contains(ip)).ToList();
+                // 自动释放：移除拉黑超过 3 分钟的 IP
+                var now = DateTime.UtcNow;
+                var expired = _blacklistedIps.Where(x => (now - x.Value).TotalMinutes >= 3).Select(x => x.Key).ToList();
+                foreach (var key in expired) _blacklistedIps.Remove(key);
+
+                ipsToTest = OptimizedIps.Where(ip => !_blacklistedIps.ContainsKey(ip)).ToList();
                 if (ipsToTest.Count == 0)
                 {
                     _blacklistedIps.Clear(); // 如果全部被拉黑，说明可能本地网络断开或恢复了，整体重置寻找
@@ -204,7 +243,7 @@ public static class HttpHelper
         }
     }
 
-    public static HttpClient CreateOptimizedClient(TimeSpan timeout)
+    public static HttpClient CreateOptimizedClient(TimeSpan timeout, TimeSpan? watchdogTimeout = null)
     {
         var handler = new SocketsHttpHandler
         {
@@ -217,8 +256,25 @@ public static class HttpHelper
                 if (UseOptimizedIps && (host.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
                     host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase)))
                 {
+                    // ── 用户自定义静态 IP：直连，不重试、不竞速、不拉黑 ──
+                    if (!string.IsNullOrEmpty(StaticIp))
+                    {
+                        var staticSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                        staticSocket.NoDelay = true;
+                        try
+                        {
+                            await staticSocket.ConnectAsync(IPAddress.Parse(StaticIp), port, cancellationToken);
+                            return new NetworkStream(staticSocket, ownsSocket: true);
+                        }
+                        catch
+                        {
+                            staticSocket.Dispose();
+                            throw;
+                        }
+                    }
+
+                    // ── 自动优选 IP：竞速 + 重试 3 次 ──
                     Exception? lastException = null;
-                    // 如果优选 IP 挂了，清空缓存重新赛跑，最多重试 3 次
                     for (int retry = 0; retry < 3; retry++)
                     {
                         var selectedIp = await GetFastestIpAsync();
@@ -233,7 +289,7 @@ public static class HttpHelper
                         catch (Exception ex)
                         {
                             optSocket.Dispose();
-                            _fastestIp = null; // 清除死掉的 IP 缓存
+                            _fastestIp = null;
                             lastException = ex;
                         }
                     }
@@ -262,7 +318,7 @@ public static class HttpHelper
         handler.PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30);
         handler.ConnectTimeout = TimeSpan.FromSeconds(3);
 
-        var resilientHandler = new ResilientHandler(handler);
+        var resilientHandler = new ResilientHandler(handler, watchdogTimeout ?? TimeSpan.FromSeconds(4));
         var client = new HttpClient(resilientHandler) { Timeout = timeout };
         
         client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL-Downloader");
@@ -271,29 +327,35 @@ public static class HttpHelper
 
     public static void InvalidateFastestIp()
     {
-        if (_fastestIp != null)
+        lock (_blacklistLock)
         {
-            lock (_blacklistLock)
+            if (_fastestIp != null)
             {
-                _blacklistedIps.Add(_fastestIp);
-                RuntimeLog.Write("HttpHelper", $"Blacklisted dead IP: {_fastestIp}");
+                if (!_blacklistedIps.ContainsKey(_fastestIp))
+                {
+                    _blacklistedIps[_fastestIp] = DateTime.UtcNow;
+                    RuntimeLog.Write("HttpHelper", $"Blacklisted dead IP: {_fastestIp} (3-min cooldown)");
+                }
+                _fastestIp = null;
             }
         }
-        _fastestIp = null;
     }
 
     private class ResilientHandler : DelegatingHandler
     {
-        public ResilientHandler(HttpMessageHandler innerHandler) : base(innerHandler)
+        private readonly TimeSpan _watchdogTimeout;
+
+        public ResilientHandler(HttpMessageHandler innerHandler, TimeSpan watchdogTimeout) : base(innerHandler)
         {
+            _watchdogTimeout = watchdogTimeout;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
 
-            // 防断控制：如果在 4 秒内没拿到响应头，判定为 Cloudflare 节点假死，主动掐断并触发换 IP
+            // 防断控制：如果在指定时间内没拿到响应头，判定为 Cloudflare 节点假死，主动掐断并触发换 IP
             using var headerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            headerCts.CancelAfter(TimeSpan.FromSeconds(4));
+            headerCts.CancelAfter(_watchdogTimeout);
 
             try
             {
@@ -301,7 +363,7 @@ public static class HttpHelper
                 if ((int)response.StatusCode >= 500)
                 {
                     var host = request.RequestUri?.Host;
-                    if (UseOptimizedIps && host != null && (host.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
+                    if (UseOptimizedIps && string.IsNullOrEmpty(StaticIp) && host != null && (host.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
                                          host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase)))
                     {
                         HttpHelper.InvalidateFastestIp();

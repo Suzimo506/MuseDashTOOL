@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:MdModManager.ViewModels"
         xmlns:svc="using:MdModManager.Services"
+        xmlns:helpers="using:MdModManager.Helpers"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
@@ -283,5 +284,56 @@
                 </StackPanel>
             </Border>
         </Grid>
+        <!-- 全局通知气泡：叠加在最上层 -->
+        <ItemsControl ItemsSource="{Binding Notifications}"
+                      VerticalAlignment="Bottom" HorizontalAlignment="Left"
+                      Margin="20,0,0,20"
+                      IsHitTestVisible="False">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Bottom" Spacing="10"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border CornerRadius="8" Padding="15,10" Opacity="{Binding Opacity}"
+                            BoxShadow="0 4 12 0 #40000000">
+                        <Border.Background>
+                            <Binding Path="IsSuccess">
+                                <Binding.Converter>
+                                    <helpers:BoolToBrushConverter TrueBrush="#E8F5E9" FalseBrush="#FFEBEE"/>
+                                </Binding.Converter>
+                            </Binding>
+                        </Border.Background>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <!-- 根据状态显示不同图标 -->
+                            <Path IsVisible="{Binding IsSuccess}" Data="M512 0a512 512 0 1 0 512 512A512 512 0 0 0 512 0z m255.488 387.584L452.928 705.408a46.208 46.208 0 0 1-65.792 0L256.512 574.912a46.208 46.208 0 1 1 65.792-65.792L420 606.528l281.28-284.736a46.208 46.208 0 0 1 66.208 65.792z"
+                                  Fill="#4CAF50" Width="18" Height="18" Stretch="Uniform"/>
+                            <Path IsVisible="{Binding IsInfo}" Data="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64z m0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z m28-564h-56v312h56V320z m0 384h-56v56h56v-56z"
+                                  Fill="#2196F3" Width="18" Height="18" Stretch="Uniform"/>
+                            <Path Data="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64z m165.4 548.2c1.4 1.4 2.1 3.2 2.1 5.1s-0.7 3.7-2.1 5.1L637 662.8c-1.4 1.4-3.2 2.1-5.1 2.1s-3.7-0.7-5.1-2.1L512 547.9 397.1 662.8c-1.4 1.4-3.2 2.1-5.1 2.1s-3.7-0.7-5.1-2.1L346.5 622.4c-1.4-1.4-2.1-3.2-2.1-5.1s0.7-3.7 2.1-5.1L461.4 512 346.5 397.1c-1.4-1.4-2.1-3.2-2.1-5.1s0.7-3.7 2.1-5.1l40.4-40.4c1.4-1.4 3.2-2.1 5.1-2.1s3.7 0.7 5.1 2.1L512 476.1l114.9-114.9c1.4-1.4 3.2-2.1 5.1-2.1s3.7 0.7 5.1 2.1l40.4 40.4c1.4 1.4 2.1 3.2 2.1 5.1s-0.7 3.7-2.1 5.1L562.6 512l114.8 114.8z"
+                                  Fill="#F44336" Width="18" Height="18" Stretch="Uniform">
+                                <Path.IsVisible>
+                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                        <Binding Path="!IsSuccess"/>
+                                        <Binding Path="!IsInfo"/>
+                                    </MultiBinding>
+                                </Path.IsVisible>
+                            </Path>
+
+                            <TextBlock Text="{Binding Message}" FontSize="13" VerticalAlignment="Center" FontWeight="SemiBold">
+                                <TextBlock.Foreground>
+                                    <Binding Path="IsSuccess">
+                                        <Binding.Converter>
+                                            <helpers:BoolToBrushConverter TrueBrush="#2E7D32" FalseBrush="#C62828"/>
+                                        </Binding.Converter>
+                                    </Binding>
+                                </TextBlock.Foreground>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
     </Panel>
 </Window>

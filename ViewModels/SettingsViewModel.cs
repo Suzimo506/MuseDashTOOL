@@ -21,12 +21,16 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string[] _downloadSources = new[] { "高速 DNS", "Suzimo", "kkgithub.com", "github.com" };
 
-    // 控制主设置面板与颜色子面板的切换
+    // 控制主设置面板与颜色子面板、高级设置面板的切换
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsMainPanelVisible))]
     private bool _isColorPanelVisible = false;
 
-    public bool IsMainPanelVisible => !IsColorPanelVisible;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsMainPanelVisible))]
+    private bool _isAdvancedPanelVisible = false;
+
+    public bool IsMainPanelVisible => !IsColorPanelVisible && !IsAdvancedPanelVisible;
 
     // 可用透明效果列表
     [ObservableProperty]
@@ -414,6 +418,42 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>是否开启优选 DNS 竞速</summary>
+    public bool UseOptimizedIps => Helpers.HttpHelper.UseOptimizedIps;
+
+    /// <summary>是否使用用户自定义的优选 IP</summary>
+    public bool UseCustomIp
+    {
+        get => _configService.Config.UseCustomIp;
+        set
+        {
+            if (_configService.Config.UseCustomIp != value)
+            {
+                _configService.Config.UseCustomIp = value;
+                OnPropertyChanged();
+                // 切换开关时立即触发一次 IP 刷新
+                OnPropertyChanged(nameof(CurrentEffectiveIp));
+            }
+        }
+    }
+
+    /// <summary>当前正在使用的实际 IP 地址</summary>
+    public string CurrentEffectiveIp => Helpers.HttpHelper.GetEffectiveIp() ?? "未获取到 IP";
+
+    /// <summary>用户自定义的优选 IP 地址</summary>
+    public string CustomIpAddress
+    {
+        get => _configService.Config.CustomIpAddress;
+        set
+        {
+            if (_configService.Config.CustomIpAddress != value)
+            {
+                _configService.Config.CustomIpAddress = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     /// <summary>透明效果 ComboBox 索引器 (0=None, 1=Transparent, 2=Mica, 3=AcrylicBlur)</summary>
     public int SelectedTransparencyIndex
     {
@@ -556,7 +596,15 @@ public partial class SettingsViewModel : ObservableObject
         System.Console.WriteLine($"[SettingsViewModel] Initialize start. IsMainPanel:{IsMainPanelVisible}, IsColor:{IsColorPanelVisible}");
         OnPropertyChanged(nameof(IsColorPanelVisible));
         OnPropertyChanged(nameof(IsMainPanelVisible));
+        OnPropertyChanged(nameof(IsAdvancedPanelVisible));
         OnPropertyChanged(nameof(SelectedDownloadSource));
+        OnPropertyChanged(nameof(UseCustomIp));
+        OnPropertyChanged(nameof(CustomIpAddress));
+        
+        // 同步 IP 设置到 Helper（安全对空值进行保护）
+        HttpHelper.StaticIp = (UseCustomIp && !string.IsNullOrWhiteSpace(CustomIpAddress))
+            ? CustomIpAddress : null;
+
         OnPropertyChanged(nameof(SuppressIncompatibleModWarning));
         OnPropertyChanged(nameof(CustomBackgroundImagePath));
         OnPropertyChanged(nameof(HasBackgroundImage));
@@ -585,6 +633,60 @@ public partial class SettingsViewModel : ObservableObject
 
     [RelayCommand]
     private void CloseColorPanel() => IsColorPanelVisible = false;
+
+    [RelayCommand]
+    private void OpenAdvancedPanel()
+    {
+        IsAdvancedPanelVisible = true;
+        // 开启定时刷新，每 2 秒更新一次当前使用的 IP 显示
+        if (_ipRefreshTimer == null)
+        {
+            _ipRefreshTimer = new Avalonia.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(2)
+            };
+            _ipRefreshTimer.Tick += (s, e) => OnPropertyChanged(nameof(CurrentEffectiveIp));
+        }
+        _ipRefreshTimer.Start();
+    }
+
+    private Avalonia.Threading.DispatcherTimer? _ipRefreshTimer;
+
+    [RelayCommand]
+    private void CloseAdvancedPanel()
+    {
+        if (HasUnconfirmedCustomIp())
+        {
+            _notificationService?.ShowFailure("无法退出", "请输入 IP 并点击确认后退出");
+            return;
+        }
+        _ipRefreshTimer?.Stop();
+        IsAdvancedPanelVisible = false;
+    }
+
+    [RelayCommand]
+    private async System.Threading.Tasks.Task ConfirmCustomIpAsync()
+    {
+        if (UseCustomIp && string.IsNullOrWhiteSpace(CustomIpAddress))
+        {
+            _notificationService?.ShowFailure("设置失败", "请输入自定义 IP 或关掉自定义模式！");
+            return;
+        }
+
+        HttpHelper.StaticIp = UseCustomIp ? CustomIpAddress.Trim() : null;
+        _configService.Config.CustomIpAddress = CustomIpAddress.Trim();
+        await _configService.SaveAsync();
+        _notificationService?.ShowSuccess("高级设置已保存");
+    }
+
+    /// <summary>检查是否存在未确认的自定义 IP 设置（开关开了但 IP 还未应用到 HttpHelper）</summary>
+    public bool HasUnconfirmedCustomIp()
+    {
+        if (!UseCustomIp) return false;
+        if (string.IsNullOrWhiteSpace(CustomIpAddress)) return true;
+        // 开关开了且输入了 IP，但与当前应用的静态 IP 不一致，说明未点确认
+        return HttpHelper.StaticIp != CustomIpAddress.Trim();
+    }
 
     [RelayCommand]
     private void ToggleTheme() => AppTheme = IsLightTheme ? "Dark" : "Light";

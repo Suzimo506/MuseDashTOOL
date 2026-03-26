@@ -85,6 +85,12 @@ public class AppConfig
 
     /// <summary>已屏蔽（不再显示）的公告 ID 列表</summary>
     public System.Collections.Generic.List<string> SuppressedAnnouncements { get; set; } = new();
+
+    /// <summary>是否使用用户自定义的优选 IP</summary>
+    public bool UseCustomIp { get; set; } = false;
+
+    /// <summary>用户自定义的优选 IP 地址</summary>
+    public string CustomIpAddress { get; set; } = "";
 }
 
 public class NoticeInfo

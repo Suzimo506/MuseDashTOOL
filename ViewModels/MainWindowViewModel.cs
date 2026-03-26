@@ -732,6 +732,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     public void CleanupCurrentPage()
     {
+        // 如果当前在高级设置中且有未确认的自定义 IP，阻止页面切换
+        if (IsNavigationBlocked()) return;
+
         Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
         var isLeavingAlbumCollectionSection = IsAlbumCollectionSectionPage(CurrentPage);
         if (isLeavingAlbumCollectionSection)
@@ -748,6 +751,17 @@ public partial class MainWindowViewModel : ObservableObject
             chartDownloadVm.Dispose(); // 切换时将停止正在播放的试听音频
         else if (CurrentPage is AccountViewModel accountVm)
             accountVm.Cleanup(); // 离开账号页时释放多余记录，节省内存
+    }
+
+    /// <summary>检查是否有未确认的高级设置阻止导航</summary>
+    private bool IsNavigationBlocked()
+    {
+        if (CurrentPage is SettingsViewModel settingsVm && settingsVm.IsAdvancedPanelVisible && settingsVm.HasUnconfirmedCustomIp())
+        {
+            _notificationService?.ShowFailure("无法离开", "请输入 IP 并点击确认后退出");
+            return true;
+        }
+        return false;
     }
 
     [RelayCommand]
