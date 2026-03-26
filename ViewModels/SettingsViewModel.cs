@@ -433,6 +433,15 @@ public partial class SettingsViewModel : ObservableObject
                 OnPropertyChanged();
                 // 切换开关时立即触发一次 IP 刷新
                 OnPropertyChanged(nameof(CurrentEffectiveIp));
+
+                // 修正 BUG：如果关闭开关，立即清除 StaticIp，不再等到重启
+                if (!value)
+                {
+                    Helpers.HttpHelper.StaticIp = null;
+                }
+                
+                // 实时保存开关状态，防止重启后重置
+                _ = _configService.SaveAsync();
             }
         }
     }
@@ -450,6 +459,8 @@ public partial class SettingsViewModel : ObservableObject
             {
                 _configService.Config.CustomIpAddress = value;
                 OnPropertyChanged();
+                // 实时保存地址，防止由于没点确认键导致重启后丢失输入
+                _ = _configService.SaveAsync();
             }
         }
     }
