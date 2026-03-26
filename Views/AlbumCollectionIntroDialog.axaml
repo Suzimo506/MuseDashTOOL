@@ -27,99 +27,71 @@
 
     <Grid RowDefinitions="*,Auto" Margin="24">
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="14">
+            <StackPanel Spacing="16">
+                <!-- Header -->
                 <TextBlock Text="请仔细阅读该文本，避免不必要的问题发生！！！！"
-                           FontSize="24"
+                           FontSize="22"
                            FontWeight="Bold"
                            TextWrapping="Wrap"
-                           Foreground="#FFFFFF"/>
+                           Foreground="Red"/>
 
-                <WrapPanel ItemSpacing="0" LineSpacing="0">
-                    <TextBlock Text="该整合包来源于"
-                               FontSize="15"
-                               TextWrapping="Wrap"
-                               Foreground="#E0E0E0"/>
-                    <Button Classes="LinkBtn"
-                            Click="OnOpenFeishuClick"
-                            Content="https://my.feishu.cn/wiki/FMmsw2JswiGTdRk9YwecoMAhnrf"/>
-                </WrapPanel>
-
-                <WrapPanel ItemSpacing="0" LineSpacing="0">
-                    <TextBlock Text="更多零散的谱面请关注B站"
-                               FontSize="15"
-                               TextWrapping="Wrap"
-                               Foreground="#E0E0E0"/>
-                    <Button Classes="LinkBtn"
-                            Click="OnOpenGreenHubClick"
-                            Content="GreenHub"/>
-                    <TextBlock Text="并且加入粉丝群获取"
-                               FontSize="15"
-                               TextWrapping="Wrap"
-                               Foreground="#E0E0E0"/>
-                </WrapPanel>
-
-                <TextBlock Text="由于整合包存放地址在github，如果加载缓慢请尝试去设置切换下载源，耐心等待！"
+                <!-- Recommendations -->
+                <TextBlock Text="请选择高速DNS获得最佳的下载体验；如果kkgithub可用，也许它的速度会超过高速DNS，但它经常断线。"
                            FontSize="15"
+                           LineHeight="22"
                            TextWrapping="Wrap"
                            Foreground="#E0E0E0"/>
 
-                <TextBlock Text="PS：不需要等待图片加载出来，可以直接下载"
+                <TextBlock Text="suzimo线路永不断线（特殊极端情况除外），但速度可能会稍慢。"
                            FontSize="15"
+                           LineHeight="22"
                            TextWrapping="Wrap"
                            Foreground="#E0E0E0"/>
 
-                <Border Height="1" Background="#55FFFFFF" Margin="0,4,0,4"/>
-
-                <TextBlock Text="群友自制谱面由于量大，点击下载后会自动跳转蓝奏云链接。请前往蓝奏云下载。"
+                <TextBlock Text="高速DNS与suzimo线路每天都有日限额下载，如果你不幸遇到了限额的情况，请切换kkgithub或github线路。"
                            FontSize="15"
+                           LineHeight="22"
                            TextWrapping="Wrap"
                            Foreground="#E0E0E0"/>
 
-                <TextBlock Text="下载之后的zip直接拖进谱面管理界面会自动打包成mdm。"
+                <TextBlock Text="#高速DNS也许会在流量高峰时期断线，如遇此情况请在设置中切换到别的下载源再切换回高速DNS"
                            FontSize="15"
+                           LineHeight="22"
                            TextWrapping="Wrap"
                            Foreground="#E0E0E0"/>
 
-                <Border Height="1" Background="#55FFFFFF" Margin="0,4,0,4"/>
+                <!-- Author Note -->
+                <TextBlock Text="（作者只是一个穷学生，能力有限QAQ）"
+                           FontSize="15"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           Foreground="#FF69B4"/>
 
-                <WrapPanel ItemSpacing="0" LineSpacing="0">
-                    <TextBlock Text="本页谱面全部由"
-                               FontSize="15"
-                               TextWrapping="Wrap"
-                               Foreground="#E0E0E0"/>
-                    <Button Classes="LinkBtn"
-                            Click="OnOpenGreenHubClick"
-                            Content="GreenHub"/>
-                    <TextBlock Text="和"
-                               FontSize="15"
-                               TextWrapping="Wrap"
-                               Foreground="#E0E0E0"/>
-                    <Button Classes="LinkBtn"
-                            Click="OnOpenMayflycmdClick"
-                            Content="Mayflycmd"/>
-                    <TextBlock Text="整理。"
-                               FontSize="15"
-                               TextWrapping="Wrap"
-                               Foreground="#E0E0E0"/>
-                    <Button Classes="LinkBtn"
-                            Click="OnOpenSuZimoClick"
-                            Content="其实我叫苏子沫"/>
-                    <TextBlock Text="搬运。"
-                               FontSize="15"
-                               TextWrapping="Wrap"
-                               Foreground="#E0E0E0"/>
+                <Border Height="1" Background="#33FFFFFF" Margin="0,4,0,4"/>
+
+                <!-- Credits Paragraph -->
+                <WrapPanel ItemSpacing="0" LineSpacing="6">
+                    <TextBlock Text="本页谱面全部由" FontSize="14" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                    <Button Classes="LinkBtn" Click="OnOpenGreenHubClick" Content="GreenHub" FontSize="14"/>
+                    <TextBlock Text="和" FontSize="14" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                    <Button Classes="LinkBtn" Click="OnOpenMayflycmdClick" Content="Mayflycmd" FontSize="14"/>
+                    <TextBlock Text="整理。其实" FontSize="14" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                    <Button Classes="LinkBtn" Click="OnOpenSuZimoClick" Content="我叫苏子沫" FontSize="14"/>
+                    <TextBlock Text="与" FontSize="14" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                    <Button Classes="LinkBtn" Click="OnOpenGreenHubClick" Content="GreenHub" FontSize="14"/>
+                    <TextBlock Text="搬运。" FontSize="14" Foreground="#E0E0E0" VerticalAlignment="Center"/>
                 </WrapPanel>
             </StackPanel>
         </ScrollViewer>
 
         <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,18,0,0">
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <CheckBox x:Name="DontShowAgainCheckBox"
-                          VerticalAlignment="Center"/>
                 <TextBlock Text="不再显示该弹窗"
                            FontSize="13"
                            Foreground="Gray"
                            VerticalAlignment="Center"/>
+                <CheckBox x:Name="DontShowAgainCheckBox"
+                          VerticalAlignment="Center"/>
             </StackPanel>
 
             <Button Grid.Column="2"

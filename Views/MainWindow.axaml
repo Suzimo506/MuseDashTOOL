@@ -238,7 +238,7 @@
 
                     <!-- 内容：从 NoticeInfo 获取 -->
                     <ScrollViewer MaxHeight="300">
-                        <TextBlock Text="{Binding CurrentAnnouncement.Content}"
+                        <TextBlock helpers:TextBlockHelper.MarkupText="{Binding CurrentAnnouncement.Content}"
                                    TextWrapping="Wrap" LineHeight="24" FontSize="14"
                                    Foreground="{DynamicResource ThemeTextMainBrush}"
                                    Opacity="0.9"/>
