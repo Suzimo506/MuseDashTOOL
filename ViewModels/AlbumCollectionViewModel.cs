@@ -235,13 +235,15 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
     private static readonly string[] Extensions = [".png", ".jpg", ".jpeg", ".webp"];
 
     public string Name { get; }
+    public string RepoUrl { get; }
 
     [ObservableProperty]
     private Bitmap? _coverImage;
 
-    public CommunityCategoryItemViewModel(string name)
+    public CommunityCategoryItemViewModel(string name, string repoUrl)
     {
         Name = name;
+        RepoUrl = repoUrl;
     }
 
     public void LoadCoverImage()
@@ -475,9 +477,16 @@ public partial class AlbumCollectionViewModel : ObservableObject
         CommunityCategories.Clear();
 
         var communityTasks = new List<Task>();
-        foreach (var name in new[] { "通过审议", "令人生草", "待定或存在小问题" })
+        var communityConfigs = new[] 
+        { 
+            ("通过审议", "https://github.com/KuoKing506/1_Csutom-Albums-Repository/releases"), 
+            ("令人生草", "https://github.com/KuoKing506/2_Custom-Albums-Repository/releases"), 
+            ("待定或存在小问题", "https://github.com/KuoKing506/3_Custom-Albums-Repository/releases") 
+        };
+
+        foreach (var (name, repoUrl) in communityConfigs)
         {
-            var item = new CommunityCategoryItemViewModel(name);
+            var item = new CommunityCategoryItemViewModel(name, repoUrl);
             CommunityCategories.Add(item);
             
             communityTasks.Add(Task.Run(async () =>
@@ -567,7 +576,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
             var detailVm = Ioc.Default.GetRequiredService<CommunityCategoryDetailViewModel>();
             mainVm.CurrentPage = detailVm;
-            await detailVm.InitializeAsync(item.Name);
+            await detailVm.InitializeAsync(item.Name, item.RepoUrl);
         }
     }
 

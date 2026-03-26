@@ -1,272 +1,264 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
-using System.Text.Json;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
-using System.Reflection;
+using MdModManager.Models;
 using MdModManager.Services;
+using MdModManager.Helpers;
 
 namespace MdModManager.ViewModels;
 
-public partial class CommunityCategoryDetailViewModel : ObservableObject
+public partial class CommunityCategoryDetailViewModel : ObservableObject, IDisposable
 {
-    public static readonly string[] DateOptions =
-    [
-        "2023-11",
-        "2024-6",
-        "2025-1",
-        "2025-8"
-    ];
+    private readonly ChartDownloadViewModel _chartDownloadViewModel;
+    private readonly IConfigService _configService;
+    private readonly IDownloadManagerService _downloadManagerService;
+    private readonly INotificationService _notificationService;
+    private static readonly SemaphoreSlim _coverSemaphore = new(7);
 
     [ObservableProperty]
     private string _categoryName = string.Empty;
 
     [ObservableProperty]
-    private string _selectedDate = DateOptions[0];
+    private string _repoUrl = string.Empty;
 
     [ObservableProperty]
-    private ObservableCollection<string> _currentEntries = new();
+    private ObservableCollection<MdmcChart> _charts = new();
 
     [ObservableProperty]
-    private string _lanzouUrl = string.Empty;
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    [NotifyPropertyChangedFor(nameof(IsNotLoading))]
+    [NotifyCanExecuteChangedFor(nameof(LoadNextPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadPrevPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadFirstPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadLastPageCommand))]
+    private bool _isLoading;
 
     [ObservableProperty]
-    private string _lanzouPassword = string.Empty;
+    private bool _isEmpty;
 
-    public bool HasLanzouLink => !string.IsNullOrEmpty(LanzouUrl);
-    public string LanzouTooltip => $"点击打开链接并自动复制密码: {LanzouPassword}";
+    [ObservableProperty]
+    private string _statusMessage = string.Empty;
 
-    public bool IsDate202311Selected => SelectedDate == DateOptions[0];
-    public bool IsDate202406Selected => SelectedDate == DateOptions[1];
-    public bool IsDate202501Selected => SelectedDate == DateOptions[2];
-    public bool IsDate202508Selected => SelectedDate == DateOptions[3];
-    public bool HasEntries => CurrentEntries.Count > 0;
-    public bool IsEmpty => !HasEntries;
-    public string EmptyMessage => $"{SelectedDate} 的列表内容待填充";
+    public bool IsNotLoading => !IsLoading;
 
-    public Task InitializeAsync(string categoryName)
+    // ── 搜索功能 ────────────────────────────────────────────────────────────
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    partial void OnSearchTextChanged(string value)
+    {
+        CurrentPage = 1;
+        _ = ReloadAsync();
+    }
+
+    // ── 排序 ──────────────────────────────────────────────────────────────────
+    [ObservableProperty]
+    private int _selectedSortIndex = 0;
+
+    public bool IsSortByName => SelectedSortIndex == 0;
+    public bool IsSortByLatest => SelectedSortIndex == 1;
+
+    partial void OnSelectedSortIndexChanged(int value)
+    {
+        OnPropertyChanged(nameof(IsSortByName));
+        OnPropertyChanged(nameof(IsSortByLatest));
+        CurrentPage = 1;
+        _ = ReloadAsync();
+    }
+
+    [ObservableProperty]
+    private bool _isAscending = false;
+
+    [RelayCommand]
+    private void ToggleSortOrder()
+    {
+        IsAscending = !IsAscending;
+        CurrentPage = 1;
+        _ = ReloadAsync();
+    }
+
+    // ── 分页 ──────────────────────────────────────────────────────────────────
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    [NotifyCanExecuteChangedFor(nameof(LoadNextPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadPrevPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadFirstPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadLastPageCommand))]
+    private int _currentPage = 1;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    [NotifyCanExecuteChangedFor(nameof(LoadNextPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadLastPageCommand))]
+    private int _totalPages = 1;
+
+    [ObservableProperty]
+    private string _jumpPageText = string.Empty;
+
+    [ObservableProperty]
+    private bool _isEditingPageNumber;
+
+    public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
+    public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
+
+    // ── 命令转发 ────────────────────────────────────────────────────────────
+    public IAsyncRelayCommand<MdmcChart> TogglePreviewCommand => _chartDownloadViewModel.TogglePreviewCommand;
+    public IAsyncRelayCommand<MdmcChart> DownloadChartCommand => _chartDownloadViewModel.DownloadChartCommand;
+    public bool EnableMarquee => _chartDownloadViewModel.EnableMarquee;
+
+    public CommunityCategoryDetailViewModel(
+        ChartDownloadViewModel chartDownloadViewModel,
+        IConfigService configService,
+        IDownloadManagerService downloadManagerService,
+        INotificationService notificationService)
+    {
+        _chartDownloadViewModel = chartDownloadViewModel;
+        _configService = configService;
+        _downloadManagerService = downloadManagerService;
+        _notificationService = notificationService;
+    }
+
+    public async Task InitializeAsync(string categoryName, string repoUrl = "")
     {
         CategoryName = categoryName;
-        SelectedDate = DateOptions[0];
-        RefreshEntries();
-        return Task.CompletedTask;
-    }
-
-    partial void OnSelectedDateChanged(string value)
-    {
-        RefreshEntries();
-        OnPropertyChanged(nameof(IsDate202311Selected));
-        OnPropertyChanged(nameof(IsDate202406Selected));
-        OnPropertyChanged(nameof(IsDate202501Selected));
-        OnPropertyChanged(nameof(IsDate202508Selected));
-        OnPropertyChanged(nameof(EmptyMessage));
-    }
-
-    private void RefreshEntries()
-    {
-        CurrentEntries.Clear();
-
-        try
-        {
-            var basePath = Path.Combine(AppContext.BaseDirectory, "SongRepository", CategoryName, SelectedDate);
-            var filePath = Path.Combine(basePath, "list.txt");
-
-            // Fallback for development/different environments
-            if (!File.Exists(filePath))
-            {
-                var devPath = Path.Combine(Environment.CurrentDirectory, "SongRepository", CategoryName, SelectedDate, "list.txt");
-                if (File.Exists(devPath))
-                    filePath = devPath;
-            }
-
-            if (File.Exists(filePath))
-            {
-                var lines = File.ReadAllLines(filePath);
-                foreach (var line in lines)
-                {
-                    if (!string.IsNullOrWhiteSpace(line))
-                        CurrentEntries.Add(line.Trim());
-                }
-            }
-        }
-        catch (System.Exception ex)
-        {
-            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to load entries: {ex.Message}. Trying embedded fallback...");
-        }
-
-        if (CurrentEntries.Count == 0)
-        {
-            TryLoadEmbeddedEntries();
-        }
-
-        OnPropertyChanged(nameof(HasEntries));
-        OnPropertyChanged(nameof(IsEmpty));
-        
-        LoadLanzouLink();
-    }
-
-    private void TryLoadEmbeddedEntries()
-    {
-        try
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            // Resource name convention: DefaultNamespace.Folder.Subfolder.Filename
-            // Note: .NET might replace '-' with '_' and prepend '_' if segment starts with digit
-            var datePart = SelectedDate.Replace("-", "_");
-            if (char.IsDigit(datePart[0])) datePart = "_" + datePart;
-            
-            var resourceName = $"MdModManager.SongRepository.{CategoryName}.{datePart}.list.txt";
-            
-            var resStream = assembly.GetManifestResourceStream(resourceName);
-            if (resStream == null)
-            {
-                // Try alternate if naming differs
-                resourceName = $"MdModManager.SongRepository.{CategoryName}.{SelectedDate}.list.txt";
-                resStream = assembly.GetManifestResourceStream(resourceName);
-            }
-
-            if (resStream != null)
-            {
-                using (resStream)
-                using (var reader = new StreamReader(resStream))
-                {
-                    while (reader.ReadLine() is string line)
-                    {
-                        if (!string.IsNullOrWhiteSpace(line))
-                            CurrentEntries.Add(line.Trim());
-                    }
-                }
-                RuntimeLog.Write("CommunityCategoryDetailVM", $"Loaded embedded entries for {CategoryName} {SelectedDate}");
-            }
-        }
-        catch (Exception ex)
-        {
-            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to load embedded entries: {ex.Message}");
-        }
-    }
-
-    private void LoadLanzouLink()
-    {
-        LanzouUrl = string.Empty;
-        LanzouPassword = string.Empty;
-
-        try
-        {
-            var filePath = Path.Combine(AppContext.BaseDirectory, "SongRepository", "community_links.json");
-            if (!File.Exists(filePath))
-            {
-                var devPath = Path.Combine(Environment.CurrentDirectory, "SongRepository", "community_links.json");
-                if (File.Exists(devPath)) filePath = devPath;
-            }
-
-            if (File.Exists(filePath))
-            {
-                var json = File.ReadAllText(filePath);
-                var data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, CommunityLink>>>(json);
-
-                if (data != null && data.TryGetValue(CategoryName, out var categoryData) &&
-                    categoryData.TryGetValue(SelectedDate, out var linkInfo))
-                {
-                    LanzouUrl = linkInfo.Url;
-                    LanzouPassword = linkInfo.Password;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to load link data from local: {ex.Message}. Trying embedded...");
-        }
-
-        if (string.IsNullOrEmpty(LanzouUrl))
-        {
-            TryLoadEmbeddedLanzouLink();
-        }
-
-        OnPropertyChanged(nameof(HasLanzouLink));
-        OnPropertyChanged(nameof(LanzouTooltip));
-    }
-
-    private void TryLoadEmbeddedLanzouLink()
-    {
-        try
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = "MdModManager.SongRepository.community_links.json";
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream != null)
-            {
-                using var reader = new StreamReader(stream);
-                var json = reader.ReadToEnd();
-                var data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, CommunityLink>>>(json);
-
-                if (data != null && data.TryGetValue(CategoryName, out var categoryData) &&
-                    categoryData.TryGetValue(SelectedDate, out var linkInfo))
-                {
-                    LanzouUrl = linkInfo.Url;
-                    LanzouPassword = linkInfo.Password;
-                    RuntimeLog.Write("CommunityCategoryDetailVM", $"Loaded embedded link for {CategoryName} {SelectedDate}");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to load embedded link: {ex.Message}");
-        }
+        // 根据用户设置的下载源，对仓库地址进行镜像加速
+        RepoUrl = GitHubMirrorHelper.ApplyMirror(repoUrl, _configService.Config.DownloadSource);
+        CurrentPage = 1;
+        SearchText = string.Empty;
+        await ReloadAsync();
     }
 
     [RelayCommand]
-    private async Task OpenLanzouAsync()
+    private async Task ReloadAsync()
     {
-        if (string.IsNullOrEmpty(LanzouUrl)) return;
+        IsLoading = true;
+        IsEmpty = false;
+        StatusMessage = "正在加载谱面列表...";
+        Charts.Clear();
+
+        // 模拟加载延迟
+        await Task.Delay(500);
 
         try
         {
-            // Open browser
-            Process.Start(new ProcessStartInfo(LanzouUrl) { UseShellExecute = true });
+            // TODO: 这里将来接入真实的 GitHub Release 获取逻辑
+            // 目前按照用户要求使用占位符
+            var totalCount = 100; // 模拟总数
+            var pageSize = 12; // 每页 12 个 (4x3)
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
-            // Copy password to clipboard
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
-                desktop.MainWindow?.Clipboard != null)
+            for (int i = 0; i < pageSize; i++)
             {
-                await desktop.MainWindow.Clipboard.SetTextAsync(LanzouPassword);
-                
-                // Show notification if service available
-                var notify = Ioc.Default.GetService<MdModManager.Services.INotificationService>();
-                notify?.ShowSuccess("密码已复制到粘贴板");
+                var index = (CurrentPage - 1) * pageSize + i + 1;
+                Charts.Add(new MdmcChart
+                {
+                    Id = $"community_{index}",
+                    Title = $"{CategoryName} 占位谱面 {index}",
+                    Artist = "Placeholder Artist",
+                    Charter = "Community Member",
+                    Bpm = "120.000",
+                    Ranked = true,
+                    LikesCount = new Random().Next(0, 500),
+                    Sheets = new List<MdmcSheet> { new MdmcSheet { Difficulty = "10" } },
+                    SearchText = SearchText
+                });
             }
+
+            IsEmpty = Charts.Count == 0;
+            StatusMessage = $"第 {CurrentPage} / {TotalPages} 页，共 {totalCount} 张谱面";
         }
         catch (Exception ex)
         {
-            RuntimeLog.Write("CommunityCategoryDetailVM", $"Failed to open link or copy password: {ex.Message}");
+            StatusMessage = $"加载失败: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+            _ = LoadCoversAsync();
         }
     }
 
-    public class CommunityLink
+    [RelayCommand(CanExecute = nameof(CanLoadNext))]
+    private async Task LoadNextPage()
     {
-        public string Url { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
+        if (CanLoadNext)
+        {
+            CurrentPage++;
+            await ReloadAsync();
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanLoadPrev))]
+    private async Task LoadPrevPage()
+    {
+        if (CanLoadPrev)
+        {
+            CurrentPage--;
+            await ReloadAsync();
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanLoadPrev))]
+    private async Task LoadFirstPageAsync()
+    {
+        CurrentPage = 1;
+        await ReloadAsync();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanLoadNext))]
+    private async Task LoadLastPageAsync()
+    {
+        CurrentPage = TotalPages;
+        await ReloadAsync();
     }
 
     [RelayCommand]
-    private void SelectDate(string? date)
+    private void StartEditPage()
     {
-        if (string.IsNullOrWhiteSpace(date))
-            return;
+        JumpPageText = CurrentPage.ToString();
+        IsEditingPageNumber = true;
+    }
 
-        if (SelectedDate == date)
+    [RelayCommand]
+    private void CancelEditPage()
+    {
+        JumpPageText = CurrentPage.ToString();
+        IsEditingPageNumber = false;
+    }
+
+    [RelayCommand]
+    private async Task JumpPageAsync()
+    {
+        if (!IsEditingPageNumber) return;
+
+        var text = JumpPageText;
+        IsEditingPageNumber = false;
+
+        if (string.IsNullOrWhiteSpace(text)) return;
+
+        if (int.TryParse(text, out int targetPage))
         {
-            RefreshEntries();
-            return;
+            CurrentPage = Math.Clamp(targetPage, 1, TotalPages);
+            await ReloadAsync();
         }
+    }
 
-        SelectedDate = date;
+    private async Task LoadCoversAsync()
+    {
+        // 占位逻辑：目前没有封面图，之后接入 GitHub 时可以使用占位图或默认图
+        await Task.CompletedTask;
     }
 
     [RelayCommand]
@@ -275,11 +267,15 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject
         if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
             desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
-            Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
+            _chartDownloadViewModel.StopPlayback();
             var vm = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
             mainVm.CurrentPage = vm;
         }
-
         await Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        Charts.Clear();
     }
 }
