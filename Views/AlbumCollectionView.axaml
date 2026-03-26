@@ -68,7 +68,7 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="10,10,10,14">
             <Button Grid.Column="0"
                     Command="{Binding GoBackCommand}"

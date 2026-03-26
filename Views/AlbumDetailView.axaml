@@ -59,7 +59,8 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,*">
+    <!-- 根布局 -->
+    <Grid RowDefinitions="Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
         <!-- 顶部栏：返回按钮 + 标题 -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="10,10,10,14">
             <Button Grid.Column="0" Command="{Binding GoBackCommand}" Theme="{StaticResource SmallRoundBtn}" ToolTip.Tip="返回上方极简菜单">

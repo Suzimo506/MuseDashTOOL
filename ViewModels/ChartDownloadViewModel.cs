@@ -306,7 +306,10 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task JumpPageAsync()
     {
-        var text = JumpPageText; // 先捕获输入，防止 LostFocus 覆盖重置
+        // 增加保护：如果已经退出编辑状态（例如已处理完 KeyBinding），则不再重复执行
+        if (!IsEditingPageNumber) return;
+
+        var text = JumpPageText; 
         IsEditingPageNumber = false;
 
         if (string.IsNullOrWhiteSpace(text)) return;

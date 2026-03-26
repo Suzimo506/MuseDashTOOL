@@ -56,4 +56,10 @@ public partial class AlbumCollectionView : UserControl
         base.OnDetachedFromVisualTree(e);
         _canSave = false;
     }
+
+    private void OnBackgroundPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        topLevel?.FocusManager?.ClearFocus();
+    }
 }

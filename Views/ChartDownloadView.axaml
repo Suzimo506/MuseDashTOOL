@@ -89,7 +89,7 @@
         <Style Selector="Button.SortBtn.Active"><Setter Property="Foreground" Value="{DynamicResource SvgIconBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource SvgIconBrush}"/><Setter Property="FontWeight" Value="Bold"/></Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
 
         <!-- 顶部标题行 (Row 0) -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="0,0,0,14">
@@ -153,7 +153,7 @@
         </Grid>
 
         <!-- 主体区域 (Row 2) -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="2" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
             <!-- 加载中 -->
             <StackPanel IsVisible="{Binding IsLoading}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16"><TextBlock Text="正在加载…" FontSize="18" Foreground="#888888" HorizontalAlignment="Center"/></StackPanel>
 

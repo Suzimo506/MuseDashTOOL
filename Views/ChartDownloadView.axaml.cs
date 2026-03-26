@@ -117,7 +117,8 @@ public partial class ChartDownloadView : UserControl
     {
         if (DataContext is ChartDownloadViewModel vm)
         {
-            vm.CancelEditPageCommand.Execute(null);
+            // 用户要求失去焦点时直接“达到按回车的效果”
+            vm.JumpPageCommand.Execute(null);
         }
     }
 }
