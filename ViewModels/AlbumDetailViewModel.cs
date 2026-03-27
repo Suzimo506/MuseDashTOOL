@@ -233,7 +233,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         return Regex.Replace(bpm.Trim(), @"\d+(\.\d+)?", match =>
         {
             return decimal.TryParse(match.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
-                ? value.ToString("0.000", CultureInfo.InvariantCulture)
+                ? value.ToString("G29", CultureInfo.InvariantCulture)
                 : match.Value;
         });
     }
