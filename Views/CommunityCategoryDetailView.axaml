@@ -127,7 +127,7 @@
 
         <!-- 工具栏：仅顶部分页栏 (Row 1) -->
         <Grid Grid.Row="1" Margin="10,0,10,14">
-            <Border Background="{DynamicResource CardBgBrush}" HorizontalAlignment="Center" Padding="12,6" CornerRadius="10" VerticalAlignment="Center">
+            <Border Background="Transparent" HorizontalAlignment="Center" Padding="12,6" CornerRadius="10" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="第一页">
                         <PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z" Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>

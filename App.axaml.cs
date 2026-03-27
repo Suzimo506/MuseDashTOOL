@@ -50,6 +50,11 @@ public partial class App : Application
             {
                 DataContext = Ioc.Default.GetRequiredService<MainWindowViewModel>(),
             };
+
+            desktop.Exit += (s, e) =>
+            {
+                updateService?.ApplyPendingUpdate();
+            };
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -74,7 +79,7 @@ public partial class App : Application
         services.AddTransient<AlbumDetailViewModel>();
         services.AddTransient<CommunityCategoryDetailViewModel>();
 
-        // Services (will be added here later)
+        // 服务类定义
         services.AddSingleton<MdModManager.Services.IConfigService, MdModManager.Services.ConfigService>();
         services.AddSingleton<MdModManager.Services.IGamePathService, MdModManager.Services.GamePathService>();
         services.AddSingleton<MdModManager.Services.IMelonLoaderService, MdModManager.Services.MelonLoaderService>();

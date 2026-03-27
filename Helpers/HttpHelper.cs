@@ -83,7 +83,7 @@ public static class HttpHelper
 
             _ = Task.Run(async () =>
             {
-                RuntimeLog.Write("HttpHelper", "Background IP racing started.");
+                RuntimeLog.Write("HttpHelper", "后台 IP 竞速已启动。");
                 while (!token.IsCancellationRequested)
                 {
                     try
@@ -101,16 +101,16 @@ public static class HttpHelper
                             {
                                 _fastestIp = newIp;
                             }
-                            RuntimeLog.Write("HttpHelper", $"Background race selected new IP: {newIp}");
+                            RuntimeLog.Write("HttpHelper", $"后台竞速选出了新 IP: {newIp}");
                         }
                     }
                     catch (OperationCanceledException) { break; }
                     catch (Exception ex)
                     {
-                        RuntimeLog.Write("HttpHelper", $"Background race error: {ex.Message}");
+                        RuntimeLog.Write("HttpHelper", $"后台竞速出错: {ex.Message}");
                     }
                 }
-                RuntimeLog.Write("HttpHelper", "Background IP racing stopped.");
+                RuntimeLog.Write("HttpHelper", "后台 IP 竞速已停止。");
             }, token);
         }
     }
@@ -334,7 +334,7 @@ public static class HttpHelper
                 if (!_blacklistedIps.ContainsKey(_fastestIp))
                 {
                     _blacklistedIps[_fastestIp] = DateTime.UtcNow;
-                    RuntimeLog.Write("HttpHelper", $"Blacklisted dead IP: {_fastestIp} (3-min cooldown)");
+                    RuntimeLog.Write("HttpHelper", $"已拉黑失效 IP: {_fastestIp} (3 分钟冷却)");
                 }
                 _fastestIp = null;
             }

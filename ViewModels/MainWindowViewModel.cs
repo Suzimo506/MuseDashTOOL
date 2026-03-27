@@ -99,7 +99,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel()
     {
-        // For designer
+        // 供设计器使用
     }
 
     public MainWindowViewModel(
@@ -200,7 +200,7 @@ public partial class MainWindowViewModel : ObservableObject
             await chvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is TutorialViewModel tvm)
         {
-            // Logic moved to InitializeAsync start
+            // 逻辑已移动至 InitializeAsync 开始处
         }
 
         // 后台预加载谱面列表 (三种分类的第一页)
@@ -253,7 +253,7 @@ public partial class MainWindowViewModel : ObservableObject
         // 读取当前主题偏好
         bool isLightTheme = _configService?.Config?.AppTheme == "Light";
 
-        // Handle custom global text color
+        // 处理自定义全局文本颜色
         var customColorHex = _configService?.Config?.CustomThemeTextColor;
         Avalonia.Media.Color parsedColor = default;
         bool hasCustomColor = !string.IsNullOrEmpty(customColorHex) && Avalonia.Media.Color.TryParse(customColorHex, out parsedColor);
@@ -261,14 +261,14 @@ public partial class MainWindowViewModel : ObservableObject
         Avalonia.Media.Color subColor = hasCustomColor ? Avalonia.Media.Color.FromArgb(190, parsedColor.R, parsedColor.G, parsedColor.B) : default;
         Avalonia.Media.SolidColorBrush? customSubBrush = hasCustomColor ? new Avalonia.Media.SolidColorBrush(subColor) : null;
 
-        // --- Handle ThemeAccentBrush (Fixed to default pink) ---
+        // --- 处理主题强调色 (固定为默认粉色) ---
         // 这是为了让 Slider, CheckBox 等原生控件保持粉色基调，不受主题色改变影响
         var defaultAccentColor = Avalonia.Media.Color.Parse("#d4237a");
         var accentBrush = new Avalonia.Media.SolidColorBrush(defaultAccentColor);
         var accentHoverBrush = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromArgb(230, defaultAccentColor.R, defaultAccentColor.G, defaultAccentColor.B));
         var accentPressedBrush = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromArgb(200, defaultAccentColor.R, defaultAccentColor.G, defaultAccentColor.B));
 
-        // --- Handle SvgIconBrush (Dynamic, controlled by "Theme Color") ---
+        // --- 处理 SVG 图标画刷 (动态，受“主题颜色”控制) ---
         var svgColorHex = _configService?.Config?.CustomThemeColor;
         Avalonia.Media.Color parsedSvgColor;
         if (string.IsNullOrEmpty(svgColorHex) || !Avalonia.Media.Color.TryParse(svgColorHex, out parsedSvgColor))
@@ -279,7 +279,7 @@ public partial class MainWindowViewModel : ObservableObject
         var svgIconHoverBrush = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromArgb(230, parsedSvgColor.R, parsedSvgColor.G, parsedSvgColor.B));
         var svgIconPressedBrush = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromArgb(200, parsedSvgColor.R, parsedSvgColor.G, parsedSvgColor.B));
 
-        // --- Handle right panel text color ---
+        // --- 处理右侧面板文本颜色 ---
         var rightColorHex = _configService?.Config?.RightPanelTextColor;
         Avalonia.Media.Color rightParsedColor = default;
         bool hasRightColor = !string.IsNullOrEmpty(rightColorHex) && Avalonia.Media.Color.TryParse(rightColorHex, out rightParsedColor);
@@ -522,8 +522,8 @@ public partial class MainWindowViewModel : ObservableObject
         {
             try
             {
-                // In Avalonia, setting a custom font family by name can be done by parsing the font name.
-                // If the font is local, we might need a custom font family representation like "resm:x?assembly#Family" or a file path format.
+                // 在 Avalonia 中，可以通过解析名称来设置自定义字体族。
+                // 如果是本地字体，可能需要特定的字体族表示形式，如 "resm:x?assembly#Family" 或文件路径格式。
                 // But if they are just installed or we construct a FontFamily with a fallback, let's see.
                 // For a local font file, we can map to its file path + family if we know it.
                 // Actually Avalonia supports setting via family name if the system knows it.
@@ -538,7 +538,7 @@ public partial class MainWindowViewModel : ObservableObject
             catch (System.Exception ex)
             {
                 System.Console.WriteLine($"无法加载字体: {ex.Message}");
-                CurrentFontFamily = Avalonia.Media.FontFamily.Default; // Fallback to default on error
+                CurrentFontFamily = Avalonia.Media.FontFamily.Default; // 出错时回退到默认
             }
         }
     }
@@ -590,7 +590,7 @@ public partial class MainWindowViewModel : ObservableObject
             }
             catch
             {
-                // Fallback if registry access fails
+                // 如果注册表访问失败，回退到默认
                 _notificationService.ShowInfo("欢迎回来", 1500);
             }
         }
@@ -747,8 +747,6 @@ public partial class MainWindowViewModel : ObservableObject
         
         if (CurrentPage is ChartManagerViewModel chartVm)
             chartVm.Dispose();
-        else if (CurrentPage is ChartDownloadViewModel chartDownloadVm)
-            chartDownloadVm.Dispose(); // 切换时将停止正在播放的试听音频
         else if (CurrentPage is AccountViewModel accountVm)
             accountVm.Cleanup(); // 离开账号页时释放多余记录，节省内存
     }
@@ -779,13 +777,13 @@ public partial class MainWindowViewModel : ObservableObject
     {
         CleanupCurrentPage();
 
-        System.Console.WriteLine("[DEBUG] Navigating to Config Manager...");
+        System.Console.WriteLine("[调试] 正在导航至配置管理器...");
         var vm = Ioc.Default.GetRequiredService<ConfigManagerViewModel>();
-        System.Console.WriteLine("[DEBUG] ConfigManagerViewModel resolved.");
+        System.Console.WriteLine("[调试] ConfigManagerViewModel 已解析。");
         CurrentPage = vm;
-        System.Console.WriteLine("[DEBUG] CurrentPage updated.");
+        System.Console.WriteLine("[调试] CurrentPage 已更新。");
         await vm.InitializeAsync(_currentPageCts.Token);
-        System.Console.WriteLine("[DEBUG] ConfigManagerViewModel InitializeAsync finished.");
+        System.Console.WriteLine("[调试] ConfigManagerViewModel InitializeAsync 已完成。");
     }
 
     [RelayCommand]

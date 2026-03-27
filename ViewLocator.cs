@@ -8,7 +8,7 @@ using MdModManager.ViewModels;
 namespace MdModManager;
 
 /// <summary>
-/// Given a view model, returns the corresponding view if possible.
+/// 给定视图模型，如果可能则返回对应的视图。
 /// </summary>
 [RequiresUnreferencedCode(
     "Default implementation of ViewLocator involves reflection which may be trimmed away.",

@@ -57,7 +57,7 @@ public partial class DownloadTaskItem : ObservableObject
 
     public CancellationTokenSource? Cts { get; set; }
     
-    // For tracking downloaded bytes to support resuming
+    // 用于追踪已下载字节以支持断点续传
     public long DownloadedBytes { get; set; } = 0;
     public long TotalBytes { get; set; } = 0;
 

@@ -62,7 +62,7 @@ public partial class MdmcChart : ObservableObject
     [JsonPropertyName("uploadedAt")]
     public DateTime? UploadedAt { get; set; }
 
-    // Custom URLs for Album Collection support
+    // 整合包自定义 URL 支持
     [property: JsonIgnore]
     public string? CustomCoverUrl { get; set; }
     
@@ -75,7 +75,7 @@ public partial class MdmcChart : ObservableObject
     [property: JsonIgnore]
     public string? CustomDownloadUrl { get; set; }
 
-    // Derived URLs
+    // 派生 URL
     public string CoverUrl => !string.IsNullOrWhiteSpace(CustomCoverUrl) ? CustomCoverUrl : $"https://cdn.mdmc.moe/charts/{Id}/cover.png";
     public string DemoUrl  => !string.IsNullOrWhiteSpace(CustomDemoUrl) ? CustomDemoUrl : $"https://cdn.mdmc.moe/charts/{Id}/demo.ogg";
     public string DemoMp3Url => !string.IsNullOrWhiteSpace(CustomDemoMp3Url) ? CustomDemoMp3Url : $"https://cdn.mdmc.moe/charts/{Id}/demo.mp3";

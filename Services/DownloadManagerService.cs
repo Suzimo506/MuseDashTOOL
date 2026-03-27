@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using MdModManager.Helpers;
 using MdModManager.Models;
-using System.Collections.Generic; // Added for HashSet
+using System.Collections.Generic; // 引入以支持 HashSet
 
 namespace MdModManager.Services;
 
@@ -25,7 +25,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     private readonly SemaphoreSlim _concurrencySemaphore = new(10, 10);
 
     public ObservableCollection<DownloadTaskItem> Tasks { get; } = new();
-    public HashSet<string> SessionDownloadedFiles { get; } = new(StringComparer.OrdinalIgnoreCase); // Added property
+    public HashSet<string> SessionDownloadedFiles { get; } = new(StringComparer.OrdinalIgnoreCase); // 引入属性记录已下载文件
 
     public DownloadManagerService(IConfigService configService, INotificationService notificationService)
     {
@@ -46,7 +46,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             var item = new DownloadTaskItem(chart);
             Tasks.Add(item);
             
-            // If the chart in the list doesn't have a loaded cover (e.g. freshly passed in before list loaded its own), try to load it
+            // 如果列表中的谱面尚未加载封面（例如刚加入下载队列时），尝试加载它
             if (item.Chart.CoverImage == null && !string.IsNullOrEmpty(item.Chart.CoverUrl))
             {
                 _ = LoadCoverAsync(item);
@@ -65,7 +65,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             var bmp = new Avalonia.Media.Imaging.Bitmap(ms);
             Dispatcher.UIThread.Post(() => item.Chart.CoverImage = bmp);
         }
-        catch { /* ignore cover load error */ }
+        catch { /* 忽略封面加载错误 */ }
     }
 
     public void PauseDownload(DownloadTaskItem item)
@@ -98,7 +98,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                 File.Delete(item.DestinationPath);
             }
         }
-        catch { /* ignored */ }
+        catch { /* 已忽略 */ }
 
         Dispatcher.UIThread.Post(() => Tasks.Remove(item));
     }
@@ -164,7 +164,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                     RuntimeLog.Write("DownloadManager", $"Download start/resume: title='{item.Chart.Title}', url='{item.Chart.DownloadUrl}', downloaded={item.DownloadedBytes}, retry={retryCount}");
                     
                     var fileMode = item.DownloadedBytes > 0 ? FileMode.Append : FileMode.Create;
-                    // Use FileShare.Write to allow resuming even if something else has it open for reading (though unlikely here)
+                    // 使用 FileShare.Write 允许在其他读取流存在时进行续传
                     using var dst = new FileStream(item.DestinationPath, fileMode, FileAccess.Write, FileShare.None, 81920, true);
 
                     using var request = new HttpRequestMessage(HttpMethod.Get, item.Chart.DownloadUrl);
@@ -189,7 +189,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                 
                 response.EnsureSuccessStatusCode();
 
-                // Try to get total size from headers
+                // 尝试从响应头获取总大小
                 if (item.TotalBytes == 0)
                 {
                     item.TotalBytes = response.Content.Headers.ContentLength ?? 0;
@@ -234,10 +234,10 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                 item.Progress = 100;
                 _notificationService.ShowSuccess($"《{item.Chart.Title}》下载完成");
                 
-                // Add to session downloaded files list
+                // 添加到当前会话的已下载文件列表
                 SessionDownloadedFiles.Add(Path.GetFullPath(item.DestinationPath));
 
-                // Auto remove after completion
+                // 完成后自动移除任务项
                 Dispatcher.UIThread.Post(() => Tasks.Remove(item));
                 return; // 成功完成
             }

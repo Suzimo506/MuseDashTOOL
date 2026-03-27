@@ -5,7 +5,7 @@ using Avalonia.Media;
 
 namespace MdModManager.Converters;
 
-/// <summary>Converts a font family name string to an Avalonia FontFamily for use in item templates.</summary>
+/// <summary>将字体系列名称字符串转换为 Avalonia FontFamily，用于项目模板。</summary>
 public class StringToFontFamilyConverter : IValueConverter
 {
     public static readonly StringToFontFamilyConverter Instance = new();
@@ -20,7 +20,7 @@ public class StringToFontFamilyConverter : IValueConverter
             }
             catch
             {
-                // fall through
+                // 回退
             }
         }
         return FontFamily.Default;

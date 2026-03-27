@@ -54,7 +54,7 @@
                            TextWrapping="Wrap"
                            Foreground="#E0E0E0"/>
 
-                <TextBlock Text="#高速DNS也许会在流量高峰时期断线，如遇此情况请在设置中切换到别的下载源再切换回高速DNS"
+                <TextBlock Text="#高速DNS也许会在流量高峰时期断线，如遇此情况请在设置中切换到别的下载源再切换回高速DNS。如果你有更好的IP节点，比如通过测速软件得到的最快节点，可以进入设置点击齿轮手动设定节点"
                            FontSize="15"
                            LineHeight="22"
                            TextWrapping="Wrap"

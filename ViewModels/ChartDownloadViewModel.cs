@@ -31,7 +31,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         _coverHttp.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
     }
 
-    // ── Charts list ───────────────────────────────────────────────────────────
+    // ── 谱面列表 ─────────────────────────────────────────────────────────────
     public ObservableCollection<MdmcChart> Charts { get; } = new();
 
     [ObservableProperty] 
@@ -45,7 +45,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _isEmpty = true;
     [ObservableProperty] private int _todayUpdatesCount = 0;
 
-    // ── Search ────────────────────────────────────────────────────────────────
+    // ── 搜索 ──────────────────────────────────────────────────────────────────
     private string _searchText = string.Empty;
     public string SearchText
     {
@@ -86,10 +86,10 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                 await ReloadAsync(ct);
             }
         }
-        catch (TaskCanceledException) { /* ignored */ }
+        catch (TaskCanceledException) { /* 已忽略 */ }
     }
 
-    // ── Sort ──────────────────────────────────────────────────────────────────
+    // ── 排序 ──────────────────────────────────────────────────────────────────
     /// <summary>排序方式列表，显示中文，Value 是 API 参数</summary>
     public (string Label, string Value)[] SortOptions { get; } = new[]
     {
@@ -111,7 +111,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                 OnPropertyChanged(nameof(IsSortByDifficulty));
                 IsAscending = false; // 切换分类时强制重置为“从高到低”
                 CurrentPage = 1;
-                _ = RefreshCommand.ExecuteAsync(null);
+                _ = ReloadAsync();
             }
         }
     }
@@ -123,7 +123,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _isAscending = false;   // 默认从高到低 (desc)
     [ObservableProperty] private bool _showUnranked = true;   // 显示未评级
 
-    // ── Pagination ────────────────────────────────────────────────────────────
+    // ── 分页 ──────────────────────────────────────────────────────────────────
     [ObservableProperty] 
     [NotifyPropertyChangedFor(nameof(CanLoadNext))]
     [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
@@ -154,7 +154,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
     public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
 
-    // ── Audio playback ────────────────────────────────────────────────────────
+    // ── 音频播放 ──────────────────────────────────────────────────────────────
     private WaveOutEvent? _waveOut;
     private MdmcChart? _playingChart;
     private CancellationTokenSource? _stopCts;
@@ -176,11 +176,13 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
     // 页面缓存: Key 为 "sort|order|query|page"
     // 存储超过 5 页就释放最旧的一页
+    private string _lastLoadedKey = string.Empty;
     private readonly System.Collections.Generic.Dictionary<string, (IList<MdmcChart> charts, int totalPages)> _pageCache = new();
     private readonly System.Collections.Generic.List<string> _cacheKeys = new();
+    private const string ProtectedCacheKey = "likes|desc||1|True";
 
-    private string GetCacheKey(int page, string sort, string order, string query) 
-        => $"{sort}|{order}|{query.Trim()}|{page}";
+    private string GetCacheKey(int page, string sort, string order, string query, bool showUnranked) 
+        => $"{sort}|{order}|{query.Trim()}|{page}|{showUnranked}";
 
     private void AddToCache(string key, (IList<MdmcChart> charts, int totalPages) result)
     {
@@ -190,17 +192,34 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         }
         else if (_cacheKeys.Count >= 5)
         {
-            var oldKey = _cacheKeys[0];
-            _cacheKeys.RemoveAt(0);
-            if (_pageCache.TryGetValue(oldKey, out var oldResult))
+            // 找到第一个不是受保护 Key 的最旧索引
+            string? keyToEvict = null;
+            for (int i = 0; i < _cacheKeys.Count; i++)
             {
-                foreach (var c in oldResult.charts)
+                if (_cacheKeys[i] != ProtectedCacheKey)
                 {
-                    c.CoverImage = null; // 释放大内存位图引用
+                    keyToEvict = _cacheKeys[i];
+                    _cacheKeys.RemoveAt(i);
+                    break;
                 }
             }
-            _pageCache.Remove(oldKey);
-            RuntimeLog.Write("ChartDownloadVM", $"Cache full, evicted: {oldKey}");
+
+            if (keyToEvict != null)
+            {
+                if (_pageCache.TryGetValue(keyToEvict, out var oldResult))
+                {
+                    foreach (var c in oldResult.charts)
+                    {
+                        // 额外检查：如果要删除的谱面也在受保护的首页中，则不要清除它的图片
+                        if (_pageCache.TryGetValue(ProtectedCacheKey, out var protectedPage) && protectedPage.charts.Contains(c))
+                            continue;
+                            
+                        c.CoverImage = null; // 释放大内存位图引用
+                    }
+                }
+                _pageCache.Remove(keyToEvict);
+                RuntimeLog.Write("ChartDownloadVM", $"Cache full, evicted: {keyToEvict}");
+            }
         }
         
         _pageCache[key] = result;
@@ -211,7 +230,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     {
         foreach (var opt in SortOptions)
         {
-            var key = GetCacheKey(1, opt.Value, "desc", "");
+            var key = GetCacheKey(1, opt.Value, "desc", "", !ShowUnranked);
             if (_pageCache.ContainsKey(key)) continue;
 
             try 
@@ -220,13 +239,19 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                 if (result.charts.Count > 0)
                 {
                     AddToCache(key, result);
-                    // 预加载前几个封面
-                    var preloadCount = Math.Min(result.charts.Count, 3);
+                    
+                    // 预加载封面
+                    // 如果是点赞数排序（首页），则加载全页封面，否则只加载前 3 个
+                    int preloadCount = (opt.Value == "likes") ? result.charts.Count : Math.Min(result.charts.Count, 3);
+                    
                     for (int i = 0; i < preloadCount; i++)
                     {
                         var chart = result.charts[i];
                         _ = LoadSingleCoverAsync(chart);
                     }
+                    
+                    if (opt.Value == "likes")
+                        RuntimeLog.Write("ChartDownloadVM", $"Preloaded all covers for Likes page 1.");
                 }
             }
             catch (Exception ex)
@@ -248,12 +273,20 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             var bmp = new Bitmap(ms);
             Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.CoverImage = bmp);
         }
-        catch { /* ignore */ }
+        catch { /* 已忽略 */ }
         finally { _coverSemaphore.Release(); }
     }
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
+        // 优化：如果已经在点赞榜首页且已经有数据，不再触发重载
+        if (Charts.Count > 0 && CurrentPage == 1 && SelectedSortIndex == 0 && string.IsNullOrWhiteSpace(SearchText) && !IsAscending)
+        {
+            _ = UpdateTodayUpdatesCountAsync();
+            UpdateStatusMessage();
+            return;
+        }
+
         CurrentPage = 1;
         _currentScrollY = 0;
         _ = UpdateTodayUpdatesCountAsync(); // 异步更新今日数量
@@ -281,28 +314,54 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         catch { /* ignore */ }
     }
 
-    // ── Commands ──────────────────────────────────────────────────────────────
+    // ── 命令 ──────────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private async Task Refresh() 
     {
-        // 手动刷新时清除缓存，确保获取最新数据
-        ClearPageCache();
+        // 手动刷新时执行完全清理，获取最新数据
+        ClearPageCache(false);
         CurrentPage = 1;
         _currentScrollY = 0;
         _ = UpdateTodayUpdatesCountAsync();
-        await ReloadAsync();
+        await ReloadAsync(default, true);
     }
 
-    private void ClearPageCache()
+    private void ClearPageCache(bool keepProtected = true)
     {
+        // 提取受保护的页面数据以便后续保留
+        (IList<MdmcChart> charts, int totalPages) protectedData = default;
+        bool hasProtected = _pageCache.TryGetValue(ProtectedCacheKey, out protectedData);
+
         foreach (var kvp in _pageCache)
         {
+            // 如果是常规清理（保留受保护页），且当前就是受保护页，则跳过位图清理
+            if (keepProtected && kvp.Key == ProtectedCacheKey)
+                continue;
+
             foreach (var c in kvp.Value.charts)
+            {
+                // 如果这个谱面也在受保护的页面中，则绝对不能清除它的位图
+                if (hasProtected && protectedData.charts.Contains(c))
+                    continue;
+
                 c.CoverImage = null;
+            }
         }
+
         _pageCache.Clear();
         _cacheKeys.Clear();
+
+        // 如果需要保留，则重新塞回字典和索引列表
+        if (keepProtected && hasProtected)
+        {
+            _pageCache[ProtectedCacheKey] = protectedData;
+            _cacheKeys.Add(ProtectedCacheKey);
+        }
+        else
+        {
+            _lastLoadedKey = string.Empty; // 缓存若被完全清空，重置上次加载的 Key
+        }
     }
 
     [RelayCommand]
@@ -451,10 +510,26 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         _notificationService.ShowSuccess($"已添加到下载列表: 《{chart.Title}》");
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // ── 私有辅助方法 ──────────────────────────────────────────────────────────
 
-    private async Task ReloadAsync(CancellationToken externalCt = default)
+    private async Task ReloadAsync(CancellationToken externalCt = default, bool force = false)
     {
+        int myId = Interlocked.Increment(ref _currentLoadId);
+        
+        // 1. 获取请求参数并计算 Key
+        var sort  = SortOptions[SelectedSortIndex].Value;
+        var order = IsAscending ? "asc" : "desc";
+        var query = SearchText.Trim();
+        var cacheKey = GetCacheKey(CurrentPage, sort, order, query, !ShowUnranked);
+
+        // 2. 检查是否已经在显示该页面
+        if (!force && cacheKey == _lastLoadedKey && Charts.Count > 0)
+        {
+            IsLoading = false;
+            UpdateStatusMessage();
+            return;
+        }
+
         _listCts?.Cancel();
         _listCts = new CancellationTokenSource();
         StopPlayback();
@@ -463,23 +538,12 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             _listCts.Token, externalCt);
         var ct = linkedCts.Token;
 
-        IsLoading = true;
-        StatusMessage = "正在加载谱面列表…";
-        
-        int myId = Interlocked.Increment(ref _currentLoadId);
-
         try
         {
-            var sort  = SortOptions[SelectedSortIndex].Value;
-            var order = IsAscending ? "asc" : "desc";
-            var query = SearchText.Trim();
-
             IList<MdmcChart> charts;
             int totalPages;
 
-            var cacheKey = GetCacheKey(CurrentPage, sort, order, query);
-
-            // 尝试在 5 页缓存中查找
+            // 3. 尝试在缓存中查找
             if (_pageCache.TryGetValue(cacheKey, out var cached))
             {
                 charts = cached.charts;
@@ -487,10 +551,14 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                 // 更新 LRU 顺序
                 _cacheKeys.Remove(cacheKey);
                 _cacheKeys.Add(cacheKey);
-                RuntimeLog.Write("ChartDownloadVM", $"Page {CurrentPage} loaded from cache.");
+                RuntimeLog.Write("ChartDownloadVM", $"Page {CurrentPage} hit cache: {cacheKey}");
             }
             else
             {
+                // 仅在需要从网络获取时才显示“正在加载”
+                IsLoading = true;
+                StatusMessage = "正在加载谱面列表…";
+
                 var result = await _downloadService.FetchChartsAsync(
                     CurrentPage, sort, order, query, !ShowUnranked, ct);
                 charts = result.charts;
@@ -502,7 +570,6 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                     {
                         charts = recovered.Value.charts;
                         totalPages = recovered.Value.totalPages;
-                        result = recovered.Value;
                     }
                 }
                 
@@ -512,19 +579,16 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
             if (myId != _currentLoadId) return;
 
+            // 4. 更新 UI 数据
             TotalPages = Math.Max(1, totalPages);
-            Charts.Clear(); // 翻页模式下，每次加载前都清空列表
-
-            foreach (var c in charts)
-            {
-                Charts.Add(c);
-            }
+            Charts.Clear(); 
+            foreach (var c in charts) Charts.Add(c);
 
             IsEmpty = Charts.Count == 0;
-            RuntimeLog.Write("ChartDownloadVM", $"Page loaded: {Charts.Count} items on page {CurrentPage}/{TotalPages}");
-            UpdateStatusMessage();
-
-            // 翻页或加载后，通知 View 回到顶部
+            _lastLoadedKey = cacheKey; // 标记当前页面已就绪
+            
+            // 记录日志并重置滚动位置
+            RuntimeLog.Write("ChartDownloadVM", $"Page updated: {Charts.Count} items on page {CurrentPage}/{TotalPages} (Key={cacheKey})");
             RequestedScrollY = 0;
         }
         catch (OperationCanceledException) { }
@@ -534,7 +598,11 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            if (myId == _currentLoadId) IsLoading = false;
+            if (myId == _currentLoadId)
+            {
+                IsLoading = false;
+                UpdateStatusMessage();
+            }
             _ = LoadCoversAsync();
         }
     }
@@ -550,7 +618,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
         if (CurrentPage == 1 && !IsAscending)
         {
-            var key = GetCacheKey(1, sort, order, "");
+            var key = GetCacheKey(1, sort, order, "", !ShowUnranked);
             if (_pageCache.TryGetValue(key, out var cached) && cached.charts.Count > 0)
             {
                 RuntimeLog.Write("ChartDownloadVM", $"Recovered empty result from cache for sort={sort}, count={cached.charts.Count}.");
@@ -564,7 +632,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             RuntimeLog.Write("ChartDownloadVM", $"Recovered empty result by retry for sort={sort}, count={retry.charts.Count}.");
             if (!IsAscending)
             {
-                var key = GetCacheKey(1, sort, order, "");
+                var key = GetCacheKey(1, sort, order, "", !ShowUnranked);
                 AddToCache(key, retry);
             }
             return retry;
@@ -633,7 +701,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                         chart.CoverImage = bmp;
                     });
                 }
-                catch { /* cover unavailable */ }
+                catch { /* 封面不可用 */ }
                 finally
                 {
                     _coverSemaphore.Release();
@@ -827,7 +895,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
         StopPlayback();
         _currentScrollY = 0;
-        ClearPageCache(); // 释放缓存中所有页面的封面图内存
-        Charts.Clear(); // 释放内存：移除对所有谱面对象及其封面图片的引用
+        ClearPageCache(false); // 彻底释放所有缓存，包括受保护的首页
+        Charts.Clear(); 
     }
 }

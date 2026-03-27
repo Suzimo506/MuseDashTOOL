@@ -7,24 +7,29 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using MdModManager.Helpers;
 using MdModManager.Services;
+using MdModManager.Views;
 
 namespace MdModManager.Services;
 
 public interface IUpdateService
 {
     Task CheckAndApplyUpdateAsync();
+    void ApplyPendingUpdate();
 }
 
 public class UpdateService : IUpdateService
 {
-    private const string CurrentVersion = "v1.1.1"; // 同时也顺手更新一下版本号常量
+    private const string CurrentVersion = "v1.1.1"; // 版本号常量
     private const string GitHubApiUrl = "https://api.github.com/repos/KuoKing506/-MuseDashTOOL/releases/latest";
     private readonly HttpClient _httpClient;
     private readonly IConfigService _configService;
+    private readonly INotificationService _notificationService;
+    private string? _pendingUpdateFile;
 
-    public UpdateService(IConfigService configService)
+    public UpdateService(IConfigService configService, INotificationService notificationService)
     {
         _configService = configService;
+        _notificationService = notificationService;
         _httpClient = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(30));
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "MuseDashModTool-Updater");
     }
@@ -61,7 +66,7 @@ public class UpdateService : IUpdateService
                     Debug.WriteLine($"Background update check failed: {ex.Message}");
                 }
 
-                // 没发现更新或检测失败，每 30 分钟轮询一次
+                // 没发现更新或检测失败，每 5 分钟轮询一次
                 await Task.Delay(TimeSpan.FromMinutes(5));
             }
         });
@@ -109,10 +114,10 @@ public class UpdateService : IUpdateService
         string? downloadUrl = null;
         string? fileName = null;
 
+        // 优先寻找 exe，用户承诺只发布 exe，但逻辑上保持兼容
         foreach (var asset in release.Assets)
         {
-            if (asset.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || 
-                asset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            if (asset.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
             {
                 downloadUrl = asset.BrowserDownloadUrl;
                 fileName = asset.Name;
@@ -120,14 +125,29 @@ public class UpdateService : IUpdateService
             }
         }
 
+        // 如果没找到 exe 再找 zip
+        if (string.IsNullOrEmpty(downloadUrl))
+        {
+            foreach (var asset in release.Assets)
+            {
+                if (asset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    downloadUrl = asset.BrowserDownloadUrl;
+                    fileName = asset.Name;
+                    break;
+                }
+            }
+        }
+
         if (string.IsNullOrEmpty(downloadUrl)) return;
+
+        // 弹出气泡提示用户正在更新
+        _notificationService.ShowInfo("发现新版本，正在后台下载更新...");
 
         // 使用用户选定的下载源进行镜像加速
         string proxiedUrl = GitHubMirrorHelper.ApplyMirror(downloadUrl, _configService.Config.DownloadSource);
         var response = await _httpClient.GetAsync(proxiedUrl);
         
-        if (!response.IsSuccessStatusCode) return;
-
         if (!response.IsSuccessStatusCode) return;
 
         var tempFile = Path.Combine(Path.GetTempPath(), "MuseDashTOOL_New" + Path.GetExtension(fileName));
@@ -136,9 +156,43 @@ public class UpdateService : IUpdateService
             await response.Content.CopyToAsync(fs);
         }
 
-        CreateUpdaterScript(tempFile);
+        // 下载完成，准备更新流程
+        _pendingUpdateFile = tempFile;
+
+        // 在 UI 线程弹出确认对话框
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            var mainWindow = (Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (mainWindow != null)
+            {
+                bool shouldRestart = await MessageBox.ShowDialogAsync(mainWindow, "新版本下载完成，是否立即重启以应用更新？", showCancel: true);
+                if (shouldRestart)
+                {
+                    ApplyUpdateInternal();
+                }
+                else
+                {
+                    _notificationService.ShowInfo("更新已就绪，将在软件关闭后自动安装", 3000);
+                }
+            }
+        });
+    }
+
+    public void ApplyPendingUpdate()
+    {
+        if (!string.IsNullOrEmpty(_pendingUpdateFile) && File.Exists(_pendingUpdateFile))
+        {
+            ApplyUpdateInternal();
+        }
+    }
+
+    private void ApplyUpdateInternal()
+    {
+        if (string.IsNullOrEmpty(_pendingUpdateFile)) return;
+
+        CreateUpdaterScript(_pendingUpdateFile);
         
-        // 启动更新脚本并强制退出主程序，实现一键重启
+        // 启动更新脚本并退出
         Process.Start(new ProcessStartInfo
         {
             FileName = "updater.bat",
@@ -153,16 +207,30 @@ public class UpdateService : IUpdateService
     {
         var currentExe = Process.GetCurrentProcess().MainModule?.FileName;
         if (currentExe == null) return;
+        
+        var processName = Process.GetCurrentProcess().ProcessName;
 
+        // 更加健壮的脚本：不断尝试直到进程彻底关闭、文件被释放并移动成功
         var script = $@"
 @echo off
-timeout /t 2 /nobreak > nul
-taskkill /f /im MuseDashTOOL.exe > nul 2>&1
+setlocal enabledelayedexpansion
+set ""retryCount=0""
+:loop
+taskkill /f /im {processName}.exe > nul 2>&1
+timeout /t 1 /nobreak > nul
 move /y ""{newFile}"" ""{currentExe}""
+if errorlevel 1 (
+    set /a ""retryCount+=1""
+    if !retryCount! lss 10 (
+        goto loop
+    )
+)
 start """" ""{currentExe}""
 del ""%~f0""
 ";
-        File.WriteAllText("updater.bat", script);
+        // 使用 GBK 编码 (936) 来确保中文路径在 cmd.exe 中不乱码
+        var encoding = System.Text.Encoding.GetEncoding(936);
+        File.WriteAllText("updater.bat", script, encoding);
     }
 
     private class GitHubRelease

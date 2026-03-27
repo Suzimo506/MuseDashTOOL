@@ -197,7 +197,7 @@
                     </ItemsControl>
 
                     <!-- 底部分页控制栏 -->
-                    <Border Grid.Row="1" Background="{DynamicResource CardBgBrush}" Margin="10,20,10,30" Padding="15,8" CornerRadius="10">
+                    <Border Grid.Row="1" Background="Transparent" Margin="10,20,10,30" Padding="15,8" CornerRadius="10">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
                             <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="第一页"><PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/></Button>
                             <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="上一页"><PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="18" Height="18"/></Button>

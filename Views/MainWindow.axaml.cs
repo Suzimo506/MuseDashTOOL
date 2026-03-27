@@ -92,6 +92,6 @@ public partial class MainWindow : Window
 
     public async Task ShowMessageBoxAsync(string message)
     {
-        await MessageBox.ShowAsDialogAsync(this, message);
+        await MessageBox.ShowDialogAsync(this, message);
     }
 }

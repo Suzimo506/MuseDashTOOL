@@ -60,7 +60,7 @@ public class ChartDownloadService : IChartDownloadService
         IProgress<double>? progress = null,
         CancellationToken ct = default)
     {
-        // Clean filename
+        // 清理文件名
         static string Safe(string s) => string.Join("_", s.Split(Path.GetInvalidFileNameChars()));
         var fileName = $"{Safe(chart.Title)} - {Safe(chart.Artist)}.mdm";
         var destPath = Path.Combine(destinationFolder, fileName);
