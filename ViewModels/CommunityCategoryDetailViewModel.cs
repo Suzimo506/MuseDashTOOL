@@ -13,6 +13,9 @@ using CommunityToolkit.Mvvm.Input;
 using MdModManager.Models;
 using MdModManager.Services;
 using MdModManager.Helpers;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Net.Http;
 
 namespace MdModManager.ViewModels;
 
@@ -118,6 +121,78 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
     public IAsyncRelayCommand<MdmcChart> DownloadChartCommand => _chartDownloadViewModel.DownloadChartCommand;
     public bool EnableMarquee => _chartDownloadViewModel.EnableMarquee;
 
+    // ── 5 页 LRU 缓存 ────────────────────────────────────────────────────────
+    private readonly Dictionary<string, (IList<MdmcChart> charts, int totalPages)> _pageCache = new();
+    private readonly List<string> _cacheKeys = new();
+    private const int MaxCachedPages = 5;
+
+    // ── 全量索引数据 ──────────────────────────────────────────────────────────
+    private List<MdmcChart> _allFullIndex = new();
+    private List<MdmcChart> _filteredIndex = new();
+    private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(15) };
+    private string _rawBaseUrl = ""; // e.g. https://raw.githubusercontent.com/user/repo/main
+    private string _githubRepoUrl = ""; // e.g. https://github.com/user/repo
+    private string _releaseTag = ""; // e.g. NO.1, read from index.json
+
+    private class CommunityIndexWrapper
+    {
+        [JsonPropertyName("release_tag")] public string ReleaseTag { get; set; } = "";
+        [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new();
+    }
+
+    private class CommunityIndexItem
+    {
+        [JsonPropertyName("id")] public string Id { get; set; } = "";
+        [JsonPropertyName("original_id")] public string OriginalId { get; set; } = "";
+        [JsonPropertyName("title")] public string Title { get; set; } = "";
+        [JsonPropertyName("artist")] public string Artist { get; set; } = "";
+        [JsonPropertyName("charter")] public string Charter { get; set; } = "";
+        [JsonPropertyName("bpm")] public string Bpm { get; set; } = "";
+        [JsonPropertyName("scene")] public string Scene { get; set; } = "";
+        [JsonPropertyName("difficulty")] public string Difficulty { get; set; } = "";
+        [JsonPropertyName("difficulties")] public List<string>? Difficulties { get; set; }
+        [JsonPropertyName("cover_url")] public string CoverUrl { get; set; } = "";
+        [JsonPropertyName("demo_url")] public string DemoUrl { get; set; } = "";
+        [JsonPropertyName("download_url")] public string DownloadUrl { get; set; } = "";
+    }
+
+    private string GetCacheKey(int page, int sortIndex, bool ascending, string query)
+        => $"{CategoryName}|{sortIndex}|{ascending}|{query.Trim()}|{page}";
+
+    private void AddToCache(string key, (IList<MdmcChart> charts, int totalPages) result)
+    {
+        if (_pageCache.ContainsKey(key))
+        {
+            _cacheKeys.Remove(key);
+        }
+        else if (_cacheKeys.Count >= MaxCachedPages)
+        {
+            var oldKey = _cacheKeys[0];
+            _cacheKeys.RemoveAt(0);
+            if (_pageCache.TryGetValue(oldKey, out var oldResult))
+            {
+                foreach (var c in oldResult.charts)
+                    c.CoverImage = null; // 释放位图内存
+            }
+            _pageCache.Remove(oldKey);
+            RuntimeLog.Write("CommunityDetailVM", $"Cache full, evicted: {oldKey}");
+        }
+
+        _pageCache[key] = result;
+        _cacheKeys.Add(key);
+    }
+
+    private void ClearPageCache()
+    {
+        foreach (var kvp in _pageCache)
+        {
+            foreach (var c in kvp.Value.charts)
+                c.CoverImage = null;
+        }
+        _pageCache.Clear();
+        _cacheKeys.Clear();
+    }
+
     public CommunityCategoryDetailViewModel(
         ChartDownloadViewModel chartDownloadViewModel,
         IConfigService configService,
@@ -133,11 +208,162 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
     public async Task InitializeAsync(string categoryName, string repoUrl = "")
     {
         CategoryName = categoryName;
-        // 根据用户设置的下载源，对仓库地址进行镜像加速
-        RepoUrl = GitHubMirrorHelper.ApplyMirror(repoUrl, _configService.Config.DownloadSource);
+        _githubRepoUrl = repoUrl; // 保存原始 GitHub 仓库地址，用于构建 Release 下载链接
+        
+        // 构建 Raw 基础地址：https://github.com/user/repo -> https://raw.githubusercontent.com/user/repo/main
+        _rawBaseUrl = repoUrl.Replace("github.com", "raw.githubusercontent.com") + "/main";
+        var rawIndexUrl = _rawBaseUrl + "/index.json";
+        RepoUrl = GitHubMirrorHelper.ApplyMirror(rawIndexUrl, _configService.Config.DownloadSource);
+        
+        ClearPageCache();
+        _allFullIndex.Clear();
+        _filteredIndex.Clear();
         CurrentPage = 1;
         SearchText = string.Empty;
+        
+        await FetchIndexAsync();
         await ReloadAsync();
+    }
+
+    private async Task FetchIndexAsync()
+    {
+        IsLoading = true;
+        StatusMessage = "正在获取远程索引...";
+        try
+        {
+            string json;
+            var localPath = FindLocalIndexPath();
+            
+            if (!string.IsNullOrEmpty(localPath) && File.Exists(localPath))
+            {
+                json = await File.ReadAllTextAsync(localPath);
+                RuntimeLog.Write("CommunityDetailVM", $"Using local override index: {localPath}");
+            }
+            else
+            {
+                json = await _httpClient.GetStringAsync(RepoUrl);
+                RuntimeLog.Write("CommunityDetailVM", $"Fetched remote index from {RepoUrl}");
+            }
+
+            List<CommunityIndexItem>? items = null;
+
+            // 尝试解析新格式 { "release_tag": "...", "charts": [...] }
+            try
+            {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var wrapper = JsonSerializer.Deserialize<CommunityIndexWrapper>(json, options);
+                if (wrapper != null && wrapper.Charts != null && wrapper.Charts.Count > 0)
+                {
+                    _releaseTag = wrapper.ReleaseTag ?? "";
+                    items = wrapper.Charts;
+                }
+            }
+            catch
+            {
+                // 尝试解析旧格式：纯数组 [...]
+                try 
+                {
+                    items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json);
+                    _releaseTag = "";
+                }
+                catch { /* parse failed */ }
+            }
+
+            if (items != null)
+            {
+                _allFullIndex = items.Select(MapToIndexChart).ToList();
+                RuntimeLog.Write("CommunityDetailVM", $"Loaded {_allFullIndex.Count} charts (tag='{_releaseTag}')");
+            }
+            else
+            {
+                throw new Exception("索引文件格式错误或为空");
+            }
+        }
+        catch (Exception ex)
+        {
+            RuntimeLog.Write("CommunityDetailVM", $"Failed to fetch index: {ex.Message}");
+            StatusMessage = $"索引获取失败: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private string? FindLocalIndexPath()
+    {
+        var candidates = new List<string>();
+        
+        // 尝试的环境变量和基础路径
+        var basePaths = new[] { Environment.CurrentDirectory, AppContext.BaseDirectory };
+        
+        foreach (var bp in basePaths)
+        {
+            candidates.Add(Path.Combine(bp, "SongRepository", CategoryName, "repo", "index.json"));
+            candidates.Add(Path.Combine(bp, "SongRepository", CategoryName, "index.json"));
+            
+            // 向上查找 5 层父目录 (开发环境下 bin/Debug/... 结构)
+            var current = new DirectoryInfo(bp);
+            for (var depth = 0; depth < 5 && current != null; depth++, current = current.Parent)
+            {
+                candidates.Add(Path.Combine(current.FullName, "SongRepository", CategoryName, "repo", "index.json"));
+                candidates.Add(Path.Combine(current.FullName, "SongRepository", CategoryName, "index.json"));
+            }
+        }
+
+        return candidates.FirstOrDefault(File.Exists);
+    }
+
+    private MdmcChart MapToIndexChart(CommunityIndexItem item)
+    {
+        // 如果 cover_url/demo_url/download_url 是相对文件名，补全为完整 raw URL
+        var coverUrl = item.CoverUrl;
+        if (!string.IsNullOrEmpty(coverUrl) && !coverUrl.StartsWith("http"))
+            coverUrl = _rawBaseUrl + "/covers/" + coverUrl;
+
+        var demoUrl = item.DemoUrl;
+        if (!string.IsNullOrEmpty(demoUrl) && !demoUrl.StartsWith("http"))
+            demoUrl = _rawBaseUrl + "/demos/" + demoUrl;
+
+        var downloadUrl = item.DownloadUrl;
+        // 如果 download_url 是相对文件名且有 release_tag，构建完整的 GitHub Release 下载链接
+        if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http") && !string.IsNullOrEmpty(_releaseTag))
+        {
+            // _githubRepoUrl: https://github.com/user/repo
+            // 完整链接: https://github.com/user/repo/releases/download/{tag}/{filename}
+            downloadUrl = _githubRepoUrl + "/releases/download/" + _releaseTag + "/" + downloadUrl;
+        }
+
+        // 应用镜像/加速逻辑
+        var source = _configService.Config.DownloadSource;
+        coverUrl = GitHubMirrorHelper.ApplyMirror(coverUrl, source);
+        demoUrl = GitHubMirrorHelper.ApplyMirror(demoUrl, source);
+        downloadUrl = GitHubMirrorHelper.ApplyMirror(downloadUrl, source);
+
+        // 兼容 difficulty (单值) 和 difficulties (列表) 两种格式
+        var sheets = new List<MdmcSheet>();
+        if (item.Difficulties != null && item.Difficulties.Count > 0)
+        {
+            sheets = item.Difficulties.Select(d => new MdmcSheet { Difficulty = d }).ToList();
+        }
+        else if (!string.IsNullOrEmpty(item.Difficulty) && item.Difficulty != "0" && item.Difficulty != "?")
+        {
+            sheets.Add(new MdmcSheet { Difficulty = item.Difficulty });
+        }
+
+        var chart = new MdmcChart
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Artist = item.Artist,
+            Charter = item.Charter,
+            Bpm = item.Bpm,
+            CustomCoverUrl = coverUrl,
+            CustomDemoUrl = demoUrl,
+            CustomDownloadUrl = downloadUrl,
+            Sheets = sheets
+        };
+        return chart;
     }
 
     [RelayCommand]
@@ -145,49 +371,71 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
     {
         IsLoading = true;
         IsEmpty = false;
-        StatusMessage = "正在加载谱面列表...";
+        StatusMessage = "正在载入...";
         Charts.Clear();
 
-        // 模拟加载延迟
-        await Task.Delay(500);
+        var query = SearchText.Trim().ToLowerInvariant();
+        var cacheKey = GetCacheKey(CurrentPage, SelectedSortIndex, IsAscending, query);
 
-        try
+        if (_pageCache.TryGetValue(cacheKey, out var cached))
         {
-            // TODO: 这里将来接入真实的 GitHub Release 获取逻辑
-            // 目前按照用户要求使用占位符
-            var totalCount = 100; // 模拟总数
-            var pageSize = 12; // 每页 12 个 (4x3)
-            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize);
-
-            for (int i = 0; i < pageSize; i++)
-            {
-                var index = (CurrentPage - 1) * pageSize + i + 1;
-                Charts.Add(new MdmcChart
-                {
-                    Id = $"community_{index}",
-                    Title = $"{CategoryName} 占位谱面 {index}",
-                    Artist = "Placeholder Artist",
-                    Charter = "Community Member",
-                    Bpm = "120.000",
-                    Ranked = true,
-                    LikesCount = new Random().Next(0, 500),
-                    Sheets = new List<MdmcSheet> { new MdmcSheet { Difficulty = "10" } },
-                    SearchText = SearchText
-                });
-            }
-
+            TotalPages = Math.Max(1, cached.totalPages);
+            foreach (var c in cached.charts) Charts.Add(c);
+            _cacheKeys.Remove(cacheKey);
+            _cacheKeys.Add(cacheKey);
             IsEmpty = Charts.Count == 0;
-            StatusMessage = $"第 {CurrentPage} / {TotalPages} 页，共 {totalCount} 张谱面";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"加载失败: {ex.Message}";
-        }
-        finally
-        {
+            StatusMessage = $"第 {CurrentPage} / {TotalPages} 页";
             IsLoading = false;
-            _ = LoadCoversAsync();
+            return;
         }
+
+        // 1. 过滤与排序
+        _filteredIndex = _allFullIndex;
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            _filteredIndex = _allFullIndex.Where(c => 
+                c.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                c.Artist.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                c.Charter.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                c.Id.Contains(query, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+
+        // 目前 index.json 里没有上传时间，默认按标题排序
+        if (IsSortByName)
+        {
+            _filteredIndex = IsAscending 
+                ? _filteredIndex.OrderBy(c => c.Title).ToList() 
+                : _filteredIndex.OrderByDescending(c => c.Title).ToList();
+        }
+
+        // 2. 分页处理
+        var pageSize = 12;
+        var totalCount = _filteredIndex.Count;
+        TotalPages = Math.Max(1, (int)Math.Ceiling((double)totalCount / pageSize));
+        
+        if (CurrentPage > TotalPages) CurrentPage = TotalPages;
+        if (CurrentPage < 1) CurrentPage = 1;
+
+        var pageCharts = _filteredIndex
+            .Skip((CurrentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        foreach (var c in pageCharts)
+        {
+            c.SearchText = SearchText;
+            Charts.Add(c);
+        }
+
+        AddToCache(cacheKey, (pageCharts, TotalPages));
+
+        IsEmpty = Charts.Count == 0;
+        StatusMessage = IsEmpty ? "未找到符合条件的谱面" : $"第 {CurrentPage} / {TotalPages} 页，共 {totalCount} 张谱面";
+        IsLoading = false;
+
+        // 3. 异步加载封面
+        _ = LoadCoversAsync(pageCharts);
     }
 
     [RelayCommand(CanExecute = nameof(CanLoadNext))]
@@ -255,10 +503,30 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         }
     }
 
-    private async Task LoadCoversAsync()
+    private async Task LoadCoversAsync(IEnumerable<MdmcChart> pageCharts)
     {
-        // 占位逻辑：目前没有封面图，之后接入 GitHub 时可以使用占位图或默认图
-        await Task.CompletedTask;
+        var tasks = pageCharts.Select(async chart =>
+        {
+            if (chart.CoverImage != null || string.IsNullOrEmpty(chart.CoverUrl)) return;
+
+            await _coverSemaphore.WaitAsync();
+            try
+            {
+                var url = GitHubMirrorHelper.ApplyMirror(chart.CoverUrl, _configService.Config.DownloadSource);
+                var bytes = await _httpClient.GetByteArrayAsync(url);
+                using var stream = new MemoryStream(bytes);
+                chart.CoverImage = new Avalonia.Media.Imaging.Bitmap(stream);
+            }
+            catch (Exception ex)
+            {
+                RuntimeLog.Write("CommunityDetailVM", $"Failed to load cover for {chart.Id}: {ex.Message}");
+            }
+            finally
+            {
+                _coverSemaphore.Release();
+            }
+        });
+        await Task.WhenAll(tasks);
     }
 
     [RelayCommand]
@@ -276,6 +544,10 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
 
     public void Dispose()
     {
+        ClearPageCache(); 
+        _allFullIndex.Clear();
+        _filteredIndex.Clear();
         Charts.Clear();
+        _httpClient.Dispose();
     }
 }
