@@ -189,9 +189,18 @@
                                             <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0"><TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                                         </Panel>
                                     </Border>
-                                    <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="5">
+                                    <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
                                         <controls:MarqueeText Text="{Binding Title}" HighlightText="{Binding Title}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" IsScrollingEnabled="{Binding $parent[UserControl].((vm:CommunityCategoryDetailViewModel)DataContext).EnableMarquee}" ToolTip.Tip="{Binding Title}"/>
-                                        <TextBlock Text="{Binding SubInfo}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding SubInfo}"/>
+                                        
+                                        <!-- 曲师 & 谱师信息 (强制单行) -->
+                                        <TextBlock Text="{Binding SubInfo}" 
+                                                   FontSize="11" 
+                                                   Foreground="{DynamicResource ThemeTextSubBrush}" 
+                                                   TextWrapping="NoWrap" 
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Height="16"
+                                                   ToolTip.Tip="{Binding SubInfo}"/>
+
                                         <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
                                             <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}" IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" VerticalAlignment="Center"/>
                                             <ItemsControl ItemsControl.ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center">
@@ -199,11 +208,13 @@
                                                 <ItemsControl.ItemTemplate><DataTemplate><Border Background="#331a3a1a" CornerRadius="3" Padding="4,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/></Border></DataTemplate></ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </StackPanel>
-                                        <Grid ColumnDefinitions="*,*" Margin="0,6,0,0">
+                                        
+                                        <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
                                             <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:CommunityCategoryDetailViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="试听 / 停止"><Panel><PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/><PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Panel></Button>
                                             <Button Grid.Column="1" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:CommunityCategoryDetailViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="下载到 Custom_Albums"><PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Button>
                                         </Grid>
                                     </StackPanel>
+
                                 </Grid>
                             </Border>
                         </DataTemplate>

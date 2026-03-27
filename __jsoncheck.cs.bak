@@ -1,9 +1,0 @@
-using System;
-using System.IO;
-using System.Text.Json;
-var text = File.ReadAllText("announcement.json");
-try { JsonDocument.Parse(text); Console.WriteLine("announcement.json: VALID"); }
-catch (Exception ex) { Console.WriteLine("announcement.json: INVALID"); Console.WriteLine(ex.Message); }
-var text2 = File.ReadAllText(Path.Combine("SongRepository","designers.json"));
-try { JsonDocument.Parse(text2); Console.WriteLine("designers.json: VALID"); }
-catch (Exception ex) { Console.WriteLine("designers.json: INVALID"); Console.WriteLine(ex.Message); }

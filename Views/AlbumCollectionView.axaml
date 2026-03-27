@@ -1,6 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:models="using:MdModManager.Models"
+             xmlns:controls="using:MdModManager.Views.Controls"
              xmlns:helpers="using:MdModManager.Helpers"
              x:Class="MdModManager.Views.AlbumCollectionView"
              x:DataType="vm:AlbumCollectionViewModel">
@@ -84,19 +86,25 @@
                           VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
-            <TextBlock Grid.Column="1"
-                       Text="整合包"
-                       FontSize="22"
-                       FontWeight="Bold"
-                       VerticalAlignment="Center"
-                       Margin="15,0,0,0">
-                <TextBlock.Foreground>
-                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
-                        <GradientStop Color="#FF00FF" Offset="0"/>
-                        <GradientStop Color="#FF69B4" Offset="1"/>
-                    </LinearGradientBrush>
-                </TextBlock.Foreground>
-            </TextBlock>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0">
+                <TextBlock Text="整合包"
+                           FontSize="22"
+                           FontWeight="Bold">
+                    <TextBlock.Foreground>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Color="#FF00FF" Offset="0"/>
+                            <GradientStop Color="#FF69B4" Offset="1"/>
+                        </LinearGradientBrush>
+                    </TextBlock.Foreground>
+                </TextBlock>
+                <!-- 搜索结果计数或下载/试听状态 -->
+                <TextBlock Text="{Binding StatusMessage}" 
+                           IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" 
+                           FontSize="12" 
+                           FontWeight="Medium"
+                           Foreground="{DynamicResource ThemeTextTertiaryBrush}" 
+                           Margin="0,2,0,0"/>
+            </StackPanel>
             
             <!-- 搜索框 (样式同步自谱面下载界面) -->
             <TextBox Grid.Column="2" 
@@ -148,7 +156,72 @@
             <ScrollViewer x:Name="AlbumScrollViewer"
                            HorizontalScrollBarVisibility="Disabled"
                            VerticalScrollBarVisibility="Auto">
-                <StackPanel>
+                <StackPanel Margin="0,0,0,20">
+                    <!-- 搜索出来的谱面列表 (仅在搜索且有结果时显示) -->
+                    <StackPanel IsVisible="{Binding HasSearchResults}" Margin="10,0,10,20">
+                        <ItemsControl ItemsSource="{Binding SearchResults}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="4" HorizontalAlignment="Stretch"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:MdmcChart">
+                                    <Border Classes="Card" Background="{DynamicResource CardBgBrush}" CornerRadius="10" Margin="8,0,8,16" VerticalAlignment="Top" ClipToBounds="True">
+                                        <Grid RowDefinitions="Auto,*">
+                                            <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
+                                                <Panel>
+                                                    <Border Background="#333333" CornerRadius="10,10,0,0" IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNull}}"><TextBlock Text="🎵" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555"/></Border>
+                                                    <Image Source="{Binding CoverImage}" IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNotNull}}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0"><TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                </Panel>
+                                            </Border>
+                                            <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
+                                                <controls:MarqueeText Text="{Binding Title}" HighlightText="{Binding Title}" SearchText="{Binding SearchText}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" ToolTip.Tip="{Binding Title}"/>
+                                                
+                                                <!-- 曲师 & 谱师信息 (强制单行) -->
+                                                <TextBlock helpers:TextBlockHelper.HighlightText="{Binding SubInfo}" 
+                                                           helpers:TextBlockHelper.SearchText="{Binding SearchText}" 
+                                                           FontSize="11" 
+                                                           Foreground="{DynamicResource ThemeTextSubBrush}" 
+                                                           TextWrapping="NoWrap" 
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Height="16"
+                                                           ToolTip.Tip="{Binding SubInfo}"/>
+
+                                                <!-- BPM & 难度标签 -->
+                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
+                                                    <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}" IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" VerticalAlignment="Center"/>
+                                                    <ItemsControl ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center">
+                                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate><DataTemplate><Border Background="#331a3a1a" CornerRadius="3" Padding="4,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/></Border></DataTemplate></ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+
+                                                <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+                                                    <Button Grid.Column="0" Theme="{StaticResource RobustPlainIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="试听 / 停止"><Panel><PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/><PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Panel></Button>
+                                                    <Button Grid.Column="1" Theme="{StaticResource RobustPlainIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="下载到 Custom_Albums"><PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Button>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- 分隔符 (仅在搜索且有结果时显示) -->
+                    <StackPanel IsVisible="{Binding HasSearchResults}" Margin="18,0,18,20">
+                        <TextBlock Text="出自以下整合包" 
+                                   FontSize="15" 
+                                   FontWeight="Bold" 
+                                   Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                        <Border Height="1" 
+                                Background="{DynamicResource ThemeTextTertiaryBrush}" 
+                                Opacity="0.15" 
+                                Margin="0,8,0,0"/>
+                    </StackPanel>
+
                     <!-- 官方/设计师分类列表 -->
                     <ItemsControl ItemsSource="{Binding Categories}">
                         <ItemsControl.ItemsPanel>
@@ -208,17 +281,21 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <!-- 群友自制谱面区域：仅当集合不为空时显示（解决搜索时显示多余标题和线的问题） -->
-                    <StackPanel Margin="8,4,8,24" Spacing="14" IsVisible="{Binding CommunityCategories.Count}">
-                        <Border Height="1"
-                                Background="{DynamicResource ThemeTextTertiaryBrush}"
-                                Opacity="0.25"/>
-                        <TextBlock Text="群友自制谱面"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   HorizontalAlignment="Left"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <ItemsControl ItemsSource="{Binding CommunityCategories}">
+                    <!-- 群友自制谱面区域：搜索时不显示标题和分割线 -->
+                    <StackPanel Margin="8,4,8,24" Spacing="14">
+                        <StackPanel IsVisible="{Binding !IsSearching}">
+                            <Border Height="1"
+                                    Background="{DynamicResource ThemeTextTertiaryBrush}"
+                                    Opacity="0.25"/>
+                            <TextBlock Text="群友自制谱面"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Margin="0,14,0,0"
+                                       HorizontalAlignment="Left"
+                                       Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                        </StackPanel>
+                        
+                        <ItemsControl ItemsSource="{Binding CommunityCategories}" IsVisible="{Binding CommunityCategories.Count}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <UniformGrid Columns="3" HorizontalAlignment="Stretch"/>

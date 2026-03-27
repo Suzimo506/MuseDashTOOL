@@ -76,17 +76,17 @@ public partial class MdmcChart : ObservableObject
     public string? CustomDownloadUrl { get; set; }
 
     // Derived URLs
-    public string CoverUrl => CustomCoverUrl ?? $"https://cdn.mdmc.moe/charts/{Id}/cover.png";
-    public string DemoUrl  => CustomDemoUrl ?? $"https://cdn.mdmc.moe/charts/{Id}/demo.ogg";
-    public string DemoMp3Url => CustomDemoMp3Url ?? $"https://cdn.mdmc.moe/charts/{Id}/demo.mp3";
-    public string DownloadUrl => CustomDownloadUrl ?? $"https://api.mdmc.moe/v3/charts/{Id}/download";
+    public string CoverUrl => !string.IsNullOrWhiteSpace(CustomCoverUrl) ? CustomCoverUrl : $"https://cdn.mdmc.moe/charts/{Id}/cover.png";
+    public string DemoUrl  => !string.IsNullOrWhiteSpace(CustomDemoUrl) ? CustomDemoUrl : $"https://cdn.mdmc.moe/charts/{Id}/demo.ogg";
+    public string DemoMp3Url => !string.IsNullOrWhiteSpace(CustomDemoMp3Url) ? CustomDemoMp3Url : $"https://cdn.mdmc.moe/charts/{Id}/demo.mp3";
+    public string DownloadUrl => !string.IsNullOrWhiteSpace(CustomDownloadUrl) ? CustomDownloadUrl : $"https://api.mdmc.moe/v3/charts/{Id}/download";
 
-    /// <summary>副标题：曲 + 谱</summary>
+    /// <summary>副标题：曲 + 谱 (同向排列)</summary>
     public string SubInfo
     {
         get
         {
-            var parts = new System.Collections.Generic.List<string>();
+            var parts = new List<string>();
             if (!string.IsNullOrEmpty(Artist))  parts.Add($"曲：{Artist}");
             if (!string.IsNullOrEmpty(Charter)) parts.Add($"谱：{Charter}");
             return string.Join("  ", parts);

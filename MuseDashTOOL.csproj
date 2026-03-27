@@ -24,7 +24,6 @@
     
     <!-- 嵌入核心资源，实现单文件独立运行 -->
     <EmbeddedResource Include="SongRepository\designers.json" />
-    <EmbeddedResource Include="SongRepository\community_links.json" />
     <EmbeddedResource Include="SongRepository\**\*.txt" />
     <EmbeddedResource Include="Pictures\通过审议.png" />
     <EmbeddedResource Include="Pictures\令人生草.jpg" />

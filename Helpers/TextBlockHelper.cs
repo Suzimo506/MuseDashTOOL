@@ -56,16 +56,17 @@ public static class TextBlockHelper
         var text = GetHighlightText(textBlock);
         var search = GetSearchText(textBlock);
 
-        textBlock.Inlines?.Clear();
-
-        if (string.IsNullOrEmpty(text)) return;
-
         // 如果没有搜索关键词，直接显示原始文本
         if (string.IsNullOrEmpty(search))
         {
+            textBlock.Text = null; // 清除可能存在的 Text 属性，避免双重渲染
+            textBlock.Inlines?.Clear();
             textBlock.Inlines?.Add(new Run { Text = text });
             return;
         }
+
+        textBlock.Text = null; // 清除可能存在的 Text 属性，避免双重渲染
+        textBlock.Inlines?.Clear();
 
         int index = 0;
         while (index < text.Length)
@@ -102,6 +103,7 @@ public static class TextBlockHelper
     private static void UpdateMarkup(TextBlock textBlock)
     {
         var text = GetMarkupText(textBlock);
+        textBlock.Text = null; 
         textBlock.Inlines?.Clear();
         if (string.IsNullOrEmpty(text)) return;
 

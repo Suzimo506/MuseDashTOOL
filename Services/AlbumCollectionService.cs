@@ -19,6 +19,7 @@ public interface IAlbumCollectionService
     Task<List<DesignerCategory>> GetCollectionsAsync();
     Task<List<DesignerChart>> GetChartsAsync(string categoryName);
     Task<List<(DesignerCategory Category, DesignerChart Chart)>> SearchChartsAsync(string query);
+    Task<List<(string CategoryName, MdmcChart Chart)>> SearchCommunityChartsAsync(string query);
 }
 
 public class AlbumCollectionService : IAlbumCollectionService
@@ -43,6 +44,16 @@ public class AlbumCollectionService : IAlbumCollectionService
     private List<DesignerCategory>? _categoryCache;
     private List<DesignerCategory>? _metadataCache;
     private readonly Dictionary<string, List<DesignerChart>> _chartsCache = new(StringComparer.OrdinalIgnoreCase);
+
+    // 社区仓库配置
+    private static readonly (string Name, string RepoUrl)[] CommunityConfigs = 
+    { 
+        ("通过审议", "https://github.com/KuoKing506/1_Csutom-Albums-Repository"), 
+        ("令人生草", "https://github.com/KuoKing506/3_Custom-Albums-Repository"), 
+        ("待定或存在小问题", "https://github.com/KuoKing506/2_Custom-Albums-Repository") 
+    };
+
+    private readonly Dictionary<string, List<MdmcChart>> _communityChartsCache = new(StringComparer.OrdinalIgnoreCase);
 
     public AlbumCollectionService()
     {
@@ -128,13 +139,174 @@ public class AlbumCollectionService : IAlbumCollectionService
                     chart.Author?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
                     chart.Artist?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true)
                 {
-                    results.Add((category, chart));
+                    results.Add((category, CloneAndNormalizeChart(chart)));
                 }
             }
         }
 
         return results;
     }
+
+    public async Task<List<(string CategoryName, MdmcChart Chart)>> SearchCommunityChartsAsync(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return new List<(string CategoryName, MdmcChart Chart)>();
+
+        var normalizedQuery = query.Trim().ToLowerInvariant();
+        var results = new List<(string CategoryName, MdmcChart Chart)>();
+
+        var tasks = CommunityConfigs.Select(async config =>
+        {
+            try
+            {
+                var charts = await GetCommunityChartsAsync(config.Name, config.RepoUrl);
+                var matches = charts.Where(c => 
+                    c.Title.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+                    c.Artist.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+                    c.Charter.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase)
+                ).ToList();
+
+                lock (results)
+                {
+                    foreach (var m in matches)
+                        results.Add((config.Name, m));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to search community repo '{config.Name}': {ex.Message}");
+            }
+        });
+
+        await Task.WhenAll(tasks);
+        return results;
+    }
+
+    private async Task<List<MdmcChart>> GetCommunityChartsAsync(string name, string repoUrl)
+    {
+        if (_communityChartsCache.TryGetValue(name, out var cached))
+            return cached;
+
+        string json = "";
+        string? localPath = FindLocalCommunityIndexPath(name);
+        
+        try
+        {
+            if (!string.IsNullOrEmpty(localPath) && File.Exists(localPath))
+            {
+                json = await File.ReadAllTextAsync(localPath);
+                Log($"Using local index for community repo '{name}': {localPath}");
+            }
+            else
+            {
+                var rawBaseUrl = repoUrl.Replace("github.com", "raw.githubusercontent.com") + "/main";
+                var rawIndexUrl = rawBaseUrl + "/index.json";
+                json = await _http.GetStringAsync(rawIndexUrl);
+                Log($"Fetched remote index for community repo '{name}'");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Failed to get index for '{name}': {ex.Message}");
+            return new List<MdmcChart>();
+        }
+
+        var rawBaseUrlFinal = repoUrl.Replace("github.com", "raw.githubusercontent.com") + "/main";
+        List<CommunityIndexItem>? items = null;
+        string releaseTag = "";
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var wrapper = JsonSerializer.Deserialize<CommunityIndexWrapper>(json, options);
+            if (wrapper != null && wrapper.Charts != null)
+            {
+                releaseTag = wrapper.ReleaseTag ?? "";
+                items = wrapper.Charts;
+            }
+        }
+        catch
+        {
+            try { items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json); } catch { }
+        }
+
+        if (items == null) return new List<MdmcChart>();
+
+        var charts = items.Select(item => MapToIndexChart(item, rawBaseUrlFinal, repoUrl, releaseTag)).ToList();
+        _communityChartsCache[name] = charts;
+        return charts;
+    }
+
+    private static string? FindLocalCommunityIndexPath(string categoryName)
+    {
+        var candidates = new List<string>();
+        var basePaths = new[] { Environment.CurrentDirectory, AppContext.BaseDirectory };
+        
+        foreach (var bp in basePaths)
+        {
+            candidates.Add(Path.Combine(bp, "SongRepository", categoryName, "repo", "index.json"));
+            candidates.Add(Path.Combine(bp, "SongRepository", categoryName, "index.json"));
+            
+            var current = new DirectoryInfo(bp);
+            for (var depth = 0; depth < 5 && current != null; depth++, current = current.Parent)
+            {
+                candidates.Add(Path.Combine(current.FullName, "SongRepository", categoryName, "repo", "index.json"));
+                candidates.Add(Path.Combine(current.FullName, "SongRepository", categoryName, "index.json"));
+            }
+        }
+        return candidates.FirstOrDefault(File.Exists);
+    }
+
+    private MdmcChart MapToIndexChart(CommunityIndexItem item, string rawBaseUrl, string githubRepoUrl, string releaseTag)
+    {
+        var coverUrl = item.CoverUrl;
+        if (!string.IsNullOrEmpty(coverUrl) && !coverUrl.StartsWith("http"))
+            coverUrl = rawBaseUrl + "/covers/" + coverUrl;
+
+        var demoUrl = item.DemoUrl;
+        if (!string.IsNullOrEmpty(demoUrl) && !demoUrl.StartsWith("http"))
+            demoUrl = rawBaseUrl + "/demos/" + demoUrl;
+
+        var demoMp3Url = item.DemoMp3Url;
+        if (!string.IsNullOrEmpty(demoMp3Url) && !demoMp3Url.StartsWith("http"))
+            demoMp3Url = rawBaseUrl + "/demos/" + demoMp3Url;
+
+        var downloadUrl = item.DownloadUrl;
+        if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http") && !string.IsNullOrEmpty(releaseTag))
+            downloadUrl = githubRepoUrl + "/releases/download/" + releaseTag + "/" + downloadUrl;
+
+        // 映射逻辑参考 CommunityCategoryDetailViewModel.cs
+        var sheets = new List<MdmcSheet>();
+        if (item.Difficulties != null && item.Difficulties.Count > 0)
+            sheets = item.Difficulties.Select(d => new MdmcSheet { Difficulty = d }).ToList();
+        else if (!string.IsNullOrEmpty(item.Difficulty) && item.Difficulty != "0" && item.Difficulty != "?")
+            foreach (var p in item.Difficulty.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                sheets.Add(new MdmcSheet { Difficulty = p.Trim() });
+
+        string cleanTitle = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : (item.Title ?? "");
+        cleanTitle = Regex.Replace(cleanTitle, @"^\[(?:Lv|LV|lv)[.\s]?\s*[^\]]+\]\s*", "", RegexOptions.IgnoreCase);
+        cleanTitle = Regex.Replace(cleanTitle, @"^(?:Lv|LV|lv)[.\s]?\s*\d+\s*", "", RegexOptions.IgnoreCase);
+        if (cleanTitle.EndsWith(".mdm", StringComparison.OrdinalIgnoreCase))
+            cleanTitle = cleanTitle[..^4];
+
+        return new MdmcChart
+        {
+            Id = item.Id,
+            Title = cleanTitle.Trim(),
+            Artist = item.Artist,
+            Charter = item.Charter,
+            Bpm = item.Bpm,
+            CustomCoverUrl = coverUrl,
+            CustomDemoUrl = demoUrl,
+            CustomDemoMp3Url = demoMp3Url,
+            CustomDownloadUrl = downloadUrl,
+            Sheets = sheets
+        };
+    }
+
+    // 内部类，用于解析群友索引
+    private class CommunityIndexWrapper { [JsonPropertyName("release_tag")] public string ReleaseTag { get; set; } = ""; [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
+    private class CommunityIndexItem { [JsonPropertyName("id")] public string Id { get; set; } = ""; [JsonPropertyName("original_id")] public string OriginalId { get; set; } = ""; [JsonPropertyName("title")] public string Title { get; set; } = ""; [JsonPropertyName("artist")] public string Artist { get; set; } = ""; [JsonPropertyName("charter")] public string Charter { get; set; } = ""; [JsonPropertyName("bpm")] public string Bpm { get; set; } = ""; [JsonPropertyName("scene")] public string Scene { get; set; } = ""; [JsonPropertyName("difficulty")] public string Difficulty { get; set; } = ""; [JsonPropertyName("difficulties")] public List<string>? Difficulties { get; set; } [JsonPropertyName("cover_url")] public string CoverUrl { get; set; } = ""; [JsonPropertyName("demo_url")] public string DemoUrl { get; set; } = ""; [JsonPropertyName("demo_mp3_url")] public string DemoMp3Url { get; set; } = ""; [JsonPropertyName("download_url")] public string DownloadUrl { get; set; } = ""; }
 
     private async Task<List<GitHubContentItem>> GetRepoContentsAsync(string path)
     {

@@ -16,6 +16,7 @@ using MdModManager.Helpers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 
 namespace MdModManager.ViewModels;
 
@@ -153,6 +154,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         [JsonPropertyName("difficulties")] public List<string>? Difficulties { get; set; }
         [JsonPropertyName("cover_url")] public string CoverUrl { get; set; } = "";
         [JsonPropertyName("demo_url")] public string DemoUrl { get; set; } = "";
+        [JsonPropertyName("demo_mp3_url")] public string DemoMp3Url { get; set; } = "";
         [JsonPropertyName("download_url")] public string DownloadUrl { get; set; } = "";
     }
 
@@ -205,8 +207,20 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         _notificationService = notificationService;
     }
 
+    private void OnDownloadViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ChartDownloadViewModel.PreviewStatusText))
+        {
+            UpdateStatusMessage();
+        }
+    }
+
     public async Task InitializeAsync(string categoryName, string repoUrl = "")
     {
+        // 重新建立监听
+        _chartDownloadViewModel.PropertyChanged -= OnDownloadViewModelPropertyChanged;
+        _chartDownloadViewModel.PropertyChanged += OnDownloadViewModelPropertyChanged;
+
         CategoryName = categoryName;
         _githubRepoUrl = repoUrl; // 保存原始 GitHub 仓库地址，用于构建 Release 下载链接
         
@@ -325,6 +339,10 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         if (!string.IsNullOrEmpty(demoUrl) && !demoUrl.StartsWith("http"))
             demoUrl = _rawBaseUrl + "/demos/" + demoUrl;
 
+        var demoMp3Url = item.DemoMp3Url;
+        if (!string.IsNullOrEmpty(demoMp3Url) && !demoMp3Url.StartsWith("http"))
+            demoMp3Url = _rawBaseUrl + "/demos/" + demoMp3Url;
+
         var downloadUrl = item.DownloadUrl;
         // 如果 download_url 是相对文件名且有 release_tag，构建完整的 GitHub Release 下载链接
         if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http") && !string.IsNullOrEmpty(_releaseTag))
@@ -348,30 +366,71 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         }
         else if (!string.IsNullOrEmpty(item.Difficulty) && item.Difficulty != "0" && item.Difficulty != "?")
         {
-            sheets.Add(new MdmcSheet { Difficulty = item.Difficulty });
+            var parts = item.Difficulty.Split(new[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var p in parts)
+            {
+                sheets.Add(new MdmcSheet { Difficulty = p.Trim() });
+            }
         }
+        
+        // 如果依然没有难度，尝试从 OriginalId (文件名) 中提取
+        if (sheets.Count == 0 && !string.IsNullOrEmpty(item.OriginalId))
+        {
+            var diffMatch = Regex.Match(item.OriginalId, @"\[(?:Lv|LV|lv)[.\s]?\s*([0-9.,&里?？\s\-\+]+)\]", RegexOptions.IgnoreCase);
+            if (diffMatch.Success)
+            {
+                var rawDiff = diffMatch.Groups[1].Value;
+                // 提取所有数字（支持 10+ 格式）
+                var nums = Regex.Matches(rawDiff, @"(\d+\+?)")
+                    .Cast<Match>()
+                    .Select(m => m.Value)
+                    .Distinct();
+                foreach (var n in nums) sheets.Add(new MdmcSheet { Difficulty = n });
+            }
+            else
+            {
+                // 尝试匹配开头的 Lv.x (无括号)
+                var standaloneMatch = Regex.Match(item.OriginalId, @"^(?:Lv|LV|lv)[.\s]?\s*(\d+)", RegexOptions.IgnoreCase);
+                if (standaloneMatch.Success) sheets.Add(new MdmcSheet { Difficulty = standaloneMatch.Groups[1].Value });
+            }
+        }
+
+        // 清理标题：仅去掉名字最前面的 [Lv.x] 或 LVx 前缀，保留之后的所有信息（如括号等）
+        // 优先使用 OriginalId，因为它保留了文件名中的完整信息
+        string cleanTitle = item.OriginalId;
+        if (string.IsNullOrEmpty(cleanTitle)) cleanTitle = item.Title ?? "";
+        
+        // 只匹配开头的等级前缀并移除
+        cleanTitle = Regex.Replace(cleanTitle, @"^\[(?:Lv|LV|lv)[.\s]?\s*[^\]]+\]\s*", "", RegexOptions.IgnoreCase);
+        cleanTitle = Regex.Replace(cleanTitle, @"^(?:Lv|LV|lv)[.\s]?\s*\d+\s*", "", RegexOptions.IgnoreCase);
+        
+        // 去掉可能的 .mdm 后缀
+        if (cleanTitle.EndsWith(".mdm", StringComparison.OrdinalIgnoreCase))
+            cleanTitle = cleanTitle.Substring(0, cleanTitle.Length - 4);
+
+        cleanTitle = cleanTitle.Trim();
 
         var chart = new MdmcChart
         {
             Id = item.Id,
-            Title = item.Title,
+            Title = cleanTitle,
             Artist = item.Artist,
             Charter = item.Charter,
             Bpm = item.Bpm,
             CustomCoverUrl = coverUrl,
             CustomDemoUrl = demoUrl,
+            CustomDemoMp3Url = demoMp3Url,
             CustomDownloadUrl = downloadUrl,
             Sheets = sheets
         };
         return chart;
     }
 
-    [RelayCommand]
     private async Task ReloadAsync()
     {
         IsLoading = true;
         IsEmpty = false;
-        StatusMessage = "正在载入...";
+        UpdateStatusMessage();
         Charts.Clear();
 
         var query = SearchText.Trim().ToLowerInvariant();
@@ -384,8 +443,8 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             _cacheKeys.Remove(cacheKey);
             _cacheKeys.Add(cacheKey);
             IsEmpty = Charts.Count == 0;
-            StatusMessage = $"第 {CurrentPage} / {TotalPages} 页";
             IsLoading = false;
+            UpdateStatusMessage();
             return;
         }
 
@@ -431,11 +490,36 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         AddToCache(cacheKey, (pageCharts, TotalPages));
 
         IsEmpty = Charts.Count == 0;
-        StatusMessage = IsEmpty ? "未找到符合条件的谱面" : $"第 {CurrentPage} / {TotalPages} 页，共 {totalCount} 张谱面";
         IsLoading = false;
+        UpdateStatusMessage();
 
         // 3. 异步加载封面
         _ = LoadCoversAsync(pageCharts);
+    }
+
+    private void UpdateStatusMessage()
+    {
+        // 只有正在缓冲或播放时显示试听状态
+        var previewText = _chartDownloadViewModel.PreviewStatusText;
+        if (!string.IsNullOrEmpty(previewText) && (previewText.Contains("正在缓冲") || previewText.Contains("正在播放")))
+        {
+            StatusMessage = previewText;
+            return;
+        }
+
+        if (IsLoading)
+        {
+            StatusMessage = "正在载入...";
+            return;
+        }
+
+        if (IsEmpty)
+        {
+            StatusMessage = "未找到符合条件的谱面";
+            return;
+        }
+
+        StatusMessage = $"第 {CurrentPage} / {TotalPages} 页，共 {_filteredIndex.Count} 张谱面";
     }
 
     [RelayCommand(CanExecute = nameof(CanLoadNext))]
@@ -536,6 +620,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
             _chartDownloadViewModel.StopPlayback();
+            _chartDownloadViewModel.PropertyChanged -= OnDownloadViewModelPropertyChanged;
             var vm = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
             mainVm.CurrentPage = vm;
         }
@@ -544,6 +629,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
 
     public void Dispose()
     {
+        _chartDownloadViewModel.PropertyChanged -= OnDownloadViewModelPropertyChanged;
         ClearPageCache(); 
         _allFullIndex.Clear();
         _filteredIndex.Clear();

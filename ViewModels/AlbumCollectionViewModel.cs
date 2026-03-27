@@ -325,25 +325,20 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
 public partial class AlbumCollectionViewModel : ObservableObject
 {
     private readonly IAlbumCollectionService _collectionService;
+    private readonly ChartDownloadViewModel _chartDownloadViewModel;
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
+    private readonly List<DesignerCategoryItemViewModel> _allCategoriesBackup = new();
+    private readonly List<CommunityCategoryItemViewModel> _allCommunityCategoriesBackup = new();
     private bool _isInitialized;
 
-    [ObservableProperty]
-    private ObservableCollection<DesignerCategoryItemViewModel> _categories = new();
+    [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _categories = new();
+    [ObservableProperty] private ObservableCollection<CommunityCategoryItemViewModel> _communityCategories = new();
+    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private bool _isEmpty;
+    [ObservableProperty] private double _scrollOffset;
+    [ObservableProperty] private ObservableCollection<MdmcChart> _searchResults = new();
 
-    [ObservableProperty]
-    private ObservableCollection<CommunityCategoryItemViewModel> _communityCategories = new();
-
-    [ObservableProperty]
-    private bool _isLoading;
-
-    [ObservableProperty]
-    private bool _isEmpty;
-
-    [ObservableProperty]
-    private double _scrollOffset;
-    
-    // ── 搜索功能 ────────────────────────────────────────────────────────────
+    public bool HasSearchResults => SearchResults.Count > 0;
     [ObservableProperty]
     private string _searchText = string.Empty;
 
@@ -351,9 +346,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
     [ObservableProperty]
     private bool _isSearching;
 
-    // 原始集合备份，用于恢复
-    private readonly List<DesignerCategoryItemViewModel> _allCategoriesBackup = new();
-    private readonly List<CommunityCategoryItemViewModel> _allCommunityCategoriesBackup = new();
+    [ObservableProperty]
+    private string _statusMessage = string.Empty;
 
     // 搜索时的取消令牌
     private CancellationTokenSource? _searchCts;
@@ -361,6 +355,40 @@ public partial class AlbumCollectionViewModel : ObservableObject
     partial void OnSearchTextChanged(string value)
     {
         _ = SearchAndFilterAsync(value);
+    }
+
+    public AlbumCollectionViewModel(IAlbumCollectionService collectionService)
+    {
+        _collectionService = collectionService;
+        _chartDownloadViewModel = Ioc.Default.GetRequiredService<ChartDownloadViewModel>();
+    }
+
+    private void OnDownloadViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ChartDownloadViewModel.PreviewStatusText))
+        {
+            UpdateStatusMessage();
+        }
+    }
+
+    private int _lastChartCount = 0;
+    private void UpdateStatusMessage()
+    {
+        // 只有在正在缓冲或正在播放时，才优先显示试听状态
+        var previewText = _chartDownloadViewModel.PreviewStatusText;
+        if (!string.IsNullOrEmpty(previewText) && (previewText.Contains("正在缓冲") || previewText.Contains("正在播放")))
+        {
+            StatusMessage = previewText;
+            return;
+        }
+
+        if (IsSearching)
+        {
+            StatusMessage = $"匹配 {_lastChartCount} 个搜索结果";
+            return;
+        }
+
+        StatusMessage = string.Empty;
     }
 
     private async Task SearchAndFilterAsync(string query)
@@ -371,7 +399,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
         try
         {
-            await Task.Delay(300, ct); // 300ms 防抖，避免频繁请求
+            await Task.Delay(300, ct); // 300ms 防抖
             
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -382,45 +410,79 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
             IsSearching = true;
             
-            // 确保备份集合已初始化（防止搜索触发过早）
             if (_allCategoriesBackup.Count == 0 && Categories.Count > 0) _allCategoriesBackup.AddRange(Categories);
             if (_allCommunityCategoriesBackup.Count == 0 && CommunityCategories.Count > 0) _allCommunityCategoriesBackup.AddRange(CommunityCategories);
 
             var normalizedQuery = query.Trim().ToLowerInvariant();
 
-            // 调用服务端搜索接口，获取所有匹配的 (分类, 谱面) 对
-            var searchResults = await _collectionService.SearchChartsAsync(normalizedQuery);
+            // 1. 搜索设计师谱面
+            var designerResults = await _collectionService.SearchChartsAsync(normalizedQuery);
             if (ct.IsCancellationRequested) return;
 
-            // 提取所有匹配谱面所在的分类名称
-            var matchingCategoryNames = searchResults
-                .Select(r => r.Category.Name)
-                .Where(name => !string.IsNullOrEmpty(name))
-                .Distinct()
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            // 2. 搜索群友自制谱面
+            var communitySearchResults = await _collectionService.SearchCommunityChartsAsync(normalizedQuery);
+            if (ct.IsCancellationRequested) return;
 
-            // 过滤逻辑：
-            // 1. 分类本身的名称匹配搜索词
-            // 2. 分类下的任何谱面匹配搜索词（通过 matchingCategoryNames 判断）
+            // 3. 构建统一的谱面搜索结果列表
+            var allChartResults = new List<MdmcChart>();
+            
+            // 映射设计师谱面
+            foreach (var (cat, chart) in designerResults)
+            {
+                allChartResults.Add(new MdmcChart
+                {
+                    Id = chart.Id,
+                    Title = chart.Title,
+                    Artist = chart.Artist,
+                    Charter = chart.Author,
+                    Bpm = chart.Bpm,
+                    CustomCoverUrl = chart.CoverUrl,
+                    CustomDemoUrl = chart.DemoUrl,
+                    CustomDemoMp3Url = chart.DemoMp3Url,
+                    CustomDownloadUrl = chart.DownloadUrl,
+                    SearchText = query // 用于粉色高亮
+                });
+            }
+
+            // 添加群友谱面
+            foreach (var (catName, chart) in communitySearchResults)
+            {
+                chart.SearchText = query; // 用于粉色高亮
+                allChartResults.Add(chart);
+            }
+
+            // 4. 计算匹配的分类，用于保留文件夹显示
+            var matchingDesignerCategoryNames = designerResults.Select(r => r.Category.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var matchingCommunityCategoryNames = communitySearchResults.Select(r => r.CategoryName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             var filteredCats = _allCategoriesBackup.Where(catVM => 
                 catVM.Category.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
-                matchingCategoryNames.Contains(catVM.Category.Name ?? string.Empty)
+                matchingDesignerCategoryNames.Contains(catVM.Category.Name ?? string.Empty)
             ).ToList();
 
-            // 群友分类暂不支持深度搜索，仅按分类名过滤
             var filteredCommCats = _allCommunityCategoriesBackup.Where(catVM => 
-                catVM.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true
+                catVM.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+                matchingCommunityCategoryNames.Contains(catVM.Name ?? string.Empty)
             ).ToList();
 
             if (ct.IsCancellationRequested) return;
 
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
+                SearchResults.Clear();
+                foreach (var chart in allChartResults) SearchResults.Add(chart);
+                _lastChartCount = allChartResults.Count;
+                OnPropertyChanged(nameof(HasSearchResults));
+                UpdateStatusMessage();
+
                 Categories.Clear();
                 foreach (var cat in filteredCats) Categories.Add(cat);
                 
                 CommunityCategories.Clear();
                 foreach (var cat in filteredCommCats) CommunityCategories.Add(cat);
+
+                // 异步加载搜索结果的封面
+                _ = LoadSearchResultsCoversAsync(allChartResults);
             });
         }
         catch (OperationCanceledException) { }
@@ -430,8 +492,32 @@ public partial class AlbumCollectionViewModel : ObservableObject
         }
     }
 
+    private async Task LoadSearchResultsCoversAsync(List<MdmcChart> charts)
+    {
+        var configService = Ioc.Default.GetRequiredService<IConfigService>();
+        var httpClient = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        
+        var tasks = charts.Select(async chart =>
+        {
+            if (chart.CoverImage != null || string.IsNullOrEmpty(chart.CoverUrl)) return;
+            await _coverSemaphore.WaitAsync();
+            try
+            {
+                var bytes = await httpClient.GetByteArrayAsync(chart.CoverUrl);
+                using var stream = new MemoryStream(bytes);
+                chart.CoverImage = new Bitmap(stream);
+            }
+            catch { }
+            finally { _coverSemaphore.Release(); }
+        });
+        await Task.WhenAll(tasks);
+    }
+
     private void RestoreOriginalCollections()
     {
+        SearchResults.Clear();
+        OnPropertyChanged(nameof(HasSearchResults));
+
         if (_allCategoriesBackup.Count > 0)
         {
             Categories.Clear();
@@ -442,6 +528,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             CommunityCategories.Clear();
             foreach (var cat in _allCommunityCategoriesBackup) CommunityCategories.Add(cat);
         }
+        UpdateStatusMessage();
     }
 
 
@@ -455,10 +542,6 @@ public partial class AlbumCollectionViewModel : ObservableObject
     public IAsyncRelayCommand<MdmcChart> DownloadChartCommand => 
         Ioc.Default.GetRequiredService<ChartDownloadViewModel>().DownloadChartCommand;
 
-    public AlbumCollectionViewModel(IAlbumCollectionService collectionService)
-    {
-        _collectionService = collectionService;
-    }
 
     public async Task InitializeAsync()
     {
@@ -472,7 +555,11 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
         IsLoading = true;
         IsEmpty = false;
+        
+        // 先释放再监听，确保监听状态正确且不过期
         ReleaseResources();
+        _chartDownloadViewModel.PropertyChanged += OnDownloadViewModelPropertyChanged;
+
         Categories.Clear();
         CommunityCategories.Clear();
 
@@ -548,6 +635,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
         Categories.Clear();
         CommunityCategories.Clear();
+        ClearSearch(); // 释放搜索结果内存并清空文本框
+        _chartDownloadViewModel.PropertyChanged -= OnDownloadViewModelPropertyChanged;
         _isInitialized = false;
         IsLoading = false;
         IsEmpty = false;
@@ -585,6 +674,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
     {
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
+            ReleaseResources();
             await mainVm.NavigateToChartDownloadCommand.ExecuteAsync(null);
         }
     }
