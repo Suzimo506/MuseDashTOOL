@@ -2,11 +2,10 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using MdModManager.Helpers;
-using MdModManager.Services;
 using MdModManager.Views;
 
 namespace MdModManager.Services;
@@ -19,31 +18,38 @@ public interface IUpdateService
 
 public class UpdateService : IUpdateService
 {
-    private const string CurrentVersion = "v1.1.1"; // 版本号常量
+    private const string CurrentVersion = "v1.1.1"; // 当前程序版本号
     private const string GitHubApiUrl = "https://api.github.com/repos/KuoKing506/-MuseDashTOOL/releases/latest";
+
     private readonly HttpClient _httpClient;
     private readonly IConfigService _configService;
     private readonly INotificationService _notificationService;
     private string? _pendingUpdateFile;
+    private int _hasStartedChecking;
 
     public UpdateService(IConfigService configService, INotificationService notificationService)
     {
         _configService = configService;
         _notificationService = notificationService;
-        _httpClient = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(30));
+        _httpClient = HttpHelper.CreateOptimizedClient(TimeSpan.FromMinutes(10));
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "MuseDashModTool-Updater");
     }
 
-    public async Task CheckAndApplyUpdateAsync()
+    public Task CheckAndApplyUpdateAsync()
     {
-        // 软件开启期间在后台一直静默进行检测
+        // 只启动一次后台检查，避免窗口事件重复触发后开启多个轮询任务。
+        if (Interlocked.Exchange(ref _hasStartedChecking, 1) == 1)
+        {
+            return Task.CompletedTask;
+        }
+
         _ = Task.Run(async () =>
         {
             while (true)
             {
                 try
                 {
-                    // 在开发环境下（dotnet run）跳过更新检测，避免干扰
+                    // 开发环境下跳过自动更新，避免调试时被更新流程打断。
                     if (Debugger.IsAttached || IsRunningFromSource())
                     {
                         return;
@@ -55,21 +61,24 @@ public class UpdateService : IUpdateService
                         string latestVersion = latestRelease.TagName;
                         if (IsNewerVersion(latestVersion, CurrentVersion))
                         {
-                            // 发现新版本，静默下载并直接重启
+                            RuntimeLog.Write("UpdateService", $"检测到新版本：{latestVersion}，当前版本：{CurrentVersion}");
                             await DownloadAndApplyUpdate(latestRelease);
-                            return; // 一旦开始更新流程（重启），此后台任务自然退出
+                            return;
                         }
                     }
                 }
                 catch (Exception ex)
                 {
+                    RuntimeLog.Write("UpdateService", $"后台更新检查失败：{ex.Message}");
                     Debug.WriteLine($"Background update check failed: {ex.Message}");
                 }
 
-                // 没发现更新或检测失败，每 5 分钟轮询一次
+                // 没发现更新或本次检查失败时，5 分钟后再重试。
                 await Task.Delay(TimeSpan.FromMinutes(5));
             }
         });
+
+        return Task.CompletedTask;
     }
 
     private bool IsRunningFromSource()
@@ -82,14 +91,16 @@ public class UpdateService : IUpdateService
     {
         try
         {
-            // 对检测逻辑也使用镜像加速，提高连接成功率
-            string proxiedApiUrl = GitHubMirrorHelper.ApplyMirror(GitHubApiUrl, _configService.Config.DownloadSource);
-            var response = await _httpClient.GetStringAsync(proxiedApiUrl);
+            // 更新检查必须直连 GitHub 官方 API。
+            // 这里拿到的是 release 的 JSON 元数据，镜像站未必兼容 GitHub API，
+            // 如果把 api.github.com 也替换成镜像域名，可能就拿不到正确的 tag_name 和 assets。
+            var response = await _httpClient.GetStringAsync(GitHubApiUrl);
             var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
             return JsonSerializer.Deserialize<GitHubRelease>(response, options);
         }
         catch (Exception ex)
         {
+            RuntimeLog.Write("UpdateService", $"获取最新 release 信息失败：{ex.Message}");
             Debug.WriteLine($"Latest release fetch failed: {ex.Message}");
             return null;
         }
@@ -114,7 +125,7 @@ public class UpdateService : IUpdateService
         string? downloadUrl = null;
         string? fileName = null;
 
-        // 优先寻找 exe，用户承诺只发布 exe，但逻辑上保持兼容
+        // 优先寻找 exe，只发布 exe，但逻辑上仍兼容 zip 兜底。
         foreach (var asset in release.Assets)
         {
             if (asset.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
@@ -125,7 +136,7 @@ public class UpdateService : IUpdateService
             }
         }
 
-        // 如果没找到 exe 再找 zip
+        // 如果没有 exe，再尝试寻找 zip 资源。
         if (string.IsNullOrEmpty(downloadUrl))
         {
             foreach (var asset in release.Assets)
@@ -139,43 +150,111 @@ public class UpdateService : IUpdateService
             }
         }
 
-        if (string.IsNullOrEmpty(downloadUrl)) return;
-
-        // 弹出气泡提示用户正在更新
-        _notificationService.ShowInfo("发现新版本，正在后台下载更新...");
-
-        // 使用用户选定的下载源进行镜像加速
-        string proxiedUrl = GitHubMirrorHelper.ApplyMirror(downloadUrl, _configService.Config.DownloadSource);
-        var response = await _httpClient.GetAsync(proxiedUrl);
-        
-        if (!response.IsSuccessStatusCode) return;
-
-        var tempFile = Path.Combine(Path.GetTempPath(), "MuseDashTOOL_New" + Path.GetExtension(fileName));
-        using (var fs = new FileStream(tempFile, FileMode.Create))
+        if (string.IsNullOrEmpty(downloadUrl) || string.IsNullOrEmpty(fileName))
         {
-            await response.Content.CopyToAsync(fs);
+            RuntimeLog.Write("UpdateService", $"发现新版本 {release.TagName}，但 release 中没有可下载的 exe 或 zip 资源。");
+            _notificationService.ShowFailure("更新失败", "发现了新版本，但没有找到可下载的安装包。");
+            return;
         }
 
-        // 下载完成，准备更新流程
-        _pendingUpdateFile = tempFile;
+        _notificationService.ShowInfo("发现新版本，正在后台下载更新...");
+        RuntimeLog.Write("UpdateService", $"开始下载更新包：{downloadUrl}");
 
-        // 在 UI 线程弹出确认对话框
-        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+        // 真正下载安装包时，才使用用户选择的下载源做镜像加速。
+        // 这样可以保证“检查更新”稳定，同时保留下载阶段的加速能力。
+        string proxiedUrl = GitHubMirrorHelper.ApplyMirror(downloadUrl, _configService.Config.DownloadSource);
+        RuntimeLog.Write("UpdateService", $"实际下载地址：{proxiedUrl}");
+
+        HttpResponseMessage response;
+        try
         {
-            var mainWindow = (Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-            if (mainWindow != null)
+            response = await _httpClient.GetAsync(proxiedUrl);
+        }
+        catch (Exception ex)
+        {
+            RuntimeLog.Write("UpdateService", $"请求更新包失败：{ex.Message}");
+
+            // 下载更新包超时时，明确提醒用户切换下载源后重试，避免用户不知道下一步该做什么。
+            if (ex is TaskCanceledException)
             {
-                bool shouldRestart = await MessageBox.ShowDialogAsync(mainWindow, "新版本下载完成，是否立即重启以应用更新？", showCancel: true);
-                if (shouldRestart)
-                {
-                    ApplyUpdateInternal();
-                }
-                else
-                {
-                    _notificationService.ShowInfo("更新已就绪，将在软件关闭后自动安装", 3000);
-                }
+                _notificationService.ShowFailure("更新失败", "下载更新包超时，请切换下载源后重试。");
             }
-        });
+            else
+            {
+                _notificationService.ShowFailure("更新失败", $"下载更新包时发生错误：{ex.Message}");
+            }
+            return;
+        }
+
+        using (response)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                RuntimeLog.Write("UpdateService", $"更新包下载失败：HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
+                _notificationService.ShowFailure("更新失败", $"下载更新包失败（HTTP {(int)response.StatusCode}）。");
+                return;
+            }
+
+            var tempFile = Path.Combine(Path.GetTempPath(), "MuseDashTOOL_New" + Path.GetExtension(fileName));
+
+            try
+            {
+                using var fs = new FileStream(tempFile, FileMode.Create);
+                await response.Content.CopyToAsync(fs);
+            }
+            catch (Exception ex)
+            {
+                RuntimeLog.Write("UpdateService", $"保存更新包失败：{ex.Message}");
+                _notificationService.ShowFailure("更新失败", $"保存更新包失败：{ex.Message}");
+                return;
+            }
+
+            _pendingUpdateFile = tempFile;
+            RuntimeLog.Write("UpdateService", $"更新包下载完成，已保存到临时文件：{tempFile}");
+
+            // 不管后续弹框是否成功，都先明确告诉用户“更新包已经下载完成”。
+            _notificationService.ShowSuccess("新版本下载完成");
+
+            // 对话框必须在 UI 线程弹出，但这里不再把是否弹框成功作为成功下载的前提。
+            Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+            {
+                await ShowUpdateReadyDialogAsync();
+            });
+        }
+    }
+
+    private async Task ShowUpdateReadyDialogAsync()
+    {
+        try
+        {
+            var mainWindow =
+                (Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)
+                ?.MainWindow;
+
+            if (mainWindow == null)
+            {
+                RuntimeLog.Write("UpdateService", "更新包已下载完成，但主窗口尚未就绪，无法弹出确认对话框。将在退出软件时自动安装。");
+                _notificationService.ShowInfo("更新已下载完成，将在软件关闭后自动安装", 4000);
+                return;
+            }
+
+            bool shouldRestart = await MessageBox.ShowDialogAsync(mainWindow, "新版本下载完成，是否立即重启以应用更新？", showCancel: true);
+            if (shouldRestart)
+            {
+                RuntimeLog.Write("UpdateService", "用户确认立即重启并应用更新。");
+                ApplyUpdateInternal();
+            }
+            else
+            {
+                RuntimeLog.Write("UpdateService", "用户选择稍后安装更新，等待程序退出时自动替换。");
+                _notificationService.ShowInfo("更新已就绪，将在软件关闭后自动安装", 3000);
+            }
+        }
+        catch (Exception ex)
+        {
+            RuntimeLog.Write("UpdateService", $"显示更新确认对话框失败：{ex.Message}");
+            _notificationService.ShowInfo("更新已下载完成，将在软件关闭后自动安装", 4000);
+        }
     }
 
     public void ApplyPendingUpdate()
@@ -191,15 +270,15 @@ public class UpdateService : IUpdateService
         if (string.IsNullOrEmpty(_pendingUpdateFile)) return;
 
         CreateUpdaterScript(_pendingUpdateFile);
-        
-        // 启动更新脚本并退出
+
+        // 启动更新脚本后立即退出当前进程，让脚本接管替换和重启。
         Process.Start(new ProcessStartInfo
         {
             FileName = "updater.bat",
             UseShellExecute = true,
             CreateNoWindow = true
         });
-        
+
         Environment.Exit(0);
     }
 
@@ -207,10 +286,10 @@ public class UpdateService : IUpdateService
     {
         var currentExe = Process.GetCurrentProcess().MainModule?.FileName;
         if (currentExe == null) return;
-        
+
         var processName = Process.GetCurrentProcess().ProcessName;
 
-        // 更加健壮的脚本：不断尝试直到进程彻底关闭、文件被释放并移动成功
+        // 反复等待当前进程退出并尝试覆盖 exe，直到替换成功或达到重试上限。
         var script = $@"
 @echo off
 setlocal enabledelayedexpansion
@@ -228,7 +307,8 @@ if errorlevel 1 (
 start """" ""{currentExe}""
 del ""%~f0""
 ";
-        // 使用 GBK 编码 (936) 来确保中文路径在 cmd.exe 中不乱码
+
+        // 使用 GBK 编码写入脚本，避免 cmd.exe 在中文路径下出现乱码。
         var encoding = System.Text.Encoding.GetEncoding(936);
         File.WriteAllText("updater.bat", script, encoding);
     }

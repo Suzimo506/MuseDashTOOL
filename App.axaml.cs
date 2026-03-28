@@ -1,25 +1,20 @@
+using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
-using System.Linq;
 using Avalonia.Markup.Xaml;
+using CommunityToolkit.Mvvm.DependencyInjection;
 using MdModManager.Services;
 using MdModManager.ViewModels;
 using MdModManager.Views;
 using Microsoft.Extensions.DependencyInjection;
-using CommunityToolkit.Mvvm.DependencyInjection;
-using System;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-
 
 namespace MdModManager;
 
 public partial class App : Application
 {
-
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -28,33 +23,61 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-        RuntimeLog.Reset();
         ConfigureServices();
-        
-        // 软件启动时后台静默预获取账号与成绩数据
-        MuseDashAccountService.StartPrefetch();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var configService = Ioc.Default.GetService<IConfigService>();
+            var gamePathService = Ioc.Default.GetService<IGamePathService>();
+
             if (configService != null)
             {
                 configService.Load();
+
+                // 运行日志优先放在喵斯快跑游戏根目录，方便直接在游戏目录里查看。
+                // 如果配置里没有有效游戏路径，就尝试自动探测一次；写入失败时会自动回退到 LocalAppData。
+                var configuredGamePath = configService.Config.GamePath;
+                if ((gamePathService == null || !gamePathService.IsValidGamePath(configuredGamePath)) && gamePathService != null)
+                {
+                    configuredGamePath = gamePathService.DetectGamePath() ?? configuredGamePath;
+                }
+
+                RuntimeLog.Configure(configuredGamePath);
             }
-            
-            // 异步检测更新
+            else
+            {
+                RuntimeLog.Configure(null);
+            }
+
+            RuntimeLog.Reset();
+
+            // 软件启动时后台静默预获取账号与成绩数据。
+            MuseDashAccountService.StartPrefetch();
+
             var updateService = Ioc.Default.GetService<IUpdateService>();
-            updateService?.CheckAndApplyUpdateAsync();
 
             desktop.MainWindow = new MainWindow
             {
                 DataContext = Ioc.Default.GetRequiredService<MainWindowViewModel>(),
             };
 
+            // 等主窗口真正创建完成后再启动更新检查，
+            // 避免更新包下载完成时因为没有可用的 owner 窗口而无法弹出确认对话框。
+            desktop.MainWindow.Opened += (s, e) =>
+            {
+                updateService?.CheckAndApplyUpdateAsync();
+            };
+
             desktop.Exit += (s, e) =>
             {
                 updateService?.ApplyPendingUpdate();
             };
+        }
+        else
+        {
+            RuntimeLog.Configure(null);
+            RuntimeLog.Reset();
+            MuseDashAccountService.StartPrefetch();
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -79,22 +102,22 @@ public partial class App : Application
         services.AddTransient<AlbumDetailViewModel>();
         services.AddTransient<CommunityCategoryDetailViewModel>();
 
-        // 服务类定义
-        services.AddSingleton<MdModManager.Services.IConfigService, MdModManager.Services.ConfigService>();
-        services.AddSingleton<MdModManager.Services.IGamePathService, MdModManager.Services.GamePathService>();
-        services.AddSingleton<MdModManager.Services.IMelonLoaderService, MdModManager.Services.MelonLoaderService>();
-        services.AddSingleton<MdModManager.Services.IModCatalogService, MdModManager.Services.ModCatalogService>();
-        services.AddSingleton<MdModManager.Services.ILocalModService, MdModManager.Services.LocalModService>();
-        services.AddSingleton<MdModManager.Services.INotificationService, MdModManager.Services.NotificationService>();
-        services.AddSingleton<MdModManager.Services.IConfigFileService, MdModManager.Services.ConfigFileService>();
-        services.AddSingleton<MdModManager.Services.IChartService, MdModManager.Services.ChartService>();
-        services.AddSingleton<MdModManager.Services.IChartDownloadService, MdModManager.Services.ChartDownloadService>();
-        services.AddSingleton<MdModManager.Services.IDownloadManagerService, MdModManager.Services.DownloadManagerService>();
-        services.AddSingleton<MdModManager.Services.INavigationService, MdModManager.Services.NavigationService>();
-        services.AddSingleton<MdModManager.Services.ModStagingService>();
-        services.AddSingleton<MdModManager.Services.IUpdateService, MdModManager.Services.UpdateService>();
-        services.AddSingleton<MdModManager.Services.IAnnouncementService, MdModManager.Services.AnnouncementService>();
-        services.AddSingleton<MdModManager.Services.IAlbumCollectionService, MdModManager.Services.AlbumCollectionService>();
+        // Services
+        services.AddSingleton<IConfigService, ConfigService>();
+        services.AddSingleton<IGamePathService, GamePathService>();
+        services.AddSingleton<IMelonLoaderService, MelonLoaderService>();
+        services.AddSingleton<IModCatalogService, ModCatalogService>();
+        services.AddSingleton<ILocalModService, LocalModService>();
+        services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<IConfigFileService, ConfigFileService>();
+        services.AddSingleton<IChartService, ChartService>();
+        services.AddSingleton<IChartDownloadService, ChartDownloadService>();
+        services.AddSingleton<IDownloadManagerService, DownloadManagerService>();
+        services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<ModStagingService>();
+        services.AddSingleton<IUpdateService, UpdateService>();
+        services.AddSingleton<IAnnouncementService, AnnouncementService>();
+        services.AddSingleton<IAlbumCollectionService, AlbumCollectionService>();
 
         Ioc.Default.ConfigureServices(services.BuildServiceProvider());
     }
@@ -110,4 +133,3 @@ public partial class App : Application
         }
     }
 }
-/* v1.1.1 */

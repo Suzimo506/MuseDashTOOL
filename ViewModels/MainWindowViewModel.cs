@@ -848,6 +848,33 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
+            var runtimeDesktopPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop);
+            var exportRuntimeLogPath = System.IO.Path.Combine(runtimeDesktopPath, "MuseDashTOOL_runtime-debug.log");
+            var runtimeLogPath = RuntimeLog.LogPath;
+            RuntimeLog.Write("MainWindowViewModel", $"用户导出运行日志到桌面：{exportRuntimeLogPath}");
+
+            // 左键标题时优先导出运行日志到桌面。
+            // 运行日志会保留真实的请求、下载、更新和异常时序，比摘要日志更适合排查问题。
+            RuntimeLog.Write("MainWindowViewModel", $"用户导出运行日志到桌面：{exportRuntimeLogPath}");
+
+            if (!System.IO.File.Exists(runtimeLogPath))
+            {
+                await System.IO.File.WriteAllTextAsync(
+                    exportRuntimeLogPath,
+                    $"未找到运行日志文件。{System.Environment.NewLine}Expected: {runtimeLogPath}{System.Environment.NewLine}");
+            }
+            else
+            {
+                System.IO.File.Copy(runtimeLogPath, exportRuntimeLogPath, overwrite: true);
+            }
+
+            if (_notificationService != null)
+            {
+                _notificationService.ShowSuccess("运行日志已保存到桌面！");
+            }
+
+            return;
+
             var desktopPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop);
             var logPath = System.IO.Path.Combine(desktopPath, "MuseDashTOOL_log.txt");
 
