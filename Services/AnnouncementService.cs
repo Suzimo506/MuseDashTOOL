@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using MdModManager.Helpers;
 using MdModManager.Models;
 
 namespace MdModManager.Services;
@@ -13,15 +14,13 @@ public interface IAnnouncementService
 
 public class AnnouncementService : IAnnouncementService
 {
-    private const string AnnouncementUrl = "https://raw.githubusercontent.com/KuoKing506/-MuseDashTOOL/refs/heads/main/announcement.json";
+    private const string AnnouncementUrl = "https://raw.githubusercontent.com/KuoKing506/-MuseDashTOOL/main/announcement.json";
     private readonly HttpClient _httpClient;
 
     public AnnouncementService()
     {
-        _httpClient = new HttpClient();
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "MuseDashModTool-Announcement");
+        _httpClient = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(4));
         // 设置较短的超时时间，避免网络环境差时卡顿
-        _httpClient.Timeout = TimeSpan.FromSeconds(5);
     }
 
     public async Task<NoticeInfo?> GetLatestAnnouncementAsync()
