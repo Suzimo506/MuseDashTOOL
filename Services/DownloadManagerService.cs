@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -9,7 +12,6 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using MdModManager.Helpers;
 using MdModManager.Models;
-using System.Collections.Generic; // 引入以支持 HashSet
 
 namespace MdModManager.Services;
 
@@ -17,15 +19,15 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 {
     private readonly IConfigService _configService;
     private readonly INotificationService _notificationService;
-    // 默认客户端用于界面小文件（如封面），超时较短以保证响应度
+    // 默认客户端用于界面小文件（如封面），超时较短以保证响应速度
     private readonly HttpClient _http = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(4));
-    // 下载专门客户端，超时放宽到 15 秒以应对慢速网络
+    // 下载专用客户端，超时放宽到 15 秒以应对慢速网络
     private readonly HttpClient _downloadHttp = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(600), TimeSpan.FromSeconds(15));
     // 并发控制器：最多同时下载 10 个谱面
     private readonly SemaphoreSlim _concurrencySemaphore = new(10, 10);
 
     public ObservableCollection<DownloadTaskItem> Tasks { get; } = new();
-    public HashSet<string> SessionDownloadedFiles { get; } = new(StringComparer.OrdinalIgnoreCase); // 引入属性记录已下载文件
+    public HashSet<string> SessionDownloadedFiles { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public DownloadManagerService(IConfigService configService, INotificationService notificationService)
     {
@@ -37,7 +39,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     {
         Dispatcher.UIThread.Post(() =>
         {
-            if (Tasks.Any(t => t.Chart.Id == chart.Id && 
+            if (Tasks.Any(t => t.Chart.Id == chart.Id &&
                 (t.Status == DownloadStatus.Waiting || t.Status == DownloadStatus.Downloading || t.Status == DownloadStatus.Paused)))
             {
                 return;
@@ -45,13 +47,12 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
             var item = new DownloadTaskItem(chart);
             Tasks.Add(item);
-            
-            // 如果列表中的谱面尚未加载封面（例如刚加入下载队列时），尝试加载它
+
             if (item.Chart.CoverImage == null && !string.IsNullOrEmpty(item.Chart.CoverUrl))
             {
                 _ = LoadCoverAsync(item);
             }
-            
+
             _ = ProcessDownloadAsync(item);
         });
     }
@@ -65,7 +66,9 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             var bmp = new Avalonia.Media.Imaging.Bitmap(ms);
             Dispatcher.UIThread.Post(() => item.Chart.CoverImage = bmp);
         }
-        catch { /* 忽略封面加载错误 */ }
+        catch
+        {
+        }
     }
 
     public void PauseDownload(DownloadTaskItem item)
@@ -90,16 +93,8 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     {
         item.Cts?.Cancel();
         item.Status = DownloadStatus.Canceled;
-        
-        try
-        {
-            if (!string.IsNullOrEmpty(item.DestinationPath) && File.Exists(item.DestinationPath))
-            {
-                File.Delete(item.DestinationPath);
-            }
-        }
-        catch { /* 已忽略 */ }
 
+        TryDeleteFile(item.DestinationPath);
         Dispatcher.UIThread.Post(() => Tasks.Remove(item));
     }
 
@@ -114,193 +109,124 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
     private async Task ProcessDownloadAsync(DownloadTaskItem item)
     {
-        // 标记为等待中
         item.Status = DownloadStatus.Waiting;
         UpdateDownloadInfo(item);
 
         bool acquired = false;
         try
         {
-            // 在入场前初始化一次 CTS，这样用户在“等待中”也能取消
-            if (item.Cts == null) item.Cts = new CancellationTokenSource();
+            if (item.Cts == null)
+                item.Cts = new CancellationTokenSource();
+
             var ct = item.Cts.Token;
 
-            // 等待入场券
             await _concurrencySemaphore.WaitAsync(ct);
             acquired = true;
 
-            // 拿到入场券，正式开始下载
             item.Status = DownloadStatus.Downloading;
             UpdateDownloadInfo(item);
 
             int retryCount = 0;
-            const int maxRetries = 10;
+            var useOptimizedIpStrategy = UsesOptimizedIpStrategy(item.Chart.DownloadUrl);
+            var maxRetryCount = useOptimizedIpStrategy ? 10 : 3;
 
-            while (retryCount < maxRetries)
+            while (retryCount <= maxRetryCount)
             {
                 try
                 {
-                    if (ct.IsCancellationRequested) return;
+                    if (ct.IsCancellationRequested)
+                        return;
 
                     var gamePath = _configService.Config.GamePath;
                     if (string.IsNullOrEmpty(gamePath))
-                    {
                         throw new Exception("游戏路径未设置，请先在设置中配置游戏目录");
-                    }
 
                     var albumsDir = Path.Combine(gamePath, "Custom_Albums");
                     if (!Directory.Exists(albumsDir))
-                    {
                         Directory.CreateDirectory(albumsDir);
-                    }
 
                     static string Safe(string s) => string.Join("_", s.Split(Path.GetInvalidFileNameChars()));
                     var fileName = $"{Safe(item.Chart.Title)} - {Safe(item.Chart.Artist)}.mdm";
                     if (string.IsNullOrEmpty(item.DestinationPath))
-                    {
                         item.DestinationPath = Path.Combine(albumsDir, fileName);
-                    }
 
                     RuntimeLog.Write("DownloadManager", $"Download start/resume: title='{item.Chart.Title}', url='{item.Chart.DownloadUrl}', downloaded={item.DownloadedBytes}, retry={retryCount}");
-                    
-                    var fileMode = item.DownloadedBytes > 0 ? FileMode.Append : FileMode.Create;
-                    // 使用 FileShare.Write 允许在其他读取流存在时进行续传
-                    using var dst = new FileStream(item.DestinationPath, fileMode, FileAccess.Write, FileShare.None, 81920, true);
 
-                    using var request = new HttpRequestMessage(HttpMethod.Get, item.Chart.DownloadUrl);
-                    if (item.DownloadedBytes > 0)
+                    await DownloadToFileAsync(item, ct);
+
+                    var validationError = await ValidateMdmIntegrityAsync(item.DestinationPath, ct);
+                    if (validationError != null)
                     {
-                        request.Headers.Range = new RangeHeaderValue(item.DownloadedBytes, null);
+                        retryCount++;
+                        RuntimeLog.Write("DownloadManager", $"Downloaded mdm failed integrity check: title='{item.Chart.Title}', retry={retryCount}, error='{validationError}'");
+
+                        ResetPartialDownload(item);
+                        UpdateDownloadInfo(item);
+
+                        if (retryCount <= maxRetryCount)
+                        {
+                            _notificationService.ShowInfo("文件损坏，尝试重新下载中", 3000);
+                            await DelayBeforeRetryAsync(useOptimizedIpStrategy, ct);
+                            continue;
+                        }
+
+                        HandleFinalFailure(item, useOptimizedIpStrategy, $"文件完整性校验失败: {validationError}");
+                        return;
                     }
 
-                    // 下载时使用 _downloadHttp
-                    using var response = await _downloadHttp.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
-                RuntimeLog.Write("DownloadManager", $"Download response: title='{item.Chart.Title}', status={(int)response.StatusCode} {response.StatusCode}");
-                
-                // If we requested a range but got 200 OK instead of 206 Partial Content, 
-                // it means the server doesn't support range or ignored it. We must restart from 0.
-                if (item.DownloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    RuntimeLog.Write("DownloadManager", $"Server returned 200 OK instead of 206, resetting download progress for '{item.Chart.Title}'");
-                    item.DownloadedBytes = 0;
-                    dst.SetLength(0);
-                    dst.Seek(0, SeekOrigin.Begin);
-                }
-                
-                response.EnsureSuccessStatusCode();
+                    item.Status = DownloadStatus.Completed;
+                    item.Progress = 100;
+                    _notificationService.ShowSuccess($"《{item.Chart.Title}》下载完成");
 
-                // 尝试从响应头获取总大小
-                if (item.TotalBytes == 0)
-                {
-                    item.TotalBytes = response.Content.Headers.ContentLength ?? 0;
-                    if (item.DownloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.PartialContent)
-                    {
-                        item.TotalBytes += item.DownloadedBytes;
-                    }
-                }
-                
-                UpdateDownloadInfo(item);
-
-                using var src = await response.Content.ReadAsStreamAsync(ct);
-                var buf = new byte[81920];
-                int n;
-
-                var lastTime = DateTime.UtcNow;
-                var lastBytes = item.DownloadedBytes;
-
-                // 读取数据流，放宽超时至 15 秒以适应慢速网络
-                while ((n = await src.ReadAsync(buf, ct).AsTask().WaitAsync(TimeSpan.FromSeconds(15), ct)) > 0)
-                {
-                    await dst.WriteAsync(buf.AsMemory(0, n), ct);
-                    item.DownloadedBytes += n;
-                    
-                    if (item.TotalBytes > 0)
-                    {
-                        item.Progress = (double)item.DownloadedBytes / item.TotalBytes * 100;
-                    }
-
-                    var now = DateTime.UtcNow;
-                    var elapsed = (now - lastTime).TotalSeconds;
-                    if (elapsed >= 1.0)
-                    {
-                        var speed = (item.DownloadedBytes - lastBytes) / elapsed;
-                        UpdateDownloadInfo(item, speed);
-                        lastTime = now;
-                        lastBytes = item.DownloadedBytes;
-                    }
-                }
-
-                item.Status = DownloadStatus.Completed;
-                item.Progress = 100;
-                _notificationService.ShowSuccess($"《{item.Chart.Title}》下载完成");
-                
-                // 添加到当前会话的已下载文件列表
-                SessionDownloadedFiles.Add(Path.GetFullPath(item.DestinationPath));
-
-                // 完成后自动移除任务项
-                Dispatcher.UIThread.Post(() => Tasks.Remove(item));
-                return; // 成功完成
-            }
-            catch (OperationCanceledException)
-            {
-                // 如果是用户点击了“取消”按钮 (Status 会被设为 Canceled)
-                if (item.Status == DownloadStatus.Canceled) return;
-
-                // 核心修复点：只有在“用户主动点击暂停”时（即 item.Cts 被标记为已取消），才真正显示“已暂停”
-                if (item.Cts != null && item.Cts.IsCancellationRequested)
-                {
-                    item.Status = DownloadStatus.Paused;
-                    UpdateDownloadInfo(item); // 暂停时切换回文件大小
+                    SessionDownloadedFiles.Add(Path.GetFullPath(item.DestinationPath));
+                    Dispatcher.UIThread.Post(() => Tasks.Remove(item));
                     return;
                 }
-
-                // 否则，该异常是由内部超时（如 HttpHelper 的 4 秒头监控）触发的，应走重试逻辑
-                retryCount++;
-                RuntimeLog.Write("DownloadManager", $"Download internal timeout (watchdog): title='{item.Chart.Title}', retry={retryCount}");
-                
-                if (HttpHelper.UseOptimizedIps)
+                catch (OperationCanceledException)
                 {
-                    HttpHelper.InvalidateFastestIp();
-                    await Task.Delay(1000);
-                }
-                continue; // 进入重试循环，尝试下一个 IP
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                // 通用重试逻辑：无论是否开启“高速 DNS”，只要没超过最大重试次数，就继续尝试
-                retryCount++;
-                RuntimeLog.Write("DownloadManager", $"Download attempt {retryCount} failed: title='{item.Chart.Title}', error='{ex.Message}'");
+                    if (item.Status == DownloadStatus.Canceled)
+                        return;
 
-                if (retryCount < maxRetries)
+                    if (item.Cts != null && item.Cts.IsCancellationRequested)
+                    {
+                        item.Status = DownloadStatus.Paused;
+                        UpdateDownloadInfo(item);
+                        return;
+                    }
+
+                    retryCount++;
+                    RuntimeLog.Write("DownloadManager", $"Download internal timeout (watchdog): title='{item.Chart.Title}', retry={retryCount}");
+
+                    if (retryCount <= maxRetryCount)
+                    {
+                        await DelayBeforeRetryAsync(useOptimizedIpStrategy, CancellationToken.None);
+                        continue;
+                    }
+
+                    HandleFinalFailure(item, useOptimizedIpStrategy, "下载超时");
+                    return;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    // 如果启用了高速 DNS，尝试换 IP
-                    if (HttpHelper.UseOptimizedIps)
-                    {
-                        HttpHelper.InvalidateFastestIp();
-                        // 等待 1 秒给新竞速一点时间
-                        await Task.Delay(1000);
-                    }
-                    else
-                    {
-                        // 普通模式下也稍微等一下再试
-                        await Task.Delay(2000);
-                    }
-                    continue; // 只要次数没完，就继续重试
-                }
+                    retryCount++;
+                    RuntimeLog.Write("DownloadManager", $"Download attempt {retryCount} failed: title='{item.Chart.Title}', error='{ex.Message}'");
 
-                // 只有真的失败 10 次后，才设置状态为错误
-                item.Status = DownloadStatus.Error;
-                item.ErrorMessage = ex.Message;
-                UpdateDownloadInfo(item);
-                _notificationService.ShowFailure("下载失败", ex.Message);
-                return;
+                    if (retryCount <= maxRetryCount)
+                    {
+                        await DelayBeforeRetryAsync(useOptimizedIpStrategy, CancellationToken.None);
+                        continue;
+                    }
+
+                    HandleFinalFailure(item, useOptimizedIpStrategy, ex.Message);
+                    return;
+                }
             }
         }
-    }
-    catch (OperationCanceledException)
+        catch (OperationCanceledException)
         {
-            // 外部异常，通常是因为 WaitAsync 被取消
-            if (item.Status == DownloadStatus.Canceled) return;
+            if (item.Status == DownloadStatus.Canceled)
+                return;
+
             if (item.Cts != null && item.Cts.IsCancellationRequested)
             {
                 item.Status = DownloadStatus.Paused;
@@ -309,19 +235,296 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         }
         catch (Exception ex)
         {
-            // 其他未知异常
             RuntimeLog.Write("DownloadManager", $"Uncaught download error: {ex.Message}");
             item.Status = DownloadStatus.Error;
-            item.ErrorMessage = ex.Message;
+            item.ErrorMessage = TranslateDownloadErrorMessage(ex.Message);
         }
         finally
         {
             if (acquired)
-            {
                 _concurrencySemaphore.Release();
-            }
+
             item.Cts?.Dispose();
             item.Cts = null;
+        }
+    }
+
+    private async Task DownloadToFileAsync(DownloadTaskItem item, CancellationToken ct)
+    {
+        var fileMode = item.DownloadedBytes > 0 ? FileMode.Append : FileMode.Create;
+        using var dst = new FileStream(item.DestinationPath, fileMode, FileAccess.Write, FileShare.None, 81920, true);
+        using var request = new HttpRequestMessage(HttpMethod.Get, item.Chart.DownloadUrl);
+
+        if (item.DownloadedBytes > 0)
+        {
+            request.Headers.Range = new RangeHeaderValue(item.DownloadedBytes, null);
+            var ifRange = CreateIfRangeHeader(item);
+            if (ifRange != null)
+                request.Headers.IfRange = ifRange;
+        }
+
+        using var response = await _downloadHttp.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        RuntimeLog.Write("DownloadManager", $"Download response: title='{item.Chart.Title}', status={(int)response.StatusCode} {response.StatusCode}");
+
+        if (item.DownloadedBytes > 0 && response.StatusCode == HttpStatusCode.OK)
+        {
+            RuntimeLog.Write("DownloadManager", $"Server returned 200 OK instead of 206, resetting download progress for '{item.Chart.Title}'");
+            item.DownloadedBytes = 0;
+            item.TotalBytes = 0;
+            dst.SetLength(0);
+            dst.Seek(0, SeekOrigin.Begin);
+        }
+
+        response.EnsureSuccessStatusCode();
+        CaptureResumeValidators(item, response);
+
+        if (item.TotalBytes == 0)
+        {
+            item.TotalBytes = response.Content.Headers.ContentLength ?? 0;
+            if (item.DownloadedBytes > 0 && response.StatusCode == HttpStatusCode.PartialContent)
+                item.TotalBytes += item.DownloadedBytes;
+        }
+
+        UpdateDownloadInfo(item);
+
+        using var src = await response.Content.ReadAsStreamAsync(ct);
+        var buf = new byte[81920];
+        var lastTime = DateTime.UtcNow;
+        var lastBytes = item.DownloadedBytes;
+
+        int n;
+        while ((n = await src.ReadAsync(buf, ct).AsTask().WaitAsync(TimeSpan.FromSeconds(15), ct)) > 0)
+        {
+            await dst.WriteAsync(buf.AsMemory(0, n), ct);
+            item.DownloadedBytes += n;
+
+            if (item.TotalBytes > 0)
+                item.Progress = (double)item.DownloadedBytes / item.TotalBytes * 100;
+
+            var now = DateTime.UtcNow;
+            var elapsed = (now - lastTime).TotalSeconds;
+            if (elapsed >= 1.0)
+            {
+                var speed = (item.DownloadedBytes - lastBytes) / elapsed;
+                UpdateDownloadInfo(item, speed);
+                lastTime = now;
+                lastBytes = item.DownloadedBytes;
+            }
+        }
+
+        await dst.FlushAsync(ct);
+    }
+
+    private static RangeConditionHeaderValue? CreateIfRangeHeader(DownloadTaskItem item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.ResumeEntityTag) &&
+            EntityTagHeaderValue.TryParse(item.ResumeEntityTag, out var entityTag) &&
+            !entityTag.IsWeak)
+        {
+            return new RangeConditionHeaderValue(entityTag);
+        }
+
+        if (item.ResumeLastModified.HasValue)
+            return new RangeConditionHeaderValue(item.ResumeLastModified.Value);
+
+        return null;
+    }
+
+    private static void CaptureResumeValidators(DownloadTaskItem item, HttpResponseMessage response)
+    {
+        if (response.Headers.ETag is { IsWeak: false } etag)
+            item.ResumeEntityTag = etag.ToString();
+        else if (response.StatusCode == HttpStatusCode.OK)
+            item.ResumeEntityTag = null;
+
+        if (response.Content.Headers.LastModified.HasValue)
+            item.ResumeLastModified = response.Content.Headers.LastModified.Value;
+        else if (response.Headers.TryGetValues("Last-Modified", out var values) &&
+                 DateTimeOffset.TryParse(values.FirstOrDefault(), out var lastModified))
+            item.ResumeLastModified = lastModified;
+        else if (response.StatusCode == HttpStatusCode.OK)
+            item.ResumeLastModified = null;
+    }
+
+    private static async Task<string?> ValidateMdmIntegrityAsync(string filePath, CancellationToken ct)
+    {
+        try
+        {
+            if (!File.Exists(filePath))
+                return "文件不存在";
+
+            var fileInfo = new FileInfo(filePath);
+            if (fileInfo.Length <= 0)
+                return "文件大小为 0";
+
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, true);
+            using var zip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
+
+            if (zip.Entries.Count == 0)
+                return "压缩包为空";
+
+            var buffer = new byte[81920];
+            foreach (var entry in zip.Entries)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (string.IsNullOrEmpty(entry.Name) && entry.FullName.EndsWith("/", StringComparison.Ordinal))
+                    continue;
+
+                using var entryStream = entry.Open();
+                while (await entryStream.ReadAsync(buffer.AsMemory(0, buffer.Length), ct) > 0)
+                {
+                }
+            }
+
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (InvalidDataException ex)
+        {
+            return ex.Message;
+        }
+        catch (IOException ex)
+        {
+            return ex.Message;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return ex.Message;
+        }
+    }
+
+    private static void ResetPartialDownload(DownloadTaskItem item)
+    {
+        item.DownloadedBytes = 0;
+        item.TotalBytes = 0;
+        item.Progress = 0;
+        item.ErrorMessage = string.Empty;
+        item.ResumeEntityTag = null;
+        item.ResumeLastModified = null;
+        TryDeleteFile(item.DestinationPath);
+    }
+
+    private static bool UsesOptimizedIpStrategy(string? downloadUrl)
+    {
+        if (!HttpHelper.UseOptimizedIps || string.IsNullOrWhiteSpace(downloadUrl))
+            return false;
+
+        if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri))
+            return false;
+
+        return uri.Host.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
+               uri.Host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task DelayBeforeRetryAsync(bool useOptimizedIpStrategy, CancellationToken ct)
+    {
+        if (useOptimizedIpStrategy)
+        {
+            HttpHelper.InvalidateFastestIp();
+            await Task.Delay(1000, ct);
+            return;
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(3), ct);
+    }
+
+    private void HandleFinalFailure(DownloadTaskItem item, bool useOptimizedIpStrategy, string reason)
+    {
+        var translatedReason = TranslateDownloadErrorMessage(reason);
+        item.Status = DownloadStatus.Error;
+        item.ErrorMessage = useOptimizedIpStrategy
+            ? translatedReason
+            : "当前下载源连续失败，请切换下载源或手动下载。";
+        UpdateDownloadInfo(item);
+        _notificationService.ShowFailure("下载失败", item.ErrorMessage);
+    }
+
+    private static string TranslateDownloadErrorMessage(string? reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            return "下载失败";
+
+        var message = reason.Trim();
+
+        if (message.Contains("Response status code does not indicate success", StringComparison.OrdinalIgnoreCase))
+        {
+            var statusCode = TryExtractHttpStatusCode(message);
+            return statusCode switch
+            {
+                400 => "下载失败：请求无效（400）",
+                401 => "下载失败：未通过身份验证（401）",
+                403 => "下载失败：服务器拒绝访问（403）",
+                404 => "下载失败：资源不存在（404）",
+                408 => "下载失败：请求超时（408）",
+                416 => "下载失败：断点续传范围无效（416）",
+                429 => "下载失败：请求过于频繁（429）",
+                >= 500 and <= 599 => $"下载失败：服务器暂时不可用（HTTP {statusCode}）",
+                int code when code > 0 => $"下载失败（HTTP {code}）",
+                _ => "下载失败：服务器返回了错误响应"
+            };
+        }
+
+        if (message.Contains("The operation was canceled", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("A task was canceled", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("timed out", StringComparison.OrdinalIgnoreCase))
+        {
+            return "下载超时";
+        }
+
+        if (message.Contains("No such host is known", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("Name or service not known", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("Temporary failure in name resolution", StringComparison.OrdinalIgnoreCase))
+        {
+            return "下载失败：无法解析服务器地址";
+        }
+
+        if (message.Contains("actively refused", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("Connection refused", StringComparison.OrdinalIgnoreCase))
+        {
+            return "下载失败：服务器拒绝连接";
+        }
+
+        if (message.Contains("forcibly closed", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("Connection reset", StringComparison.OrdinalIgnoreCase))
+        {
+            return "下载失败：连接被服务器中断";
+        }
+
+        if (message.Contains("SSL", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("TLS", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("secure connection", StringComparison.OrdinalIgnoreCase))
+        {
+            return "下载失败：安全连接建立失败";
+        }
+
+        return message;
+    }
+
+    private static int TryExtractHttpStatusCode(string message)
+    {
+        var parts = message.Split([' ', ':', '(', ')', '.', ',', ';'], StringSplitOptions.RemoveEmptyEntries);
+        foreach (var part in parts)
+        {
+            if (part.Length == 3 && int.TryParse(part, out var code))
+                return code;
+        }
+
+        return 0;
+    }
+
+    private static void TryDeleteFile(string? path)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                File.Delete(path);
+        }
+        catch
+        {
         }
     }
 
@@ -329,7 +532,6 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     {
         if (item.Status == DownloadStatus.Downloading)
         {
-            // 开始下载且还没计算出速度时，默认显示 0 KB/s 而非文件大小
             double speed = speedBps < 0 ? 0 : speedBps;
             if (speed < 1024)
                 item.DownloadInfo = $"{speed:F0} B/s";
@@ -359,6 +561,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         {
             task.Cts?.Cancel();
         }
+
         _http.Dispose();
         _downloadHttp.Dispose();
     }

@@ -764,7 +764,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new HttpRequestException($"HTTP {(int)response.StatusCode}");
+                    throw new HttpRequestException($"HTTP 响应异常: {(int)response.StatusCode}");
                 }
 
                 var bytes = await response.Content.ReadAsByteArrayAsync(ct);

@@ -94,7 +94,7 @@ public class MelonLoaderService : IMelonLoaderService
     public async Task InstallAsync(string downloadUrl, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
         var gamePath = _configService.Config.GamePath;
-        if (string.IsNullOrEmpty(gamePath)) throw new Exception("Game path not set.");
+        if (string.IsNullOrEmpty(gamePath)) throw new Exception("游戏目录未设置");
 
         var tempZip = Path.Combine(Path.GetTempPath(), $"MelonLoader_{Guid.NewGuid():N}.zip");
 

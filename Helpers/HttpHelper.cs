@@ -219,7 +219,7 @@ public static class HttpHelper
                     {
                         if (Interlocked.Decrement(ref remaining) == 0)
                         {
-                            tcs.TrySetException(new Exception("All IPs failed"));
+                            tcs.TrySetException(new Exception("所有 IP 连接试跑失败"));
                         }
                     }
                 }, cts.Token);

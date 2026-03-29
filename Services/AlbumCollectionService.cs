@@ -213,7 +213,7 @@ public class AlbumCollectionService : IAlbumCollectionService
 
         var rawBaseUrlFinal = repoUrl.Replace("github.com", "raw.githubusercontent.com") + "/main";
         List<CommunityIndexItem>? items = null;
-        string releaseTag = "";
+        List<string> defaultReleaseTags = [];
 
         try
         {
@@ -221,7 +221,10 @@ public class AlbumCollectionService : IAlbumCollectionService
             var wrapper = JsonSerializer.Deserialize<CommunityIndexWrapper>(json, options);
             if (wrapper != null && wrapper.Charts != null)
             {
-                releaseTag = wrapper.ReleaseTag ?? "";
+                defaultReleaseTags = CommunityReleaseHelper.MergeReleaseTags(
+                    null,
+                    wrapper.ReleaseTag,
+                    wrapper.ReleaseTags);
                 items = wrapper.Charts;
             }
         }
@@ -232,7 +235,7 @@ public class AlbumCollectionService : IAlbumCollectionService
 
         if (items == null) return new List<MdmcChart>();
 
-        var charts = items.Select(item => MapToIndexChart(item, rawBaseUrlFinal, repoUrl, releaseTag)).ToList();
+        var charts = items.Select(item => MapToIndexChart(item, rawBaseUrlFinal, repoUrl, defaultReleaseTags)).ToList();
         _communityChartsCache[name] = charts;
         return charts;
     }
@@ -257,7 +260,11 @@ public class AlbumCollectionService : IAlbumCollectionService
         return candidates.FirstOrDefault(File.Exists);
     }
 
-    private MdmcChart MapToIndexChart(CommunityIndexItem item, string rawBaseUrl, string githubRepoUrl, string releaseTag)
+    private MdmcChart MapToIndexChart(
+        CommunityIndexItem item,
+        string rawBaseUrl,
+        string githubRepoUrl,
+        IReadOnlyList<string> defaultReleaseTags)
     {
         var coverUrl = item.CoverUrl;
         if (!string.IsNullOrEmpty(coverUrl) && !coverUrl.StartsWith("http"))
@@ -272,8 +279,8 @@ public class AlbumCollectionService : IAlbumCollectionService
             demoMp3Url = rawBaseUrl + "/demos/" + demoMp3Url;
 
         var downloadUrl = item.DownloadUrl;
-        if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http") && !string.IsNullOrEmpty(releaseTag))
-            downloadUrl = githubRepoUrl + "/releases/download/" + releaseTag + "/" + downloadUrl;
+        var candidateTags = CommunityReleaseHelper.MergeReleaseTags(defaultReleaseTags, item.ReleaseTag, item.ReleaseTags);
+        downloadUrl = CommunityReleaseHelper.ResolveReleaseDownloadUrl(downloadUrl, githubRepoUrl, candidateTags);
 
         // 映射逻辑参考 CommunityCategoryDetailViewModel.cs
         var sheets = new List<MdmcSheet>();
@@ -305,8 +312,8 @@ public class AlbumCollectionService : IAlbumCollectionService
     }
 
     // 内部类，用于解析群友索引
-    private class CommunityIndexWrapper { [JsonPropertyName("release_tag")] public string ReleaseTag { get; set; } = ""; [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
-    private class CommunityIndexItem { [JsonPropertyName("id")] public string Id { get; set; } = ""; [JsonPropertyName("original_id")] public string OriginalId { get; set; } = ""; [JsonPropertyName("title")] public string Title { get; set; } = ""; [JsonPropertyName("artist")] public string Artist { get; set; } = ""; [JsonPropertyName("charter")] public string Charter { get; set; } = ""; [JsonPropertyName("bpm")] public string Bpm { get; set; } = ""; [JsonPropertyName("scene")] public string Scene { get; set; } = ""; [JsonPropertyName("difficulty")] public string Difficulty { get; set; } = ""; [JsonPropertyName("difficulties")] public List<string>? Difficulties { get; set; } [JsonPropertyName("cover_url")] public string CoverUrl { get; set; } = ""; [JsonPropertyName("demo_url")] public string DemoUrl { get; set; } = ""; [JsonPropertyName("demo_mp3_url")] public string DemoMp3Url { get; set; } = ""; [JsonPropertyName("download_url")] public string DownloadUrl { get; set; } = ""; }
+    private class CommunityIndexWrapper { [JsonPropertyName("release_tag")] public JsonElement ReleaseTag { get; set; } [JsonPropertyName("release_tags")] public JsonElement ReleaseTags { get; set; } [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
+    private class CommunityIndexItem { [JsonPropertyName("id")] public string Id { get; set; } = ""; [JsonPropertyName("original_id")] public string OriginalId { get; set; } = ""; [JsonPropertyName("title")] public string Title { get; set; } = ""; [JsonPropertyName("artist")] public string Artist { get; set; } = ""; [JsonPropertyName("charter")] public string Charter { get; set; } = ""; [JsonPropertyName("bpm")] public string Bpm { get; set; } = ""; [JsonPropertyName("scene")] public string Scene { get; set; } = ""; [JsonPropertyName("difficulty")] public string Difficulty { get; set; } = ""; [JsonPropertyName("difficulties")] public List<string>? Difficulties { get; set; } [JsonPropertyName("cover_url")] public string CoverUrl { get; set; } = ""; [JsonPropertyName("demo_url")] public string DemoUrl { get; set; } = ""; [JsonPropertyName("demo_mp3_url")] public string DemoMp3Url { get; set; } = ""; [JsonPropertyName("download_url")] public string DownloadUrl { get; set; } = ""; [JsonPropertyName("release_tag")] public JsonElement ReleaseTag { get; set; } [JsonPropertyName("release_tags")] public JsonElement ReleaseTags { get; set; } }
 
     private async Task<List<GitHubContentItem>> GetRepoContentsAsync(string path)
     {
