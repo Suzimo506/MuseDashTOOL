@@ -133,11 +133,12 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
     private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(15) };
     private string _rawBaseUrl = ""; // e.g. https://raw.githubusercontent.com/user/repo/main
     private string _githubRepoUrl = ""; // e.g. https://github.com/user/repo
-    private string _releaseTag = ""; // e.g. NO.1, read from index.json
+    private List<string> _defaultReleaseTags = new();
 
     private class CommunityIndexWrapper
     {
-        [JsonPropertyName("release_tag")] public string ReleaseTag { get; set; } = "";
+        [JsonPropertyName("release_tag")] public JsonElement ReleaseTag { get; set; }
+        [JsonPropertyName("release_tags")] public JsonElement ReleaseTags { get; set; }
         [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new();
     }
 
@@ -156,6 +157,8 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         [JsonPropertyName("demo_url")] public string DemoUrl { get; set; } = "";
         [JsonPropertyName("demo_mp3_url")] public string DemoMp3Url { get; set; } = "";
         [JsonPropertyName("download_url")] public string DownloadUrl { get; set; } = "";
+        [JsonPropertyName("release_tag")] public JsonElement ReleaseTag { get; set; }
+        [JsonPropertyName("release_tags")] public JsonElement ReleaseTags { get; set; }
     }
 
     private string GetCacheKey(int page, int sortIndex, bool ascending, string query)
@@ -205,6 +208,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         _configService = configService;
         _downloadManagerService = downloadManagerService;
         _notificationService = notificationService;
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL-CommunityDetail");
     }
 
     private void OnDownloadViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -232,6 +236,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         ClearPageCache();
         _allFullIndex.Clear();
         _filteredIndex.Clear();
+        _defaultReleaseTags.Clear();
         CurrentPage = 1;
         SearchText = string.Empty;
         
@@ -261,14 +266,17 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
 
             List<CommunityIndexItem>? items = null;
 
-            // 尝试解析新格式 { "release_tag": "...", "charts": [...] }
+            // 尝试解析新格式 { "release_tag": "..."/["..."], "charts": [...] }
             try
             {
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var wrapper = JsonSerializer.Deserialize<CommunityIndexWrapper>(json, options);
                 if (wrapper != null && wrapper.Charts != null && wrapper.Charts.Count > 0)
                 {
-                    _releaseTag = wrapper.ReleaseTag ?? "";
+                    _defaultReleaseTags = CommunityReleaseHelper.MergeReleaseTags(
+                        null,
+                        wrapper.ReleaseTag,
+                        wrapper.ReleaseTags);
                     items = wrapper.Charts;
                 }
             }
@@ -278,7 +286,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
                 try 
                 {
                     items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json);
-                    _releaseTag = "";
+                    _defaultReleaseTags.Clear();
                 }
                 catch { /* parse failed */ }
             }
@@ -286,7 +294,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             if (items != null)
             {
                 _allFullIndex = items.Select(MapToIndexChart).ToList();
-                RuntimeLog.Write("CommunityDetailVM", $"Loaded {_allFullIndex.Count} charts (tag='{_releaseTag}')");
+                RuntimeLog.Write("CommunityDetailVM", $"Loaded {_allFullIndex.Count} charts (tags='{string.Join(", ", _defaultReleaseTags)}')");
             }
             else
             {
@@ -344,13 +352,8 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             demoMp3Url = _rawBaseUrl + "/demos/" + demoMp3Url;
 
         var downloadUrl = item.DownloadUrl;
-        // 如果 download_url 是相对文件名且有 release_tag，构建完整的 GitHub Release 下载链接
-        if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http") && !string.IsNullOrEmpty(_releaseTag))
-        {
-            // _githubRepoUrl: https://github.com/user/repo
-            // 完整链接: https://github.com/user/repo/releases/download/{tag}/{filename}
-            downloadUrl = _githubRepoUrl + "/releases/download/" + _releaseTag + "/" + downloadUrl;
-        }
+        var candidateTags = CommunityReleaseHelper.MergeReleaseTags(_defaultReleaseTags, item.ReleaseTag, item.ReleaseTags);
+        downloadUrl = CommunityReleaseHelper.ResolveReleaseDownloadUrl(downloadUrl, _githubRepoUrl, candidateTags);
 
         // 应用镜像/加速逻辑
         var source = _configService.Config.DownloadSource;

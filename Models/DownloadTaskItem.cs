@@ -1,6 +1,7 @@
 using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MdModManager.Models;
+using System;
 
 namespace MdModManager.Models;
 
@@ -60,6 +61,8 @@ public partial class DownloadTaskItem : ObservableObject
     // 用于追踪已下载字节以支持断点续传
     public long DownloadedBytes { get; set; } = 0;
     public long TotalBytes { get; set; } = 0;
+    public string? ResumeEntityTag { get; set; }
+    public DateTimeOffset? ResumeLastModified { get; set; }
 
     public string DestinationPath { get; set; } = string.Empty;
 
