@@ -183,18 +183,22 @@ public class UpdateService : IUpdateService
                                      uri.Host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase));
         }
 
+        // 无论重连多少次，最多尝试 maxRetryCount 次下载
         while (retryCount <= maxRetryCount)
         {
             try
             {
+                // 如果是断点续传，采取追加模式写入；如果是首次下载或重新下载，采取覆盖创建模式
                 var fileMode = downloadedBytes > 0 ? FileMode.Append : FileMode.Create;
                 using var dst = new FileStream(tempFile, fileMode, FileAccess.Write, FileShare.None, 81920, true);
                 
                 using var request = new HttpRequestMessage(HttpMethod.Get, proxiedUrl);
                 if (downloadedBytes > 0)
                 {
+                    // 设置断点续传的请求头 Range 参数，告知服务器从上一次中断的字节处继续传输数据
                     request.Headers.Range = new RangeHeaderValue(downloadedBytes, null);
                     
+                    // 使用上一次下载记录的校验信息（If-Range）检查服务端文件是否被更改过，以免将错误的内容强行拼接在旧文件后导致包损坏
                     if (!string.IsNullOrWhiteSpace(resumeEntityTag) && EntityTagHeaderValue.TryParse(resumeEntityTag, out var entityTag) && !entityTag.IsWeak)
                         request.Headers.IfRange = new RangeConditionHeaderValue(entityTag);
                     else if (resumeLastModified.HasValue)
@@ -207,7 +211,8 @@ public class UpdateService : IUpdateService
                 
                 if (downloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
-                    RuntimeLog.Write("UpdateService", "Server returned 200 OK instead of 206, resetting download progress.");
+                    // 如果服务器不支持断点续传或文件已更新（此时返回 200 OK 而不是续传的 206 Partial Content），则清空并重置下载进度
+                    RuntimeLog.Write("UpdateService", "服务器不支持断点续传或文件已更新（返回 200 OK 而非 206），重置下载进度。");
                     downloadedBytes = 0;
                     totalBytes = 0;
                     dst.SetLength(0);
@@ -216,7 +221,7 @@ public class UpdateService : IUpdateService
                 
                 response.EnsureSuccessStatusCode();
 
-                // Capture resume validators
+                // 捕获并保存断点续传的校验信息 (ETag 和 Last-Modified) 供遇到网络异常中断、下一次循环重连时核验
                 if (response.Headers.ETag is { IsWeak: false } etagVal)
                     resumeEntityTag = etagVal.ToString();
                 else if (response.StatusCode == System.Net.HttpStatusCode.OK)
@@ -240,7 +245,7 @@ public class UpdateService : IUpdateService
                 var buffer = new byte[81920];
                 int read;
 
-                // Watchdog: Read with WaitAsync (15 seconds timeout)
+                // 看门狗保护机制：使用 WaitAsync 限制网络流的读取，超过 15 秒无数据传输即视为假死或超时，断开并触发捕获异常进入下次重修
                 while ((read = await src.ReadAsync(buffer, 0, buffer.Length).WaitAsync(TimeSpan.FromSeconds(15))) > 0)
                 {
                     await dst.WriteAsync(buffer, 0, read);
@@ -255,7 +260,7 @@ public class UpdateService : IUpdateService
                 
                 await dst.FlushAsync();
                 
-                // --- SUCCESS ---
+                // --- 下载成功 ---
                 _notificationService.RemoveNotification(progressNotif);
                 
                 _pendingUpdateFile = tempFile;
@@ -264,7 +269,7 @@ public class UpdateService : IUpdateService
                 _notificationService.ShowSuccess("新版本下载完成");
                 Avalonia.Threading.Dispatcher.UIThread.Post(async () => await ShowUpdateReadyDialogAsync());
                 
-                return; // exit the loop and method
+                return; // 下载完全结束，成功退出该方法和外层的最外围重试循环
             }
             catch (Exception ex)
             {
@@ -277,6 +282,7 @@ public class UpdateService : IUpdateService
                     return;
                 }
                 
+                // 遇到报错时，若当前使用了优选 IP 策略（如镜像源故障），主动将此节点标记暂时失效，下一次重连时就能自动获取新的可用 IP
                 if (useOptimizedIpStrategy)
                 {
                     HttpHelper.InvalidateFastestIp();
