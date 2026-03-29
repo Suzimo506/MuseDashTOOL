@@ -339,6 +339,127 @@ public partial class AlbumCollectionViewModel : ObservableObject
     [ObservableProperty] private ObservableCollection<MdmcChart> _searchResults = new();
 
     public bool HasSearchResults => SearchResults.Count > 0;
+
+    // 分页与内存管理
+    private List<MdmcChart> _allSearchItemsBackup = new();
+    private readonly List<int> _loadedPages = new();
+    private const int PageSize = 12;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    private int _currentPage = 1;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    private int _totalPages = 1;
+
+    [ObservableProperty] private string _jumpPageText = string.Empty;
+    [ObservableProperty] private bool _isEditingPageNumber = false;
+    [ObservableProperty] private double? _requestedSearchScrollY;
+
+    partial void OnCurrentPageChanged(int value)
+    {
+        JumpPageText = value.ToString();
+    }
+
+    public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
+    public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
+
+    [RelayCommand]
+    private async Task LoadNextPage()
+    {
+        if (CanLoadNext) await LoadPageAsync(CurrentPage + 1);
+    }
+
+    [RelayCommand]
+    private async Task LoadPrevPage()
+    {
+        if (CanLoadPrev) await LoadPageAsync(CurrentPage - 1);
+    }
+
+    [RelayCommand]
+    private async Task LoadFirstPage() => await LoadPageAsync(1);
+
+    [RelayCommand]
+    private async Task LoadLastPage() => await LoadPageAsync(TotalPages);
+
+    [RelayCommand]
+    private void StartEditPage()
+    {
+        JumpPageText = CurrentPage.ToString();
+        IsEditingPageNumber = true;
+    }
+
+    [RelayCommand]
+    private void CancelEditPage()
+    {
+        JumpPageText = CurrentPage.ToString();
+        IsEditingPageNumber = false;
+    }
+
+    [RelayCommand]
+    private async Task JumpPage()
+    {
+        if (!IsEditingPageNumber) return;
+        var text = JumpPageText;
+        IsEditingPageNumber = false;
+        if (int.TryParse(text, out int targetPage))
+        {
+            targetPage = Math.Clamp(targetPage, 1, TotalPages);
+            await LoadPageAsync(targetPage);
+        }
+    }
+
+    private async Task LoadPageAsync(int page)
+    {
+        CurrentPage = page;
+
+        // LRU 页面缓存管理
+        if (!_loadedPages.Contains(page))
+        {
+            _loadedPages.Add(page);
+        }
+        else
+        {
+            _loadedPages.Remove(page);
+            _loadedPages.Add(page);
+        }
+
+        if (_loadedPages.Count > 5)
+        {
+            int oldestPage = _loadedPages[0];
+            _loadedPages.RemoveAt(0);
+
+            // 清理旧页面覆盖图片
+            var oldItems = _allSearchItemsBackup.Skip((oldestPage - 1) * PageSize).Take(PageSize);
+            foreach (var item in oldItems)
+            {
+                item.CoverImage = null;
+            }
+            RuntimeLog.Write("AlbumCollectionVM", $"Evicted page {oldestPage} covers from memory.");
+        }
+
+        var pageItems = _allSearchItemsBackup.Skip((page - 1) * PageSize).Take(PageSize).ToList();
+
+        RequestedSearchScrollY = 0;
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            SearchResults.Clear();
+            foreach (var chart in pageItems)
+            {
+                SearchResults.Add(chart);
+            }
+            OnPropertyChanged(nameof(HasSearchResults));
+            UpdateStatusMessage();
+
+            // 异步加载该页面的封面
+            _ = LoadSearchResultsCoversAsync(pageItems);
+        });
+    }
+
     [ObservableProperty]
     private string _searchText = string.Empty;
 
@@ -467,23 +588,21 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
             if (ct.IsCancellationRequested) return;
 
+            _lastChartCount = allChartResults.Count;
+            _allSearchItemsBackup = allChartResults;
+            TotalPages = Math.Max(1, (int)Math.Ceiling((double)_allSearchItemsBackup.Count / PageSize));
+            _loadedPages.Clear();
+
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
-                SearchResults.Clear();
-                foreach (var chart in allChartResults) SearchResults.Add(chart);
-                _lastChartCount = allChartResults.Count;
-                OnPropertyChanged(nameof(HasSearchResults));
-                UpdateStatusMessage();
-
                 Categories.Clear();
                 foreach (var cat in filteredCats) Categories.Add(cat);
                 
                 CommunityCategories.Clear();
                 foreach (var cat in filteredCommCats) CommunityCategories.Add(cat);
-
-                // 异步加载搜索结果的封面
-                _ = LoadSearchResultsCoversAsync(allChartResults);
             });
+
+            await LoadPageAsync(1);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
@@ -515,6 +634,15 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     private void RestoreOriginalCollections()
     {
+        foreach (var item in _allSearchItemsBackup)
+        {
+            item.CoverImage = null;
+        }
+        _allSearchItemsBackup.Clear();
+        _loadedPages.Clear();
+        CurrentPage = 1;
+        TotalPages = 1;
+
         SearchResults.Clear();
         OnPropertyChanged(nameof(HasSearchResults));
 
@@ -632,6 +760,14 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
         foreach (var item in CommunityCategories)
             item.ReleaseResources();
+
+        foreach (var item in _allSearchItemsBackup)
+            item.CoverImage = null;
+        
+        _allSearchItemsBackup.Clear();
+        _loadedPages.Clear();
+        CurrentPage = 1;
+        TotalPages = 1;
 
         Categories.Clear();
         CommunityCategories.Clear();

@@ -11,6 +11,44 @@ public partial class AlbumCollectionView : UserControl
     {
         InitializeComponent();
         
+        this.DataContextChanged += (s, e) =>
+        {
+            if (DataContext is AlbumCollectionViewModel vm)
+            {
+                vm.PropertyChanged += (sender, args) =>
+                {
+                    if (args.PropertyName == nameof(AlbumCollectionViewModel.RequestedSearchScrollY) 
+                        && vm.RequestedSearchScrollY.HasValue)
+                    {
+                        var y = vm.RequestedSearchScrollY.Value;
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            var sv = this.FindControl<ScrollViewer>("AlbumScrollViewer");
+                            if (sv != null)
+                            {
+                                sv.Offset = new Avalonia.Vector(sv.Offset.X, y);
+                            }
+                        }, Avalonia.Threading.DispatcherPriority.Background);
+                        vm.RequestedSearchScrollY = null;
+                    }
+
+                    if (args.PropertyName == nameof(AlbumCollectionViewModel.IsEditingPageNumber) 
+                        && vm.IsEditingPageNumber)
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            var tb = this.FindControl<TextBox>("PageJumpTextBox_Bottom");
+                            if (tb != null)
+                            {
+                                tb.Focus();
+                                tb.SelectAll();
+                            }
+                        }, Avalonia.Threading.DispatcherPriority.Loaded);
+                    }
+                };
+            }
+        };
+
         var scrollViewer = this.FindControl<ScrollViewer>("AlbumScrollViewer");
         if (scrollViewer != null)
         {
@@ -61,5 +99,21 @@ public partial class AlbumCollectionView : UserControl
     {
         var topLevel = TopLevel.GetTopLevel(this);
         topLevel?.FocusManager?.ClearFocus();
+    }
+
+    private void OnPageNumberClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        if (DataContext is AlbumCollectionViewModel vm)
+        {
+            vm.StartEditPageCommand.Execute(null);
+        }
+    }
+
+    private void OnPageJumpLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is AlbumCollectionViewModel vm)
+        {
+            vm.JumpPageCommand.Execute(null);
+        }
     }
 }
