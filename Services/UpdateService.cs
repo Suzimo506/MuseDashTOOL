@@ -5,6 +5,8 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
+using System.Net.Http.Headers;
 using MdModManager.Helpers;
 using MdModManager.Views;
 
@@ -18,7 +20,7 @@ public interface IUpdateService
 
 public class UpdateService : IUpdateService
 {
-    private const string CurrentVersion = "v1.1.3"; // 当前程序版本号
+    private const string CurrentVersion = "v1.1.1"; // 当前程序版本号
     private const string GitHubApiUrl = "https://api.github.com/repos/KuoKing506/-MuseDashTOOL/releases/latest";
 
     private readonly HttpClient _httpClient;
@@ -157,69 +159,134 @@ public class UpdateService : IUpdateService
             return;
         }
 
-        _notificationService.ShowInfo("发现新版本，正在后台下载更新...");
+        var progressNotif = _notificationService.ShowPersistentProgress("发现新版本，正在后台下载更新...");
         RuntimeLog.Write("UpdateService", $"开始下载更新包：{downloadUrl}");
 
-        // 真正下载安装包时，才使用用户选择的下载源做镜像加速。
-        // 这样可以保证“检查更新”稳定，同时保留下载阶段的加速能力。
         string proxiedUrl = GitHubMirrorHelper.ApplyMirror(downloadUrl, _configService.Config.DownloadSource);
         RuntimeLog.Write("UpdateService", $"实际下载地址：{proxiedUrl}");
 
-        HttpResponseMessage response;
-        try
-        {
-            response = await _httpClient.GetAsync(proxiedUrl);
-        }
-        catch (Exception ex)
-        {
-            RuntimeLog.Write("UpdateService", $"请求更新包失败：{ex.Message}");
+        var tempFile = Path.Combine(Path.GetTempPath(), "MuseDashTOOL_New" + Path.GetExtension(fileName));
 
-            // 下载更新包超时时，明确提醒用户切换下载源后重试，避免用户不知道下一步该做什么。
-            if (ex is TaskCanceledException)
-            {
-                _notificationService.ShowFailure("更新失败", "下载更新包超时，请切换下载源后重试。");
-            }
-            else
-            {
-                _notificationService.ShowFailure("更新失败", $"下载更新包时发生错误：{ex.Message}");
-            }
-            return;
+        long downloadedBytes = 0;
+        long totalBytes = 0;
+        string? resumeEntityTag = null;
+        DateTimeOffset? resumeLastModified = null;
+
+        int retryCount = 0;
+        int maxRetryCount = 20;
+
+        bool useOptimizedIpStrategy = false;
+        if (Uri.TryCreate(proxiedUrl, UriKind.Absolute, out var uri))
+        {
+            useOptimizedIpStrategy = HttpHelper.UseOptimizedIps && 
+                                    (uri.Host.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
+                                     uri.Host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase));
         }
 
-        using (response)
+        while (retryCount <= maxRetryCount)
         {
-            if (!response.IsSuccessStatusCode)
-            {
-                RuntimeLog.Write("UpdateService", $"更新包下载失败：HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
-                _notificationService.ShowFailure("更新失败", $"下载更新包失败（HTTP {(int)response.StatusCode}）。");
-                return;
-            }
-
-            var tempFile = Path.Combine(Path.GetTempPath(), "MuseDashTOOL_New" + Path.GetExtension(fileName));
-
             try
             {
-                using var fs = new FileStream(tempFile, FileMode.Create);
-                await response.Content.CopyToAsync(fs);
+                var fileMode = downloadedBytes > 0 ? FileMode.Append : FileMode.Create;
+                using var dst = new FileStream(tempFile, fileMode, FileAccess.Write, FileShare.None, 81920, true);
+                
+                using var request = new HttpRequestMessage(HttpMethod.Get, proxiedUrl);
+                if (downloadedBytes > 0)
+                {
+                    request.Headers.Range = new RangeHeaderValue(downloadedBytes, null);
+                    
+                    if (!string.IsNullOrWhiteSpace(resumeEntityTag) && EntityTagHeaderValue.TryParse(resumeEntityTag, out var entityTag) && !entityTag.IsWeak)
+                        request.Headers.IfRange = new RangeConditionHeaderValue(entityTag);
+                    else if (resumeLastModified.HasValue)
+                        request.Headers.IfRange = new RangeConditionHeaderValue(resumeLastModified.Value);
+                }
+
+                RuntimeLog.Write("UpdateService", $"Attempt {retryCount}: url='{proxiedUrl}', downloaded={downloadedBytes}");
+
+                using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                
+                if (downloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    RuntimeLog.Write("UpdateService", "Server returned 200 OK instead of 206, resetting download progress.");
+                    downloadedBytes = 0;
+                    totalBytes = 0;
+                    dst.SetLength(0);
+                    dst.Seek(0, SeekOrigin.Begin);
+                }
+                
+                response.EnsureSuccessStatusCode();
+
+                // Capture resume validators
+                if (response.Headers.ETag is { IsWeak: false } etagVal)
+                    resumeEntityTag = etagVal.ToString();
+                else if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    resumeEntityTag = null;
+
+                if (response.Content.Headers.LastModified.HasValue)
+                    resumeLastModified = response.Content.Headers.LastModified.Value;
+                else if (response.Headers.TryGetValues("Last-Modified", out var lastModValues) && DateTimeOffset.TryParse(lastModValues.FirstOrDefault(), out var parsedLastMod))
+                    resumeLastModified = parsedLastMod;
+                else if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    resumeLastModified = null;
+
+                if (totalBytes == 0)
+                {
+                    totalBytes = response.Content.Headers.ContentLength ?? 0;
+                    if (downloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.PartialContent)
+                        totalBytes += downloadedBytes;
+                }
+
+                using var src = await response.Content.ReadAsStreamAsync();
+                var buffer = new byte[81920];
+                int read;
+
+                // Watchdog: Read with WaitAsync (15 seconds timeout)
+                while ((read = await src.ReadAsync(buffer, 0, buffer.Length).WaitAsync(TimeSpan.FromSeconds(15))) > 0)
+                {
+                    await dst.WriteAsync(buffer, 0, read);
+                    downloadedBytes += read;
+                    
+                    if (totalBytes > 0)
+                    {
+                        var progress = (double)downloadedBytes / totalBytes * 100;
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() => progressNotif.ProgressValue = progress);
+                    }
+                }
+                
+                await dst.FlushAsync();
+                
+                // --- SUCCESS ---
+                _notificationService.RemoveNotification(progressNotif);
+                
+                _pendingUpdateFile = tempFile;
+                RuntimeLog.Write("UpdateService", $"更新包下载完成，已保存到临时文件：{tempFile}");
+                
+                _notificationService.ShowSuccess("新版本下载完成");
+                Avalonia.Threading.Dispatcher.UIThread.Post(async () => await ShowUpdateReadyDialogAsync());
+                
+                return; // exit the loop and method
             }
             catch (Exception ex)
             {
-                RuntimeLog.Write("UpdateService", $"保存更新包失败：{ex.Message}");
-                _notificationService.ShowFailure("更新失败", $"保存更新包失败：{ex.Message}");
-                return;
+                retryCount++;
+                RuntimeLog.Write("UpdateService", $"更新包下载异常 (retry={retryCount}): {ex.Message}");
+                if (retryCount > maxRetryCount)
+                {
+                    _notificationService.RemoveNotification(progressNotif);
+                    _notificationService.ShowFailure("更新失败", "尝试多次下载并反复重连依然失败，请检查网络或切换下载源！");
+                    return;
+                }
+                
+                if (useOptimizedIpStrategy)
+                {
+                    HttpHelper.InvalidateFastestIp();
+                    await Task.Delay(1000);
+                }
+                else
+                {
+                    await Task.Delay(3000);
+                }
             }
-
-            _pendingUpdateFile = tempFile;
-            RuntimeLog.Write("UpdateService", $"更新包下载完成，已保存到临时文件：{tempFile}");
-
-            // 不管后续弹框是否成功，都先明确告诉用户“更新包已经下载完成”。
-            _notificationService.ShowSuccess("新版本下载完成");
-
-            // 对话框必须在 UI 线程弹出，但这里不再把是否弹框成功作为成功下载的前提。
-            Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
-            {
-                await ShowUpdateReadyDialogAsync();
-            });
         }
     }
 

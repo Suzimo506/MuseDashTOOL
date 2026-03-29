@@ -12,6 +12,8 @@ public interface INotificationService
     void ShowSuccess(string message);
     void ShowFailure(string message, string reason);
     void ShowInfo(string message, int durationMs = 1500);
+    DownloadNotification ShowPersistentProgress(string message);
+    void RemoveNotification(DownloadNotification notification);
     void ClearPersistentNotifications();
 }
 
@@ -24,6 +26,12 @@ public partial class DownloadNotification : ObservableObject
 
     [ObservableProperty]
     private double _opacity = 1.0;
+    
+    [ObservableProperty]
+    private bool _showProgress = false;
+    
+    [ObservableProperty]
+    private double _progressValue = 0.0;
 }
 
 public class NotificationService : INotificationService
@@ -41,6 +49,18 @@ public class NotificationService : INotificationService
 
     public void ShowInfo(string message, int durationMs = 1500) =>
         ShowNotification(new DownloadNotification { Message = message, IsInfo = true, DurationMs = durationMs });
+
+    public DownloadNotification ShowPersistentProgress(string message)
+    {
+        var notif = new DownloadNotification { Message = message, IsInfo = true, DurationMs = 0, ShowProgress = true };
+        ShowNotification(notif);
+        return notif;
+    }
+
+    public void RemoveNotification(DownloadNotification notification)
+    {
+        Dispatcher.UIThread.Post(() => Notifications.Remove(notification));
+    }
 
     public void ClearPersistentNotifications()
     {

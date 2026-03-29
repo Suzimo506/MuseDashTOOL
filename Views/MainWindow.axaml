@@ -321,15 +321,18 @@
                                 </Path.IsVisible>
                             </Path>
 
-                            <TextBlock Text="{Binding Message}" FontSize="13" VerticalAlignment="Center" FontWeight="SemiBold">
-                                <TextBlock.Foreground>
-                                    <Binding Path="IsSuccess">
-                                        <Binding.Converter>
-                                            <helpers:BoolToBrushConverter TrueBrush="#2E7D32" FalseBrush="#C62828"/>
-                                        </Binding.Converter>
-                                    </Binding>
-                                </TextBlock.Foreground>
-                            </TextBlock>
+                            <StackPanel Orientation="Vertical" VerticalAlignment="Center" Spacing="4">
+                                <TextBlock Text="{Binding Message}" FontSize="13" FontWeight="SemiBold">
+                                    <TextBlock.Foreground>
+                                        <Binding Path="IsSuccess">
+                                            <Binding.Converter>
+                                                <helpers:BoolToBrushConverter TrueBrush="#2E7D32" FalseBrush="#C62828"/>
+                                            </Binding.Converter>
+                                        </Binding>
+                                    </TextBlock.Foreground>
+                                </TextBlock>
+                                <ProgressBar IsVisible="{Binding ShowProgress}" Minimum="0" Maximum="100" Value="{Binding ProgressValue}" Height="4" Foreground="#d4237a" HorizontalAlignment="Stretch" Margin="0,2,0,0"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </DataTemplate>
