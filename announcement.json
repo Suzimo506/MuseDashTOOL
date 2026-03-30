@@ -1,5 +1,5 @@
 {
-    "id": "Sudden",
+    "id": "1",
     "is_enabled": true,
     "title": "突发状况",
     "content": "由于镜像域名被误封，导致高速DNS与Suzimo两条线路暂时无法使用，请先使用其他线路，恢复时会发布公告通知。",
