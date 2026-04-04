@@ -253,7 +253,7 @@ public static class HttpHelper
                 var port = context.DnsEndPoint.Port;
 
                 // 只有在启用优选 DNS 且域名属于 suzimo 或 mdmc 时才强制使用优选 IP 
-                if (UseOptimizedIps && (host.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
+                if (UseOptimizedIps && (host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
                     host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase)))
                 {
                     // ── 用户自定义静态 IP：直连，不重试、不竞速、不拉黑 ──
@@ -363,7 +363,7 @@ public static class HttpHelper
                 if ((int)response.StatusCode >= 500)
                 {
                     var host = request.RequestUri?.Host;
-                    if (UseOptimizedIps && string.IsNullOrEmpty(StaticIp) && host != null && (host.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
+                    if (UseOptimizedIps && string.IsNullOrEmpty(StaticIp) && host != null && (host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
                                          host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase)))
                     {
                         HttpHelper.InvalidateFastestIp();
@@ -374,7 +374,7 @@ public static class HttpHelper
             catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException || ex is TimeoutException)
             {
                 var host = request.RequestUri?.Host;
-                if (UseOptimizedIps && host != null && (host.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
+                if (UseOptimizedIps && host != null && (host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
                                      host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase)))
                 {
                     HttpHelper.InvalidateFastestIp();

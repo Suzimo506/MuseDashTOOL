@@ -59,9 +59,9 @@ public partial class SettingsViewModel : ObservableObject
         get
         {
             var val = _configService.Config.DownloadSource;
-            if (_configService.Config.UseOptimizedDns && val == "suzimo.online") return "高速 DNS";
+            if (_configService.Config.UseOptimizedDns && val == "suzimo.site") return "高速 DNS";
             if (val == "ghproxy.net") return "github.com";
-            if (val == "suzimo.online") return "Suzimo";
+            if (val == "suzimo.site") return "Suzimo";
             return val;
         }
         set
@@ -71,12 +71,12 @@ public partial class SettingsViewModel : ObservableObject
 
             if (value == "高速 DNS")
             {
-                newVal = "suzimo.online";
+                newVal = "suzimo.site";
                 useOpt = true;
             }
             else if (value == "Suzimo")
             {
-                newVal = "suzimo.online";
+                newVal = "suzimo.site";
                 useOpt = false;
             }
             else

@@ -24,13 +24,13 @@ public static class GitHubMirrorHelper
             return canonicalUrl;
         }
 
-        // Suzimo 选项：固定使用 suzimo.online
+        // Suzimo 选项：固定使用 suzimo.site
         if (downloadSource.Equals("Suzimo", StringComparison.OrdinalIgnoreCase) || 
-            downloadSource.Equals("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
+            downloadSource.Equals("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
             downloadSource.Equals("高速DNS", StringComparison.OrdinalIgnoreCase) ||
             downloadSource.Equals("Suzimo优化", StringComparison.OrdinalIgnoreCase))
         {
-            return ApplyCustomMirror(canonicalUrl, "suzimo.online");
+            return ApplyCustomMirror(canonicalUrl, "suzimo.site");
         }
 
         if (downloadSource.Contains(KkGitHubHost, StringComparison.OrdinalIgnoreCase))

@@ -416,7 +416,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri))
             return false;
 
-        return uri.Host.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
+        return uri.Host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
                uri.Host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase);
     }
 

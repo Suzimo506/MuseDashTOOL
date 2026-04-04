@@ -179,7 +179,7 @@ public class UpdateService : IUpdateService
         if (Uri.TryCreate(proxiedUrl, UriKind.Absolute, out var uri))
         {
             useOptimizedIpStrategy = HttpHelper.UseOptimizedIps && 
-                                    (uri.Host.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase) ||
+                                    (uri.Host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
                                      uri.Host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase));
         }
 

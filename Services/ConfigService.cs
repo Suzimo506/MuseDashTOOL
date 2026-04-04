@@ -38,10 +38,7 @@ public class ConfigService : IConfigService
                 var config = JsonSerializer.Deserialize(json, AppJsonContext.Default.AppConfig);
                 if (config != null)
                 {
-                    if (config.ModLinksUrl != null && config.ModLinksUrl.Contains("raw.githubusercontent.com/MDMods/MuseDashModLinks/main/ModLinks.json"))
-                    {
-                        config.ModLinksUrl = "https://gitee.com/lxymahatma/ModLinks/raw/dev/Mods.json";
-                    }
+                    NormalizeLegacyConfig(config);
                     Config = config;
                 }
             }
@@ -62,10 +59,7 @@ public class ConfigService : IConfigService
                 var config = JsonSerializer.Deserialize(json, AppJsonContext.Default.AppConfig);
                 if (config != null)
                 {
-                    if (config.ModLinksUrl.Contains("raw.githubusercontent.com/MDMods/MuseDashModLinks/main/ModLinks.json"))
-                    {
-                        config.ModLinksUrl = "https://gitee.com/lxymahatma/ModLinks/raw/dev/Mods.json";
-                    }
+                    NormalizeLegacyConfig(config);
                     Config = config;
                 }
             }
@@ -91,6 +85,21 @@ public class ConfigService : IConfigService
         catch (Exception ex)
         {
             Console.WriteLine($"Failed to save config: {ex}");
+        }
+    }
+
+    private static void NormalizeLegacyConfig(AppConfig config)
+    {
+        if (!string.IsNullOrWhiteSpace(config.ModLinksUrl) &&
+            config.ModLinksUrl.Contains("raw.githubusercontent.com/MDMods/MuseDashModLinks/main/ModLinks.json"))
+        {
+            config.ModLinksUrl = "https://gitee.com/lxymahatma/ModLinks/raw/dev/Mods.json";
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.DownloadSource) &&
+            config.DownloadSource.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase))
+        {
+            config.DownloadSource = "suzimo.site";
         }
     }
 }
