@@ -416,8 +416,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri))
             return false;
 
-        return uri.Host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
-               uri.Host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase);
+        return HttpHelper.IsOptimizedAccelerationHost(uri.Host);
     }
 
     private static async Task DelayBeforeRetryAsync(bool useOptimizedIpStrategy, CancellationToken ct)

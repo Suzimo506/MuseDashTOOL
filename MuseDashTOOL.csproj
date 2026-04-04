@@ -11,7 +11,7 @@
     <RootNamespace>MdModManager</RootNamespace>
     <AssemblyName>MuseDashTOOL</AssemblyName>
     <ApplicationIcon>Assets\MuseDashTOOL.ico</ApplicationIcon>
-    <Version>1.1.3</Version>
+    <Version>1.1.4</Version>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -24,6 +24,7 @@
     
     <!-- 嵌入核心资源，实现单文件独立运行 -->
     <EmbeddedResource Include="SongRepository\designers.json" />
+    <EmbeddedResource Include="mirror-domains.json" Condition="Exists('mirror-domains.json')" />
     <EmbeddedResource Include="SongRepository\**\*.txt" />
     <EmbeddedResource Include="Pictures\通过审议.png" />
     <EmbeddedResource Include="Pictures\令人生草.jpg" />
@@ -55,4 +56,4 @@
 
 
 
-<!-- v1.1.3 -->
+<!-- v1.1.4 -->

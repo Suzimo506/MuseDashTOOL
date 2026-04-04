@@ -188,7 +188,7 @@ public class ChartService : IChartService
             for (int i = 1; i <= 5; i++)
             {
                 var val = root[$"difficulty{i}"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(val) && val != "0" && val != "?")
+                if (!string.IsNullOrWhiteSpace(val) && val != "0")
                 {
                     diffs.Add(val!);
                 }
@@ -218,7 +218,7 @@ public class ChartService : IChartService
                 if (k.Contains("difficult") && kvp.Value != null)
                 {
                     var valStr = kvp.Value.ToString();
-                    if (!string.IsNullOrWhiteSpace(valStr) && valStr != "0" && valStr != "?")
+                    if (!string.IsNullOrWhiteSpace(valStr) && valStr != "0")
                     {
                         chart.Difficulties.Add($"{kvp.Key}:{valStr}");
                     }

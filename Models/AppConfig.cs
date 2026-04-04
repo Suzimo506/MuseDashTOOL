@@ -119,4 +119,5 @@ public class NoticeInfo
 [JsonSerializable(typeof(ModInfo[]))]
 [JsonSerializable(typeof(GitHubRelease[]))]
 [JsonSerializable(typeof(NoticeInfo))]
+[JsonSerializable(typeof(MirrorDomainsConfig))]
 internal partial class AppJsonContext : JsonSerializerContext { }

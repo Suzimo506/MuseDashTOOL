@@ -20,7 +20,7 @@ public interface IUpdateService
 
 public class UpdateService : IUpdateService
 {
-    private const string CurrentVersion = "v1.1.3"; // 当前程序版本号
+    private const string CurrentVersion = "v1.1.4"; // 当前程序版本号
     private const string GitHubApiUrl = "https://api.github.com/repos/KuoKing506/-MuseDashTOOL/releases/latest";
 
     private readonly HttpClient _httpClient;
@@ -178,9 +178,8 @@ public class UpdateService : IUpdateService
         bool useOptimizedIpStrategy = false;
         if (Uri.TryCreate(proxiedUrl, UriKind.Absolute, out var uri))
         {
-            useOptimizedIpStrategy = HttpHelper.UseOptimizedIps && 
-                                    (uri.Host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
-                                     uri.Host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase));
+            useOptimizedIpStrategy = HttpHelper.UseOptimizedIps &&
+                                     HttpHelper.IsOptimizedAccelerationHost(uri.Host);
         }
 
         // 无论重连多少次，最多尝试 maxRetryCount 次下载

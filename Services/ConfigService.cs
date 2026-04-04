@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using MdModManager.Helpers;
 using MdModManager.Models;
 
 namespace MdModManager.Services;
@@ -96,10 +97,9 @@ public class ConfigService : IConfigService
             config.ModLinksUrl = "https://gitee.com/lxymahatma/ModLinks/raw/dev/Mods.json";
         }
 
-        if (!string.IsNullOrWhiteSpace(config.DownloadSource) &&
-            config.DownloadSource.Contains("suzimo.online", StringComparison.OrdinalIgnoreCase))
+        if (MirrorDomainRegistry.IsSuzimoDownloadSource(config.DownloadSource))
         {
-            config.DownloadSource = "suzimo.site";
+            config.DownloadSource = MirrorDomainRegistry.SuzimoAlias;
         }
     }
 }

@@ -243,6 +243,13 @@ public static class HttpHelper
         }
     }
 
+    public static bool IsOptimizedAccelerationHost(string? host)
+    {
+        return MirrorDomainRegistry.IsSuzimoHost(host) ||
+               (!string.IsNullOrWhiteSpace(host) &&
+                host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase));
+    }
+
     public static HttpClient CreateOptimizedClient(TimeSpan timeout, TimeSpan? watchdogTimeout = null)
     {
         var handler = new SocketsHttpHandler
@@ -253,8 +260,7 @@ public static class HttpHelper
                 var port = context.DnsEndPoint.Port;
 
                 // 只有在启用优选 DNS 且域名属于 suzimo 或 mdmc 时才强制使用优选 IP 
-                if (UseOptimizedIps && (host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
-                    host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase)))
+                if (UseOptimizedIps && IsOptimizedAccelerationHost(host))
                 {
                     // ── 用户自定义静态 IP：直连，不重试、不竞速、不拉黑 ──
                     if (!string.IsNullOrEmpty(StaticIp))
@@ -363,8 +369,7 @@ public static class HttpHelper
                 if ((int)response.StatusCode >= 500)
                 {
                     var host = request.RequestUri?.Host;
-                    if (UseOptimizedIps && string.IsNullOrEmpty(StaticIp) && host != null && (host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
-                                         host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase)))
+                    if (UseOptimizedIps && string.IsNullOrEmpty(StaticIp) && IsOptimizedAccelerationHost(host))
                     {
                         HttpHelper.InvalidateFastestIp();
                     }
@@ -374,8 +379,7 @@ public static class HttpHelper
             catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException || ex is TimeoutException)
             {
                 var host = request.RequestUri?.Host;
-                if (UseOptimizedIps && host != null && (host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
-                                     host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase)))
+                if (UseOptimizedIps && IsOptimizedAccelerationHost(host))
                 {
                     HttpHelper.InvalidateFastestIp();
                 }

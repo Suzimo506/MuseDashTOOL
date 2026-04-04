@@ -24,13 +24,11 @@ public static class GitHubMirrorHelper
             return canonicalUrl;
         }
 
-        // Suzimo 选项：固定使用 suzimo.site
-        if (downloadSource.Equals("Suzimo", StringComparison.OrdinalIgnoreCase) || 
-            downloadSource.Equals("suzimo.site", StringComparison.OrdinalIgnoreCase) ||
-            downloadSource.Equals("高速DNS", StringComparison.OrdinalIgnoreCase) ||
-            downloadSource.Equals("Suzimo优化", StringComparison.OrdinalIgnoreCase))
+        // Suzimo / 高速 DNS 只保留代号，真实域名统一从镜像配置里解析出来。
+        var suzimoHost = MirrorDomainRegistry.ResolveMirrorHost(downloadSource);
+        if (!string.IsNullOrWhiteSpace(suzimoHost))
         {
-            return ApplyCustomMirror(canonicalUrl, "suzimo.site");
+            return ApplyCustomMirror(canonicalUrl, suzimoHost);
         }
 
         if (downloadSource.Contains(KkGitHubHost, StringComparison.OrdinalIgnoreCase))
@@ -54,6 +52,7 @@ public static class GitHubMirrorHelper
         if (!Uri.TryCreate(canonical, UriKind.Absolute, out var uri))
             return canonical;
 
+        // 这里允许传完整 URL 或纯主机名，统一裁成 host 再拼接。
         var host = customHost.Replace("https://", "").Replace("http://", "").TrimEnd('/');
         
         // 特殊处理 kkgithub 的 raw 域名

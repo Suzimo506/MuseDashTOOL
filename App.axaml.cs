@@ -51,6 +51,10 @@ public partial class App : Application
 
             RuntimeLog.Reset();
 
+            var mirrorDomainService = Ioc.Default.GetService<IMirrorDomainService>();
+            // 在后台线程完成镜像配置初始化，避免在 UI 线程同步等待异步任务时卡死启动流程。
+            Task.Run(() => mirrorDomainService?.InitializeAsync() ?? Task.CompletedTask).GetAwaiter().GetResult();
+
             // 软件启动时后台静默预获取账号与成绩数据。
             MuseDashAccountService.StartPrefetch();
 
@@ -118,6 +122,7 @@ public partial class App : Application
         services.AddSingleton<IUpdateService, UpdateService>();
         services.AddSingleton<IAnnouncementService, AnnouncementService>();
         services.AddSingleton<IAlbumCollectionService, AlbumCollectionService>();
+        services.AddSingleton<IMirrorDomainService, MirrorDomainService>();
 
         Ioc.Default.ConfigureServices(services.BuildServiceProvider());
     }
