@@ -1,8 +1,8 @@
 {
-    "id": "1",
+    "id": "1.1.4",
     "is_enabled": true,
-    "title": "突发状况",
-    "content": "由于镜像域名被误封，导致高速DNS与Suzimo两条线路暂时无法使用，请先使用其他线路，恢复时会发布公告通知。",
+    "title": "v1.1.4更新！！",
+    "content": "1、高速DNS与Suzimo线路恢复使用，带来不便深感抱歉\n2、修复了谱面管理界面某些难度会无法显示的问题",
     "action_button_text": "进入新版喵斯兔",
     "cancel_button_text": "不再显示该弹窗"
 }
