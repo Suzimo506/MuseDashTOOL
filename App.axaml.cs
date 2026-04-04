@@ -52,8 +52,8 @@ public partial class App : Application
             RuntimeLog.Reset();
 
             var mirrorDomainService = Ioc.Default.GetService<IMirrorDomainService>();
-            // 在后台线程完成镜像配置初始化，避免在 UI 线程同步等待异步任务时卡死启动流程。
-            Task.Run(() => mirrorDomainService?.InitializeAsync() ?? Task.CompletedTask).GetAwaiter().GetResult();
+            // 启动阶段只加载本地镜像配置，保证软件尽快进入主界面。
+            mirrorDomainService?.Initialize();
 
             // 软件启动时后台静默预获取账号与成绩数据。
             MuseDashAccountService.StartPrefetch();
@@ -69,6 +69,7 @@ public partial class App : Application
             // 避免更新包下载完成时因为没有可用的 owner 窗口而无法弹出确认对话框。
             desktop.MainWindow.Opened += (s, e) =>
             {
+                _ = mirrorDomainService?.RefreshFromRemoteIfNeededAsync();
                 updateService?.CheckAndApplyUpdateAsync();
             };
 
