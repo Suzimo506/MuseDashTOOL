@@ -198,6 +198,8 @@ public partial class MainWindowViewModel : ObservableObject
             await cmvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is ChartManagerViewModel chvm)
             await chvm.InitializeAsync(_currentPageCts.Token);
+        else if (CurrentPage is ChartUploadViewModel cuvm)
+            await cuvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is TutorialViewModel tvm)
         {
             // 逻辑已移动至 InitializeAsync 开始处
@@ -410,6 +412,13 @@ public partial class MainWindowViewModel : ObservableObject
             Avalonia.Application.Current.Resources["SvgIconBrush"] = svgIconBrush;
             Avalonia.Application.Current.Resources["SvgIconHoverBrush"] = svgIconHoverBrush;
             Avalonia.Application.Current.Resources["SvgIconPressedBrush"] = svgIconPressedBrush;
+
+            // 根据主题色亮度自动计算对比色（黑或白），用于按钮文字
+            var luminance = 0.299 * parsedSvgColor.R + 0.587 * parsedSvgColor.G + 0.114 * parsedSvgColor.B;
+            var contrastColor = luminance > 150
+                ? Avalonia.Media.Color.Parse("#000000")
+                : Avalonia.Media.Color.Parse("#FFFFFF");
+            Avalonia.Application.Current.Resources["SvgIconContrastBrush"] = new Avalonia.Media.SolidColorBrush(contrastColor);
 
             // 让滑动条滑块也跟随主题色
             Avalonia.Application.Current.Resources["ScrollBarThumbFill"] = svgIconBrush;
@@ -802,6 +811,16 @@ public partial class MainWindowViewModel : ObservableObject
         CleanupCurrentPage();
 
         var vm = Ioc.Default.GetRequiredService<ChartDownloadViewModel>();
+        CurrentPage = vm;
+        await vm.InitializeAsync(_currentPageCts.Token);
+    }
+
+    [RelayCommand]
+    private async Task NavigateToChartUploadAsync()
+    {
+        CleanupCurrentPage();
+
+        var vm = Ioc.Default.GetRequiredService<ChartUploadViewModel>();
         CurrentPage = vm;
         await vm.InitializeAsync(_currentPageCts.Token);
     }

@@ -1,0 +1,160 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:model="using:MdModManager.Models"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="680"
+             x:Class="MdModManager.Views.ChartUploadView"
+             x:Name="Root"
+             x:DataType="vm:ChartUploadViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="18">
+        <StackPanel Grid.Row="0" Spacing="6">
+            <TextBlock Text="谱面上传" FontSize="22" FontWeight="Bold">
+                <TextBlock.Foreground>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                        <GradientStop Color="#FF00FF" Offset="0"/>
+                        <GradientStop Color="#FF69B4" Offset="1"/>
+                    </LinearGradientBrush>
+                </TextBlock.Foreground>
+            </TextBlock>
+            <TextBlock Text="上传的谱面在几分钟后出现在【未经审查】分类里"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource ThemeTextSubBrush}"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" ColumnDefinitions="1.2*,1*" ColumnSpacing="16">
+            <Border Grid.Column="0"
+                    Background="{DynamicResource CardBgBrush}"
+                    CornerRadius="12"
+                    Padding="18">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="当前账号" FontSize="15" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding AccountSummary}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                    <TextBlock Text="{Binding ConfigNotice}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource ThemeTextSubBrush}"
+                               FontSize="12"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Background="{DynamicResource CardBgBrush}"
+                    CornerRadius="12"
+                    Padding="18">
+                <StackPanel Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="B站视频链接 (选填)" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding Burl}"
+                             Watermark="例如 https://www.bilibili.com/video/BV..."
+                             IsEnabled="{Binding CanEditQueue}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2"
+                Background="Transparent"
+                BorderBrush="{DynamicResource ThemeTextSubBrush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="22"
+                DragDrop.AllowDrop="True"
+                x:Name="DropZoneBorder">
+            <Border.Resources>
+                <ControlTheme x:Key="IconUploadButtonTheme" TargetType="Button">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+                    <Setter Property="Transitions">
+                        <Transitions>
+                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" Easing="SineEaseInOut"/>
+                        </Transitions>
+                    </Setter>
+                    <Setter Property="Template">
+                        <ControlTemplate>
+                            <!-- IMPORTANT: Do not use Name="PART_ContentPresenter" to avoid fluent theme bug causing gray background -->
+                            <Border Background="{TemplateBinding Background}">
+                                <ContentPresenter Content="{TemplateBinding Content}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter>
+                    <Style Selector="^:pointerover">
+                        <Setter Property="RenderTransform" Value="scale(1.1)"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                    </Style>
+                    <Style Selector="^:pressed">
+                        <Setter Property="RenderTransform" Value="scale(0.95)"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                    </Style>
+                </ControlTheme>
+            </Border.Resources>
+
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Margin="0,0,18,0" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding DropZoneTitle}"
+                               FontSize="16"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="一次仅允许上传一个文件"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Width="48" Height="48"
+                        Theme="{StaticResource IconUploadButtonTheme}"
+                        Click="OnPickFilesClick"
+                        IsEnabled="{Binding CanEditQueue}"
+                        VerticalAlignment="Center">
+                    <Path Width="28" Height="28" Stretch="Uniform"
+                          Fill="{DynamicResource SvgIconBrush}"
+                          Data="M563.2 42.666667v640c0 23.466667-19.2 42.666667-42.666667 42.666666s-42.666667-19.2-42.666666-42.666666V42.666667c0-23.466667 19.2-42.666667 42.666666-42.666667s42.666667 19.2 42.666667 42.666667 M806.1952 457.275733L550.5792 712.900267a42.7776 42.7776 0 0 1-60.330667 0c-16.597333-16.605867-16.597333-43.776 0-60.330667l255.616-255.624533a42.7776 42.7776 0 0 1 60.330667 0 42.7776 42.7776 0 0 1 0 60.330666 M490.350933 712.8832L234.734933 457.275733a42.7776 42.7776 0 0 1 0-60.330666c16.597333-16.605867 43.776-16.605867 60.330667 0l255.616 255.616a42.7776 42.7776 0 0 1 0 60.330666 42.7776 42.7776 0 0 1-60.330667 0 M904.533333 1024H136.533333c-70.570667 0-128-57.429333-128-128V640c0-23.594667 19.072-42.666667 42.666667-42.666667s42.666667 19.072 42.666667 42.666667v256c0 23.552 19.114667 42.666667 42.666666 42.666667h768c23.552 0 42.666667-19.114667 42.666667-42.666667V640c0-23.594667 19.072-42.666667 42.666667-42.666667s42.666667 19.072 42.666666 42.666667v256c0 70.570667-57.429333 128-128 128"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="3"
+                Background="{DynamicResource CardBgBrush}"
+                CornerRadius="12"
+                Padding="18">
+            <StackPanel Spacing="8" VerticalAlignment="Center">
+                <TextBlock Text="B站视频链接用于展示你的谱面演示，如果你填写了这一栏，未来有活动或审查时会将你的谱面纳入审查范围。如果没有视频链接可以留空。" 
+                           TextWrapping="Wrap" 
+                           Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                <TextBlock Text="确认你上传的谱面是你的原创，不接受未经授权的转载以及改编谱面" 
+                           TextWrapping="Wrap" 
+                           Foreground="{DynamicResource ThemeTextSubBrush}"/>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12" VerticalAlignment="Center">
+            <WrapPanel Grid.Column="0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding UploadStatus}"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTextSubBrush}"
+                           Margin="0,0,16,0"/>
+                
+                <ProgressBar IsIndeterminate="False"
+                             Maximum="100"
+                             Value="{Binding UploadProgress}"
+                             IsVisible="{Binding IsBusy}"
+                             Foreground="{DynamicResource SvgIconBrush}"
+                             VerticalAlignment="Center"
+                             Width="120" Height="4"
+                             CornerRadius="2"/>
+            </WrapPanel>
+
+            <Button Grid.Column="2"
+                    Command="{Binding UploadAllCommand}"
+                    IsEnabled="{Binding CanUpload}"
+                    Background="{DynamicResource SvgIconBrush}"
+                    Foreground="{DynamicResource SvgIconContrastBrush}"
+                    Padding="20,10">
+                <TextBlock Text="{Binding UploadButtonText}" FontWeight="SemiBold"/>
+            </Button>
+        </Grid>
+    </Grid>
+</UserControl>

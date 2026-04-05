@@ -100,6 +100,7 @@ public partial class App : Application
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<ConfigManagerViewModel>();
         services.AddTransient<ChartManagerViewModel>();
+        services.AddTransient<ChartUploadViewModel>();
         services.AddSingleton<ChartDownloadViewModel>();
         services.AddTransient<DownloadManagerViewModel>();
         services.AddTransient<AccountViewModel>();
@@ -116,7 +117,10 @@ public partial class App : Application
         services.AddSingleton<INotificationService, NotificationService>();
         services.AddSingleton<IConfigFileService, ConfigFileService>();
         services.AddSingleton<IChartService, ChartService>();
+        services.AddSingleton<IChartPackageProcessor, ChartPackageProcessor>();
         services.AddSingleton<IChartDownloadService, ChartDownloadService>();
+        services.AddSingleton<IChartUploadConfigService, ChartUploadConfigService>();
+        services.AddSingleton<IChartUploadService, ChartUploadService>();
         services.AddSingleton<IDownloadManagerService, DownloadManagerService>();
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<ModStagingService>();

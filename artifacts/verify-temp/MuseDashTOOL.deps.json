@@ -7,7 +7,7 @@
   "targets": {
     ".NETCoreApp,Version=v9.0": {},
     ".NETCoreApp,Version=v9.0/win-x64": {
-      "MuseDashTOOL/1.1.2": {
+      "MuseDashTOOL/1.1.4": {
         "dependencies": {
           "AsmResolver.DotNet": "5.5.1",
           "AssetsTools.NET": "3.0.0",
@@ -490,7 +490,7 @@
     }
   },
   "libraries": {
-    "MuseDashTOOL/1.1.2": {
+    "MuseDashTOOL/1.1.4": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

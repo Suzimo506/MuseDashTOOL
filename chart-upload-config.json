@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "api_url": "https://upload.suzimo.site",
+  "fallback_api_urls": [],
+  "notice": "请在这里或远程 chart-upload-config.json 中填写独立后端上传接口地址，客户端只会把谱面传给后端。",
+  "timeout_seconds": 120
+}

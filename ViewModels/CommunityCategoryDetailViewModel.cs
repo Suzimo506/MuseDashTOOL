@@ -230,7 +230,9 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         
         // 构建 Raw 基础地址：https://github.com/user/repo -> https://raw.githubusercontent.com/user/repo/main
         _rawBaseUrl = repoUrl.Replace("github.com", "raw.githubusercontent.com") + "/main";
-        var rawIndexUrl = _rawBaseUrl + "/index.json";
+        // 增加时间戳，避免被代理端的 cacheTtl: 86400 (24h) 锁死。除以 300 保证和 GitHub 的 5 分钟级原始缓存周期一致，防止请求穿透太多导致限流。
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
+        var rawIndexUrl = _rawBaseUrl + $"/index.json?t={timestamp}";
         RepoUrl = GitHubMirrorHelper.ApplyMirror(rawIndexUrl, _configService.Config.DownloadSource);
         
         ClearPageCache();
@@ -269,7 +271,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             // 尝试解析新格式 { "release_tag": "..."/["..."], "charts": [...] }
             try
             {
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
                 var wrapper = JsonSerializer.Deserialize<CommunityIndexWrapper>(json, options);
                 if (wrapper != null && wrapper.Charts != null && wrapper.Charts.Count > 0)
                 {
@@ -280,15 +282,19 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
                     items = wrapper.Charts;
                 }
             }
-            catch
+            catch (Exception ex1)
             {
                 // 尝试解析旧格式：纯数组 [...]
                 try 
                 {
-                    items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json);
+                    var optionsFallback = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+                    items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json, optionsFallback);
                     _defaultReleaseTags.Clear();
                 }
-                catch { /* parse failed */ }
+                catch (Exception ex2)
+                {
+                    RuntimeLog.Write("CommunityDetailVM", $"Parse failed... WrapperEx: {ex1.Message}, ArrayEx: {ex2.Message}");
+                }
             }
 
             if (items != null)

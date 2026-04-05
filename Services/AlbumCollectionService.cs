@@ -199,8 +199,9 @@ public class AlbumCollectionService : IAlbumCollectionService
             }
             else
             {
+                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
                 var rawBaseUrl = repoUrl.Replace("github.com", "raw.githubusercontent.com") + "/main";
-                var rawIndexUrl = rawBaseUrl + "/index.json";
+                var rawIndexUrl = rawBaseUrl + $"/index.json?t={timestamp}";
                 json = await _http.GetStringAsync(rawIndexUrl);
                 Log($"Fetched remote index for community repo '{name}'");
             }
@@ -217,7 +218,7 @@ public class AlbumCollectionService : IAlbumCollectionService
 
         try
         {
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
             var wrapper = JsonSerializer.Deserialize<CommunityIndexWrapper>(json, options);
             if (wrapper != null && wrapper.Charts != null)
             {
@@ -230,7 +231,12 @@ public class AlbumCollectionService : IAlbumCollectionService
         }
         catch
         {
-            try { items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json); } catch { }
+            try 
+            { 
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+                items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json, options); 
+            } 
+            catch { }
         }
 
         if (items == null) return new List<MdmcChart>();

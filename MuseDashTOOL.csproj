@@ -11,7 +11,7 @@
     <RootNamespace>MdModManager</RootNamespace>
     <AssemblyName>MuseDashTOOL</AssemblyName>
     <ApplicationIcon>Assets\MuseDashTOOL.ico</ApplicationIcon>
-    <Version>1.1.4</Version>
+    <Version>1.2.0</Version>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -19,6 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="chart-upload-config.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('chart-upload-config.json')" />
     <AvaloniaResource Include="Assets\**" Exclude="Assets\classdata.tpk" />
     <EmbeddedResource Include="Assets\classdata.tpk" />
     
@@ -56,4 +57,4 @@
 
 
 
-<!-- v1.1.4 -->
+<!-- v1.2.0 -->

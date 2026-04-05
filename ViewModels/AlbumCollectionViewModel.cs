@@ -696,7 +696,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
         { 
             ("通过审议", "https://github.com/KuoKing506/1_Csutom-Albums-Repository"), 
             ("令人生草", "https://github.com/KuoKing506/3_Custom-Albums-Repository"), 
-            ("待定或存在小问题", "https://github.com/KuoKing506/2_Custom-Albums-Repository") 
+            ("待定或存在小问题", "https://github.com/KuoKing506/2_Custom-Albums-Repository"),
+            ("未经审查", "https://github.com/KuoKing506/NewCustomAlbums") 
         };
 
         foreach (var (name, repoUrl) in communityConfigs)

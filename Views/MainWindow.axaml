@@ -66,7 +66,7 @@
                                     </LinearGradientBrush>
                                 </TextBlock.Foreground>
                             </TextBlock>
-                            <TextBlock Text="v1.1.4" FontSize="12" Foreground="White" Margin="5,0,0,2" VerticalAlignment="Bottom"/>
+                            <TextBlock Text="v1.2.0" FontSize="12" Foreground="White" Margin="5,0,0,2" VerticalAlignment="Bottom"/>
                         </StackPanel>
                     </Button>
                     
@@ -82,7 +82,7 @@
                                 <Setter Property="FontSize" Value="16"/>
                                 <Setter Property="FontWeight" Value="Bold"/>
                                 <Setter Property="Padding" Value="15,0"/>
-                                <Setter Property="MinHeight" Value="46"/>
+                                <Setter Property="MinHeight" Value="40"/>
                                 <Setter Property="CornerRadius" Value="6"/>
                                 <Setter Property="RenderTransform" Value="translateX(0px) scale(1.0)"/>
                                 <Setter Property="Transitions">
@@ -121,10 +121,11 @@
                             <LayoutTransformControl.LayoutTransform>
                                 <ScaleTransform ScaleX="{Binding FontScale}" ScaleY="{Binding FontScale}"/>
                             </LayoutTransformControl.LayoutTransform>
-                            <StackPanel Spacing="8">
+                            <StackPanel Spacing="10">
                                 <Button Classes="NavBtn" Command="{Binding NavigateToModManagerCommand}"><TextBlock Text="Mod管理" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
                                 <Button Classes="NavBtn" Command="{Binding NavigateToChartManagerCommand}"><TextBlock Text="谱面管理" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
                                 <Button Classes="NavBtn" Command="{Binding NavigateToChartDownloadCommand}"><TextBlock Text="谱面下载" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
+                                <Button Classes="NavBtn" Command="{Binding NavigateToChartUploadCommand}"><TextBlock Text="谱面上传" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
                                 <Button Classes="NavBtn" Command="{Binding NavigateToDownloadManagerCommand}"><TextBlock Text="下载列表" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
                                 <Button Classes="NavBtn" Command="{Binding NavigateToConfigManagerCommand}"><TextBlock Text="配置文件" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
                                 <Button Classes="NavBtn" Command="{Binding NavigateToAccountCommand}"><TextBlock Text="我的账号" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
