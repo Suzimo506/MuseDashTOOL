@@ -159,7 +159,11 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         [JsonPropertyName("download_url")] public string DownloadUrl { get; set; } = "";
         [JsonPropertyName("release_tag")] public JsonElement ReleaseTag { get; set; }
         [JsonPropertyName("release_tags")] public JsonElement ReleaseTags { get; set; }
+        [JsonPropertyName("upload_time")] public string UploadTime { get; set; } = "";
     }
+
+    // ── 滚动位置信号 ─────────────────────────────────────────────────────────
+    [ObservableProperty] private double? _requestedScrollY;
 
     private string GetCacheKey(int page, int sortIndex, bool ascending, string query)
         => $"{CategoryName}|{sortIndex}|{ascending}|{query.Trim()}|{page}";
@@ -300,6 +304,15 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             if (items != null)
             {
                 _allFullIndex = items.Select(MapToIndexChart).ToList();
+
+                // 未经审查：按 upload_time 倒序排列（最新上传的在前）
+                if (CategoryName == "未经审查")
+                {
+                    _allFullIndex = _allFullIndex
+                        .OrderByDescending(c => c.UploadedAt ?? DateTime.MinValue)
+                        .ToList();
+                }
+
                 RuntimeLog.Write("CommunityDetailVM", $"Loaded {_allFullIndex.Count} charts (tags='{string.Join(", ", _defaultReleaseTags)}')");
             }
             else
@@ -430,7 +443,9 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             CustomDemoUrl = demoUrl,
             CustomDemoMp3Url = demoMp3Url,
             CustomDownloadUrl = downloadUrl,
-            Sheets = sheets
+            Sheets = sheets,
+            UploadedAt = DateTime.TryParseExact(item.UploadTime, "yyyy/MM/dd HH:mm:ss",
+                System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt) ? dt : null
         };
         return chart;
     }
@@ -501,6 +516,9 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         IsEmpty = Charts.Count == 0;
         IsLoading = false;
         UpdateStatusMessage();
+
+        // 翻页后滚动到顶部
+        RequestedScrollY = 0;
 
         // 3. 异步加载封面
         _ = LoadCoversAsync(pageCharts);

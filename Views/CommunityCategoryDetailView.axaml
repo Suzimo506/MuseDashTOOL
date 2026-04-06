@@ -171,7 +171,7 @@
             </StackPanel>
 
             <!-- 谱面列表滚动区域 -->
-            <ScrollViewer IsVisible="{Binding !IsEmpty}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding !IsEmpty}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Charts}" Margin="10,0,10,20">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>

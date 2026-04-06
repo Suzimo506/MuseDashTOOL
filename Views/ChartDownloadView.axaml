@@ -164,10 +164,10 @@
             <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding !IsEmpty}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <Grid RowDefinitions="*,Auto">
                     <ItemsControl ItemsSource="{Binding Charts}" Grid.Row="0">
-                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" HorizontalAlignment="Left"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" HorizontalAlignment="Stretch"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="models:MdmcChart">
-                                <Border Classes="Card" Background="{DynamicResource CardBgBrush}" CornerRadius="10" Width="208" Margin="2,0,2,16" VerticalAlignment="Top" ClipToBounds="True">
+                                <Border Classes="Card" Background="{DynamicResource CardBgBrush}" CornerRadius="10" Margin="2,0,2,16" VerticalAlignment="Top" ClipToBounds="True">
                                     <Grid RowDefinitions="Auto,*">
                                         <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
                                             <Panel>

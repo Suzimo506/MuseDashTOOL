@@ -58,6 +58,10 @@ public partial class App : Application
             // 软件启动时后台静默预获取账号与成绩数据。
             MuseDashAccountService.StartPrefetch();
 
+            // 后台预获取远端 mod 仓库配置（不阻塞启动）
+            var modRepoService = Ioc.Default.GetService<IModRepositoryConfigService>();
+            if (modRepoService != null) _ = modRepoService.PreloadAsync();
+
             var updateService = Ioc.Default.GetService<IUpdateService>();
 
             desktop.MainWindow = new MainWindow
@@ -128,6 +132,7 @@ public partial class App : Application
         services.AddSingleton<IAnnouncementService, AnnouncementService>();
         services.AddSingleton<IAlbumCollectionService, AlbumCollectionService>();
         services.AddSingleton<IMirrorDomainService, MirrorDomainService>();
+        services.AddSingleton<IModRepositoryConfigService, ModRepositoryConfigService>();
 
         Ioc.Default.ConfigureServices(services.BuildServiceProvider());
     }

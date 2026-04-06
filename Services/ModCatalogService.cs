@@ -16,6 +16,7 @@ public interface IModCatalogService
 public class ModCatalogService : IModCatalogService
 {
     private readonly IConfigService _configService;
+    private readonly IModRepositoryConfigService _repoConfigService;
     private readonly HttpClient _httpClient;
 
     // 反序列化选项：
@@ -26,9 +27,10 @@ public class ModCatalogService : IModCatalogService
         PropertyNameCaseInsensitive = true
     };
 
-    public ModCatalogService(IConfigService configService)
+    public ModCatalogService(IConfigService configService, IModRepositoryConfigService repoConfigService)
     {
         _configService = configService;
+        _repoConfigService = repoConfigService;
         _httpClient = new HttpClient();
         // 设置 User-Agent，防止部分服务器拒绝空 UA 请求
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MdModManager/1.0");
@@ -59,7 +61,12 @@ public class ModCatalogService : IModCatalogService
     {
         try
         {
-            var url = _configService.Config.ModLinksUrl;
+            // 优先使用远端仓库配置的 mod_links_url
+            var repoConfig = await _repoConfigService.GetConfigAsync(cancellationToken);
+            var url = !string.IsNullOrWhiteSpace(repoConfig.ModLinksUrl)
+                ? repoConfig.ModLinksUrl
+                : _configService.Config.ModLinksUrl;
+            RuntimeLog.Write("ModCatalog", $"Fetching mod list from: {url}");
             var response = await _httpClient.GetStringAsync(url, cancellationToken);
 
             // 先尝试对象格式：{ "Mods": [...] }
