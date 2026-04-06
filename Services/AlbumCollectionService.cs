@@ -30,6 +30,13 @@ public class AlbumCollectionService : IAlbumCollectionService
     private const string GitHubApiBase = $"https://api.github.com/repos/{Owner}/{Repo}/contents";
     private const string RemoteIndexUrl = $"https://raw.githubusercontent.com/{Owner}/{Repo}/{Branch}/designers.json";
 
+    // ── 新整合包仓库 ──
+    private const string NewRepo = "NewCollectionAlbums";
+    private const string NewRepoGitHub = $"https://github.com/{Owner}/{NewRepo}";
+    private const string NewRepoRawBase = $"https://raw.githubusercontent.com/{Owner}/{NewRepo}/{Branch}";
+    private const string NewRepoCollectionIndexUrl = $"{NewRepoRawBase}/Collection_index.json";
+    private const string NewRepoReleaseTag = "NO.1";
+
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".png", ".jpg", ".jpeg", ".webp"
@@ -44,6 +51,9 @@ public class AlbumCollectionService : IAlbumCollectionService
     private List<DesignerCategory>? _categoryCache;
     private List<DesignerCategory>? _metadataCache;
     private readonly Dictionary<string, List<DesignerChart>> _chartsCache = new(StringComparer.OrdinalIgnoreCase);
+
+    // 新整合包仓库缓存
+    private NewCollectionIndex? _newCollectionCache;
 
     // 社区仓库配置
     private static readonly (string Name, string RepoUrl)[] CommunityConfigs = 
@@ -67,13 +77,14 @@ public class AlbumCollectionService : IAlbumCollectionService
         if (_categoryCache != null)
             return _categoryCache;
 
+        List<DesignerCategory> oldCategories;
         try
         {
             var items = await GetRepoContentsAsync(string.Empty);
             var metadataByName = (await GetMetadataIndexAsync())
                 .ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
 
-            _categoryCache = items
+            oldCategories = items
                 .Where(x => string.Equals(x.Type, "dir", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(x => new DesignerCategory
@@ -85,15 +96,25 @@ public class AlbumCollectionService : IAlbumCollectionService
                 })
                 .ToList();
 
-            Log($"Loaded {_categoryCache.Count} album folders from GitHub.");
-
-            return _categoryCache;
+            Log($"Loaded {oldCategories.Count} album folders from old GitHub repo.");
         }
         catch (Exception ex)
         {
-            Log($"Failed to crawl GitHub folders: {ex}");
-            return await GetCollectionsFromJsonFallbackAsync();
+            Log($"Failed to crawl old GitHub folders: {ex}");
+            oldCategories = await GetCollectionsFromJsonFallbackAsync();
         }
+
+        // 合并新仓库的整合包
+        var newCategories = await GetNewRepoCollectionNamesAsync();
+        var existingNames = new HashSet<string>(oldCategories.Select(c => c.Name), StringComparer.OrdinalIgnoreCase);
+        foreach (var nc in newCategories)
+        {
+            if (!existingNames.Contains(nc.Name))
+                oldCategories.Add(nc);
+        }
+
+        _categoryCache = oldCategories;
+        return _categoryCache;
     }
 
     public async Task<List<DesignerChart>> GetChartsAsync(string categoryName)
@@ -103,6 +124,14 @@ public class AlbumCollectionService : IAlbumCollectionService
 
         if (_chartsCache.TryGetValue(categoryName, out var cached))
             return cached;
+
+        // 先检查是否属于新仓库的整合包
+        var newCharts = await TryGetNewRepoChartsAsync(categoryName);
+        if (newCharts != null)
+        {
+            _chartsCache[categoryName] = newCharts;
+            return newCharts;
+        }
 
         try
         {
@@ -135,12 +164,31 @@ public class AlbumCollectionService : IAlbumCollectionService
         {
             foreach (var chart in category.Charts)
             {
-                // 搜索条件：标题、作者或艺术家
                 if (chart.Title?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
                     chart.Author?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
                     chart.Artist?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true)
                 {
                     results.Add((category, CloneAndNormalizeChart(chart)));
+                }
+            }
+        }
+
+        // 同时搜索新仓库的整合包
+        var newIndex = await GetNewCollectionIndexAsync();
+        if (newIndex?.Collections != null)
+        {
+            foreach (var col in newIndex.Collections)
+            {
+                var fakeCategory = new DesignerCategory { Name = col.Name };
+                foreach (var item in col.Charts)
+                {
+                    var title = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : item.Title;
+                    if (title?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+                        item.Charter?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+                        item.Artist?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        results.Add((fakeCategory, MapNewRepoItemToDesignerChart(item, col.Name)));
+                    }
                 }
             }
         }
@@ -321,6 +369,135 @@ public class AlbumCollectionService : IAlbumCollectionService
     // 内部类，用于解析群友索引
     private class CommunityIndexWrapper { [JsonPropertyName("release_tag")] public JsonElement ReleaseTag { get; set; } [JsonPropertyName("release_tags")] public JsonElement ReleaseTags { get; set; } [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
     private class CommunityIndexItem { [JsonPropertyName("id")] public string Id { get; set; } = ""; [JsonPropertyName("original_id")] public string OriginalId { get; set; } = ""; [JsonPropertyName("title")] public string Title { get; set; } = ""; [JsonPropertyName("artist")] public string Artist { get; set; } = ""; [JsonPropertyName("charter")] public string Charter { get; set; } = ""; [JsonPropertyName("bpm")] public string Bpm { get; set; } = ""; [JsonPropertyName("scene")] public string Scene { get; set; } = ""; [JsonPropertyName("difficulty")] public string Difficulty { get; set; } = ""; [JsonPropertyName("difficulties")] public List<string>? Difficulties { get; set; } [JsonPropertyName("cover_url")] public string CoverUrl { get; set; } = ""; [JsonPropertyName("demo_url")] public string DemoUrl { get; set; } = ""; [JsonPropertyName("demo_mp3_url")] public string DemoMp3Url { get; set; } = ""; [JsonPropertyName("download_url")] public string DownloadUrl { get; set; } = ""; [JsonPropertyName("release_tag")] public JsonElement ReleaseTag { get; set; } [JsonPropertyName("release_tags")] public JsonElement ReleaseTags { get; set; } }
+
+    // ── 新整合包仓库数据模型 ──
+    private class NewCollectionIndex { [JsonPropertyName("collections")] public List<NewCollectionEntry> Collections { get; set; } = new(); }
+    private class NewCollectionEntry { [JsonPropertyName("name")] public string Name { get; set; } = ""; [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
+
+    // ── 新整合包仓库：获取索引 ──
+    private async Task<NewCollectionIndex?> GetNewCollectionIndexAsync()
+    {
+        if (_newCollectionCache != null) return _newCollectionCache;
+
+        string? json = null;
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+
+        // 1. 本地文件优先
+        try
+        {
+            var localPath = FindLocalNewCollectionIndexPath();
+            if (!string.IsNullOrEmpty(localPath) && File.Exists(localPath))
+            {
+                json = await File.ReadAllTextAsync(localPath);
+                Log($"Loaded new collection index from local: {localPath}");
+            }
+        }
+        catch (Exception ex) { Log($"Local new collection index read failed: {ex.Message}"); }
+
+        // 2. 远端获取
+        if (string.IsNullOrEmpty(json))
+        {
+            try
+            {
+                var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
+                json = await _http.GetStringAsync($"{NewRepoCollectionIndexUrl}?t={ts}");
+                Log("Fetched new collection index from remote.");
+            }
+            catch (Exception ex) { Log($"Remote new collection index fetch failed: {ex.Message}"); }
+        }
+
+        if (string.IsNullOrEmpty(json)) return null;
+
+        try
+        {
+            _newCollectionCache = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
+            Log($"Parsed new collection index: {_newCollectionCache?.Collections.Count ?? 0} collections.");
+        }
+        catch (Exception ex) { Log($"Failed to parse new collection index: {ex.Message}"); }
+
+        return _newCollectionCache;
+    }
+
+    private async Task<List<DesignerCategory>> GetNewRepoCollectionNamesAsync()
+    {
+        var result = new List<DesignerCategory>();
+        var index = await GetNewCollectionIndexAsync();
+        if (index?.Collections == null) return result;
+
+        foreach (var col in index.Collections)
+        {
+            if (!string.IsNullOrWhiteSpace(col.Name))
+            {
+                result.Add(new DesignerCategory { Name = col.Name });
+                Log($"New collection discovered: '{col.Name}' with {col.Charts.Count} charts.");
+            }
+        }
+        return result;
+    }
+
+    private async Task<List<DesignerChart>?> TryGetNewRepoChartsAsync(string categoryName)
+    {
+        var index = await GetNewCollectionIndexAsync();
+        var col = index?.Collections?.FirstOrDefault(c => string.Equals(c.Name, categoryName, StringComparison.OrdinalIgnoreCase));
+        if (col == null) return null;
+
+        var charts = col.Charts.Select(item => MapNewRepoItemToDesignerChart(item, col.Name)).ToList();
+        Log($"New repo category '{categoryName}' resolved to {charts.Count} charts.");
+        return charts;
+    }
+
+    private DesignerChart MapNewRepoItemToDesignerChart(CommunityIndexItem item, string collectionName)
+    {
+        var encodedCollection = Uri.EscapeDataString(collectionName);
+
+        // 封面：{NewRepoRawBase}/{collectionName}/covers/{cover_url}
+        var coverUrl = item.CoverUrl;
+        if (!string.IsNullOrEmpty(coverUrl) && !coverUrl.StartsWith("http"))
+            coverUrl = $"{NewRepoRawBase}/{encodedCollection}/covers/{coverUrl}";
+
+        // 试听：{NewRepoRawBase}/{collectionName}/demos/{demo_url}
+        var demoUrl = item.DemoUrl;
+        if (!string.IsNullOrEmpty(demoUrl) && !demoUrl.StartsWith("http"))
+            demoUrl = $"{NewRepoRawBase}/{encodedCollection}/demos/{demoUrl}";
+
+        var demoMp3Url = item.DemoMp3Url;
+        if (!string.IsNullOrEmpty(demoMp3Url) && !demoMp3Url.StartsWith("http"))
+            demoMp3Url = $"{NewRepoRawBase}/{encodedCollection}/demos/{demoMp3Url}";
+
+        // 下载：GitHub Release {NewRepoGitHub}/releases/download/NO.1/{download_url}
+        var downloadUrl = item.DownloadUrl;
+        if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http"))
+            downloadUrl = $"{NewRepoGitHub}/releases/download/{NewRepoReleaseTag}/{downloadUrl}";
+
+        var title = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : (item.Title ?? "");
+
+        return new DesignerChart
+        {
+            Id = item.Id,
+            Title = title.Trim(),
+            Artist = item.Artist,
+            Author = item.Charter,
+            Bpm = item.Bpm,
+            CoverUrl = coverUrl,
+            DemoUrl = demoUrl,
+            DemoMp3Url = demoMp3Url,
+            DownloadUrl = downloadUrl
+        };
+    }
+
+    private static string? FindLocalNewCollectionIndexPath()
+    {
+        var candidates = new List<string>();
+        var basePaths = new[] { Environment.CurrentDirectory, AppContext.BaseDirectory };
+        foreach (var bp in basePaths)
+        {
+            candidates.Add(Path.Combine(bp, "SongRepository", "Collection_index.json"));
+            var current = new DirectoryInfo(bp);
+            for (var depth = 0; depth < 5 && current != null; depth++, current = current.Parent)
+                candidates.Add(Path.Combine(current.FullName, "SongRepository", "Collection_index.json"));
+        }
+        return candidates.FirstOrDefault(File.Exists);
+    }
 
     private async Task<List<GitHubContentItem>> GetRepoContentsAsync(string path)
     {
