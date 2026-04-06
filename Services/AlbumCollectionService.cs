@@ -340,10 +340,22 @@ public class AlbumCollectionService : IAlbumCollectionService
         // 映射逻辑参考 CommunityCategoryDetailViewModel.cs
         var sheets = new List<MdmcSheet>();
         if (item.Difficulties != null && item.Difficulties.Count > 0)
-            sheets = item.Difficulties.Select(d => new MdmcSheet { Difficulty = d }).ToList();
+        {
+            foreach (var d in item.Difficulties)
+            {
+                if (!string.IsNullOrEmpty(d))
+                {
+                    var splitted = d.Split(new char[] { ',', '，', ' ', '/', '、' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    foreach (var s in splitted)
+                        sheets.Add(new MdmcSheet { Difficulty = s });
+                }
+            }
+        }
         else if (!string.IsNullOrEmpty(item.Difficulty) && item.Difficulty != "0" && item.Difficulty != "?")
-            foreach (var p in item.Difficulty.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                sheets.Add(new MdmcSheet { Difficulty = p.Trim() });
+        {
+            foreach (var p in item.Difficulty.Split(new char[] { ',', '，', ' ', '/', '、' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                sheets.Add(new MdmcSheet { Difficulty = p });
+        }
 
         string cleanTitle = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : (item.Title ?? "");
         cleanTitle = Regex.Replace(cleanTitle, @"^\[(?:Lv|LV|lv)[.\s]?\s*[^\]]+\]\s*", "", RegexOptions.IgnoreCase);
@@ -372,7 +384,7 @@ public class AlbumCollectionService : IAlbumCollectionService
 
     // ── 新整合包仓库数据模型 ──
     private class NewCollectionIndex { [JsonPropertyName("collections")] public List<NewCollectionEntry> Collections { get; set; } = new(); }
-    private class NewCollectionEntry { [JsonPropertyName("name")] public string Name { get; set; } = ""; [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
+    private class NewCollectionEntry { [JsonPropertyName("name")] public string Name { get; set; } = ""; [JsonPropertyName("description")] public string Description { get; set; } = ""; [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
 
     // ── 新整合包仓库：获取索引 ──
     private async Task<NewCollectionIndex?> GetNewCollectionIndexAsync()
@@ -428,7 +440,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         {
             if (!string.IsNullOrWhiteSpace(col.Name))
             {
-                result.Add(new DesignerCategory { Name = col.Name });
+                result.Add(new DesignerCategory { Name = col.Name, Description = col.Description });
                 Log($"New collection discovered: '{col.Name}' with {col.Charts.Count} charts.");
             }
         }
@@ -481,7 +493,8 @@ public class AlbumCollectionService : IAlbumCollectionService
             CoverUrl = coverUrl,
             DemoUrl = demoUrl,
             DemoMp3Url = demoMp3Url,
-            DownloadUrl = downloadUrl
+            DownloadUrl = downloadUrl,
+            Difficulties = item.Difficulties
         };
     }
 

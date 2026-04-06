@@ -126,6 +126,9 @@
                 <TextBlock Text="确认你上传的谱面是你的原创，不接受未经授权的转载以及改编谱面" 
                            TextWrapping="Wrap" 
                            Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                <TextBlock Text="谱面大小不能超过100MB，请压缩后上传" 
+                           TextWrapping="Wrap" 
+                           Foreground="{DynamicResource ThemeTextSubBrush}"/>
             </StackPanel>
         </Border>
 

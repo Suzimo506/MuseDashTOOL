@@ -561,6 +561,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
                     CustomDemoUrl = chart.DemoUrl,
                     CustomDemoMp3Url = chart.DemoMp3Url,
                     CustomDownloadUrl = chart.DownloadUrl,
+                    Sheets = ExtractDifficultySheets(chart),
                     SearchText = query // 用于粉色高亮
                 });
             }
@@ -814,5 +815,41 @@ public partial class AlbumCollectionViewModel : ObservableObject
             ReleaseResources();
             await mainVm.NavigateToChartDownloadCommand.ExecuteAsync(null);
         }
+    }
+
+    private static List<MdmcSheet> ExtractDifficultySheets(DesignerChart chart)
+    {
+        var labels = new List<string>();
+        if (chart.Difficulties != null && chart.Difficulties.Count > 0)
+        {
+            foreach (var d in chart.Difficulties)
+            {
+                if (!string.IsNullOrEmpty(d))
+                {
+                    labels.AddRange(d.Split(new char[] { ',', '，', ' ', '/', '、' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                     .Where(x => !string.IsNullOrWhiteSpace(x)));
+                }
+            }
+        }
+
+        if (labels.Count == 0 && !string.IsNullOrWhiteSpace(chart.DownloadUrl))
+        {
+            var urlDecoded = System.Net.WebUtility.UrlDecode(chart.DownloadUrl);
+            var match = System.Text.RegularExpressions.Regex.Match(
+                urlDecoded,
+                @"\[Lv\.(.*?)\]",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                labels.AddRange(match.Groups[1].Value
+                    .Split(new char[] { ',', '，', ' ', '/', '、' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Where(x => !string.IsNullOrWhiteSpace(x)));
+            }
+        }
+        
+        if (labels.Count == 0)
+            labels.Add("?");
+            
+        return labels.Select(l => new MdmcSheet { Difficulty = l }).ToList();
     }
 }

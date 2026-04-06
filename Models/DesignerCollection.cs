@@ -43,4 +43,7 @@ public class DesignerChart
 
     [JsonPropertyName("demoMp3Url")]
     public string DemoMp3Url { get; set; } = string.Empty;
+
+    [JsonPropertyName("difficulties")]
+    public List<string>? Difficulties { get; set; }
 }

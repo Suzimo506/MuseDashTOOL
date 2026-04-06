@@ -264,8 +264,12 @@
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Top"
                                         Margin="8,8,8,16"
-                                        ToolTip.Tip="{Binding Category.Description}"
                                         Cursor="Hand">
+                                    <ToolTip.Tip>
+                                        <TextBlock Text="{Binding Category.Description}" 
+                                                   FontFamily="Segoe UI, Microsoft YaHei, sans-serif"
+                                                   FontSize="13"/>
+                                    </ToolTip.Tip>
                                     <Button.Styles>
                                         <Style Selector="Button:pointerover /template/ ContentPresenter">
                                             <Setter Property="Background" Value="Transparent"/>

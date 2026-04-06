@@ -118,12 +118,28 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
         foreach (var c in charts) // Iterate over all charts, not filteredCharts
         {
-            var urlDecoded = System.Net.WebUtility.UrlDecode(c.DownloadUrl);
-            var match = System.Text.RegularExpressions.Regex.Match(
-                urlDecoded,
-                @"\[Lv\.(.*?)\]",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            var difficultyLabels = ExtractDifficultyLabels(match);
+            List<string> difficultyLabels = new List<string>();
+            if (c.Difficulties != null && c.Difficulties.Count > 0)
+            {
+                foreach (var d in c.Difficulties)
+                {
+                    if (!string.IsNullOrEmpty(d))
+                    {
+                        var splitted = d.Split(new char[] { ',', '，', ' ', '/', '、' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        difficultyLabels.AddRange(splitted.Where(x => !string.IsNullOrWhiteSpace(x)));
+                    }
+                }
+            }
+            
+            if (difficultyLabels.Count == 0)
+            {
+                var urlDecoded = System.Net.WebUtility.UrlDecode(c.DownloadUrl);
+                var match = System.Text.RegularExpressions.Regex.Match(
+                    urlDecoded,
+                    @"\[Lv\.(.*?)\]",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                difficultyLabels = ExtractDifficultyLabels(match);
+            }
 
             Charts.Add(new MdmcChart
             {
@@ -218,7 +234,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
         var raw = match.Groups[1].Value;
         var labels = raw
-            .Split([',', '，'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Split([',', '，', ' ', '/', '、'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(label => !string.IsNullOrWhiteSpace(label))
             .ToList();
 

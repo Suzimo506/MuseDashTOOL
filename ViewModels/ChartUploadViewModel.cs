@@ -95,6 +95,15 @@ public partial class ChartUploadViewModel : ObservableObject
 
             try
             {
+                var fileInfo = new System.IO.FileInfo(filePath);
+                const long maxSize = 100L * 1024 * 1024; // 100MB
+                if (fileInfo.Exists && fileInfo.Length > maxSize)
+                {
+                    var sizeMb = fileInfo.Length / (1024.0 * 1024.0);
+                    _notificationService.ShowFailure("文件过大", $"谱面大小 {sizeMb:F1}MB 超过 100MB 限制，请压缩后上传！");
+                    continue;
+                }
+
                 var prepared = await _packageProcessor.PrepareUploadAsync(filePath);
                 
                 // 更换新文件时自动清空之前的（既然一次仅允许上传一个）
