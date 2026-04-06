@@ -129,6 +129,9 @@
                 <TextBlock Text="谱面大小不能超过100MB，请压缩后上传" 
                            TextWrapping="Wrap" 
                            Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                <TextBlock Text="感谢你对MDMC社区做出的贡献！" 
+                           TextWrapping="Wrap" 
+                           Foreground="{DynamicResource ThemeTextSubBrush}"/>
             </StackPanel>
         </Border>
 
