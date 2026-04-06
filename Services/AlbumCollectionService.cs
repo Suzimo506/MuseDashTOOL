@@ -251,7 +251,12 @@ public class AlbumCollectionService : IAlbumCollectionService
                 var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
                 var rawBaseUrl = repoUrl.Replace("github.com", "raw.githubusercontent.com") + "/main";
                 var rawIndexUrl = rawBaseUrl + $"/index.json?t={timestamp}";
-                json = await _http.GetStringAsync(rawIndexUrl);
+                
+                var configService = CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default.GetService<IConfigService>();
+                var source = configService?.Config?.DownloadSource ?? "Auto";
+                var finalUrl = GitHubMirrorHelper.ApplyMirror(rawIndexUrl, source);
+                
+                json = await _http.GetStringAsync(finalUrl);
                 Log($"Fetched remote index for community repo '{name}'");
             }
         }
@@ -412,7 +417,13 @@ public class AlbumCollectionService : IAlbumCollectionService
             try
             {
                 var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
-                json = await _http.GetStringAsync($"{NewRepoCollectionIndexUrl}?t={ts}");
+                var rawUrl = $"{NewRepoCollectionIndexUrl}?t={ts}";
+                
+                var configService = CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default.GetService<IConfigService>();
+                var source = configService?.Config?.DownloadSource ?? "Auto";
+                var finalUrl = GitHubMirrorHelper.ApplyMirror(rawUrl, source);
+
+                json = await _http.GetStringAsync(finalUrl);
                 Log("Fetched new collection index from remote.");
             }
             catch (Exception ex) { Log($"Remote new collection index fetch failed: {ex.Message}"); }
