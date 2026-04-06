@@ -10,7 +10,7 @@ namespace MdModManager.Services;
 
 public interface IModCatalogService
 {
-    Task<List<ModInfo>> GetModsAsync(CancellationToken cancellationToken = default);
+    Task<List<ModInfo>> GetModsAsync(bool forceRefresh = false, CancellationToken cancellationToken = default);
 }
 
 public class ModCatalogService : IModCatalogService
@@ -18,6 +18,7 @@ public class ModCatalogService : IModCatalogService
     private readonly IConfigService _configService;
     private readonly IModRepositoryConfigService _repoConfigService;
     private readonly HttpClient _httpClient;
+    private List<ModInfo>? _cachedMods;
 
     // 反序列化选项：
     // - 纯反射模式，不使用 AOT Source Generator，避免与其他选项发生冲突
@@ -42,8 +43,13 @@ public class ModCatalogService : IModCatalogService
     /// - 新格式：[ ... ]（来自 Gitee lxymahatma/ModLinks dev 分支）
     /// 并整合 Euterpe Market (https://euterpe-org.com/market) 的独有模组。
     /// </summary>
-    public async Task<List<ModInfo>> GetModsAsync(CancellationToken cancellationToken = default)
+    public async Task<List<ModInfo>> GetModsAsync(bool forceRefresh = false, CancellationToken cancellationToken = default)
     {
+        if (!forceRefresh && _cachedMods != null)
+        {
+            return _cachedMods;
+        }
+
         // 1. 获取主源 (Gitee/GitHub)
         var giteeMods = await FetchGiteeModsAsync(cancellationToken);
         
@@ -54,6 +60,7 @@ public class ModCatalogService : IModCatalogService
         var result = new List<ModInfo>(giteeMods);
         result.AddRange(euterpeMods);
 
+        _cachedMods = result;
         return result;
     }
 

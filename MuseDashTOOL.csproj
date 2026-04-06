@@ -11,7 +11,7 @@
     <RootNamespace>MdModManager</RootNamespace>
     <AssemblyName>MuseDashTOOL</AssemblyName>
     <ApplicationIcon>Assets\MuseDashTOOL.ico</ApplicationIcon>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>

@@ -186,7 +186,9 @@ public partial class ModManagerViewModel : ObservableObject
         }
     }
 
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(CancellationToken cancellationToken = default) => await InitializeAsync(false, cancellationToken);
+    
+    public async Task InitializeAsync(bool forceRefresh, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -218,7 +220,7 @@ public partial class ModManagerViewModel : ObservableObject
             Console.WriteLine($"[兼容性] 游戏路径: {gamePath}");
             Console.WriteLine($"[兼容性] 读取到的游戏版本: '{_gameVersion}'");
 
-            var remoteMods = await _catalogService.GetModsAsync(cancellationToken);
+            var remoteMods = await _catalogService.GetModsAsync(forceRefresh, cancellationToken);
 
             // 把暂存文件夹路径传给 GetLocalMods，一次调用同时扫描 Mods/ 和 Mods_Staging/
             var stagingFolder = string.IsNullOrEmpty(gamePath)
@@ -430,7 +432,7 @@ public partial class ModManagerViewModel : ObservableObject
     [RelayCommand]
     private async Task RefreshModListAsync()
     {
-        await InitializeAsync();
+        await InitializeAsync(true);
     }
 
     [RelayCommand]

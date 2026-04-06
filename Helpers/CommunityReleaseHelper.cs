@@ -32,15 +32,15 @@ public static class CommunityReleaseHelper
     {
         var tags = new List<string>();
 
-        if (defaults != null)
-        {
-            foreach (var tag in defaults)
-                AddTag(tags, tag);
-        }
-
         foreach (var element in elements)
         {
             foreach (var tag in ParseReleaseTags(element))
+                AddTag(tags, tag);
+        }
+
+        if (defaults != null)
+        {
+            foreach (var tag in defaults)
                 AddTag(tags, tag);
         }
 
