@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "api_url": "https://upload.suzimo.site",
+  "fallback_api_urls": [],
+  "notice": "",
+  "timeout_seconds": 300
+}

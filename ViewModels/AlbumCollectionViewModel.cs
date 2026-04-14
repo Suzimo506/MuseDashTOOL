@@ -695,10 +695,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
         var communityTasks = new List<Task>();
         var communityConfigs = new[] 
         { 
-            ("通过审议", "https://github.com/KuoKing506/1_Csutom-Albums-Repository"), 
-            ("令人生草", "https://github.com/KuoKing506/3_Custom-Albums-Repository"), 
-            ("待定或存在小问题", "https://github.com/KuoKing506/2_Custom-Albums-Repository"),
-            ("未经审查", "https://github.com/KuoKing506/NewCustomAlbums") 
+            ("通过审议", "https://download.suzimo.site/1_Csutom-Albums-Repository"), 
+            ("令人生草", "https://download.suzimo.site/3_Custom-Albums-Repository"), 
+            ("待定或存在小问题", "https://download.suzimo.site/2_Custom-Albums-Repository"),
+            ("未经审查", "https://download.suzimo.site/%E6%9C%AA%E7%BB%8F%E5%AE%A1%E6%9F%A5") 
         };
 
         foreach (var (name, repoUrl) in communityConfigs)

@@ -209,7 +209,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     retryCount++;
-                    RuntimeLog.Write("DownloadManager", $"Download attempt {retryCount} failed: title='{item.Chart.Title}', error='{ex.Message}'");
+                    RuntimeLog.Write("DownloadManager", $"Download attempt {retryCount} failed: title='{item.Chart.Title}', url='{item.Chart.DownloadUrl}', error='{ex.Message}'");
 
                     if (retryCount <= maxRetryCount)
                     {
@@ -264,7 +264,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         }
 
         using var response = await _downloadHttp.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
-        RuntimeLog.Write("DownloadManager", $"Download response: title='{item.Chart.Title}', status={(int)response.StatusCode} {response.StatusCode}");
+        RuntimeLog.Write("DownloadManager", $"Download response: title='{item.Chart.Title}', status={(int)response.StatusCode} {response.StatusCode}, url='{item.Chart.DownloadUrl}'");
 
         if (item.DownloadedBytes > 0 && response.StatusCode == HttpStatusCode.OK)
         {

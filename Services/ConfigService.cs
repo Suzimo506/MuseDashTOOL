@@ -97,7 +97,17 @@ public class ConfigService : IConfigService
             config.ModLinksUrl = "https://gitee.com/lxymahatma/ModLinks/raw/dev/Mods.json";
         }
 
-        if (MirrorDomainRegistry.IsSuzimoDownloadSource(config.DownloadSource))
+        // 旧下载源迁移：github.com / kkgithub.com / ghproxy.net 等已废弃，统一迁移到 suzimo + 高速DNS
+        var ds = config.DownloadSource;
+        if (string.IsNullOrWhiteSpace(ds) ||
+            ds.Equals("github.com", StringComparison.OrdinalIgnoreCase) ||
+            ds.Equals("kkgithub.com", StringComparison.OrdinalIgnoreCase) ||
+            ds.Equals("ghproxy.net", StringComparison.OrdinalIgnoreCase))
+        {
+            config.DownloadSource = MirrorDomainRegistry.SuzimoAlias;
+            config.UseOptimizedDns = true;
+        }
+        else if (MirrorDomainRegistry.IsSuzimoDownloadSource(ds))
         {
             config.DownloadSource = MirrorDomainRegistry.SuzimoAlias;
         }

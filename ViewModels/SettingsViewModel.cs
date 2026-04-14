@@ -19,7 +19,7 @@ public partial class SettingsViewModel : ObservableObject
 
     // 可用的下载源列表
     [ObservableProperty]
-    private string[] _downloadSources = new[] { "高速 DNS", "Suzimo", "kkgithub.com", "github.com" };
+    private string[] _downloadSources = new[] { "高速 DNS", "Suzimo" };
 
     // 控制主设置面板与颜色子面板、高级设置面板的切换
     [ObservableProperty]
@@ -58,37 +58,17 @@ public partial class SettingsViewModel : ObservableObject
     {
         get
         {
-            var val = _configService.Config.DownloadSource;
-            if (_configService.Config.UseOptimizedDns && MirrorDomainRegistry.IsSuzimoDownloadSource(val)) return "高速 DNS";
-            if (val == "ghproxy.net") return "github.com";
-            if (MirrorDomainRegistry.IsSuzimoDownloadSource(val)) return "Suzimo";
-            return val;
+            if (_configService.Config.UseOptimizedDns) return "高速 DNS";
+            return "Suzimo";
         }
         set
         {
-            string newVal;
-            bool useOpt = false;
-
-            if (value == "高速 DNS")
-            {
-                newVal = MirrorDomainRegistry.SuzimoAlias;
-                useOpt = true;
-            }
-            else if (value == "Suzimo")
-            {
-                newVal = MirrorDomainRegistry.SuzimoAlias;
-                useOpt = false;
-            }
-            else
-            {
-                newVal = value;
-                useOpt = false;
-            }
+            bool useOpt = value == "高速 DNS";
 
             bool changed = false;
-            if (_configService.Config.DownloadSource != newVal)
+            if (_configService.Config.DownloadSource != MirrorDomainRegistry.SuzimoAlias)
             {
-                _configService.Config.DownloadSource = newVal;
+                _configService.Config.DownloadSource = MirrorDomainRegistry.SuzimoAlias;
                 changed = true;
             }
             if (_configService.Config.UseOptimizedDns != useOpt)

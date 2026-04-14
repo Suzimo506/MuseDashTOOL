@@ -247,7 +247,8 @@ public static class HttpHelper
     {
         return MirrorDomainRegistry.IsSuzimoHost(host) ||
                (!string.IsNullOrWhiteSpace(host) &&
-                host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase));
+                (host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase) ||
+                 host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase)));
     }
 
     public static HttpClient CreateOptimizedClient(TimeSpan timeout, TimeSpan? watchdogTimeout = null)

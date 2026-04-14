@@ -89,13 +89,20 @@ public partial class MelonLoaderViewModel : ObservableObject
         DownloadProgress = 0;
         _installCts = new CancellationTokenSource();
 
+        // 确保优选IP在 MelonLoader 下载期间始终启用
+        var previousUseOptimized = HttpHelper.UseOptimizedIps;
+
         try
         {
             var progress = new Progress<double>(p => DownloadProgress = p);
-            var downloadUrl = GitHubMirrorHelper.ApplyMirror(
-                asset.DownloadUrl,
-                _configService.Config.DownloadSource);
 
+            // MelonLoader 强制通过 suzimo.site 代理加速下载，使用优选IP
+            var suzimoHost = MirrorDomainRegistry.SuzimoHost;
+            if (string.IsNullOrWhiteSpace(suzimoHost))
+                suzimoHost = "suzimo.site";
+            var downloadUrl = GitHubMirrorHelper.ApplyCustomMirror(asset.DownloadUrl, suzimoHost);
+
+            HttpHelper.UseOptimizedIps = true;
             await _melonLoaderService.InstallAsync(downloadUrl, progress, _installCts.Token);
             RefreshCurrentVersion();
             _notificationService.ShowSuccess("MelonLoader 安装成功");
@@ -111,6 +118,8 @@ public partial class MelonLoaderViewModel : ObservableObject
         }
         finally
         {
+            // 恢复用户原有的优选IP设置
+            HttpHelper.UseOptimizedIps = previousUseOptimized;
             IsActionProgressing = false;
             DownloadProgress = 0;
             _installCts?.Dispose();

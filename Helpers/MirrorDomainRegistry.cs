@@ -103,9 +103,6 @@ public static class MirrorDomainRegistry
         // 这里只排除已知非 Suzimo 下载源，剩下的主机名都按旧 Suzimo 配置迁移到代号。
         return normalizedHost.Contains('.', StringComparison.Ordinal) &&
                !normalizedHost.Equals("github.com", StringComparison.OrdinalIgnoreCase) &&
-               !normalizedHost.Equals("raw.githubusercontent.com", StringComparison.OrdinalIgnoreCase) &&
-               !normalizedHost.Equals("kkgithub.com", StringComparison.OrdinalIgnoreCase) &&
-               !normalizedHost.Equals("raw.kkgithub.com", StringComparison.OrdinalIgnoreCase) &&
-               !normalizedHost.Equals("ghproxy.net", StringComparison.OrdinalIgnoreCase);
+               !normalizedHost.Equals("raw.githubusercontent.com", StringComparison.OrdinalIgnoreCase);
     }
 }

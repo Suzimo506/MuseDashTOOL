@@ -4,8 +4,6 @@ namespace MdModManager.Helpers;
 
 public static class GitHubMirrorHelper
 {
-    private const string KkGitHubHost = "kkgithub.com";
-    private const string KkRawHost = "raw.kkgithub.com";
     private const string GitHubHost = "github.com";
     private const string RawGitHubHost = "raw.githubusercontent.com";
 
@@ -14,33 +12,20 @@ public static class GitHubMirrorHelper
         if (string.IsNullOrWhiteSpace(url))
             return string.Empty;
 
-        var canonicalUrl = NormalizeCanonicalUrl(url);
-        if (!Uri.TryCreate(canonicalUrl, UriKind.Absolute, out var uri))
-            return canonicalUrl;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return url;
 
-        if (string.IsNullOrWhiteSpace(downloadSource) ||
-            downloadSource.Contains(GitHubHost, StringComparison.OrdinalIgnoreCase))
-        {
-            return canonicalUrl;
-        }
+        if (string.IsNullOrWhiteSpace(downloadSource))
+            return url;
 
         // Suzimo / 高速 DNS 只保留代号，真实域名统一从镜像配置里解析出来。
         var suzimoHost = MirrorDomainRegistry.ResolveMirrorHost(downloadSource);
         if (!string.IsNullOrWhiteSpace(suzimoHost))
         {
-            return ApplyCustomMirror(canonicalUrl, suzimoHost);
+            return ApplyCustomMirror(url, suzimoHost);
         }
 
-        if (downloadSource.Contains(KkGitHubHost, StringComparison.OrdinalIgnoreCase))
-        {
-            if (uri.Host.Equals(GitHubHost, StringComparison.OrdinalIgnoreCase))
-                return ReplaceHost(uri, KkGitHubHost);
-
-            if (uri.Host.Equals(RawGitHubHost, StringComparison.OrdinalIgnoreCase))
-                return ReplaceHost(uri, KkRawHost);
-        }
-
-        return canonicalUrl;
+        return url;
     }
 
     public static string ApplyCustomMirror(string url, string customHost)
@@ -48,18 +33,22 @@ public static class GitHubMirrorHelper
         if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(customHost))
             return url;
 
-        var canonical = NormalizeCanonicalUrl(url);
-        if (!Uri.TryCreate(canonical, UriKind.Absolute, out var uri))
-            return canonical;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return url;
 
         // 这里允许传完整 URL 或纯主机名，统一裁成 host 再拼接。
         var host = customHost.Replace("https://", "").Replace("http://", "").TrimEnd('/');
         
-        // 特殊处理 kkgithub 的 raw 域名
-        if (host.Equals("kkgithub.com", StringComparison.OrdinalIgnoreCase) && 
-            uri.Host.Equals("raw.githubusercontent.com", StringComparison.OrdinalIgnoreCase))
+        // 仅替换 GitHub 相关的域名，防止误伤 R2 直链或其它域名
+        if (uri.Host.Equals(GitHubHost, StringComparison.OrdinalIgnoreCase) || 
+            uri.Host.Equals(RawGitHubHost, StringComparison.OrdinalIgnoreCase))
         {
-            host = "raw.kkgithub.com";
+            // 特殊处理 suzimo.site：对于 github.com 的 Release 链接，需要通过代理转发
+            // 但如果是 raw.githubusercontent.com 的链接也可以代理
+        }
+        else
+        {
+            return url; // 如果不是 GitHub 的链接，直接放行，不做劫持
         }
         
         var scheme = uri.Scheme;
@@ -72,25 +61,6 @@ public static class GitHubMirrorHelper
             result += "#" + fragment;
         }
         return result;
-    }
-
-    public static string NormalizeCanonicalUrl(string? url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return string.Empty;
-
-        var trimmed = url.Trim();
-
-        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
-            return trimmed;
-
-        if (uri.Host.Equals(KkGitHubHost, StringComparison.OrdinalIgnoreCase))
-            return ReplaceHost(uri, GitHubHost);
-
-        if (uri.Host.Equals(KkRawHost, StringComparison.OrdinalIgnoreCase))
-            return ReplaceHost(uri, RawGitHubHost);
-
-        return trimmed;
     }
 
     private static string ReplaceHost(Uri uri, string host)
@@ -108,3 +78,4 @@ public static class GitHubMirrorHelper
         return result;
     }
 }
+

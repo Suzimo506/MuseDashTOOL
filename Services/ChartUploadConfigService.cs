@@ -13,7 +13,7 @@ public interface IChartUploadConfigService
 
 public sealed class ChartUploadConfigService : IChartUploadConfigService
 {
-    private const string RemoteConfigUrl = "https://raw.githubusercontent.com/KuoKing506/-MuseDashTOOL/main/chart-upload-config.json";
+    private const string RemoteConfigUrl = "https://download.suzimo.site/%E6%9C%AA%E7%BB%8F%E5%AE%A1%E6%9F%A5/chart-upload-config.json";
     private const string ConfigFileName = "chart-upload-config.json";
 
     private readonly HttpClient _httpClient;

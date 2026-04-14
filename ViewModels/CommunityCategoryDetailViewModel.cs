@@ -230,11 +230,18 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         _chartDownloadViewModel.PropertyChanged += OnDownloadViewModelPropertyChanged;
 
         CategoryName = categoryName;
-        _githubRepoUrl = repoUrl; // 保存原始 GitHub 仓库地址，用于构建 Release 下载链接
+        _githubRepoUrl = repoUrl; 
         
-        // 构建 Raw 基础地址：https://github.com/user/repo -> https://raw.githubusercontent.com/user/repo/main
-        _rawBaseUrl = repoUrl.Replace("github.com", "raw.githubusercontent.com") + "/main";
-        // 增加时间戳，避免被代理端的 cacheTtl: 86400 (24h) 锁死。除以 300 保证和 GitHub 的 5 分钟级原始缓存周期一致，防止请求穿透太多导致限流。
+        if (repoUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase))
+        {
+            _rawBaseUrl = repoUrl.Replace("github.com", "raw.githubusercontent.com") + "/main";
+        }
+        else
+        {
+            // 对于 R2 存储 (download.suzimo.site)，repoUrl 已经是 Raw 基础地址
+            _rawBaseUrl = repoUrl.TrimEnd('/');
+        }
+        
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
         var rawIndexUrl = _rawBaseUrl + $"/index.json?t={timestamp}";
         RepoUrl = GitHubMirrorHelper.ApplyMirror(rawIndexUrl, _configService.Config.DownloadSource);
@@ -371,8 +378,16 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             demoMp3Url = _rawBaseUrl + "/demos/" + demoMp3Url;
 
         var downloadUrl = item.DownloadUrl;
-        var candidateTags = CommunityReleaseHelper.MergeReleaseTags(_defaultReleaseTags, item.ReleaseTag, item.ReleaseTags);
-        downloadUrl = CommunityReleaseHelper.ResolveReleaseDownloadUrl(downloadUrl, _githubRepoUrl, candidateTags);
+        if (_githubRepoUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase))
+        {
+            var candidateTags = CommunityReleaseHelper.MergeReleaseTags(_defaultReleaseTags, item.ReleaseTag, item.ReleaseTags);
+            downloadUrl = CommunityReleaseHelper.ResolveReleaseDownloadUrl(downloadUrl, _githubRepoUrl, candidateTags);
+        }
+        else if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            // 对于 R2 存储，谱面文件统一存放在 mdm/ 目录下
+            downloadUrl = _rawBaseUrl + "/mdm/" + downloadUrl;
+        }
 
         // 应用镜像/加速逻辑
         var source = _configService.Config.DownloadSource;
