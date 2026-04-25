@@ -41,7 +41,7 @@ file class MdMoePlayerResponse
     public System.Collections.Generic.List<MdMoePlay>? Plays { get; set; }
 
     [JsonPropertyName("rl")]
-    public decimal? RelativeLevel { get; set; }
+    public JsonElement? RelativeLevel { get; set; }
 }
 
 file class MdMoeUser
@@ -267,10 +267,18 @@ public static class MuseDashAccountService
                 while (len > 0 && bytes[len - 1] == 0) len--;
 
                 var json = Encoding.UTF8.GetString(bytes, 0, len).Trim();
-                if (string.IsNullOrEmpty(json)) continue;
+                if (string.IsNullOrEmpty(json) || !json.StartsWith('{')) continue;
 
-                var info = JsonSerializer.Deserialize<MuseDashAccountInfo>(json);
-                if (info != null) return info;
+                try
+                {
+                    var info = JsonSerializer.Deserialize<MuseDashAccountInfo>(json);
+                    if (info != null && !string.IsNullOrWhiteSpace(info.Uid)) return info;
+                }
+                catch (JsonException)
+                {
+                    // 忽略格式错误的 JSON 条目，继续查找下一个
+                    continue;
+                }
             }
         }
         catch (Exception ex)
@@ -362,10 +370,20 @@ public static class MuseDashAccountService
             
             if (resp == null) return null;
 
+            decimal rlValue = 0m;
+            if (resp.RelativeLevel.HasValue)
+            {
+                var el = resp.RelativeLevel.Value;
+                if (el.ValueKind == JsonValueKind.Number)
+                    rlValue = el.GetDecimal();
+                else if (el.ValueKind == JsonValueKind.String && decimal.TryParse(el.GetString(), out var parsed))
+                    rlValue = parsed;
+            }
+
             var data = new PlayerProfileData
             {
                 Nickname = resp.User?.Nickname,
-                RelativeLevel = resp.RelativeLevel ?? 0m,
+                RelativeLevel = rlValue,
                 RecordsCount = resp.Plays?.Count ?? 0,
             };
 

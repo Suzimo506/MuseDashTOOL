@@ -9,6 +9,7 @@ x86/
 [Oo]bj/
 PublishOutput/
 publish_output/
+artifacts/
 
 # IDE files
 .vs/
@@ -16,16 +17,21 @@ publish_output/
 *.user
 *.userosscache
 *.sln.docstates
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln.docstates
+
+# .NET / SDK
+.dotnet-home/
+.dotnet/
+.templateengine/
 
 # System files
 Thumbs.db
 Desktop.ini
-
-# User-specific files
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
+.DS_Store
 
 # NuGet
 packages/
@@ -33,5 +39,10 @@ packages/
 *.nuget.targets
 project.assets.json
 
-# Local config
+# Local config & Logs
 *.local
+*.log
+mirror-domains.json
+announcement.json
+mod_repository.json
+chart-upload-config.json

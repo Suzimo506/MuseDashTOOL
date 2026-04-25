@@ -82,7 +82,8 @@ public class AlbumCollectionService : IAlbumCollectionService
         try
         {
             var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
-            var workerUrl = $"https://workerdl.{baseHost}/api/list";
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
+            var workerUrl = $"https://workerdl.{baseHost}/api/list?t={timestamp}";
             var json = await _http.GetStringAsync(workerUrl);
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var result = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json, options);
@@ -97,7 +98,7 @@ public class AlbumCollectionService : IAlbumCollectionService
                         Description = "R2 云端专属整合包"
                     })
                     .ToList();
-                Log($"Loaded {categories.Count} collection folders dynamically from Cloudflare R2.");
+                Log($"Loaded {categories.Count} collection folders dynamically from Cloudflare R2 (Cache-busted).");
             }
         }
         catch (Exception ex)
@@ -113,8 +114,9 @@ public class AlbumCollectionService : IAlbumCollectionService
     {
         var encodedName = Uri.EscapeDataString(name);
         var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
         // 使用原生的 R2 域名进行文件拉取，动态受控于统一镜像配置
-        var url = $"https://download.{baseHost}/{encodedName}/index.json";
+        var url = $"https://download.{baseHost}/{encodedName}/index.json?t={timestamp}";
         var json = await _http.GetStringAsync(url);
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
         
