@@ -28,7 +28,7 @@ public interface IMirrorDomainService
 public class MirrorDomainService : IMirrorDomainService
 {
     // 真实域名配置固定从官方仓库根目录读取，避免后面每次换域名都改代码。
-    private const string RemoteMirrorDomainsUrl = "https://raw.githubusercontent.com/KuoKing506/-MuseDashTOOL/main/mirror-domains.json";
+    private const string RemoteMirrorDomainsUrl = "https://raw.githubusercontent.com/Suzimo506/MuseDashTOOL/main/mirror-domains.json";
     private const string MirrorDomainsFileName = "mirror-domains.json";
 
     private readonly HttpClient _httpClient;

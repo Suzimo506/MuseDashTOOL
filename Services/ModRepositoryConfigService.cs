@@ -19,7 +19,7 @@ public interface IModRepositoryConfigService
 
 public sealed class ModRepositoryConfigService : IModRepositoryConfigService
 {
-    private const string RemoteConfigUrl = "https://raw.githubusercontent.com/KuoKing506/-MuseDashTOOL/main/mod_repository.json";
+    private const string RemoteConfigUrl = "https://raw.githubusercontent.com/Suzimo506/MuseDashTOOL/main/mod_repository.json";
     private const string CacheFileName = "mod_repository.json";
 
     private readonly HttpClient _httpClient;

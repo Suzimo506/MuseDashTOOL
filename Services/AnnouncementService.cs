@@ -14,7 +14,7 @@ public interface IAnnouncementService
 
 public class AnnouncementService : IAnnouncementService
 {
-    private const string AnnouncementUrl = "https://raw.githubusercontent.com/KuoKing506/-MuseDashTOOL/main/announcement.json";
+    private const string AnnouncementUrl = "https://raw.githubusercontent.com/Suzimo506/MuseDashTOOL/main/announcement.json";
     private readonly HttpClient _httpClient;
 
     public AnnouncementService()
