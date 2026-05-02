@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MdModManager.Services;
+using MdModManager.Models;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;

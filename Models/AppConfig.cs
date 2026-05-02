@@ -115,4 +115,7 @@ public class NoticeInfo
 [JsonSerializable(typeof(GitHubRelease[]))]
 [JsonSerializable(typeof(NoticeInfo))]
 [JsonSerializable(typeof(MirrorDomainsConfig))]
+[JsonSerializable(typeof(MuseDashAccountInfo))]
+[JsonSerializable(typeof(MdMoePlayerResponse))]
+[JsonSerializable(typeof(Dictionary<string, MdMoeAlbum>))]
 internal partial class AppJsonContext : JsonSerializerContext { }

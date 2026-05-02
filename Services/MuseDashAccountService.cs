@@ -4,129 +4,12 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using MdModManager.Models;
 
 namespace MdModManager.Services;
 
-public class MuseDashAccountInfo
-{
-    [JsonPropertyName("uid")]
-    public string? Uid { get; set; }
 
-    [JsonPropertyName("id")]
-    public string? Id { get; set; }
-
-    [JsonPropertyName("nickname")]
-    public string? Nickname { get; set; }
-
-    [JsonPropertyName("username")]
-    public string? Username { get; set; }
-
-    [JsonPropertyName("email")]
-    public string? Email { get; set; }
-
-    [JsonPropertyName("phone")]
-    public string? Phone { get; set; }
-
-    /// <summary>Real in-game nickname fetched from musedash.moe (null if offline).</summary>
-    public string? OnlineNickname { get; set; }
-}
-
-/// <summary>Partial response shape from https://api.musedash.moe/player/&lt;uid&gt;</summary>
-file class MdMoePlayerResponse
-{
-    [JsonPropertyName("user")]
-    public MdMoeUser? User { get; set; }
-
-    [JsonPropertyName("plays")]
-    public System.Collections.Generic.List<MdMoePlay>? Plays { get; set; }
-
-    [JsonPropertyName("rl")]
-    public JsonElement? RelativeLevel { get; set; }
-}
-
-file class MdMoeUser
-{
-    [JsonPropertyName("nickname")]
-    public string? Nickname { get; set; }
-}
-
-file class MdMoePlay
-{
-    [JsonPropertyName("name")]
-    public string? SongName { get; set; }
-
-    [JsonPropertyName("uid")]
-    public string? Uid { get; set; }
-
-    [JsonPropertyName("score")]
-    public int? Score { get; set; }
-
-    [JsonPropertyName("acc")]
-    public decimal? Accuracy { get; set; }
-
-    [JsonPropertyName("character_uid")]
-    public string? CharacterUid { get; set; }
-
-    [JsonPropertyName("elfin_uid")]
-    public string? ElfinUid { get; set; }
-    
-    [JsonPropertyName("level")]
-    public string? Level { get; set; }
-    
-    [JsonPropertyName("difficulty")]
-    public int? Difficulty { get; set; }
-    
-    [JsonPropertyName("i")]
-    public int? Rank { get; set; }
-}
-
-public class PlayerProfileData
-{
-    public string? Nickname { get; set; }
-    public decimal RelativeLevel { get; set; }
-    public int RecordsCount { get; set; }
-    public int PerfectsCount { get; set; }
-    public decimal AverageAccuracy { get; set; }
-    public System.Collections.Generic.List<PlayerSongRecord> RecentPlays { get; set; } = new();
-}
-
-public class PlayerSongRecord
-{
-    public string Title { get; set; } = "";
-    public string Author { get; set; } = "";
-    public string CoverUrl { get; set; } = "";
-    public bool HasCoverUrl => !string.IsNullOrEmpty(CoverUrl);
-    public string Level { get; set; } = "";
-    public string Accuracy { get; set; } = "";
-    public string Score { get; set; } = "";
-    public string Gear { get; set; } = "";
-    public string Rank { get; set; } = "";
-}
-
-file class MdMoeAlbum
-{
-    [JsonPropertyName("title")]
-    public string? Title { get; set; }
-    
-    [JsonPropertyName("music")]
-    public System.Collections.Generic.Dictionary<string, MdMoeMusic>? Music { get; set; }
-}
-
-file class MdMoeMusic
-{
-    [JsonPropertyName("name")]
-    public string? Name { get; set; }
-    
-    [JsonPropertyName("author")]
-    public string? Author { get; set; }
-
-    [JsonPropertyName("cover")]
-    public string? Cover { get; set; }
-
-    /// <summary>Difficulty levels for [Easy, Hard, Master, Hidden, Extra]</summary>
-    [JsonPropertyName("difficulty")]
-    public string[]? Difficulty { get; set; }
-}
 
 public static class MuseDashAccountService
 {
@@ -211,7 +94,7 @@ public static class MuseDashAccountService
         try
         {
             var json = await _httpCache.GetStringAsync($"{ApiBase}/albums");
-            var albums = JsonSerializer.Deserialize<System.Collections.Generic.Dictionary<string, MdMoeAlbum>>(json);
+            var albums = JsonSerializer.Deserialize(json, AppJsonContext.Default.DictionaryStringMdMoeAlbum);
             if (albums != null)
             {
                 foreach (var album in albums.Values)
@@ -271,7 +154,7 @@ public static class MuseDashAccountService
 
                 try
                 {
-                    var info = JsonSerializer.Deserialize<MuseDashAccountInfo>(json);
+                    var info = JsonSerializer.Deserialize(json, AppJsonContext.Default.MuseDashAccountInfo);
                     if (info != null && !string.IsNullOrWhiteSpace(info.Uid)) return info;
                 }
                 catch (JsonException)
@@ -383,7 +266,7 @@ public static class MuseDashAccountService
         {
             var url = $"{ApiBase}/player/{Uri.EscapeDataString(uid)}";
             var json = await _http.GetStringAsync(url);
-            var resp = JsonSerializer.Deserialize<MdMoePlayerResponse>(json);
+            var resp = JsonSerializer.Deserialize(json, AppJsonContext.Default.MdMoePlayerResponse);
             
             if (resp == null) return null;
 
