@@ -134,33 +134,14 @@ public partial class ModManagerView : UserControl
     }
 
     /// <summary>
-    /// 下载按钮点击：若 mod 不兼容且未永久关闭提醒，先弹窗确认
+    /// 下载按钮点击：临时 → 跳转到 Euterpe 网站
     /// </summary>
-    private async void OnDownloadClick(object? sender, RoutedEventArgs e)
+    private void OnDownloadClick(object? sender, RoutedEventArgs e)
     {
-        if (sender is not Button btn) return;
-        if (btn.Tag is not LocalMod mod) return;
-        if (DataContext is not ModManagerViewModel vm) return;
-
-        if (mod.IsIncompatible)
+        try
         {
-            var configService = Ioc.Default.GetRequiredService<IConfigService>();
-            if (!configService.Config.SuppressIncompatibleModWarning)
-            {
-                var dialog = new IncompatibleModDialog();
-                var owner = TopLevel.GetTopLevel(this) as Window;
-                await dialog.ShowDialog(owner!);
-
-                if (!dialog.Confirmed) return;
-
-                if (dialog.DontShowAgain)
-                {
-                    configService.Config.SuppressIncompatibleModWarning = true;
-                    _ = configService.SaveAsync();
-                }
-            }
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://euterpe-org.com") { UseShellExecute = true });
         }
-
-        await vm.DownloadModAsync(mod);
+        catch { }
     }
 }

@@ -102,7 +102,7 @@ public class MirrorDomainService : IMirrorDomainService
         if (Interlocked.Exchange(ref _hasStartedBackgroundRefresh, 1) == 1)
             return;
 
-        var currentHost = MirrorDomainRegistry.SuzimoHost;
+        var currentCombined = $"{MirrorDomainRegistry.SuzimoHost}|{MirrorDomainRegistry.AlbumDownloadDomain}|{MirrorDomainRegistry.AlbumInfoDomain}";
         var remoteResult = await TryLoadFromRemoteAsync(cancellationToken, compareOnly: true).ConfigureAwait(false);
 
         if (remoteResult.Result == RemoteLoadResult.Failed)
@@ -117,9 +117,9 @@ public class MirrorDomainService : IMirrorDomainService
             return;
         }
 
-        if (string.Equals(currentHost, remoteResult.Host, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(currentCombined, remoteResult.Host, StringComparison.OrdinalIgnoreCase))
         {
-            RuntimeLog.Write("MirrorDomainService", $"远端镜像域名未变化，无需更新：{remoteResult.Host}");
+            RuntimeLog.Write("MirrorDomainService", $"远端镜像配置未变化，无需更新：{remoteResult.Host}");
             return;
         }
 
@@ -129,7 +129,7 @@ public class MirrorDomainService : IMirrorDomainService
             var applyResult = await TryLoadFromRemoteAsync(cancellationToken, compareOnly: false).ConfigureAwait(false);
             if (applyResult.Result == RemoteLoadResult.Loaded)
             {
-                RuntimeLog.Write("MirrorDomainService", $"远端镜像域名已更新：{currentHost} -> {MirrorDomainRegistry.SuzimoHost}");
+                RuntimeLog.Write("MirrorDomainService", $"远端镜像域名已更新");
                 _notificationService.ShowInfo("镜像域名已更新", 1500);
             }
             else if (applyResult.Result == RemoteLoadResult.Empty)
@@ -250,8 +250,9 @@ public class MirrorDomainService : IMirrorDomainService
 
             if (compareOnly)
             {
-                RuntimeLog.Write("MirrorDomainService", $"已检查远端镜像域名：{normalizedHost}");
-                return (RemoteLoadResult.Loaded, normalizedHost);
+                var combinedRemote = $"{normalizedHost}|{MirrorDomainRegistry.NormalizeHost(config.AlbumDownloadDomain)}|{MirrorDomainRegistry.NormalizeHost(config.AlbumInfoDomain)}";
+                RuntimeLog.Write("MirrorDomainService", $"已检查远端镜像配置：{combinedRemote}");
+                return (RemoteLoadResult.Loaded, combinedRemote);
             }
 
             MirrorDomainRegistry.Update(config);

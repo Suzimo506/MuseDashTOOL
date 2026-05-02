@@ -140,7 +140,7 @@ public partial class MainWindowViewModel : ObservableObject
         var vm = Ioc.Default.GetRequiredService<ConfigManagerViewModel>();
         vm.PreSelectedFilePath = filePath;
         CurrentPage = vm;
-        await vm.InitializeAsync(_currentPageCts.Token);
+        await vm.InitializeAsync(_currentPageCts!.Token);
     }
 
     public async Task InitializeAsync()
@@ -222,7 +222,7 @@ public partial class MainWindowViewModel : ObservableObject
     public void UpdateBackground()
     {
         OnPropertyChanged(nameof(CustomBackgroundOpacity));
-        CustomBackgroundDarkness = 1.0 - _configService.Config.CustomBackgroundOpacity;
+        CustomBackgroundDarkness = 1.0 - (_configService?.Config.CustomBackgroundOpacity ?? 1.0);
         var path = CustomBackgroundImagePath;
         if (string.IsNullOrEmpty(path) || !System.IO.File.Exists(path))
         {
@@ -729,7 +729,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         var vm = Ioc.Default.GetRequiredService<MelonLoaderViewModel>();
         CurrentPage = vm;
-        await vm.InitializeAsync(_currentPageCts.Token);
+        await vm.InitializeAsync(_currentPageCts!.Token);
     }
 
     private static bool IsAlbumCollectionSectionPage(object? page)
@@ -778,7 +778,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         var vm = Ioc.Default.GetRequiredService<ModManagerViewModel>();
         CurrentPage = vm;
-        await vm.InitializeAsync(_currentPageCts.Token);
+        await vm.InitializeAsync(_currentPageCts!.Token);
     }
 
     [RelayCommand]
@@ -791,7 +791,7 @@ public partial class MainWindowViewModel : ObservableObject
         System.Console.WriteLine("[调试] ConfigManagerViewModel 已解析。");
         CurrentPage = vm;
         System.Console.WriteLine("[调试] CurrentPage 已更新。");
-        await vm.InitializeAsync(_currentPageCts.Token);
+        await vm.InitializeAsync(_currentPageCts!.Token);
         System.Console.WriteLine("[调试] ConfigManagerViewModel InitializeAsync 已完成。");
     }
 
@@ -802,7 +802,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         var vm = Ioc.Default.GetRequiredService<ChartManagerViewModel>();
         CurrentPage = vm;
-        await vm.InitializeAsync(_currentPageCts.Token);
+        await vm.InitializeAsync(_currentPageCts!.Token);
     }
 
     [RelayCommand]
@@ -812,7 +812,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         var vm = Ioc.Default.GetRequiredService<ChartDownloadViewModel>();
         CurrentPage = vm;
-        await vm.InitializeAsync(_currentPageCts.Token);
+        await vm.InitializeAsync(_currentPageCts!.Token);
     }
 
     [RelayCommand]
@@ -822,7 +822,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         var vm = Ioc.Default.GetRequiredService<ChartUploadViewModel>();
         CurrentPage = vm;
-        await vm.InitializeAsync(_currentPageCts.Token);
+        await vm.InitializeAsync(_currentPageCts!.Token);
     }
 
     [RelayCommand]
@@ -838,9 +838,28 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task NavigateToDownloadManagerAsync()
     {
+        var prevPageTypeName = CurrentPage?.GetType().Name;
         CleanupCurrentPage();
 
         var vm = Ioc.Default.GetRequiredService<DownloadManagerViewModel>();
+        vm.PreviousPageType = prevPageTypeName;
+        vm.OnRequestBack += () => 
+        {
+            // 根据来源页面类型，调用对应的导航方法重新加载
+            switch (vm.PreviousPageType)
+            {
+                case nameof(AlbumCollectionViewModel):
+                    _ = NavigateToAlbumCollectionAsync();
+                    break;
+                case nameof(ChartDownloadViewModel):
+                    _ = NavigateToChartDownloadAsync();
+                    break;
+                default:
+                    // 兜底：回到谱面下载
+                    _ = NavigateToChartDownloadAsync();
+                    break;
+            }
+        };
         CurrentPage = vm;
         await Task.CompletedTask;
     }
@@ -850,12 +869,6 @@ public partial class MainWindowViewModel : ObservableObject
     {
         CleanupCurrentPage();
 
-        if (_configService != null &&
-            Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
-            desktop.MainWindow != null)
-        {
-            await MdModManager.Views.AlbumCollectionIntroDialog.ShowDialogAsync(desktop.MainWindow, _configService);
-        }
 
         var vm = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
         CurrentPage = vm;
@@ -892,78 +905,7 @@ public partial class MainWindowViewModel : ObservableObject
                 _notificationService.ShowSuccess("运行日志已保存到桌面！");
             }
 
-            return;
-
-            var desktopPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop);
-            var logPath = System.IO.Path.Combine(desktopPath, "MuseDashTOOL_log.txt");
-
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("=== MuseDashTOOL Diagnostic Log ===");
-            sb.AppendLine($"Timestamp: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            sb.AppendLine($"OS Version: {System.Environment.OSVersion}");
-            sb.AppendLine($"64-bit OS: {System.Environment.Is64BitOperatingSystem}");
-            sb.AppendLine($".NET Version: {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}");
-            
-            if (_configService != null)
-            {
-                var cfg = _configService.Config;
-                sb.AppendLine();
-                sb.AppendLine("--- Configuration & Preferences ---");
-                sb.AppendLine($"GamePath: {cfg.GamePath}");
-                sb.AppendLine($"DownloadSource: {cfg.DownloadSource}");
-                sb.AppendLine($"OriginalModeEnabled: {cfg.IsOriginalModeEnabled}");
-                
-                sb.AppendLine();
-                sb.AppendLine("--- UI & Aesthetics ---");
-                sb.AppendLine($"Theme: {cfg.AppTheme}");
-                sb.AppendLine($"TransparencyMode: {cfg.WindowTransparencyMode}");
-                sb.AppendLine($"WindowOpacity: {cfg.WindowOpacity}");
-                sb.AppendLine($"BackgroundBlur: {cfg.BackgroundBlurRadius}");
-                sb.AppendLine($"CustomFont: {cfg.CustomFontFamily ?? "Default"} (Size: {cfg.CustomFontSize})");
-                sb.AppendLine($"ThemeColor: {cfg.CustomThemeColor}");
-                sb.AppendLine($"TextLinearSpacing: {cfg.NavButtonLetterSpacing}");
-
-                sb.AppendLine();
-                sb.AppendLine("--- Announcement System ---");
-                sb.AppendLine($"Suppressed IDs ({cfg.SuppressedAnnouncements.Count}): {string.Join(", ", cfg.SuppressedAnnouncements)}");
-            }
-            
-            if (_gamePathService != null && _configService != null)
-            {
-                sb.AppendLine();
-                sb.AppendLine("--- Game & Mod State ---");
-                sb.AppendLine($"Game Path Valid: {_gamePathService.IsValidGamePath(_configService.Config.GamePath)}");
-                
-                var mlDir = System.IO.Path.Combine(_configService.Config.GamePath, "MelonLoader");
-                var modsDir = System.IO.Path.Combine(_configService.Config.GamePath, "Mods");
-                
-                sb.AppendLine($"MelonLoader Folder: {(System.IO.Directory.Exists(mlDir) ? "Present" : "Missing")}");
-                sb.AppendLine($"Mods Folder: {(System.IO.Directory.Exists(modsDir) ? "Present" : "Missing")}");
-                
-                if (System.IO.Directory.Exists(modsDir))
-                {
-                    var dllFiles = System.IO.Directory.GetFiles(modsDir, "*.dll");
-                    sb.AppendLine($"Installed DLL Mods ({dllFiles.Length}):");
-                    foreach (var dll in dllFiles)
-                    {
-                        try
-                        {
-                            var version = System.Diagnostics.FileVersionInfo.GetVersionInfo(dll).FileVersion;
-                            sb.AppendLine($" - {System.IO.Path.GetFileName(dll)} (v{version})");
-                        }
-                        catch { sb.AppendLine($" - {System.IO.Path.GetFileName(dll)} (Version unknown)"); }
-                    }
-                }
-            }
-
-            await System.IO.File.WriteAllTextAsync(logPath, sb.ToString());
-            
-            // 可以选择弹个通知告诉用户已生成，利用现有的 NotificationService
-            if (_notificationService != null)
-            {
-                _notificationService.ShowSuccess("诊断日志已保存到桌面！");
-            }
-        }
+    }
         catch (System.Exception ex)
         {
             if (_notificationService != null)

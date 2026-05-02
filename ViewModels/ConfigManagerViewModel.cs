@@ -256,7 +256,7 @@ public partial class ConfigManagerViewModel : ObservableObject
 
     private CfgFolderNode GetOrAddDeepFolder(ObservableCollection<CfgFolderNode> currentCollection, string[] folderPath)
     {
-        CfgFolderNode currentFolder = null;
+        CfgFolderNode? currentFolder = null;
         foreach (var name in folderPath)
         {
             var folder = currentCollection.FirstOrDefault(n => !n.IsFileNode && n.FolderName.Equals(name, System.StringComparison.OrdinalIgnoreCase));
@@ -268,7 +268,7 @@ public partial class ConfigManagerViewModel : ObservableObject
             currentFolder = folder;
             currentCollection = folder.Children;
         }
-        return currentFolder;
+        return currentFolder!;
     }
 
     private void SortChildrenRecursive(CfgFolderNode node)

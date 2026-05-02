@@ -10,6 +10,8 @@ public static class MirrorDomainRegistry
 
     private static readonly object Sync = new();
     private static string _suzimoHost = string.Empty;
+    private static string _albumDownloadDomain = string.Empty;
+    private static string _albumInfoDomain = string.Empty;
 
     public static string SuzimoHost
     {
@@ -18,6 +20,28 @@ public static class MirrorDomainRegistry
             lock (Sync)
             {
                 return _suzimoHost;
+            }
+        }
+    }
+
+    public static string AlbumDownloadDomain
+    {
+        get
+        {
+            lock (Sync)
+            {
+                return _albumDownloadDomain;
+            }
+        }
+    }
+
+    public static string AlbumInfoDomain
+    {
+        get
+        {
+            lock (Sync)
+            {
+                return _albumInfoDomain;
             }
         }
     }
@@ -36,6 +60,8 @@ public static class MirrorDomainRegistry
         lock (Sync)
         {
             _suzimoHost = normalizedHost;
+            _albumDownloadDomain = NormalizeHost(config.AlbumDownloadDomain);
+            _albumInfoDomain = NormalizeHost(config.AlbumInfoDomain);
         }
     }
 

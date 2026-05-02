@@ -56,6 +56,13 @@ public static class TextBlockHelper
         var text = GetHighlightText(textBlock);
         var search = GetSearchText(textBlock);
 
+        if (string.IsNullOrEmpty(text))
+        {
+            textBlock.Text = null;
+            textBlock.Inlines?.Clear();
+            return;
+        }
+
         // 如果没有搜索关键词，直接显示原始文本
         if (string.IsNullOrEmpty(search))
         {

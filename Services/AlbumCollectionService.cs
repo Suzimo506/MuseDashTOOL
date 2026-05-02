@@ -52,16 +52,12 @@ public class AlbumCollectionService : IAlbumCollectionService
     private List<DesignerCategory>? _metadataCache;
     private readonly Dictionary<string, List<DesignerChart>> _chartsCache = new(StringComparer.OrdinalIgnoreCase);
 
-    // 新整合包仓库缓存
-    private NewCollectionIndex? _newCollectionCache;
-
     // 社区仓库配置
     private static readonly (string Name, string RepoUrl)[] CommunityConfigs = 
     { 
-        ("通过审议", "https://download.suzimo.site/1_Csutom-Albums-Repository"), 
-        ("令人生草", "https://download.suzimo.site/3_Custom-Albums-Repository"), 
-        ("待定或存在小问题", "https://download.suzimo.site/2_Custom-Albums-Repository"),
-        ("未经审查", "https://download.suzimo.site/%E6%9C%AA%E7%BB%8F%E5%AE%A1%E6%9F%A5"),
+        ("通过审议", "https://download.suzimo.site/通过审议"), 
+        ("令人生草", "https://download.suzimo.site/令人生草"), 
+        ("待定或有些小问题", "https://download.suzimo.site/待定或有些小问题"),
         ("宫守文学曲包", "https://download.suzimo.site/宫守文学曲包")
     };
 
@@ -79,18 +75,54 @@ public class AlbumCollectionService : IAlbumCollectionService
             return _categoryCache;
 
         List<DesignerCategory> categories = new();
+        var cachePath = Path.Combine(AppContext.BaseDirectory, "Cache", "FoldersList.json");
+
+        try
+        {
+            if (File.Exists(cachePath))
+            {
+                var json = await File.ReadAllTextAsync(cachePath);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var result = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json, options);
+                if (result != null && result.TryGetValue("collections", out var folders))
+                {
+                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题" };
+                    categories = folders.Where(f => !excludeNames.Contains(f)).OrderBy(f => f)
+                        .Select(f => new DesignerCategory { Name = f, Description = "R2 云端专属整合包" }).ToList();
+                    _categoryCache = categories;
+                    Log($"Loaded {categories.Count} collection folders from local cache.");
+                    return categories;
+                }
+            }
+        }
+        catch (Exception ex) { Log($"Failed to read local FoldersList cache: {ex.Message}"); }
+
         try
         {
             var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
-            var workerUrl = $"https://workerdl.{baseHost}/api/list?t={timestamp}";
+            var infoDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumInfoDomain) ? MirrorDomainRegistry.AlbumInfoDomain : $"workerdl.{baseHost}";
+            var workerUrl = $"https://{infoDomain}/api/list?t={timestamp}";
             var json = await _http.GetStringAsync(workerUrl);
+            
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+                await File.WriteAllTextAsync(cachePath, json);
+            } catch { }
+
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var result = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json, options);
 
             if (result != null && result.TryGetValue("collections", out var folders))
             {
+                var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "通过审议", "令人生草", "待定或有些小问题"
+                };
+
                 categories = folders
+                    .Where(f => !excludeNames.Contains(f))
                     .OrderBy(f => f)
                     .Select(f => new DesignerCategory
                     {
@@ -98,7 +130,7 @@ public class AlbumCollectionService : IAlbumCollectionService
                         Description = "R2 云端专属整合包"
                     })
                     .ToList();
-                Log($"Loaded {categories.Count} collection folders dynamically from Cloudflare R2 (Cache-busted).");
+                Log($"Loaded {categories.Count} collection folders dynamically from Cloudflare R2.");
             }
         }
         catch (Exception ex)
@@ -114,10 +146,51 @@ public class AlbumCollectionService : IAlbumCollectionService
     {
         var encodedName = Uri.EscapeDataString(name);
         var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
-        // 使用原生的 R2 域名进行文件拉取，动态受控于统一镜像配置
-        var url = $"https://download.{baseHost}/{encodedName}/index.json?t={timestamp}";
-        var json = await _http.GetStringAsync(url);
+        
+        string? json = null;
+        var cacheDir = Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes");
+        var cachePath = Path.Combine(cacheDir, $"{name}.json");
+
+        try
+        {
+            if (File.Exists(cachePath))
+            {
+                json = await File.ReadAllTextAsync(cachePath);
+                Log($"Loaded R2 category index from local: {cachePath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Failed to read local cache for '{name}': {ex.Message}");
+        }
+
+        if (string.IsNullOrEmpty(json))
+        {
+            try
+            {
+                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
+                var downloadDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumDownloadDomain) ? MirrorDomainRegistry.AlbumDownloadDomain : $"download.{baseHost}";
+                var url = $"https://{downloadDomain}/{encodedName}/index.json?t={timestamp}";
+                json = await _http.GetStringAsync(url);
+                Log($"Fetched remote index for '{name}' from {url}");
+
+                try
+                {
+                    Directory.CreateDirectory(cacheDir);
+                    await File.WriteAllTextAsync(cachePath, json);
+                }
+                catch (Exception ex)
+                {
+                    Log($"Failed to save cache for '{name}': {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to fetch R2 category '{name}': {ex.Message}");
+                return new List<DesignerChart>();
+            }
+        }
+
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
         
         List<CommunityIndexItem>? items = null;
@@ -125,10 +198,9 @@ public class AlbumCollectionService : IAlbumCollectionService
         // 尝试格式 1：完整的 Collection_index.json 结构（包含 collections 数组）
         try {
             var newCol = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
-            if (newCol?.Collections != null) {
-                // 这个文件里面可能只装了一个包，我们提取第一个，或者匹配名字的
-                var match = newCol.Collections.FirstOrDefault();
-                if (match != null) items = match.Charts;
+            if (newCol?.Collections != null && newCol.Collections.Count > 0) {
+                var match = newCol.Collections.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)) ?? newCol.Collections.First();
+                items = match.Charts;
             }
         } catch { }
 
@@ -218,20 +290,21 @@ public class AlbumCollectionService : IAlbumCollectionService
         }
 
         // 同时搜索新仓库的整合包
-        var newIndex = await GetNewCollectionIndexAsync();
-        if (newIndex?.Collections != null)
+        var newCategories = await GetCollectionsAsync();
+        if (newCategories != null)
         {
-            foreach (var col in newIndex.Collections)
+            foreach (var col in newCategories)
             {
-                var fakeCategory = new DesignerCategory { Name = col.Name };
-                foreach (var item in col.Charts)
+                var charts = await GetChartsAsync(col.Name);
+                if (charts == null) continue;
+
+                foreach (var chart in charts)
                 {
-                    var title = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : item.Title;
-                    if (title?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
-                        item.Charter?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
-                        item.Artist?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true)
+                    if (chart.Title?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+                        chart.Author?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+                        chart.Artist?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true)
                     {
-                        results.Add((fakeCategory, MapNewRepoItemToDesignerChart(item, col.Name)));
+                        results.Add((col, CloneAndNormalizeChart(chart)));
                     }
                 }
             }
@@ -314,6 +387,18 @@ public class AlbumCollectionService : IAlbumCollectionService
                 
                 json = await _http.GetStringAsync(finalUrl);
                 Log($"Fetched remote index for community repo '{name}'");
+                
+                try
+                {
+                    var cacheDir = Path.Combine(AppContext.BaseDirectory, "Cache", "CommunityIndexes");
+                    if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
+                    var cachePath = Path.Combine(cacheDir, $"{name}.json");
+                    await File.WriteAllTextAsync(cachePath, json);
+                }
+                catch (Exception ex)
+                {
+                    Log($"Failed to save cache for '{name}': {ex.Message}");
+                }
             }
         }
         catch (Exception ex)
@@ -331,24 +416,39 @@ public class AlbumCollectionService : IAlbumCollectionService
         try
         {
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
-            var wrapper = JsonSerializer.Deserialize<CommunityIndexWrapper>(json, options);
-            if (wrapper != null && wrapper.Charts != null)
+            var newCol = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
+            if (newCol?.Collections != null && newCol.Collections.Count > 0)
             {
-                defaultReleaseTags = CommunityReleaseHelper.MergeReleaseTags(
-                    null,
-                    wrapper.ReleaseTag,
-                    wrapper.ReleaseTags);
-                items = wrapper.Charts;
+                var match = newCol.Collections.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)) ?? newCol.Collections.First();
+                items = match.Charts;
             }
         }
-        catch
+        catch { }
+
+        if (items == null)
         {
-            try 
-            { 
+            try
+            {
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
-                items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json, options); 
-            } 
-            catch { }
+                var wrapper = JsonSerializer.Deserialize<CommunityIndexWrapper>(json, options);
+                if (wrapper != null && wrapper.Charts != null)
+                {
+                    defaultReleaseTags = CommunityReleaseHelper.MergeReleaseTags(
+                        null,
+                        wrapper.ReleaseTag,
+                        wrapper.ReleaseTags);
+                    items = wrapper.Charts;
+                }
+            }
+            catch
+            {
+                try 
+                { 
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+                    items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json, options); 
+                } 
+                catch { }
+            }
         }
 
         if (items == null) return new List<MdmcChart>();
@@ -365,14 +465,12 @@ public class AlbumCollectionService : IAlbumCollectionService
         
         foreach (var bp in basePaths)
         {
-            candidates.Add(Path.Combine(bp, "SongRepository", categoryName, "repo", "index.json"));
-            candidates.Add(Path.Combine(bp, "SongRepository", categoryName, "index.json"));
+            candidates.Add(Path.Combine(bp, "Cache", "CommunityIndexes", $"{categoryName}.json"));
             
             var current = new DirectoryInfo(bp);
             for (var depth = 0; depth < 5 && current != null; depth++, current = current.Parent)
             {
-                candidates.Add(Path.Combine(current.FullName, "SongRepository", categoryName, "repo", "index.json"));
-                candidates.Add(Path.Combine(current.FullName, "SongRepository", categoryName, "index.json"));
+                candidates.Add(Path.Combine(current.FullName, "Cache", "CommunityIndexes", $"{categoryName}.json"));
             }
         }
         return candidates.FirstOrDefault(File.Exists);
@@ -384,23 +482,25 @@ public class AlbumCollectionService : IAlbumCollectionService
         string githubRepoUrl,
         IReadOnlyList<string> defaultReleaseTags)
     {
+        var isGithub = githubRepoUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase);
+        var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
+        var repoName = Path.GetFileName(githubRepoUrl.TrimEnd('/'));
+
         var coverUrl = item.CoverUrl;
         if (!string.IsNullOrEmpty(coverUrl) && !coverUrl.StartsWith("http"))
-            coverUrl = rawBaseUrl + "/covers/" + coverUrl;
+            coverUrl = isGithub ? rawBaseUrl + "/covers/" + coverUrl : BuildR2ResourceUrl(baseHost, repoName, "covers", coverUrl);
 
         var demoUrl = item.DemoUrl;
         if (!string.IsNullOrEmpty(demoUrl) && !demoUrl.StartsWith("http"))
-            demoUrl = rawBaseUrl + "/demos/" + demoUrl;
+            demoUrl = isGithub ? rawBaseUrl + "/demos/" + demoUrl : BuildR2ResourceUrl(baseHost, repoName, "demos", demoUrl);
 
         var demoMp3Url = item.DemoMp3Url;
         if (!string.IsNullOrEmpty(demoMp3Url) && !demoMp3Url.StartsWith("http"))
-            demoMp3Url = rawBaseUrl + "/demos/" + demoMp3Url;
+            demoMp3Url = isGithub ? rawBaseUrl + "/demos/" + demoMp3Url : BuildR2ResourceUrl(baseHost, repoName, "demos", demoMp3Url);
 
         var downloadUrl = item.DownloadUrl;
-        if (!githubRepoUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase))
+        if (!isGithub)
         {
-            var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
-            var repoName = Path.GetFileName(githubRepoUrl.TrimEnd('/'));
             downloadUrl = BuildR2ResourceUrl(baseHost, repoName, "mdm", downloadUrl);
         }
         else
@@ -412,8 +512,6 @@ public class AlbumCollectionService : IAlbumCollectionService
             // 新版 R2 下载逻辑
             if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http"))
             {
-                var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
-                var repoName = Path.GetFileName(githubRepoUrl.TrimEnd('/'));
                 downloadUrl = BuildR2ResourceUrl(baseHost, repoName, "mdm", downloadUrl);
             }
         }
@@ -463,138 +561,8 @@ public class AlbumCollectionService : IAlbumCollectionService
     private class CommunityIndexWrapper { [JsonPropertyName("release_tag")] public JsonElement ReleaseTag { get; set; } [JsonPropertyName("release_tags")] public JsonElement ReleaseTags { get; set; } [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
     private class CommunityIndexItem { [JsonPropertyName("id")] public string Id { get; set; } = ""; [JsonPropertyName("original_id")] public string OriginalId { get; set; } = ""; [JsonPropertyName("title")] public string Title { get; set; } = ""; [JsonPropertyName("artist")] public string Artist { get; set; } = ""; [JsonPropertyName("charter")] public string Charter { get; set; } = ""; [JsonPropertyName("bpm")] public string Bpm { get; set; } = ""; [JsonPropertyName("scene")] public string Scene { get; set; } = ""; [JsonPropertyName("difficulty")] public string Difficulty { get; set; } = ""; [JsonPropertyName("difficulties")] public List<string>? Difficulties { get; set; } [JsonPropertyName("cover_url")] public string CoverUrl { get; set; } = ""; [JsonPropertyName("demo_url")] public string DemoUrl { get; set; } = ""; [JsonPropertyName("demo_mp3_url")] public string DemoMp3Url { get; set; } = ""; [JsonPropertyName("download_url")] public string DownloadUrl { get; set; } = ""; [JsonPropertyName("release_tag")] public JsonElement ReleaseTag { get; set; } [JsonPropertyName("release_tags")] public JsonElement ReleaseTags { get; set; } }
 
-    // ── 新整合包仓库数据模型 ──
     private class NewCollectionIndex { [JsonPropertyName("collections")] public List<NewCollectionEntry> Collections { get; set; } = new(); }
     private class NewCollectionEntry { [JsonPropertyName("name")] public string Name { get; set; } = ""; [JsonPropertyName("description")] public string Description { get; set; } = ""; [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
-
-    // ── 新整合包仓库：获取索引 ──
-    private async Task<NewCollectionIndex?> GetNewCollectionIndexAsync()
-    {
-        if (_newCollectionCache != null) return _newCollectionCache;
-
-        string? json = null;
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
-
-        // 1. 本地文件优先
-        try
-        {
-            var localPath = FindLocalNewCollectionIndexPath();
-            if (!string.IsNullOrEmpty(localPath) && File.Exists(localPath))
-            {
-                json = await File.ReadAllTextAsync(localPath);
-                Log($"Loaded new collection index from local: {localPath}");
-            }
-        }
-        catch (Exception ex) { Log($"Local new collection index read failed: {ex.Message}"); }
-
-        // 2. 远端获取
-        if (string.IsNullOrEmpty(json))
-        {
-            try
-            {
-                var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
-                var rawUrl = $"{NewRepoCollectionIndexUrl}?t={ts}";
-                
-                var configService = CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default.GetService<IConfigService>();
-                var source = configService?.Config?.DownloadSource ?? "Auto";
-                var finalUrl = GitHubMirrorHelper.ApplyMirror(rawUrl, source);
-
-                json = await _http.GetStringAsync(finalUrl);
-                Log("Fetched new collection index from remote.");
-            }
-            catch (Exception ex) { Log($"Remote new collection index fetch failed: {ex.Message}"); }
-        }
-
-        if (string.IsNullOrEmpty(json)) return null;
-
-        try
-        {
-            _newCollectionCache = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
-            Log($"Parsed new collection index: {_newCollectionCache?.Collections.Count ?? 0} collections.");
-        }
-        catch (Exception ex) { Log($"Failed to parse new collection index: {ex.Message}"); }
-
-        return _newCollectionCache;
-    }
-
-    private async Task<List<DesignerCategory>> GetNewRepoCollectionNamesAsync()
-    {
-        var result = new List<DesignerCategory>();
-        var index = await GetNewCollectionIndexAsync();
-        if (index?.Collections == null) return result;
-
-        foreach (var col in index.Collections)
-        {
-            if (!string.IsNullOrWhiteSpace(col.Name))
-            {
-                result.Add(new DesignerCategory { Name = col.Name, Description = col.Description });
-                Log($"New collection discovered: '{col.Name}' with {col.Charts.Count} charts.");
-            }
-        }
-        return result;
-    }
-
-    private async Task<List<DesignerChart>?> TryGetNewRepoChartsAsync(string categoryName)
-    {
-        var index = await GetNewCollectionIndexAsync();
-        var col = index?.Collections?.FirstOrDefault(c => string.Equals(c.Name, categoryName, StringComparison.OrdinalIgnoreCase));
-        if (col == null) return null;
-
-        var charts = col.Charts.Select(item => MapNewRepoItemToDesignerChart(item, col.Name)).ToList();
-        Log($"New repo category '{categoryName}' resolved to {charts.Count} charts.");
-        return charts;
-    }
-
-    private DesignerChart MapNewRepoItemToDesignerChart(CommunityIndexItem item, string collectionName)
-    {
-        var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
-
-        // 资源链接统一使用 R2 构造助手
-        var coverUrl = BuildR2ResourceUrl(baseHost, collectionName, "covers", item.CoverUrl);
-        var demoUrl = BuildR2ResourceUrl(baseHost, collectionName, "demos", item.DemoUrl);
-        var demoMp3Url = BuildR2ResourceUrl(baseHost, collectionName, "demos", item.DemoMp3Url);
-
-        // 旧版下载逻辑
-        /*
-        // 下载：GitHub Release {NewRepoGitHub}/releases/download/NO.1/{download_url}
-        var downloadUrl = item.DownloadUrl;
-        if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http"))
-            downloadUrl = $"{NewRepoGitHub}/releases/download/{NewRepoReleaseTag}/{downloadUrl}";
-        */
-
-        // 新版 R2 下载逻辑
-        var downloadUrl = BuildR2ResourceUrl(baseHost, collectionName, "mdm", item.DownloadUrl);
-
-        string title = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : (item.Title ?? "");
-
-        return new DesignerChart
-        {
-            Id = item.Id,
-            Title = title.Trim(),
-            Artist = item.Artist,
-            Author = item.Charter,
-            Bpm = item.Bpm,
-            CoverUrl = coverUrl,
-            DemoUrl = demoUrl,
-            DemoMp3Url = demoMp3Url,
-            DownloadUrl = downloadUrl,
-            Difficulties = item.Difficulties
-        };
-    }
-
-    private static string? FindLocalNewCollectionIndexPath()
-    {
-        var candidates = new List<string>();
-        var basePaths = new[] { Environment.CurrentDirectory, AppContext.BaseDirectory };
-        foreach (var bp in basePaths)
-        {
-            candidates.Add(Path.Combine(bp, "SongRepository", "Collection_index.json"));
-            var current = new DirectoryInfo(bp);
-            for (var depth = 0; depth < 5 && current != null; depth++, current = current.Parent)
-                candidates.Add(Path.Combine(current.FullName, "SongRepository", "Collection_index.json"));
-        }
-        return candidates.FirstOrDefault(File.Exists);
-    }
 
     private async Task<List<GitHubContentItem>> GetRepoContentsAsync(string path)
     {
@@ -938,7 +906,8 @@ public class AlbumCollectionService : IAlbumCollectionService
         var parts = fileName.Trim().Replace("\\", "/").Trim('/').Split('/');
         var encodedFileName = string.Join("/", parts.Select(Uri.EscapeDataString));
 
-        return $"https://download.{baseHost}/{encodedCategory}/{encodedSubFolder}/{encodedFileName}";
+        var downloadDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumDownloadDomain) ? MirrorDomainRegistry.AlbumDownloadDomain : $"download.{baseHost}";
+        return $"https://{downloadDomain}/{encodedCategory}/{encodedSubFolder}/{encodedFileName}";
     }
 
     private static void Log(string message)

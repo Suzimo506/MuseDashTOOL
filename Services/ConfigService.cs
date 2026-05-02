@@ -91,11 +91,6 @@ public class ConfigService : IConfigService
 
     private static void NormalizeLegacyConfig(AppConfig config)
     {
-        if (!string.IsNullOrWhiteSpace(config.ModLinksUrl) &&
-            config.ModLinksUrl.Contains("raw.githubusercontent.com/MDMods/MuseDashModLinks/main/ModLinks.json"))
-        {
-            config.ModLinksUrl = "https://gitee.com/lxymahatma/ModLinks/raw/dev/Mods.json";
-        }
 
         // 旧下载源迁移：github.com / kkgithub.com / ghproxy.net 等已废弃，统一迁移到 suzimo + 高速DNS
         var ds = config.DownloadSource;

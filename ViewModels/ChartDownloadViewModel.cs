@@ -747,7 +747,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                 using var response = await _coverHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
                 
                 // 如果 .ogg 不存在 (404) 或失效，尝试回退到 .mp3
-                if (!response.IsSuccessStatusCode && !ct.IsCancellationRequested && !string.IsNullOrWhiteSpace(chart.DemoMp3Url) && !url.Equals(chart.DemoMp3Url))
+                if (!response.IsSuccessStatusCode && !ct.IsCancellationRequested && !string.IsNullOrWhiteSpace(chart.DemoMp3Url) && url != chart.DemoMp3Url)
                 {
                     url = chart.DemoMp3Url;
                     ext = Path.GetExtension(url ?? string.Empty);

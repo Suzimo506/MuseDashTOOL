@@ -1,25 +1,62 @@
-# MuseDashTOOL
+<div align="center">
+  
+[English](README_EN.md) | [简体中文](README.md)
 
-一个为《喵斯快跑》(Muse Dash) 设计的现代、功能强大且易于使用的模组管理工具。
+<img src="Assets/MuseDashTOOL.ico" width="120" height="120" alt="MuseDashTOOL Logo" />
 
-设计参考了 MuseDashModTool 有许多相近的功能
+# MuseDashTOOL (喵斯兔)
 
-##  功能
+**一个为《喵斯快跑》(Muse Dash) 设计的现代、功能强大且易于使用的模组管理平台。**
 
--   **文件管理**：多维度管理模组以及自制谱面
--   **配置管理**：支持直观地修改模组配置文件
--   **曲谱下载**：能够快速下载mdmc社区的谱面，支持软件内试听
--   **自定义主题**：可以进行高度的个性化自定义
--   **自动翻译**：自动翻译模组描述
--   **账号信息查看**：可以在软件内访问musedash.moe查看账号信息
--  （总之能够使你能够方便的管理任何和喵斯快跑有关的东西）
+[![release](https://img.shields.io/github/v/release/Suzimo506/MuseDashTOOL?color=31c2f2&label=release)](https://github.com/Suzimo506/MuseDashTOOL/releases/latest)
+[![downloads](https://img.shields.io/github/downloads/Suzimo506/MuseDashTOOL/total?color=4EC94E&label=downloads)](https://github.com/Suzimo506/MuseDashTOOL/releases)
+[![license](https://img.shields.io/badge/license-GPL--3.0-bd93f9)](LICENSE)
 
-### 准备工作
+---
 
--   Steam版本喵斯快跑
+### 🎨 界面预览
 
-## 屏幕截图
+<!-- 这里可以放你的截图 -->
+![主界面预览](Pictures/main_preview.png)
 
-![模组管理](Pictures/image-1.png)
-![谱面预览](Pictures/image-2.png)
-![设置界面](Pictures/image-3.png)
+</div>
+
+## ✨ 核心特性
+
+- 🚀 **极速体验**：深度优化的文件扫描与列表加载逻辑。
+- 📦 **模组管理**：支持一键导入、启用/禁用、以及批量删除模组。
+- 🎵 **谱面管理**：支持快速下载、试听MDMC社区的谱面；且特别加入国内谱师的曲包整合包提供下载，未来也许会集成Euterpe-org.com的谱面下载功能。
+- 🔧 **配置编辑**：内置直观的模组配置文件编辑器，无需手动翻找 JSON/cfg。
+- 🌍 **智能翻译**：自动调用在线翻译服务，轻松阅读外语模组描述。
+- 🎨 **个性化**：支持自定义背景图片、模糊度、字体以及主题色调。
+- 👤 **账号中心**：实时查看个人游戏数据（未来将支持更多社交特性）。
+
+## 🛠️ 快速开始
+
+### 环境要求
+- Windows 10/11 (x64)
+- 游戏版本：Steam 版 Muse Dash
+- 已安装 [MelonLoader](https://melonwiki.xyz/#/) (MuseDashTOOL也可协助你一键安装)
+
+### 安装步骤
+1. 前往 [Releases](https://github.com/Suzimo506/MuseDashTOOL/releases) 页面下载最新的压缩包。
+2. 解压到任意目录（**请勿解压到游戏根目录**）。
+3. 运行 `MuseDashTOOL.exe`，首次启动请按提示选择游戏所在目录。
+
+## 📅 更新日志 (v1.2.3)
+
+- **整合包下载**：修复并重新上线了整合包下载功能。
+- **全局搜索**：整合包界面现在支持在包内进行单个谱面搜索。
+- **源站优化**：调整了默认下载源，建议配置高速 DNS 获得最佳速度。
+- **模组库**：模组在线列表恢复，当前版本提供跳转网站下载支持。
+- **UI 改进**：调整了“我的账号”布局，为后续登录系统做准备。
+
+## 🤝 参与贡献
+
+如果你有好的想法或发现了 Bug，欢迎提交 [Issue](https://github.com/Suzimo506/MuseDashTOOL/issues) 或发起 [Pull Request](https://github.com/Suzimo506/MuseDashTOOL/pulls)。
+
+---
+
+<div align="center">
+An open-source initiative dedicated to the Muse Dash modding ecosystem.
+</div>

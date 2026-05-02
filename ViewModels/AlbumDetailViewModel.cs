@@ -18,7 +18,6 @@ namespace MdModManager.ViewModels;
 
 public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 {
-    private string _chartCountText = string.Empty;
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
 
     [ObservableProperty]
@@ -36,13 +35,70 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     private ObservableCollection<MdmcChart> _charts = new();
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    [NotifyPropertyChangedFor(nameof(IsNotLoading))]
+    [NotifyCanExecuteChangedFor(nameof(LoadNextPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadPrevPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadFirstPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadLastPageCommand))]
     private bool _isLoading;
 
     [ObservableProperty]
     private bool _isEmpty;
 
+    public bool IsNotLoading => !IsLoading;
+
     [ObservableProperty]
     private string _searchText = string.Empty;
+
+    partial void OnSearchTextChanged(string value)
+    {
+        CurrentPage = 1;
+        _ = ReloadAsync();
+    }
+
+    [RelayCommand]
+    private void ClearSearch()
+    {
+        SearchText = string.Empty;
+    }
+
+    // ── 分页 ──────────────────────────────────────────────────────────────────
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    [NotifyCanExecuteChangedFor(nameof(LoadNextPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadPrevPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadFirstPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadLastPageCommand))]
+    private int _currentPage = 1;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    [NotifyCanExecuteChangedFor(nameof(LoadNextPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadLastPageCommand))]
+    private int _totalPages = 1;
+
+    [ObservableProperty]
+    private string _jumpPageText = string.Empty;
+
+    [ObservableProperty]
+    private bool _isEditingPageNumber;
+
+    public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
+    public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
+
+    [ObservableProperty] private double? _requestedScrollY;
+
+    // ── 5 页 LRU 缓存 ────────────────────────────────────────────────────────
+    private readonly Dictionary<string, (IList<MdmcChart> charts, int totalPages)> _pageCache = new();
+    private readonly List<string> _cacheKeys = new();
+    private const int MaxCachedPages = 5;
+
+    private List<MdmcChart> _allFullIndex = new();
+    private List<MdmcChart> _filteredIndex = new();
 
     public IAsyncRelayCommand<MdmcChart> TogglePreviewCommand => _chartDownloadViewModel.TogglePreviewCommand;
     public IAsyncRelayCommand<MdmcChart> DownloadChartCommand => _chartDownloadViewModel.DownloadChartCommand;
@@ -77,16 +133,63 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         _chartDownloadViewModel.PropertyChanged -= OnChartDownloadViewModelPropertyChanged;
     }
 
+    private string GetCacheKey(int page, string query) => $"{Category?.Name}|{query.Trim()}|{page}";
+
+    private void AddToCache(string key, (IList<MdmcChart> charts, int totalPages) result)
+    {
+        if (_pageCache.ContainsKey(key))
+        {
+            _cacheKeys.Remove(key);
+        }
+        else if (_cacheKeys.Count >= MaxCachedPages)
+        {
+            var oldKey = _cacheKeys[0];
+            _cacheKeys.RemoveAt(0);
+            if (_pageCache.TryGetValue(oldKey, out var oldResult))
+            {
+                foreach (var c in oldResult.charts)
+                    c.CoverImage = null; // 释放位图内存
+            }
+            _pageCache.Remove(oldKey);
+        }
+
+        _pageCache[key] = result;
+        _cacheKeys.Add(key);
+    }
+
+    private void ClearPageCache()
+    {
+        foreach (var kvp in _pageCache)
+        {
+            foreach (var c in kvp.Value.charts)
+                c.CoverImage = null;
+        }
+        _pageCache.Clear();
+        _cacheKeys.Clear();
+    }
+
     private void UpdateStatusMessage()
     {
-        if (!string.IsNullOrEmpty(_chartDownloadViewModel.PreviewStatusText))
+        var previewText = _chartDownloadViewModel.PreviewStatusText;
+        if (!string.IsNullOrEmpty(previewText) && (previewText.Contains("正在缓冲") || previewText.Contains("正在播放")))
         {
-            StatusMessage = _chartDownloadViewModel.PreviewStatusText;
+            StatusMessage = previewText;
+            return;
         }
-        else
+
+        if (IsLoading)
         {
-            StatusMessage = _chartCountText;
+            StatusMessage = "正在载入...";
+            return;
         }
+
+        if (IsEmpty)
+        {
+            StatusMessage = "未找到符合条件的谱面";
+            return;
+        }
+
+        StatusMessage = $"第 {CurrentPage} / {TotalPages} 页，共 {_filteredIndex.Count} 张谱面";
     }
 
     public async Task InitializeAsync(DesignerCategory category, string searchText = "")
@@ -94,29 +197,21 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         Log($"Initializing album detail for '{category.Name}' with search query '{searchText}'.");
         Category = category;
         SearchText = searchText;
-        Charts.Clear();
+        
+        ClearPageCache();
+        _allFullIndex.Clear();
+        _filteredIndex.Clear();
+        CurrentPage = 1;
+
         IsLoading = true;
         IsEmpty = false;
+        StatusMessage = "正在获取整合包谱面...";
 
         var charts = await _collectionService.GetChartsAsync(category.Name);
         Category.Charts = charts;
         Log($"Category '{category.Name}' returned {charts.Count} chart records.");
 
-        // 之前在这里过滤了谱面，导致只显示一个谱面。
-        // 根据要求，现在即使有搜索词也显示全部谱面（"不要只显示这一个谱面，而是打开这个谱面所在的文件夹"）。
-        // 匹配到的谱面依然会由前端通过 SearchText 属性进行粉色高亮。
-        // var filteredCharts = charts;
-        // if (!string.IsNullOrWhiteSpace(searchText))
-        // {
-        //     var normalizedQuery = searchText.Trim().ToLowerInvariant();
-        //     filteredCharts = charts.Where(c => 
-        //         c.Title?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
-        //         c.Author?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
-        //         c.Artist?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true
-        //     ).ToList();
-        // }
-
-        foreach (var c in charts) // Iterate over all charts, not filteredCharts
+        foreach (var c in charts)
         {
             List<string> difficultyLabels = new List<string>();
             if (c.Difficulties != null && c.Difficulties.Count > 0)
@@ -141,7 +236,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                 difficultyLabels = ExtractDifficultyLabels(match);
             }
 
-            Charts.Add(new MdmcChart
+            _allFullIndex.Add(new MdmcChart
             {
                 Id = c.Id,
                 Title = c.Title,
@@ -154,27 +249,116 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                 CustomDemoMp3Url = ResolveResourceUrl(c.DemoMp3Url),
                 Sheets = difficultyLabels
                     .Select(label => new MdmcSheet { Difficulty = label })
-                    .ToList(),
-                SearchText = searchText // 传递当前搜索关键词用于高亮
+                    .ToList()
             });
-
-            Log($"Chart view item: title='{c.Title}', cover='{c.CoverUrl}', demo='{c.DemoUrl}', mp3='{c.DemoMp3Url}', download='{c.DownloadUrl}'");
         }
+
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        IsLoading = true;
+        IsEmpty = false;
+        UpdateStatusMessage();
+        Charts.Clear();
+
+        var query = SearchText.Trim().ToLowerInvariant();
+        var cacheKey = GetCacheKey(CurrentPage, query);
+
+        if (_pageCache.TryGetValue(cacheKey, out var cached))
+        {
+            TotalPages = Math.Max(1, cached.totalPages);
+            foreach (var c in cached.charts) 
+            {
+                c.SearchText = SearchText;
+                Charts.Add(c);
+            }
+            _cacheKeys.Remove(cacheKey);
+            _cacheKeys.Add(cacheKey);
+            IsEmpty = Charts.Count == 0;
+            IsLoading = false;
+            UpdateStatusMessage();
+            return;
+        }
+
+        _filteredIndex = _allFullIndex;
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            _filteredIndex = _allFullIndex.Where(c => 
+                c.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
+                c.Artist?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
+                c.Charter?.Contains(query, StringComparison.OrdinalIgnoreCase) == true
+            ).ToList();
+        }
+
+        var pageSize = 12;
+        var totalCount = _filteredIndex.Count;
+        TotalPages = Math.Max(1, (int)Math.Ceiling((double)totalCount / pageSize));
+        
+        if (CurrentPage > TotalPages) CurrentPage = TotalPages;
+        if (CurrentPage < 1) CurrentPage = 1;
+
+        var pageCharts = _filteredIndex
+            .Skip((CurrentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        foreach (var c in pageCharts)
+        {
+            c.SearchText = SearchText;
+            Charts.Add(c);
+        }
+
+        AddToCache(cacheKey, (pageCharts, TotalPages));
 
         IsEmpty = Charts.Count == 0;
         IsLoading = false;
-        
-        _chartCountText = $"当前页面 {Charts.Count} 张谱面";
         UpdateStatusMessage();
 
-        Log($"Album detail initialized. Visible charts: {Charts.Count}");
-        _ = LoadCoversAsync();
+        RequestedScrollY = 0;
+
+        _ = LoadCoversAsync(pageCharts);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanLoadPrev))]
+    private async Task LoadFirstPageAsync() { CurrentPage = 1; await ReloadAsync(); }
+
+    [RelayCommand(CanExecute = nameof(CanLoadPrev))]
+    private async Task LoadPrevPageAsync() { if (CurrentPage > 1) { CurrentPage--; await ReloadAsync(); } }
+
+    [RelayCommand(CanExecute = nameof(CanLoadNext))]
+    private async Task LoadNextPageAsync() { if (CurrentPage < TotalPages) { CurrentPage++; await ReloadAsync(); } }
+
+    [RelayCommand(CanExecute = nameof(CanLoadNext))]
+    private async Task LoadLastPageAsync() { CurrentPage = TotalPages; await ReloadAsync(); }
+
+    [RelayCommand]
+    private void StartEditPage() { JumpPageText = CurrentPage.ToString(); IsEditingPageNumber = true; }
+
+    [RelayCommand]
+    private void CancelEditPage() { IsEditingPageNumber = false; JumpPageText = ""; }
+
+    [RelayCommand]
+    private async Task JumpPageAsync()
+    {
+        IsEditingPageNumber = false;
+        if (int.TryParse(JumpPageText.Trim(), out int page))
+        {
+            page = Math.Max(1, Math.Min(page, TotalPages));
+            if (page != CurrentPage)
+            {
+                CurrentPage = page;
+                await ReloadAsync();
+            }
+        }
+        JumpPageText = "";
     }
 
     [RelayCommand]
     private async Task DownloadAllAsync()
     {
-        if (Charts.Count == 0)
+        if (_filteredIndex.Count == 0)
             return;
 
         if (!IsDotNet6Installed())
@@ -192,9 +376,9 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         }
 
         var queued = 0;
-        foreach (var chart in Charts)
+        foreach (var chart in _filteredIndex)
         {
-            var url = chart.DownloadUrl;
+            var url = chart.CustomDownloadUrl;
             if (string.IsNullOrWhiteSpace(url))
                 continue;
 
@@ -212,7 +396,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
         if (queued > 0)
         {
-            _notificationService.ShowSuccess($"已添加当前整合包的 {queued} 张谱面到下载列表");
+            _notificationService.ShowSuccess($"已添加 {queued} 张谱面到下载列表");
             Log($"Queued {queued} charts for category '{Category?.Name}'.");
         }
     }
@@ -259,22 +443,18 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         return GitHubMirrorHelper.ApplyMirror(url, _configService.Config.DownloadSource);
     }
 
-    private async Task LoadCoversAsync()
+    private async Task LoadCoversAsync(List<MdmcChart> pageCharts)
     {
-        // 使用优化客户端以享受高速 DNS 竞速（如果开启了的话）
         using var http = MdModManager.Helpers.HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(15));
         http.DefaultRequestHeaders.Remove("User-Agent");
         http.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0");
 
         var tasks = new List<Task>();
 
-        foreach (var chart in Charts)
+        foreach (var chart in pageCharts)
         {
-            if (string.IsNullOrWhiteSpace(chart.CoverUrl))
-            {
-                Log($"Skip cover load for '{chart.Title}': empty url");
+            if (string.IsNullOrWhiteSpace(chart.CustomCoverUrl))
                 continue;
-            }
 
             if (chart.CoverImage != null) continue;
 
@@ -285,24 +465,20 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                 {
                     if (chart.CoverImage != null) return;
 
-                    var fetchUrl = chart.CoverUrl;
-                    // 特例处理：调色盘谱面因特殊符号 # (%23) 在重定向时易断链，此处强制进行特例修正
+                    var fetchUrl = chart.CustomCoverUrl;
                     if (!string.IsNullOrEmpty(fetchUrl) && (fetchUrl.Contains("~%23FFFFFF~") || fetchUrl.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true)))
                     {
                         var manualUrl = fetchUrl.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
                         fetchUrl = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
                     }
 
-                    Log($"Loading cover for '{chart.Title}': {fetchUrl}");
                     var bytes = await http.GetByteArrayAsync(fetchUrl);
                     using var ms = new System.IO.MemoryStream(bytes);
                     var bmp = new Avalonia.Media.Imaging.Bitmap(ms);
                     Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.CoverImage = bmp);
-                    Log($"Cover loaded for '{chart.Title}', bytes={bytes.Length}");
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Log($"Cover load failed for '{chart.Title}': {ex.Message}");
                 }
                 finally
                 {

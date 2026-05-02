@@ -41,12 +41,53 @@
                 <Setter Property="Opacity" Value="0.6"/>
             </Style>
         </ControlTheme>
+        <!-- 小型圆角按钮主题 (彻底隔离影响，纯透明背景) -->
+        <ControlTheme x:Key="SmallRoundBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBg"
+                            Background="Transparent"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBg">
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBg">
+                <Setter Property="Opacity" Value="0.6"/>
+                <Setter Property="RenderTransform" Value="scale(0.96)"/>
+            </Style>
+        </ControlTheme>
     </UserControl.Resources>
 
     <Grid RowDefinitions="Auto,*">
         <!-- 头部 -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
-            <StackPanel Grid.Column="0" Spacing="4">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,20">
+            <!-- 返回按钮 -->
+            <Button Grid.Column="0"
+                    Command="{Binding GoBackCommand}"
+                    Theme="{StaticResource SmallRoundBtn}"
+                    ToolTip.Tip="返回上一级">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
+                          Fill="{DynamicResource SvgIconBrush}" Stretch="Uniform" Width="22" Height="22" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <StackPanel Grid.Column="1" Spacing="4" Margin="10,0,0,0" VerticalAlignment="Center">
                 <TextBlock Text="下载列表" FontSize="22" FontWeight="Bold">
                     <TextBlock.Foreground>
                         <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">

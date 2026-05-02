@@ -695,10 +695,9 @@ public partial class AlbumCollectionViewModel : ObservableObject
         var communityTasks = new List<Task>();
         var communityConfigs = new[] 
         { 
-            ("通过审议", "https://download.suzimo.site/1_Csutom-Albums-Repository"), 
-            ("令人生草", "https://download.suzimo.site/3_Custom-Albums-Repository"), 
-            ("待定或存在小问题", "https://download.suzimo.site/2_Custom-Albums-Repository"),
-            ("未经审查", "https://download.suzimo.site/%E6%9C%AA%E7%BB%8F%E5%AE%A1%E6%9F%A5") 
+            ("通过审议", "https://download.suzimo.site/通过审议"), 
+            ("令人生草", "https://download.suzimo.site/令人生草"), 
+            ("待定或有些小问题", "https://download.suzimo.site/待定或有些小问题")
         };
 
         foreach (var (name, repoUrl) in communityConfigs)
@@ -790,7 +789,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
             Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
             var detailVm = Ioc.Default.GetRequiredService<AlbumDetailViewModel>();
             mainVm.CurrentPage = detailVm;
-            await detailVm.InitializeAsync(item.Category, SearchText);
+            // 不传递 SearchText，避免用户搜索“整合包名称”进入后，因为谱面不包含该名称而导致列表为空
+            await detailVm.InitializeAsync(item.Category, string.Empty);
         }
     }
 

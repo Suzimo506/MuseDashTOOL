@@ -53,6 +53,19 @@ public partial class CommunityCategoryDetailView : UserControl
         topLevel?.FocusManager?.ClearFocus();
     }
 
+    private void OnSearchIconPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(sender as Avalonia.Visual);
+        if (point.Properties.IsRightButtonPressed)
+        {
+            if (DataContext is CommunityCategoryDetailViewModel vm)
+            {
+                vm.ClearSearchCommand.Execute(null);
+            }
+            e.Handled = true;
+        }
+    }
+
     private void OnPageNumberClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
         if (DataContext is CommunityCategoryDetailViewModel vm)

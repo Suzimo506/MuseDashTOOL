@@ -24,9 +24,7 @@
     <EmbeddedResource Include="Assets\classdata.tpk" />
     
     <!-- 嵌入核心资源，实现单文件独立运行 -->
-    <EmbeddedResource Include="SongRepository\designers.json" />
     <EmbeddedResource Include="mirror-domains.json" Condition="Exists('mirror-domains.json')" />
-    <EmbeddedResource Include="SongRepository\**\*.txt" />
     <EmbeddedResource Include="Pictures\通过审议.png" />
     <EmbeddedResource Include="Pictures\令人生草.jpg" />
     <EmbeddedResource Include="Pictures\待定或存在小问题.png" />

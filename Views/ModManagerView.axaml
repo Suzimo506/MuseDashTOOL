@@ -420,6 +420,12 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ScrollViewer>
+
+            <!-- 下载列表底部提示 -->
+            <TextBlock Text="模组下载请前往 Euterpe-org.com"
+                       IsVisible="{Binding IsDownloadTabSelected}"
+                       HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                       Foreground="#7EB8C9" FontSize="14" Margin="0,0,0,10"/>
             </Grid>
         </DockPanel>
     </Grid>

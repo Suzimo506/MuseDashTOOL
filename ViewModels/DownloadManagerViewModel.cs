@@ -10,6 +10,11 @@ public partial class DownloadManagerViewModel : ObservableObject
 {
     private readonly IDownloadManagerService _downloadManagerService;
 
+    [ObservableProperty]
+    private string? _previousPageType;
+
+    public event Action? OnRequestBack;
+
     public ObservableCollection<DownloadTaskItem> Tasks => _downloadManagerService.Tasks;
 
     public DownloadManagerViewModel(IDownloadManagerService downloadManagerService)
@@ -39,5 +44,11 @@ public partial class DownloadManagerViewModel : ObservableObject
     private void ClearCompleted()
     {
         _downloadManagerService.ClearCompletedAndCanceled();
+    }
+
+    [RelayCommand]
+    private void GoBack()
+    {
+        OnRequestBack?.Invoke();
     }
 }

@@ -42,7 +42,9 @@ public partial class SettingsView : UserControl
 
     private async void OnDrop(object? sender, Avalonia.Input.DragEventArgs e)
     {
+        #pragma warning disable CS0618
         var files = e.Data.GetFiles();
+        #pragma warning restore CS0618
         if (files != null && this.DataContext is MdModManager.ViewModels.SettingsViewModel vm)
         {
             var filePaths = new System.Collections.Generic.List<string>();

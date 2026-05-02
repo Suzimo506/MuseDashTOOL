@@ -23,7 +23,6 @@ public partial class ModManagerViewModel : ObservableObject
     private readonly INotificationService _notificationService;
     private readonly ModStagingService _stagingService;
     private readonly INavigationService _navigationService;
-    private readonly IModRepositoryConfigService _repoConfigService;
 
     // 后台定时器：检测游戏进程，游戏关闭后自动将暂存文件移入 Mods 文件夹
     private Timer? _stagingWatcherTimer;
@@ -85,8 +84,7 @@ public partial class ModManagerViewModel : ObservableObject
         IConfigService configService,
         INotificationService notificationService,
         ModStagingService stagingService,
-        INavigationService navigationService,
-        IModRepositoryConfigService repoConfigService)
+        INavigationService navigationService)
     {
         _catalogService = catalogService;
         _localModService = localModService;
@@ -94,7 +92,6 @@ public partial class ModManagerViewModel : ObservableObject
         _notificationService = notificationService;
         _stagingService = stagingService;
         _navigationService = navigationService;
-        _repoConfigService = repoConfigService;
     }
 
     // ─── 游戏进程检测 ────────────────────────────────────────────────────────────
@@ -552,23 +549,16 @@ public partial class ModManagerViewModel : ObservableObject
     [RelayCommand]
     private async Task UpdateModAsync(LocalMod mod)
     {
-        if (mod.RemoteInfo == null) return;
-        await PerformDownloadAsync(mod.RemoteInfo, isUpdate: true, localMod: mod);
+        // 临时：跳转到 Euterpe 网站
+        try { Process.Start(new ProcessStartInfo("https://euterpe-org.com") { UseShellExecute = true }); }
+        catch (Exception ex) { Console.WriteLine($"[ModManagerViewModel] UpdateModAsync 跳转异常: {ex}"); }
     }
 
-    /// <summary>打开 Mod 详情页（GitHub repository 链接）</summary>
+    /// <summary>打开 Mod 详情页 — 临时：统一跳转 Euterpe</summary>
     [RelayCommand]
     private void OpenHomePage(LocalMod mod)
     {
-        var repo = mod.RemoteInfo?.HomePage;
-        if (string.IsNullOrWhiteSpace(repo)) return;
-
-        // "owner/repo" 格式补全为 GitHub URL
-        var url = repo.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-            ? repo
-            : $"https://github.com/{repo}";
-
-        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+        try { Process.Start(new ProcessStartInfo("https://euterpe-org.com") { UseShellExecute = true }); }
         catch (Exception ex)
         {
             Console.WriteLine($"[ModManagerViewModel] OpenHomePage({mod.Name}) 操作异常: {ex}");
@@ -714,19 +704,6 @@ public partial class ModManagerViewModel : ObservableObject
             {
                 // 注意：旧版的硬编码镜像判断逻辑已移除，由核心镜像逻辑统一处理或直接使用原始链接
             }
-        }
-        else if (_repoConfigService.IsRemoteConfigActive)
-        {
-            // 远端配置已激活：从 mod_links_url 推导下载基址，并应用镜像加速
-            var repoConfig = await _repoConfigService.GetConfigAsync();
-            var baseUrl = repoConfig.ModLinksUrl;
-            // 查找最后一个 / 并截取目录部分，然后拼接 Mods/fileName
-            var lastSlash = baseUrl.LastIndexOf('/');
-            var downloadBase = lastSlash >= 0 ? baseUrl.Substring(0, lastSlash + 1) : baseUrl + "/";
-            downloadUrl = downloadBase + "Mods/" + fileName;
-            // 应用设置里的下载源进行加速
-            downloadUrl = Helpers.GitHubMirrorHelper.ApplyMirror(downloadUrl, _configService.Config.DownloadSource);
-            RuntimeLog.Write("ModManagerVM", $"Remote config active, download URL: {downloadUrl}");
         }
         else
         {

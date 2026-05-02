@@ -6,9 +6,6 @@ public class AppConfig
 {
     public string GamePath { get; set; } = "";
 
-    public string ModLinksUrl { get; set; } =
-        "https://gitee.com/lxymahatma/ModLinks/raw/dev/Mods.json";
-        
     public string DownloadSource { get; set; } = "suzimo";
 
     /// <summary>启用高速 DNS 优选 (Cloudflare 节点竞速)</summary>
@@ -29,8 +26,6 @@ public class AppConfig
     /// <summary>启动游戏时不再显示确认弹窗</summary>
     public bool SuppressLaunchGameConfirmation { get; set; } = false;
 
-    /// <summary>进入整合包页面时不再显示提示弹窗</summary>
-    public bool SuppressAlbumCollectionIntro { get; set; } = false;
 
     /// <summary>谱面试听音量</summary>
     public double ChartPreviewVolume { get; set; } = 0.5;

@@ -65,6 +65,12 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         _ = ReloadAsync();
     }
 
+    [RelayCommand]
+    private void ClearSearch()
+    {
+        SearchText = string.Empty;
+    }
+
     // ── 排序 ──────────────────────────────────────────────────────────────────
     [ObservableProperty]
     private int _selectedSortIndex = 0;
@@ -141,6 +147,9 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         [JsonPropertyName("release_tags")] public JsonElement ReleaseTags { get; set; }
         [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new();
     }
+
+    private class NewCollectionIndex { [JsonPropertyName("collections")] public List<NewCollectionEntry> Collections { get; set; } = new(); }
+    private class NewCollectionEntry { [JsonPropertyName("name")] public string Name { get; set; } = ""; [JsonPropertyName("description")] public string Description { get; set; } = ""; [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
 
     private class CommunityIndexItem
     {
@@ -275,36 +284,64 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             {
                 json = await _httpClient.GetStringAsync(RepoUrl);
                 RuntimeLog.Write("CommunityDetailVM", $"Fetched remote index from {RepoUrl}");
+                
+                try
+                {
+                    var cacheDir = Path.Combine(AppContext.BaseDirectory, "Cache", "CommunityIndexes");
+                    if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
+                    var cachePath = Path.Combine(cacheDir, $"{CategoryName}.json");
+                    await File.WriteAllTextAsync(cachePath, json);
+                }
+                catch (Exception ex)
+                {
+                    RuntimeLog.Write("CommunityDetailVM", $"Failed to save cache for '{CategoryName}': {ex.Message}");
+                }
             }
 
             List<CommunityIndexItem>? items = null;
 
-            // 尝试解析新格式 { "release_tag": "..."/["..."], "charts": [...] }
+            // 尝试解析整合包新格式 { "collections": [...] }
             try
             {
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
-                var wrapper = JsonSerializer.Deserialize<CommunityIndexWrapper>(json, options);
-                if (wrapper != null && wrapper.Charts != null && wrapper.Charts.Count > 0)
+                var newCol = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
+                if (newCol?.Collections != null && newCol.Collections.Count > 0)
                 {
-                    _defaultReleaseTags = CommunityReleaseHelper.MergeReleaseTags(
-                        null,
-                        wrapper.ReleaseTag,
-                        wrapper.ReleaseTags);
-                    items = wrapper.Charts;
+                    var match = newCol.Collections.FirstOrDefault(c => string.Equals(c.Name, CategoryName, StringComparison.OrdinalIgnoreCase)) ?? newCol.Collections.First();
+                    items = match.Charts;
                 }
             }
-            catch (Exception ex1)
+            catch { }
+
+            if (items == null)
             {
-                // 尝试解析旧格式：纯数组 [...]
-                try 
+                // 尝试解析旧格式 { "release_tag": "...", "charts": [...] }
+                try
                 {
-                    var optionsFallback = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
-                    items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json, optionsFallback);
-                    _defaultReleaseTags.Clear();
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+                    var wrapper = JsonSerializer.Deserialize<CommunityIndexWrapper>(json, options);
+                    if (wrapper != null && wrapper.Charts != null && wrapper.Charts.Count > 0)
+                    {
+                        _defaultReleaseTags = CommunityReleaseHelper.MergeReleaseTags(
+                            null,
+                            wrapper.ReleaseTag,
+                            wrapper.ReleaseTags);
+                        items = wrapper.Charts;
+                    }
                 }
-                catch (Exception ex2)
+                catch (Exception ex1)
                 {
-                    RuntimeLog.Write("CommunityDetailVM", $"Parse failed... WrapperEx: {ex1.Message}, ArrayEx: {ex2.Message}");
+                    // 尝试解析旧格式：纯数组 [...]
+                    try 
+                    {
+                        var optionsFallback = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+                        items = JsonSerializer.Deserialize<List<CommunityIndexItem>>(json, optionsFallback);
+                        _defaultReleaseTags.Clear();
+                    }
+                    catch (Exception ex2)
+                    {
+                        RuntimeLog.Write("CommunityDetailVM", $"Parse failed... WrapperEx: {ex1.Message}, ArrayEx: {ex2.Message}");
+                    }
                 }
             }
 
@@ -347,15 +384,13 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         
         foreach (var bp in basePaths)
         {
-            candidates.Add(Path.Combine(bp, "SongRepository", CategoryName, "repo", "index.json"));
-            candidates.Add(Path.Combine(bp, "SongRepository", CategoryName, "index.json"));
+            candidates.Add(Path.Combine(bp, "Cache", "CommunityIndexes", $"{CategoryName}.json"));
             
             // 向上查找 5 层父目录 (开发环境下 bin/Debug/... 结构)
             var current = new DirectoryInfo(bp);
             for (var depth = 0; depth < 5 && current != null; depth++, current = current.Parent)
             {
-                candidates.Add(Path.Combine(current.FullName, "SongRepository", CategoryName, "repo", "index.json"));
-                candidates.Add(Path.Combine(current.FullName, "SongRepository", CategoryName, "index.json"));
+                candidates.Add(Path.Combine(current.FullName, "Cache", "CommunityIndexes", $"{CategoryName}.json"));
             }
         }
 
@@ -364,18 +399,29 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
 
     private MdmcChart MapToIndexChart(CommunityIndexItem item)
     {
+        string EncodePath(string path) => string.Join("/", path.Replace("\\", "/").Split('/').Select(Uri.EscapeDataString));
+
+        var encodedBaseUrl = _rawBaseUrl;
+        if (!_rawBaseUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase) && !_rawBaseUrl.Contains("raw.githubusercontent.com"))
+        {
+            var uri = new Uri(_rawBaseUrl);
+            var unescapedPath = Uri.UnescapeDataString(uri.AbsolutePath);
+            var encodedPath = string.Join("/", unescapedPath.Split('/').Select(Uri.EscapeDataString));
+            encodedBaseUrl = $"{uri.Scheme}://{uri.Host}" + encodedPath;
+        }
+
         // 如果 cover_url/demo_url/download_url 是相对文件名，补全为完整 raw URL
         var coverUrl = item.CoverUrl;
         if (!string.IsNullOrEmpty(coverUrl) && !coverUrl.StartsWith("http"))
-            coverUrl = _rawBaseUrl + "/covers/" + coverUrl;
+            coverUrl = encodedBaseUrl + "/covers/" + EncodePath(coverUrl);
 
         var demoUrl = item.DemoUrl;
         if (!string.IsNullOrEmpty(demoUrl) && !demoUrl.StartsWith("http"))
-            demoUrl = _rawBaseUrl + "/demos/" + demoUrl;
+            demoUrl = encodedBaseUrl + "/demos/" + EncodePath(demoUrl);
 
         var demoMp3Url = item.DemoMp3Url;
         if (!string.IsNullOrEmpty(demoMp3Url) && !demoMp3Url.StartsWith("http"))
-            demoMp3Url = _rawBaseUrl + "/demos/" + demoMp3Url;
+            demoMp3Url = encodedBaseUrl + "/demos/" + EncodePath(demoMp3Url);
 
         var downloadUrl = item.DownloadUrl;
         if (_githubRepoUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase))
@@ -386,7 +432,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         else if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
         {
             // 对于 R2 存储，谱面文件统一存放在 mdm/ 目录下
-            downloadUrl = _rawBaseUrl + "/mdm/" + downloadUrl;
+            downloadUrl = encodedBaseUrl + "/mdm/" + EncodePath(downloadUrl);
         }
 
         // 应用镜像/加速逻辑

@@ -66,7 +66,7 @@
                                     </LinearGradientBrush>
                                 </TextBlock.Foreground>
                             </TextBlock>
-                            <TextBlock Text="v1.2.2" FontSize="12" Foreground="White" Margin="5,0,0,2" VerticalAlignment="Bottom"/>
+                            <TextBlock Text="v1.2.3" FontSize="12" Foreground="White" Margin="5,0,0,2" VerticalAlignment="Bottom"/>
                         </StackPanel>
                     </Button>
                     
@@ -125,10 +125,10 @@
                                 <Button Classes="NavBtn" Command="{Binding NavigateToModManagerCommand}"><TextBlock Text="Mod管理" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
                                 <Button Classes="NavBtn" Command="{Binding NavigateToChartManagerCommand}"><TextBlock Text="谱面管理" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
                                 <Button Classes="NavBtn" Command="{Binding NavigateToChartDownloadCommand}"><TextBlock Text="谱面下载" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
-                                <Button Classes="NavBtn" Command="{Binding NavigateToChartUploadCommand}"><TextBlock Text="谱面上传" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
-                                <Button Classes="NavBtn" Command="{Binding NavigateToDownloadManagerCommand}"><TextBlock Text="下载列表" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
+                                <!-- <Button Classes="NavBtn" Command="{Binding NavigateToChartUploadCommand}"><TextBlock Text="谱面上传" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button> -->
                                 <Button Classes="NavBtn" Command="{Binding NavigateToConfigManagerCommand}"><TextBlock Text="配置文件" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
                                 <Button Classes="NavBtn" Command="{Binding NavigateToAccountCommand}"><TextBlock Text="我的账号" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
+                                <Button Classes="NavBtn" Command="{Binding NavigateToTutorialCommand}"><TextBlock Text="使用说明" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
                             </StackPanel>
                         </LayoutTransformControl>
                     </StackPanel>
