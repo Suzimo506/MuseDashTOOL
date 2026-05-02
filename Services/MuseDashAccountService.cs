@@ -134,8 +134,8 @@ public static class MuseDashAccountService
     private const string KeyPrefix = "peropero_account_user_info_h";
     private const string ApiBase = "https://api.musedash.moe";
 
-    // Fast client for player API (10s) — don't block on large payloads
-    private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(10) };
+    // Fast client for player API (Increased to 30s to handle slow network)
+    private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(30) };
     // Slow client for background caches like albums/characters (~3MB responses)
     private static readonly HttpClient _httpCache = new() { Timeout = TimeSpan.FromSeconds(60) };
 
@@ -330,10 +330,27 @@ public static class MuseDashAccountService
             var uid = info.Uid ?? "";
             if (string.IsNullOrWhiteSpace(uid)) return;
 
-            // Kick off album+character caches in parallel with main player data
-            var profileTask = FetchPlayerProfileAsync(uid);
-            await profileTask;
-            CachedProfile = profileTask.Result;
+            // 后台静默重试逻辑：如果失败，每隔 5 秒重试一次，最多尝试 3 次
+            int retryCount = 0;
+            while (retryCount < 3)
+            {
+                try
+                {
+                    var profile = await FetchPlayerProfileAsync(uid);
+                    if (profile != null)
+                    {
+                        CachedProfile = profile;
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[MuseDashAccountService] Background prefetch attempt {retryCount + 1} failed: {ex.Message}");
+                }
+
+                retryCount++;
+                if (retryCount < 3) await Task.Delay(5000);
+            }
         }
         catch (Exception ex)
         {

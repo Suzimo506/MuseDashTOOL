@@ -24,11 +24,10 @@
 
 - 🚀 **Blazing Fast**: Deeply optimized file scanning and list loading logic.
 - 📦 **Mod Management**: One-click import, enable/disable, and batch deletion of mods.
-- 🎵 **Chart Management**: Support fast download and preview of charts from MDMC community; specially added song pack collections from local charter; future integration with Euterpe-org.com is planned.
+- 🎵 **Chart Management**: Support fast download and preview of charts from MDMC community; specially added song pack collections from local charter.
 - 🔧 **Config Editor**: Built-in intuitive mod configuration editor, no need to manually edit JSON/cfg files.
 - 🌍 **Smart Translation**: Automatically use online translation services to easily read foreign mod descriptions.
 - 🎨 **Personalization**: Support custom background images, blur, fonts, and theme colors.
-- 👤 **Account Center**: Real-time view of personal game data (more social features coming soon).
 
 ## 🛠️ Quick Start
 
@@ -41,14 +40,6 @@
 1. Go to the [Releases](https://github.com/Suzimo506/MuseDashTOOL/releases) page and download the latest package.
 2. Extract to any directory (**Do NOT extract to the game root directory**).
 3. Run `MuseDashTOOL.exe`, and follow the prompts to select your game directory on first launch.
-
-## 📅 Changelog (v1.2.3)
-
-- **Collection Download**: Fixed and re-enabled the collection download feature.
-- **Global Search**: Search within individual collections is now supported.
-- **Source Optimization**: Adjusted default download sources; high-speed DNS is recommended for best performance.
-- **Mod Catalog**: Restored mod catalog with direct links to download sites.
-- **UI Improvements**: Adjusted the "My Account" layout for future login system integration.
 
 ## 🤝 Contributing
 
