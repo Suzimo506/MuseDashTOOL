@@ -326,6 +326,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
 {
     private readonly IAlbumCollectionService _collectionService;
     private readonly ChartDownloadViewModel _chartDownloadViewModel;
+    private readonly INotificationService _notificationService;
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
     private readonly List<DesignerCategoryItemViewModel> _allCategoriesBackup = new();
     private readonly List<CommunityCategoryItemViewModel> _allCommunityCategoriesBackup = new();
@@ -479,9 +480,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
         _ = SearchAndFilterAsync(value);
     }
 
-    public AlbumCollectionViewModel(IAlbumCollectionService collectionService)
+    public AlbumCollectionViewModel(IAlbumCollectionService collectionService, INotificationService notificationService)
     {
         _collectionService = collectionService;
+        _notificationService = notificationService;
         _chartDownloadViewModel = Ioc.Default.GetRequiredService<ChartDownloadViewModel>();
     }
 
@@ -704,25 +706,41 @@ public partial class AlbumCollectionViewModel : ObservableObject
             IsLoading = false; // 有本地数据先展示
         }
 
-        // 2. 后台静默刷新总列表
+        // 2. 后台静默全量刷新
         _ = Task.Run(async () =>
         {
             try
             {
-                // 注意：GetCollectionsAsync 内部会尝试去拉取远端
+                // 首先同步总目录表
                 var remoteCollections = await _collectionService.GetCollectionsAsync();
                 
-                // 简单比对数量，如果发生变化则刷新
+                // 比对并刷新目录显示
                 if (remoteCollections.Count != collections.Count || !remoteCollections.Select(c => c.Name).SequenceEqual(collections.Select(c => c.Name)))
                 {
                     Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
                     {
                         await LoadCategoriesAsync(remoteCollections);
-                        Log("Album collection list updated from remote.");
+                        _notificationService?.ShowSuccess("曲包目录检测到更新，已自动刷新~");
                     });
                 }
+
+                // 核心优化：全量预取所有曲包的歌曲索引 (Index Sync)
+                // 这样进入具体文件夹就是瞬开，且全局搜索速度极快且数据最新
+                var syncTasks = remoteCollections.Select(async col => 
+                {
+                    try { await _collectionService.GetChartsAsync(col.Name); } catch { }
+                }).ToList();
+
+                // 同时同步社区曲包
+                var communityTasks = AlbumCollectionService.CommunityConfigs.Select(async config =>
+                {
+                    try { await _collectionService.GetCommunityChartsAsync(config.Name, config.RepoUrl); } catch { }
+                });
+
+                await Task.WhenAll(syncTasks.Concat(communityTasks));
+                Log("Full background sync completed: All indexes are now up-to-date locally.");
             }
-            catch (Exception ex) { Log($"Failed to sync folder list in background: {ex.Message}"); }
+            catch (Exception ex) { Log($"Failed to sync collections in background: {ex.Message}"); }
             finally 
             { 
                 _isSyncing = false;

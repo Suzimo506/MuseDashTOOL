@@ -59,7 +59,7 @@ public class AlbumCollectionService : IAlbumCollectionService
     private readonly Dictionary<string, List<DesignerChart>> _chartsCache = new(StringComparer.OrdinalIgnoreCase);
 
     // 社区仓库配置
-    private static readonly (string Name, string RepoUrl)[] CommunityConfigs = 
+    public static readonly (string Name, string RepoUrl)[] CommunityConfigs = 
     { 
         ("通过审议", "https://download.suzimo.site/通过审议"), 
         ("令人生草", "https://download.suzimo.site/令人生草"), 
@@ -268,12 +268,18 @@ public class AlbumCollectionService : IAlbumCollectionService
 
     public async Task<List<DesignerChart>> GetLocalChartsAsync(string categoryName)
     {
+        // 优先使用内存缓存（后台全量同步后已填充）
+        if (_chartsCache.TryGetValue(categoryName, out var cached))
+            return cached;
+
         var cachePath = Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes", $"{categoryName}.json");
         if (!File.Exists(cachePath)) return new List<DesignerChart>();
         try
         {
             var json = await File.ReadAllTextAsync(cachePath);
-            return ParseDesignerCharts(json, categoryName);
+            var charts = ParseDesignerCharts(json, categoryName);
+            _chartsCache[categoryName] = charts; // 回写内存缓存，避免重复解析
+            return charts;
         }
         catch { return new List<DesignerChart>(); }
     }
@@ -327,31 +333,17 @@ public class AlbumCollectionService : IAlbumCollectionService
         if (string.IsNullOrWhiteSpace(query))
             return new List<(DesignerCategory Category, DesignerChart Chart)>();
 
-        var collections = await GetMetadataIndexAsync();
         var results = new List<(DesignerCategory Category, DesignerChart Chart)>();
         var normalizedQuery = query.Trim().ToLowerInvariant();
 
-        foreach (var category in collections)
-        {
-            foreach (var chart in category.Charts)
-            {
-                if (chart.Title?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
-                    chart.Author?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
-                    chart.Artist?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true)
-                {
-                    results.Add((category, CloneAndNormalizeChart(chart)));
-                }
-            }
-        }
-
-        // 同时搜索新仓库的整合包
-        var newCategories = await GetCollectionsAsync();
+        // 搜索 R2 整合包（纯本地缓存）
+        var newCategories = await GetLocalCollectionsAsync();
         if (newCategories != null)
         {
             foreach (var col in newCategories)
             {
-                var charts = await GetChartsAsync(col.Name);
-                if (charts == null) continue;
+                var charts = await GetLocalChartsAsync(col.Name);
+                if (charts == null || charts.Count == 0) continue;
 
                 foreach (var chart in charts)
                 {
@@ -380,7 +372,8 @@ public class AlbumCollectionService : IAlbumCollectionService
         {
             try
             {
-                var charts = await GetCommunityChartsAsync(config.Name, config.RepoUrl);
+                // 社区搜索同样优先使用本地缓存
+                var charts = await GetLocalCommunityChartsAsync(config.Name);
                 var matches = charts.Where(c => 
                     c.Title.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
                     c.Artist.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||

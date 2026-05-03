@@ -86,6 +86,9 @@ public class AppConfig
 
     /// <summary>用户自定义的优选 IP 地址</summary>
     public string CustomIpAddress { get; set; } = "";
+
+    /// <summary>用户已点击确认过的红点标记列表（格式: "版本号:标记名"，如 "1.2.5:Tutorial"）</summary>
+    public System.Collections.Generic.List<string> DismissedBadges { get; set; } = new();
 }
 
 public class NoticeInfo

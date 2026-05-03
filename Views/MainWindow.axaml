@@ -66,7 +66,7 @@
                                     </LinearGradientBrush>
                                 </TextBlock.Foreground>
                             </TextBlock>
-                            <TextBlock Text="v1.2.3" FontSize="12" Foreground="White" Margin="5,0,0,2" VerticalAlignment="Bottom"/>
+                            <TextBlock Text="v1.2.5" FontSize="12" Foreground="White" Margin="5,0,0,2" VerticalAlignment="Bottom"/>
                         </StackPanel>
                     </Button>
                     
@@ -128,7 +128,31 @@
                                 <!-- <Button Classes="NavBtn" Command="{Binding NavigateToChartUploadCommand}"><TextBlock Text="谱面上传" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button> -->
                                 <Button Classes="NavBtn" Command="{Binding NavigateToConfigManagerCommand}"><TextBlock Text="配置文件" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
                                 <Button Classes="NavBtn" Command="{Binding NavigateToAccountCommand}"><TextBlock Text="我的账号" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
-                                <Button Classes="NavBtn" Command="{Binding NavigateToTutorialCommand}"><TextBlock Text="使用说明" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
+                                <Button Classes="NavBtn" Command="{Binding NavigateToTutorialCommand}">
+                                    <Grid>
+                                        <TextBlock Text="使用说明" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                        <!-- 红点提示：有新内容时显示，点击后消失 -->
+                                        <Ellipse Width="8" Height="8" Fill="#FF4444"
+                                                 HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                 Margin="0,-2,-12,0"
+                                                 IsVisible="{Binding ShowTutorialBadge}">
+                                            <Ellipse.Styles>
+                                                <Style Selector="Ellipse">
+                                                    <Style.Animations>
+                                                        <Animation Duration="0:0:1.5" IterationCount="INFINITE" PlaybackDirection="Alternate">
+                                                            <KeyFrame Cue="0%">
+                                                                <Setter Property="Opacity" Value="1.0"/>
+                                                            </KeyFrame>
+                                                            <KeyFrame Cue="100%">
+                                                                <Setter Property="Opacity" Value="0.3"/>
+                                                            </KeyFrame>
+                                                        </Animation>
+                                                    </Style.Animations>
+                                                </Style>
+                                            </Ellipse.Styles>
+                                        </Ellipse>
+                                    </Grid>
+                                </Button>
                             </StackPanel>
                         </LayoutTransformControl>
                     </StackPanel>

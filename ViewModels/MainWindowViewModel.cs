@@ -97,6 +97,10 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private NoticeInfo? _currentAnnouncement;
 
+    /// <summary>使用说明按钮是否显示红点提示</summary>
+    [ObservableProperty]
+    private bool _showTutorialBadge;
+
     public MainWindowViewModel()
     {
         // 供设计器使用
@@ -180,6 +184,9 @@ public partial class MainWindowViewModel : ObservableObject
 
         // 异步尝试获取公告，但不阻塞主进程
         _ = TryShowAnnouncementAsync();
+
+        // 初始化红点提示（当前版本新内容标记）
+        InitializeBadges();
 
         UpdateFontFamily();
         UpdateFontSize();
@@ -833,7 +840,13 @@ public partial class MainWindowViewModel : ObservableObject
 
         var vm = Ioc.Default.GetRequiredService<TutorialViewModel>();
         CurrentPage = vm;
-        await Task.CompletedTask;
+
+        // 点击后清除红点提示
+        if (ShowTutorialBadge)
+        {
+            await DismissBadgeAsync("Tutorial");
+            ShowTutorialBadge = false;
+        }
     }
 
     [RelayCommand]
@@ -950,5 +963,47 @@ public partial class MainWindowViewModel : ObservableObject
             }
         }
         IsAnnouncementVisible = false;
+    }
+
+    // ──────────────────────────────────────────────────────────
+    //  可复用的红点提示系统
+    //  使用方法：
+    //  1. 在 AppConfig.DismissedBadges 中存储 "版本号:标记名"
+    //  2. 添加 [ObservableProperty] bool _showXxxBadge
+    //  3. 在 InitializeBadges() 中调用 ShouldShowBadge("标记名")
+    //  4. 在对应的 Navigate 方法中调用 DismissBadgeAsync("标记名")
+    // ──────────────────────────────────────────────────────────
+
+    /// <summary>当前程序版本号（与 UpdateService.CurrentVersion 保持一致）</summary>
+    private const string CurrentAppVersion = "1.2.5";
+
+    /// <summary>初始化所有红点提示状态</summary>
+    private void InitializeBadges()
+    {
+        // v1.2.5: 使用说明页有新内容
+        ShowTutorialBadge = ShouldShowBadge("Tutorial");
+
+        // 未来版本可以在这里继续添加，例如:
+        // ShowSettingsBadge = ShouldShowBadge("Settings");
+    }
+
+    /// <summary>判断指定标记在当前版本是否应该显示红点</summary>
+    private bool ShouldShowBadge(string badgeName)
+    {
+        if (_configService == null) return false;
+        var key = $"{CurrentAppVersion}:{badgeName}";
+        return !_configService.Config.DismissedBadges.Contains(key);
+    }
+
+    /// <summary>标记指定红点为已读，并持久化到配置文件</summary>
+    private async Task DismissBadgeAsync(string badgeName)
+    {
+        if (_configService == null) return;
+        var key = $"{CurrentAppVersion}:{badgeName}";
+        if (!_configService.Config.DismissedBadges.Contains(key))
+        {
+            _configService.Config.DismissedBadges.Add(key);
+            await _configService.SaveAsync();
+        }
     }
 }

@@ -169,6 +169,13 @@
                         </WrapPanel>
                         <TextBlock Text="不要手动解压！不要手动解压！直接启动游戏即可！" FontWeight="Bold" Foreground="#FF4444" HorizontalAlignment="Center" Margin="0,10,0,0"/>
                         <TextBlock Text="这样可以在你第一次打开游戏时节省大量的时间" HorizontalAlignment="Center" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                        <TextBlock Text="目前CustomAlbums（自制谱核心模组仅支持MelonLoader 0.6.1）" FontWeight="Bold" Foreground="#FF6699" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+
+                    <!-- 高级设置 -->
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="■ 高级设置" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
+                        <TextBlock Text="• 如果你对谱面下载速度不满意（某些地区某些时间段可能速度稍慢），进入设置里点击齿轮进入高级设置，填入你测速出的cloudflare高速IP并启用，可以有效地改善下载速度" TextWrapping="Wrap" Foreground="{DynamicResource ThemeTextMainBrush}"/>
                     </StackPanel>
 
                     <!-- Mod管理 -->
@@ -193,6 +200,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="■ 谱面下载界面" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
                         <TextBlock Text="• 搜索框输入内容之后，点击右边出现的“清除”可以清空输入框内容" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                        <TextBlock Text="• 点击翻页组件的数字，可以直接输入你想要跳转的页数" Foreground="{DynamicResource ThemeTextMainBrush}"/>
                     </StackPanel>
 
                     <!-- 配置文件 -->

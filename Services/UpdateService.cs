@@ -20,7 +20,7 @@ public interface IUpdateService
 
 public class UpdateService : IUpdateService
 {
-    private const string CurrentVersion = "v1.2.4"; // 当前程序版本号
+    private const string CurrentVersion = "v1.2.5"; // 当前程序版本号
     private const string GitHubApiUrl = "https://api.github.com/repos/Suzimo506/MuseDashTOOL/releases/latest";
 
     private readonly HttpClient _httpClient;
@@ -127,10 +127,10 @@ public class UpdateService : IUpdateService
         string? downloadUrl = null;
         string? fileName = null;
 
-        // 优先寻找 exe，只发布 exe，但逻辑上仍兼容 zip 兜底。
+        // 优先寻找 zip 压缩包（从 v1.2.5 起发布 zip 格式）
         foreach (var asset in release.Assets)
         {
-            if (asset.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            if (asset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
                 downloadUrl = asset.BrowserDownloadUrl;
                 fileName = asset.Name;
@@ -138,12 +138,12 @@ public class UpdateService : IUpdateService
             }
         }
 
-        // 如果没有 exe，再尝试寻找 zip 资源。
+        // 如果没有 zip，再尝试寻找 exe 资源（兼容旧版本发布）。
         if (string.IsNullOrEmpty(downloadUrl))
         {
             foreach (var asset in release.Assets)
             {
-                if (asset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                if (asset.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                 {
                     downloadUrl = asset.BrowserDownloadUrl;
                     fileName = asset.Name;
@@ -360,9 +360,36 @@ public class UpdateService : IUpdateService
         if (currentExe == null) return;
 
         var processName = Process.GetCurrentProcess().ProcessName;
+        var appDir = Path.GetDirectoryName(currentExe) ?? Environment.CurrentDirectory;
+        var isZip = newFile.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
 
-        // 反复等待当前进程退出并尝试覆盖 exe，直到替换成功或达到重试上限。
-        var script = $@"
+        string script;
+        if (isZip)
+        {
+            // ZIP 模式：解压覆盖整个目录，然后重启
+            script = $@"
+@echo off
+setlocal enabledelayedexpansion
+set ""retryCount=0""
+:loop
+taskkill /f /im {processName}.exe > nul 2>&1
+timeout /t 1 /nobreak > nul
+powershell -NoProfile -Command ""Expand-Archive -Path '{newFile}' -DestinationPath '{appDir}' -Force"" 2>nul
+if errorlevel 1 (
+    set /a ""retryCount+=1""
+    if !retryCount! lss 10 (
+        goto loop
+    )
+)
+del ""{newFile}"" > nul 2>&1
+start """" ""{currentExe}""
+del ""%~f0""
+";
+        }
+        else
+        {
+            // EXE 模式：直接替换单文件
+            script = $@"
 @echo off
 setlocal enabledelayedexpansion
 set ""retryCount=0""
@@ -379,6 +406,7 @@ if errorlevel 1 (
 start """" ""{currentExe}""
 del ""%~f0""
 ";
+        }
 
         // 使用 GBK 编码写入脚本，避免 cmd.exe 在中文路径下出现乱码。
         var encoding = System.Text.Encoding.GetEncoding(936);
