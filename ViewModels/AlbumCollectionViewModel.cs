@@ -330,6 +330,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
     private readonly List<DesignerCategoryItemViewModel> _allCategoriesBackup = new();
     private readonly List<CommunityCategoryItemViewModel> _allCommunityCategoriesBackup = new();
     private bool _isInitialized;
+    private bool _isSyncing;
 
     [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _categories = new();
     [ObservableProperty] private ObservableCollection<CommunityCategoryItemViewModel> _communityCategories = new();
@@ -522,6 +523,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
         {
             await Task.Delay(300, ct); // 300ms 防抖
             
+            _chartDownloadViewModel.StopPlayback();
+            
             if (string.IsNullOrWhiteSpace(query))
             {
                 IsSearching = false;
@@ -635,6 +638,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     private void RestoreOriginalCollections()
     {
+        _chartDownloadViewModel.StopPlayback();
         foreach (var item in _allSearchItemsBackup)
         {
             item.CoverImage = null;
@@ -674,25 +678,65 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     public async Task InitializeAsync()
     {
+        if (_isSyncing) return;
+        _isSyncing = true;
+
         if (_isInitialized && (Categories.Count > 0 || CommunityCategories.Count > 0))
         {
             IsLoading = false;
             IsEmpty = !Categories.Any();
-            RuntimeLog.Write("AlbumCollectionVM", "Reuse cached album collection folders and covers.");
+            _isSyncing = false;
             return;
         }
 
         IsLoading = true;
         IsEmpty = false;
         
-        // 先释放再监听，确保监听状态正确且不过期
         ReleaseResources();
         _chartDownloadViewModel.PropertyChanged += OnDownloadViewModelPropertyChanged;
 
+        // 1. 优先加载本地缓存数据 (如果有的话)
+        var collections = await _collectionService.GetLocalCollectionsAsync();
+        await LoadCategoriesAsync(collections);
+        
+        if (Categories.Count > 0)
+        {
+            IsLoading = false; // 有本地数据先展示
+        }
+
+        // 2. 后台静默刷新总列表
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                // 注意：GetCollectionsAsync 内部会尝试去拉取远端
+                var remoteCollections = await _collectionService.GetCollectionsAsync();
+                
+                // 简单比对数量，如果发生变化则刷新
+                if (remoteCollections.Count != collections.Count || !remoteCollections.Select(c => c.Name).SequenceEqual(collections.Select(c => c.Name)))
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                    {
+                        await LoadCategoriesAsync(remoteCollections);
+                        Log("Album collection list updated from remote.");
+                    });
+                }
+            }
+            catch (Exception ex) { Log($"Failed to sync folder list in background: {ex.Message}"); }
+            finally 
+            { 
+                _isSyncing = false;
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => { IsLoading = false; _isInitialized = true; }); 
+            }
+        });
+    }
+
+    private async Task LoadCategoriesAsync(List<DesignerCategory> collections)
+    {
         Categories.Clear();
         CommunityCategories.Clear();
 
-        var communityTasks = new List<Task>();
+        // 这里的社区分类配置应该保持一致
         var communityConfigs = new[] 
         { 
             ("通过审议", "https://download.suzimo.site/通过审议"), 
@@ -700,59 +744,37 @@ public partial class AlbumCollectionViewModel : ObservableObject
             ("待定或有些小问题", "https://download.suzimo.site/待定或有些小问题")
         };
 
-        foreach (var (name, repoUrl) in communityConfigs)
+        var communityTasks = communityConfigs.Select(config => 
         {
-            var item = new CommunityCategoryItemViewModel(name, repoUrl);
+            var item = new CommunityCategoryItemViewModel(config.Item1, config.Item2);
             CommunityCategories.Add(item);
-            
-            communityTasks.Add(Task.Run(async () =>
-            {
+            return Task.Run(async () => {
                 await _coverSemaphore.WaitAsync();
-                try
-                {
-                    item.LoadCoverImage();
-                }
-                finally
-                {
-                    _coverSemaphore.Release();
-                }
-            }));
-        }
+                try { item.LoadCoverImage(); } finally { _coverSemaphore.Release(); }
+            });
+        }).ToList();
 
-        var collections = await _collectionService.GetCollectionsAsync();
-        
-        var designerTasks = new List<Task>();
-        foreach (var category in collections)
+        var designerTasks = collections.Select(category => 
         {
             var item = new DesignerCategoryItemViewModel(category);
             Categories.Add(item);
-            
-            designerTasks.Add(Task.Run(async () =>
-            {
+            return Task.Run(async () => {
                 await _coverSemaphore.WaitAsync();
-                try
-                {
-                    item.LoadCoverImage();
-                }
-                finally
-                {
-                    _coverSemaphore.Release();
-                }
-            }));
-        }
+                try { item.LoadCoverImage(); } finally { _coverSemaphore.Release(); }
+            });
+        }).ToList();
 
         await Task.WhenAll(communityTasks.Concat(designerTasks));
 
-        // 初始化备份集合，用于搜索过滤恢复
         _allCategoriesBackup.Clear();
         _allCategoriesBackup.AddRange(Categories);
         _allCommunityCategoriesBackup.Clear();
         _allCommunityCategoriesBackup.AddRange(CommunityCategories);
 
         IsEmpty = !Categories.Any();
-        IsLoading = false;
-        _isInitialized = true;
     }
+
+    private void Log(string msg) => RuntimeLog.Write("AlbumCollectionVM", msg);
 
     public void ReleaseResources()
     {

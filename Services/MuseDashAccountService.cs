@@ -17,10 +17,10 @@ public static class MuseDashAccountService
     private const string KeyPrefix = "peropero_account_user_info_h";
     private const string ApiBase = "https://api.musedash.moe";
 
-    // Fast client for player API (Increased to 30s to handle slow network)
-    private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(30) };
+    // Fast client for player API (Increased to 60s to handle extremely slow server/network)
+    private static readonly HttpClient _http = Helpers.HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(60));
     // Slow client for background caches like albums/characters (~3MB responses)
-    private static readonly HttpClient _httpCache = new() { Timeout = TimeSpan.FromSeconds(60) };
+    private static readonly HttpClient _httpCache = Helpers.HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(90), TimeSpan.FromSeconds(15));
 
     // Dynamic character and elfin cache loaded from api.musedash.moe/ce
     private static System.Collections.Generic.List<string>? _characterNames = null;
@@ -266,8 +266,15 @@ public static class MuseDashAccountService
         {
             var url = $"{ApiBase}/player/{Uri.EscapeDataString(uid)}";
             var json = await _http.GetStringAsync(url);
-            var resp = JsonSerializer.Deserialize(json, AppJsonContext.Default.MdMoePlayerResponse);
             
+            // 增加防御性检查：如果返回的是 HTML 错误页面（常见于 522 错误），GetStringAsync 虽可能不报错，但解析会崩
+            if (string.IsNullOrWhiteSpace(json) || !json.TrimStart().StartsWith("{"))
+            {
+                LastError = "服务器返回了无效数据 (可能是 API 正在维护或被 Cloudflare 拦截)";
+                return null;
+            }
+
+            var resp = JsonSerializer.Deserialize(json, AppJsonContext.Default.MdMoePlayerResponse);
             if (resp == null) return null;
 
             decimal rlValue = 0m;

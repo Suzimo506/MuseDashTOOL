@@ -207,6 +207,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         // 后台预加载谱面列表 (三种分类的第一页)
         _ = Ioc.Default.GetRequiredService<ChartDownloadViewModel>().PreloadAllSortsAsync();
+
     }
 
     private void UpdateGamePathStatus()

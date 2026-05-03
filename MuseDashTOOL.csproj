@@ -11,7 +11,7 @@
     <RootNamespace>MdModManager</RootNamespace>
     <AssemblyName>MuseDashTOOL</AssemblyName>
     <ApplicationIcon>Assets\MuseDashTOOL.ico</ApplicationIcon>
-    <Version>1.2.2</Version>
+    <Version>1.2.4</Version>
     <PublishSingleFile>true</PublishSingleFile>
     <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>true</SelfContained>
@@ -31,7 +31,7 @@
     <EmbeddedResource Include="mirror-domains.json" Condition="Exists('mirror-domains.json')" />
     <EmbeddedResource Include="Pictures\通过审议.png" />
     <EmbeddedResource Include="Pictures\令人生草.jpg" />
-    <EmbeddedResource Include="Pictures\待定或存在小问题.png" />
+    <EmbeddedResource Include="Pictures\待定或有些小问题.png" />
     <EmbeddedResource Include="Pictures\Normal.jpg" />
   </ItemGroup>
 
@@ -59,4 +59,4 @@
 
 
 
-<!-- v1.2.0 -->
+<!-- v1.2.4 -->

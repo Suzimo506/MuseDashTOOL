@@ -54,6 +54,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     partial void OnSearchTextChanged(string value)
     {
+        _chartDownloadViewModel.StopPlayback();
         CurrentPage = 1;
         _ = ReloadAsync();
     }
@@ -207,10 +208,54 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         IsEmpty = false;
         StatusMessage = "正在获取整合包谱面...";
 
-        var charts = await _collectionService.GetChartsAsync(category.Name);
-        Category.Charts = charts;
-        Log($"Category '{category.Name}' returned {charts.Count} chart records.");
+        // 1. 优先加载本地缓存
+        var localCharts = await _collectionService.GetLocalChartsAsync(category.Name);
+        if (localCharts.Count > 0)
+        {
+            ProcessAndLoadCharts(localCharts);
+            await ReloadAsync();
+            IsLoading = false; // 有本地数据，先取消加载动画
+        }
 
+        // 2. 后台并行拉取远端，进行比对更新
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var remoteCharts = await _collectionService.GetChartsAsync(category.Name);
+                if (remoteCharts.Count > 0)
+                {
+                    // 简单比对：如果本地为空，或者数量/标题不一致，则刷新
+                    bool needsUpdate = localCharts.Count == 0 || 
+                                     remoteCharts.Count != localCharts.Count ||
+                                     !remoteCharts.Select(c => c.Id).SequenceEqual(localCharts.Select(c => c.Id));
+
+                    if (needsUpdate)
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                        {
+                            ProcessAndLoadCharts(remoteCharts);
+                            await ReloadAsync();
+                            _notificationService.ShowSuccess("曲包检测到更新，已强制刷新界面~");
+                            Log($"Remote update detected and applied for '{category.Name}'.");
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Background remote sync failed for '{category.Name}': {ex.Message}");
+            }
+            finally
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => { IsLoading = false; });
+            }
+        });
+    }
+
+    private void ProcessAndLoadCharts(List<DesignerChart> charts)
+    {
+        _allFullIndex.Clear();
         foreach (var c in charts)
         {
             List<string> difficultyLabels = new List<string>();
@@ -252,8 +297,6 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                     .ToList()
             });
         }
-
-        await ReloadAsync();
     }
 
     private async Task ReloadAsync()
