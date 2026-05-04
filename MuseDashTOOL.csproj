@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <None Include="chart-upload-config.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('chart-upload-config.json')" />
-    <AvaloniaResource Include="Assets\**" Exclude="Assets\classdata.tpk" />
+    <AvaloniaResource Include="Assets\**" Exclude="Assets\classdata.tpk;Assets\Preview.png" />
     <EmbeddedResource Include="Assets\classdata.tpk" />
     
     <!-- 嵌入核心资源，实现单文件独立运行 -->
