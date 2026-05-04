@@ -11,7 +11,7 @@
     <RootNamespace>MdModManager</RootNamespace>
     <AssemblyName>MuseDashTOOL</AssemblyName>
     <ApplicationIcon>Assets\MuseDashTOOL.ico</ApplicationIcon>
-    <Version>1.2.6</Version>
+    <Version>1.2.7</Version>
     <PublishSingleFile>true</PublishSingleFile>
     <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>true</SelfContained>
@@ -59,4 +59,4 @@
 
 
 
-<!-- v1.2.6 -->
+<!-- v1.2.7 -->

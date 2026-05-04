@@ -17,7 +17,7 @@
 ### 🎨 界面预览
 
 <!-- 这里可以放你的截图 -->
-![主界面预览](Pictures/main_preview.png)
+![主界面预览](Assets/Preview.png)
 
 </div>
 

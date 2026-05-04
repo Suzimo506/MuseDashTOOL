@@ -87,9 +87,26 @@ public class AlbumCollectionService : IAlbumCollectionService
                 var result = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json, options);
                 if (result != null && result.TryGetValue("collections", out var folders))
                 {
-                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题" };
+                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
                     var categories = folders.Where(f => !excludeNames.Contains(f)).OrderBy(f => f)
-                        .Select(f => new DesignerCategory { Name = f, Description = "R2 云端专属整合包" }).ToList();
+                        .Select(f => new DesignerCategory { Name = f, Description = "" }).ToList();
+                    _categoryCache = categories;
+                    return categories;
+                }
+                
+                // 尝试解析为包含描述的结构
+                var newResult = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
+                if (newResult?.Collections != null && newResult.Collections.Count > 0)
+                {
+                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
+                    var categories = newResult.Collections
+                        .Where(c => !excludeNames.Contains(c.Name))
+                        .OrderBy(c => c.Name)
+                        .Select(c => new DesignerCategory 
+                        { 
+                            Name = c.Name, 
+                            Description = string.IsNullOrWhiteSpace(c.Description) ? "" : c.Description 
+                        }).ToList();
                     _categoryCache = categories;
                     return categories;
                 }
@@ -123,10 +140,30 @@ public class AlbumCollectionService : IAlbumCollectionService
 
             if (result != null && result.TryGetValue("collections", out var folders))
             {
-                var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题" };
+                var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
                 categories = folders.Where(f => !excludeNames.Contains(f)).OrderBy(f => f)
-                    .Select(f => new DesignerCategory { Name = f, Description = "R2 云端专属整合包" }).ToList();
-                
+                    .Select(f => new DesignerCategory { Name = f, Description = "" }).ToList();
+            }
+            else
+            {
+                // 尝试解析为包含描述的结构
+                var newResult = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
+                if (newResult?.Collections != null && newResult.Collections.Count > 0)
+                {
+                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
+                    categories = newResult.Collections
+                        .Where(c => !excludeNames.Contains(c.Name))
+                        .OrderBy(c => c.Name)
+                        .Select(c => new DesignerCategory 
+                        { 
+                            Name = c.Name, 
+                            Description = string.IsNullOrWhiteSpace(c.Description) ? "" : c.Description 
+                        }).ToList();
+                }
+            }
+
+            if (categories.Count > 0)
+            {
                 // 成功后同步到本地缓存
                 try
                 {
@@ -137,7 +174,7 @@ public class AlbumCollectionService : IAlbumCollectionService
                     var indexCacheDir = Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes");
                     if (Directory.Exists(indexCacheDir))
                     {
-                        var remoteFolderSet = new HashSet<string>(folders, StringComparer.OrdinalIgnoreCase);
+                        var remoteFolderSet = categories.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
                         var localFiles = Directory.GetFiles(indexCacheDir, "*.json");
                         foreach (var file in localFiles)
                         {
@@ -218,6 +255,13 @@ public class AlbumCollectionService : IAlbumCollectionService
             if (newCol?.Collections != null && newCol.Collections.Count > 0) {
                 var match = newCol.Collections.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)) ?? newCol.Collections.First();
                 items = match.Charts;
+                
+                // 同步描述到缓存
+                if (!string.IsNullOrWhiteSpace(match.Description))
+                {
+                    var cachedCat = _categoryCache?.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
+                    if (cachedCat != null) cachedCat.Description = match.Description;
+                }
             }
         } catch { }
 
@@ -936,7 +980,9 @@ public class AlbumCollectionService : IAlbumCollectionService
         var parts = fileName.Trim().Replace("\\", "/").Trim('/').Split('/');
         var encodedFileName = string.Join("/", parts.Select(Uri.EscapeDataString));
 
-        var downloadDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumDownloadDomain) ? MirrorDomainRegistry.AlbumDownloadDomain : $"download.{baseHost}";
+        var downloadDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumDownloadDomain) 
+            ? MirrorDomainRegistry.AlbumDownloadDomain 
+            : $"download.{baseHost}";
         return $"https://{downloadDomain}/{encodedCategory}/{encodedSubFolder}/{encodedFileName}";
     }
 

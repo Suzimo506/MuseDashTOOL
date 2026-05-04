@@ -15,6 +15,8 @@ using MdModManager.Models;
 using MdModManager.Services;
 using MdModManager.Helpers;
 using System.Globalization;
+using System.IO.Compression;
+using System.Net.Http;
 
 namespace MdModManager.ViewModels;
 
@@ -327,6 +329,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
     private readonly IAlbumCollectionService _collectionService;
     private readonly ChartDownloadViewModel _chartDownloadViewModel;
     private readonly INotificationService _notificationService;
+    private readonly IConfigService _configService;
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
     private readonly List<DesignerCategoryItemViewModel> _allCategoriesBackup = new();
     private readonly List<CommunityCategoryItemViewModel> _allCommunityCategoriesBackup = new();
@@ -480,10 +483,11 @@ public partial class AlbumCollectionViewModel : ObservableObject
         _ = SearchAndFilterAsync(value);
     }
 
-    public AlbumCollectionViewModel(IAlbumCollectionService collectionService, INotificationService notificationService)
+    public AlbumCollectionViewModel(IAlbumCollectionService collectionService, INotificationService notificationService, IConfigService configService)
     {
         _collectionService = collectionService;
         _notificationService = notificationService;
+        _configService = configService;
         _chartDownloadViewModel = Ioc.Default.GetRequiredService<ChartDownloadViewModel>();
     }
 
@@ -670,6 +674,153 @@ public partial class AlbumCollectionViewModel : ObservableObject
     [RelayCommand]
     public void ClearSearch() => SearchText = string.Empty;
 
+    [RelayCommand]
+    private async Task DownloadPictures()
+    {
+        try
+        {
+            // 遵循设置中的下载域名
+            var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
+            var downloadDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumDownloadDomain) 
+                ? MirrorDomainRegistry.AlbumDownloadDomain 
+                : $"download.{baseHost}";
+
+            // 添加时间戳绕过 Cloudflare 缓存
+            var url = $"https://{downloadDomain}/Pictures.zip?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+            
+            // 如果下载源不是 suzimo，则尝试通过镜像助手处理
+            if (_configService.Config.DownloadSource != "suzimo")
+            {
+                url = GitHubMirrorHelper.ApplyMirror(url, _configService.Config.DownloadSource);
+            }
+            
+            var notification = _notificationService.ShowPersistentProgress("正在准备下载 Pictures 资源包...");
+            
+            try
+            {
+                var tempFile = Path.Combine(Path.GetTempPath(), "Pictures_temp.zip");
+                using var client = HttpHelper.CreateOptimizedClient(TimeSpan.FromMinutes(10));
+                
+                long downloadedBytes = 0;
+                long totalBytes = 0;
+                
+                // 如果本地已有临时文件，尝试读取其大小以支持断点续传
+                if (File.Exists(tempFile))
+                {
+                    downloadedBytes = new FileInfo(tempFile).Length;
+                }
+
+                int retryCount = 0;
+                int maxRetryCount = 20;
+
+                while (retryCount <= maxRetryCount)
+                {
+                    try
+                    {
+                        var fileMode = downloadedBytes > 0 ? FileMode.Append : FileMode.Create;
+                        using var dst = new FileStream(tempFile, fileMode, FileAccess.Write, FileShare.None, 81920, true);
+                        
+                        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                        if (downloadedBytes > 0)
+                        {
+                            request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(downloadedBytes, null);
+                        }
+
+                        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                        
+                        // 如果服务器不支持断点续传（返回 200 而非 206），则重置
+                        if (downloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.OK)
+                        {
+                            downloadedBytes = 0;
+                            dst.SetLength(0);
+                            dst.Seek(0, SeekOrigin.Begin);
+                        }
+                        
+                        response.EnsureSuccessStatusCode();
+
+                        if (totalBytes == 0)
+                        {
+                            totalBytes = response.Content.Headers.ContentLength ?? 0;
+                            if (downloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.PartialContent)
+                                totalBytes += downloadedBytes;
+                        }
+
+                        using var src = await response.Content.ReadAsStreamAsync();
+                        var buffer = new byte[81920];
+                        int read;
+
+                        // 看门狗保护：15秒无响应则断开重连
+                        while ((read = await src.ReadAsync(buffer, 0, buffer.Length).WaitAsync(TimeSpan.FromSeconds(15))) > 0)
+                        {
+                            await dst.WriteAsync(buffer, 0, read);
+                            downloadedBytes += read;
+                            
+                            if (totalBytes > 0)
+                            {
+                                var progress = (double)downloadedBytes / totalBytes * 100;
+                                Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+                                    notification.ProgressValue = progress;
+                                    notification.Message = $"正在下载 Pictures (续传中: {progress:F1}%) - {(downloadedBytes / 1024.0 / 1024.0):F1}MB / {(totalBytes / 1024.0 / 1024.0):F1}MB";
+                                });
+                            }
+                        }
+                        
+                        await dst.FlushAsync();
+                        break; // 下载完成，跳出重试循环
+                    }
+                    catch (Exception ex)
+                    {
+                        retryCount++;
+                        RuntimeLog.Write("DownloadPictures", $"下载异常 (重试 {retryCount}/{maxRetryCount}): {ex.Message}");
+                        if (retryCount > maxRetryCount) throw;
+                        await Task.Delay(3000); // 停顿后重试
+                        
+                        // 更新已下载字节数，准备下一次续传
+                        if (File.Exists(tempFile))
+                            downloadedBytes = new FileInfo(tempFile).Length;
+                    }
+                }
+
+                _notificationService.RemoveNotification(notification);
+                var extractNotif = _notificationService.ShowPersistentProgress("正在解压 Pictures 资源...");
+                
+                await Task.Run(() =>
+                {
+                    var extractPath = AppContext.BaseDirectory;
+                    var targetDir = Path.Combine(extractPath, "Pictures");
+                    
+                    // 解压前先清理旧文件夹，防止文件名冲突或乱码残留
+                    if (Directory.Exists(targetDir))
+                    {
+                        Directory.Delete(targetDir, true);
+                    }
+
+                    // 强制指定 GBK 编码进行解压，防止中文文件名乱码
+                    ZipFile.ExtractToDirectory(tempFile, extractPath, System.Text.Encoding.GetEncoding(936), true);
+                });
+
+                _notificationService.RemoveNotification(extractNotif);
+                _notificationService.ShowSuccess("Pictures 资源同步完成！");
+                
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+                
+                // 刷新封面
+                foreach (var cat in Categories) cat.LoadCoverImage();
+                foreach (var cat in CommunityCategories) cat.LoadCoverImage();
+            }
+            catch (Exception ex)
+            {
+                _notificationService.RemoveNotification(notification);
+                _notificationService.ShowFailure("Pictures 下载失败", ex.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowFailure("操作失败", ex.Message);
+        }
+    }
+
+
     // ── 试听与下载命令 (转发自 ChartDownloadViewModel) ───────────────────
     public IAsyncRelayCommand<MdmcChart> TogglePreviewCommand => 
         Ioc.Default.GetRequiredService<ChartDownloadViewModel>().TogglePreviewCommand;
@@ -754,12 +905,12 @@ public partial class AlbumCollectionViewModel : ObservableObject
         Categories.Clear();
         CommunityCategories.Clear();
 
-        // 这里的社区分类配置应该保持一致
+        var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
         var communityConfigs = new[] 
         { 
-            ("通过审议", "https://download.suzimo.site/通过审议"), 
-            ("令人生草", "https://download.suzimo.site/令人生草"), 
-            ("待定或有些小问题", "https://download.suzimo.site/待定或有些小问题")
+            ("通过审议", $"https://download.{baseHost}/通过审议"), 
+            ("令人生草", $"https://download.{baseHost}/令人生草"), 
+            ("待定或有些小问题", $"https://download.{baseHost}/待定或有些小问题")
         };
 
         var communityTasks = communityConfigs.Select(config => 

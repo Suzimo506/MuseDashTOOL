@@ -19,10 +19,12 @@ public interface INotificationService
 
 public partial class DownloadNotification : ObservableObject
 {
-    public string Message { get; init; } = "";
-    public bool IsSuccess { get; init; }
-    public bool IsInfo { get; init; }
-    public int DurationMs { get; init; } = 1500;
+    [ObservableProperty]
+    private string _message = "";
+    
+    public bool IsSuccess { get; set; }
+    public bool IsInfo { get; set; }
+    public int DurationMs { get; set; } = 1500;
 
     [ObservableProperty]
     private double _opacity = 1.0;

@@ -16,7 +16,7 @@
 
 ### 🎨 Preview
 
-![Main Preview](Pictures/main_preview.png)
+![Main Preview](Assets/Preview.png)
 
 </div>
 
