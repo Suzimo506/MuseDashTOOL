@@ -20,7 +20,7 @@ public interface IUpdateService
 
 public class UpdateService : IUpdateService
 {
-    private const string CurrentVersion = "v1.2.5"; // 当前程序版本号
+    private const string CurrentVersion = "v1.2.6"; // 当前程序版本号
     private const string GitHubApiUrl = "https://api.github.com/repos/Suzimo506/MuseDashTOOL/releases/latest";
 
     private readonly HttpClient _httpClient;
@@ -127,7 +127,7 @@ public class UpdateService : IUpdateService
         string? downloadUrl = null;
         string? fileName = null;
 
-        // 优先寻找 zip 压缩包（从 v1.2.5 起发布 zip 格式）
+        // 优先寻找 zip 压缩包（从 v1.2.6 起发布 zip 格式）
         foreach (var asset in release.Assets)
         {
             if (asset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))

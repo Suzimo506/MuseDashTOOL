@@ -311,7 +311,8 @@ public partial class ModManagerViewModel : ObservableObject
                 Author = "Microsoft",
                 Version = "SDK 6.0.428",
                 Description = "自制谱游玩必备环境",
-                HomePage = "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.428-windows-x64-installer",
+                HomePage = "https://dotnet.microsoft.com/zh-cn/download/dotnet/thank-you/sdk-6.0.428-windows-x64-installer",
+                DownloadLink = "https://builds.dotnet.microsoft.com/dotnet/Sdk/6.0.428/dotnet-sdk-6.0.428-win-x64.exe",
                 FileName = "dotnet6-runtime-placeholder",
                 GameVersion = "*"
             };
@@ -549,15 +550,31 @@ public partial class ModManagerViewModel : ObservableObject
     [RelayCommand]
     private async Task UpdateModAsync(LocalMod mod)
     {
+        // .NET 6 特殊处理
+        if (mod.RemoteInfo?.FileName == "dotnet6-runtime-placeholder")
+        {
+            try { Process.Start(new ProcessStartInfo(mod.RemoteInfo.HomePage) { UseShellExecute = true }); }
+            catch (Exception ex) { Console.WriteLine($"[ModManagerViewModel] UpdateModAsync (.NET 6) 跳转异常: {ex}"); }
+            return;
+        }
+
         // 临时：跳转到 Euterpe 网站
         try { Process.Start(new ProcessStartInfo("https://euterpe-org.com") { UseShellExecute = true }); }
         catch (Exception ex) { Console.WriteLine($"[ModManagerViewModel] UpdateModAsync 跳转异常: {ex}"); }
     }
 
-    /// <summary>打开 Mod 详情页 — 临时：统一跳转 Euterpe</summary>
+    /// <summary>打开 Mod 详情页 — .NET 6 特殊处理，其余跳转 Euterpe</summary>
     [RelayCommand]
     private void OpenHomePage(LocalMod mod)
     {
+        // .NET 6 特殊处理
+        if (mod.RemoteInfo?.FileName == "dotnet6-runtime-placeholder")
+        {
+            try { Process.Start(new ProcessStartInfo(mod.RemoteInfo.HomePage) { UseShellExecute = true }); }
+            catch (Exception ex) { Console.WriteLine($"[ModManagerViewModel] OpenHomePage (.NET 6) 操作异常: {ex}"); }
+            return;
+        }
+
         try { Process.Start(new ProcessStartInfo("https://euterpe-org.com") { UseShellExecute = true }); }
         catch (Exception ex)
         {
@@ -654,13 +671,14 @@ public partial class ModManagerViewModel : ObservableObject
             }
         }
 
-        // 特殊处理 .NET 6 运行时下载：打开官方页面
+        // 特殊处理 .NET 6 运行时下载：使用直链触发浏览器下载
         if (fileName == "dotnet6-runtime-placeholder")
         {
             try
             {
-                Process.Start(new ProcessStartInfo(remoteInfo.HomePage) { UseShellExecute = true });
-                _notificationService.ShowSuccess("正在打开 .NET 下载页面");
+                var url = !string.IsNullOrEmpty(remoteInfo.DownloadLink) ? remoteInfo.DownloadLink : remoteInfo.HomePage;
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                _notificationService.ShowSuccess("正在开始下载 .NET 6 运行时");
             }
             catch (Exception ex)
             {

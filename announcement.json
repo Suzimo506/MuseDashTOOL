@@ -1,7 +1,7 @@
 {
-    "id": "1.2.5",
+    "id": "1.2.6",
     "is_enabled": true,
-    "title": "v1.2.5 更新内容",
+    "title": "v1.2.6 更新内容",
     "content": "1、优化了整合包搜索界面的响应速度\n2、修复了某些问题",
     "action_button_text": "进入新版喵斯兔",
     "cancel_button_text": "不再显示该弹窗"

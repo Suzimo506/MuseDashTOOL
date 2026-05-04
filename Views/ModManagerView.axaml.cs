@@ -134,10 +134,19 @@ public partial class ModManagerView : UserControl
     }
 
     /// <summary>
-    /// 下载按钮点击：临时 → 跳转到 Euterpe 网站
+    /// 下载按钮点击：.NET 6 特殊处理，其余跳转 Euterpe
     /// </summary>
     private void OnDownloadClick(object? sender, RoutedEventArgs e)
     {
+        if (sender is Button btn && btn.Tag is LocalMod mod && mod.RemoteInfo?.FileName == "dotnet6-runtime-placeholder")
+        {
+            var url = mod.RemoteInfo.DownloadLink;
+            if (string.IsNullOrEmpty(url)) url = mod.RemoteInfo.HomePage;
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+            catch { }
+            return;
+        }
+
         try
         {
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://euterpe-org.com") { UseShellExecute = true });
