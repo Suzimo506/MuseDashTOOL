@@ -3,13 +3,18 @@ using System.Text.Json.Serialization;
 
 namespace MdModManager.Models;
 
-public class DesignerCategory
+public partial class DesignerCategory : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
+    private string _description = string.Empty;
     [JsonPropertyName("description")]
-    public string Description { get; set; } = string.Empty;
+    public string Description
+    {
+        get => _description;
+        set => SetProperty(ref _description, value);
+    }
 
     [JsonPropertyName("charts")]
     public List<DesignerChart> Charts { get; set; } = new();

@@ -458,3 +458,6 @@ p u b l i s h _ o u t p u t / 
 publish_output/
 Pictures/
 !Pictures/main_preview.png
+
+# AI Coding Rules
+CODING_STYLE.md
