@@ -84,17 +84,7 @@ public class AlbumCollectionService : IAlbumCollectionService
             {
                 var json = await File.ReadAllTextAsync(cachePath);
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var result = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json, options);
-                if (result != null && result.TryGetValue("collections", out var folders))
-                {
-                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
-                    var categories = folders.Where(f => !excludeNames.Contains(f)).OrderBy(f => f)
-                        .Select(f => new DesignerCategory { Name = f, Description = "" }).ToList();
-                    _categoryCache = categories;
-                    return categories;
-                }
-                
-                // 尝试解析为包含描述的结构
+                // 1. 优先尝试解析为包含描述的结构
                 var newResult = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
                 if (newResult?.Collections != null && newResult.Collections.Count > 0)
                 {
@@ -107,6 +97,17 @@ public class AlbumCollectionService : IAlbumCollectionService
                             Name = c.Name, 
                             Description = string.IsNullOrWhiteSpace(c.Description) ? "" : c.Description 
                         }).ToList();
+                    _categoryCache = categories;
+                    return categories;
+                }
+
+                // 2. 失败后尝试解析为旧的字典结构
+                var result = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json, options);
+                if (result != null && result.TryGetValue("collections", out var folders))
+                {
+                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
+                    var categories = folders.Where(f => !excludeNames.Contains(f)).OrderBy(f => f)
+                        .Select(f => new DesignerCategory { Name = f, Description = "" }).ToList();
                     _categoryCache = categories;
                     return categories;
                 }
@@ -138,27 +139,29 @@ public class AlbumCollectionService : IAlbumCollectionService
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var result = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json, options);
 
-            if (result != null && result.TryGetValue("collections", out var folders))
+            // 1. 优先尝试解析为包含描述的结构
+            var newResult = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
+            if (newResult?.Collections != null && newResult.Collections.Count > 0)
             {
                 var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
-                categories = folders.Where(f => !excludeNames.Contains(f)).OrderBy(f => f)
-                    .Select(f => new DesignerCategory { Name = f, Description = "" }).ToList();
+                categories = newResult.Collections
+                    .Where(c => !excludeNames.Contains(c.Name))
+                    .OrderBy(c => c.Name)
+                    .Select(c => new DesignerCategory 
+                    { 
+                        Name = c.Name, 
+                        Description = string.IsNullOrWhiteSpace(c.Description) ? "" : c.Description 
+                    }).ToList();
             }
             else
             {
-                // 尝试解析为包含描述的结构
-                var newResult = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
-                if (newResult?.Collections != null && newResult.Collections.Count > 0)
+                // 2. 失败后尝试解析为旧的字典结构
+                var result = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json, options);
+                if (result != null && result.TryGetValue("collections", out var folders))
                 {
                     var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
-                    categories = newResult.Collections
-                        .Where(c => !excludeNames.Contains(c.Name))
-                        .OrderBy(c => c.Name)
-                        .Select(c => new DesignerCategory 
-                        { 
-                            Name = c.Name, 
-                            Description = string.IsNullOrWhiteSpace(c.Description) ? "" : c.Description 
-                        }).ToList();
+                    categories = folders.Where(f => !excludeNames.Contains(f)).OrderBy(f => f)
+                        .Select(f => new DesignerCategory { Name = f, Description = "" }).ToList();
                 }
             }
 
