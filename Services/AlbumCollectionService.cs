@@ -928,7 +928,8 @@ public class AlbumCollectionService : IAlbumCollectionService
             CoverUrl = NormalizeResourceUrl(chart.CoverUrl),
             DownloadUrl = NormalizeResourceUrl(chart.DownloadUrl),
             DemoUrl = NormalizeResourceUrl(chart.DemoUrl),
-            DemoMp3Url = NormalizeResourceUrl(chart.DemoMp3Url)
+            DemoMp3Url = NormalizeResourceUrl(chart.DemoMp3Url),
+            Difficulties = chart.Difficulties != null ? new List<string>(chart.Difficulties) : null
         };
     }
 
