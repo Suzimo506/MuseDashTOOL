@@ -98,14 +98,20 @@ public class AlbumCollectionService : IAlbumCollectionService
                 var newResult = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
                 if (newResult?.Collections != null && newResult.Collections.Count > 0)
                 {
+                    if (_categoryCache == null) _categoryCache = new List<DesignerCategory>();
                     var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
                     var categories = newResult.Collections
                         .Where(c => !excludeNames.Contains(c.Name))
                         .OrderBy(c => c.Name)
-                        .Select(c => new DesignerCategory 
-                        { 
-                            Name = c.Name, 
-                            Description = string.IsNullOrWhiteSpace(c.Description) ? "" : c.Description 
+                        .Select(c => 
+                        {
+                            var existing = _categoryCache.FirstOrDefault(x => string.Equals(x.Name, c.Name, StringComparison.OrdinalIgnoreCase));
+                            if (existing != null)
+                            {
+                                if (!string.IsNullOrWhiteSpace(c.Description)) existing.Description = c.Description;
+                                return existing;
+                            }
+                            return new DesignerCategory { Name = c.Name, Description = c.Description ?? "" };
                         }).ToList();
                     _categoryCache = categories;
                     return categories;
@@ -141,8 +147,13 @@ public class AlbumCollectionService : IAlbumCollectionService
             if (result != null && result.TryGetValue("collections", out var folders))
             {
                 var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
+                if (_categoryCache == null) _categoryCache = new List<DesignerCategory>();
                 categories = folders.Where(f => !excludeNames.Contains(f)).OrderBy(f => f)
-                    .Select(f => new DesignerCategory { Name = f, Description = "" }).ToList();
+                    .Select(f => 
+                    {
+                        var existing = _categoryCache.FirstOrDefault(x => string.Equals(x.Name, f, StringComparison.OrdinalIgnoreCase));
+                        return existing ?? new DesignerCategory { Name = f, Description = "" };
+                    }).ToList();
             }
             else
             {
@@ -150,14 +161,20 @@ public class AlbumCollectionService : IAlbumCollectionService
                 var newResult = JsonSerializer.Deserialize<NewCollectionIndex>(json, options);
                 if (newResult?.Collections != null && newResult.Collections.Count > 0)
                 {
+                    if (_categoryCache == null) _categoryCache = new List<DesignerCategory>();
                     var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures" };
                     categories = newResult.Collections
                         .Where(c => !excludeNames.Contains(c.Name))
                         .OrderBy(c => c.Name)
-                        .Select(c => new DesignerCategory 
-                        { 
-                            Name = c.Name, 
-                            Description = string.IsNullOrWhiteSpace(c.Description) ? "" : c.Description 
+                        .Select(c => 
+                        {
+                            var existing = _categoryCache.FirstOrDefault(x => string.Equals(x.Name, c.Name, StringComparison.OrdinalIgnoreCase));
+                            if (existing != null)
+                            {
+                                if (!string.IsNullOrWhiteSpace(c.Description)) existing.Description = c.Description;
+                                return existing;
+                            }
+                            return new DesignerCategory { Name = c.Name, Description = c.Description ?? "" };
                         }).ToList();
                 }
             }
@@ -167,8 +184,7 @@ public class AlbumCollectionService : IAlbumCollectionService
                 // 成功后同步到本地缓存
                 try
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-                    await File.WriteAllTextAsync(cachePath, json);
+                    await TrySaveCacheIfChangedAsync(cachePath, json);
 
                     // 同步清理本地多余的缓存文件 (Orphaned Cache Cleanup)
                     var indexCacheDir = Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes");
@@ -224,16 +240,8 @@ public class AlbumCollectionService : IAlbumCollectionService
             json = await _http.GetStringAsync(url);
             Log($"Fetched remote index for '{name}' from {url}");
 
-            // 成功后更新本地缓存
-            try
-            {
-                Directory.CreateDirectory(cacheDir);
-                await File.WriteAllTextAsync(cachePath, json);
-            }
-            catch (Exception ex)
-            {
-                Log($"Failed to save cache for '{name}': {ex.Message}");
-            }
+            // 使用统一的按需同步逻辑
+            await TrySaveCacheIfChangedAsync(cachePath, json);
         }
         catch (Exception ex)
         {
@@ -490,13 +498,8 @@ public class AlbumCollectionService : IAlbumCollectionService
             json = await _http.GetStringAsync(finalUrl);
             Log($"Fetched remote index for community repo '{name}'");
             
-            try
-            {
-                var cacheDir = Path.Combine(AppContext.BaseDirectory, "Cache", "CommunityIndexes");
-                if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
-                var cachePath = Path.Combine(cacheDir, $"{name}.json");
-                await File.WriteAllTextAsync(cachePath, json);
-            } catch { }
+            var cachePath = Path.Combine(AppContext.BaseDirectory, "Cache", "CommunityIndexes", $"{name}.json");
+            await TrySaveCacheIfChangedAsync(cachePath, json);
         }
         catch (Exception ex)
         {
@@ -999,6 +1002,28 @@ public class AlbumCollectionService : IAlbumCollectionService
             ? MirrorDomainRegistry.AlbumDownloadDomain 
             : $"download.{baseHost}";
         return $"https://{downloadDomain}/{encodedCategory}/{encodedSubFolder}/{encodedFileName}";
+    }
+
+    private async Task TrySaveCacheIfChangedAsync(string cachePath, string newContent)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(cachePath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+            if (File.Exists(cachePath))
+            {
+                var oldContent = await File.ReadAllTextAsync(cachePath);
+                if (oldContent.Trim() == newContent.Trim()) return;
+            }
+
+            await File.WriteAllTextAsync(cachePath, newContent);
+            Log($"Cache updated: {Path.GetFileName(cachePath)}");
+        }
+        catch (Exception ex)
+        {
+            Log($"Failed to save cache to {cachePath}: {ex.Message}");
+        }
     }
 
     private static void Log(string message)
