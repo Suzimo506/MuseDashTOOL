@@ -46,6 +46,8 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             }
 
             var item = new DownloadTaskItem(chart);
+            item.DestinationPath = GetUniqueDestinationPath(chart);
+
             Tasks.Add(item);
 
             if (item.Chart.CoverImage == null && !string.IsNullOrEmpty(item.Chart.CoverUrl))
@@ -55,6 +57,27 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
             _ = ProcessDownloadAsync(item);
         });
+    }
+
+    private string GetUniqueDestinationPath(MdmcChart chart)
+    {
+        var gamePath = _configService.Config.GamePath;
+        if (string.IsNullOrEmpty(gamePath)) return string.Empty;
+
+        var albumsDir = Path.Combine(gamePath, "Custom_Albums");
+        if (!Directory.Exists(albumsDir)) Directory.CreateDirectory(albumsDir);
+
+        static string Safe(string s) => string.Join("_", (s ?? "Unknown").Split(Path.GetInvalidFileNameChars()));
+        var baseName = $"{Safe(chart.Title)} - {Safe(chart.Artist)}";
+        var finalPath = Path.Combine(albumsDir, $"{baseName}.mdm");
+
+        int count = 1;
+        // 避让队列冲突或会话已下载路径
+        while (Tasks.Any(t => t.DestinationPath == finalPath) || SessionDownloadedFiles.Contains(Path.GetFullPath(finalPath)))
+        {
+            finalPath = Path.Combine(albumsDir, $"{baseName} ({count++}).mdm");
+        }
+        return finalPath;
     }
 
     private async Task LoadCoverAsync(DownloadTaskItem item)
@@ -137,18 +160,11 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                     if (ct.IsCancellationRequested)
                         return;
 
-                    var gamePath = _configService.Config.GamePath;
-                    if (string.IsNullOrEmpty(gamePath))
-                        throw new Exception("游戏路径未设置，请先在设置中配置游戏目录");
-
-                    var albumsDir = Path.Combine(gamePath, "Custom_Albums");
-                    if (!Directory.Exists(albumsDir))
-                        Directory.CreateDirectory(albumsDir);
-
-                    static string Safe(string s) => string.Join("_", s.Split(Path.GetInvalidFileNameChars()));
-                    var fileName = $"{Safe(item.Chart.Title)} - {Safe(item.Chart.Artist)}.mdm";
                     if (string.IsNullOrEmpty(item.DestinationPath))
-                        item.DestinationPath = Path.Combine(albumsDir, fileName);
+                        item.DestinationPath = GetUniqueDestinationPath(item.Chart);
+
+                    if (string.IsNullOrEmpty(item.DestinationPath))
+                        throw new Exception("无法确定下载路径，请检查游戏目录设置");
 
                     RuntimeLog.Write("DownloadManager", $"Download start/resume: title='{item.Chart.Title}', url='{item.Chart.DownloadUrl}', downloaded={item.DownloadedBytes}, retry={retryCount}");
 

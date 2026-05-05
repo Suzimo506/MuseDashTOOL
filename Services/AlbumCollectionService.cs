@@ -121,8 +121,8 @@ public class AlbumCollectionService : IAlbumCollectionService
         await _collectionsLock.WaitAsync();
         try
         {
-            if (_categoryCache != null)
-                return _categoryCache;
+            // 移除内存缓存拦截，确保后台同步任务能真正触发网络请求
+            // 与 GetChartsAsync 逻辑对齐，由调用方（ViewModel）控制本地/远端的加载顺序
 
         List<DesignerCategory> categories = new();
         var cachePath = Path.Combine(AppContext.BaseDirectory, "Cache", "FoldersList.json");
@@ -237,7 +237,13 @@ public class AlbumCollectionService : IAlbumCollectionService
         }
         catch (Exception ex)
         {
-            Log($"Remote fetch failed for '{name}': {ex.Message}");
+            Log($"Remote fetch failed for '{name}': {ex.Message}. Falling back to local cache.");
+            
+            // 远端失败，回退到本地缓存读取，保证界面不为空
+            if (File.Exists(cachePath))
+            {
+                try { json = await File.ReadAllTextAsync(cachePath); } catch { }
+            }
         }
 
         if (string.IsNullOrEmpty(json))
@@ -295,7 +301,7 @@ public class AlbumCollectionService : IAlbumCollectionService
            cleanTitle = Regex.Replace(cleanTitle, @"^\[(?:Lv|LV|lv)[.\s]?\s*[^\]]+\]\s*", "", RegexOptions.IgnoreCase);
 
            charts.Add(new DesignerChart {
-               Id = item.Id,
+               Id = !string.IsNullOrWhiteSpace(item.Id) ? item.Id : (item.DownloadUrl ?? Guid.NewGuid().ToString()),
                Title = cleanTitle,
                Artist = item.Artist,
                Author = item.Charter,
@@ -364,7 +370,8 @@ public class AlbumCollectionService : IAlbumCollectionService
            string cleanTitle = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : (item.Title ?? "");
            cleanTitle = Regex.Replace(cleanTitle, @"^\[(?:Lv|LV|lv)[.\s]?\s*[^\]]+\]\s*", "", RegexOptions.IgnoreCase);
            charts.Add(new DesignerChart {
-               Id = item.Id, Title = cleanTitle, Artist = item.Artist, Author = item.Charter,
+               Id = !string.IsNullOrWhiteSpace(item.Id) ? item.Id : (item.DownloadUrl ?? Guid.NewGuid().ToString()),
+               Title = cleanTitle, Artist = item.Artist, Author = item.Charter,
                Bpm = item.Bpm, CoverUrl = cover, DemoUrl = demo, DemoMp3Url = mp3,
                DownloadUrl = dlUrl, Difficulties = item.Difficulties
            });
@@ -618,7 +625,7 @@ public class AlbumCollectionService : IAlbumCollectionService
 
         return new MdmcChart
         {
-            Id = item.Id,
+            Id = !string.IsNullOrWhiteSpace(item.Id) ? item.Id : (item.DownloadUrl ?? Guid.NewGuid().ToString()),
             Title = cleanTitle.Trim(),
             Artist = item.Artist,
             Charter = item.Charter,

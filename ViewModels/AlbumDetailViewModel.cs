@@ -283,7 +283,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
             _allFullIndex.Add(new MdmcChart
             {
-                Id = c.Id,
+                Id = string.IsNullOrWhiteSpace(c.Id) ? c.DownloadUrl : c.Id,
                 Title = c.Title,
                 Artist = c.Artist,
                 Charter = c.Author,
@@ -307,6 +307,17 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         Charts.Clear();
 
         var query = SearchText.Trim().ToLowerInvariant();
+
+        _filteredIndex = _allFullIndex;
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            _filteredIndex = _allFullIndex.Where(c => 
+                c.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
+                c.Artist?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
+                c.Charter?.Contains(query, StringComparison.OrdinalIgnoreCase) == true
+            ).ToList();
+        }
+
         var cacheKey = GetCacheKey(CurrentPage, query);
 
         if (_pageCache.TryGetValue(cacheKey, out var cached))
@@ -323,16 +334,6 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             IsLoading = false;
             UpdateStatusMessage();
             return;
-        }
-
-        _filteredIndex = _allFullIndex;
-        if (!string.IsNullOrWhiteSpace(query))
-        {
-            _filteredIndex = _allFullIndex.Where(c => 
-                c.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
-                c.Artist?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
-                c.Charter?.Contains(query, StringComparison.OrdinalIgnoreCase) == true
-            ).ToList();
         }
 
         var pageSize = 12;
