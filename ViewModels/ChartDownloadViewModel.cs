@@ -371,6 +371,32 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private void OpenMdmcWebsite()
+    {
+        try
+        {
+            var url = "https://mdmc.moe/";
+            if (OperatingSystem.IsWindows())
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                System.Diagnostics.Process.Start("xdg-open", url);
+            }
+            else if (OperatingSystem.IsMacOS())
+            {
+                System.Diagnostics.Process.Start("open", url);
+            }
+        }
+        catch { /* ignore */ }
+    }
+
+    [RelayCommand]
     private async Task OpenAlbumCollectionAsync()
     {
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)

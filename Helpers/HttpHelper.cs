@@ -324,12 +324,20 @@ public static class HttpHelper
 
         handler.PooledConnectionLifetime = TimeSpan.FromMinutes(2);
         handler.PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30);
-        handler.ConnectTimeout = TimeSpan.FromSeconds(3);
+        handler.ConnectTimeout = TimeSpan.FromSeconds(5);
 
-        var resilientHandler = new ResilientHandler(handler, watchdogTimeout ?? TimeSpan.FromSeconds(4));
+        var resilientHandler = new ResilientHandler(handler, watchdogTimeout ?? TimeSpan.FromSeconds(10));
         var client = new HttpClient(resilientHandler) { Timeout = timeout };
         
-        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL-Downloader");
+        // 伪装成真实浏览器，避免被 Cloudflare 或 MDMC 防火墙拦截
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+        client.DefaultRequestHeaders.Accept.ParseAdd("application/json, text/plain, */*");
+        client.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
+        
+        // 关键：模拟官方网页来源，绕过服务器的来源校验
+        client.DefaultRequestHeaders.Add("Referer", "https://mdmc.moe/");
+        client.DefaultRequestHeaders.Add("Origin", "https://mdmc.moe");
+
         return client;
     }
 

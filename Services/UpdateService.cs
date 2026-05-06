@@ -20,7 +20,7 @@ public interface IUpdateService
 
 public class UpdateService : IUpdateService
 {
-    private const string CurrentVersion = "v1.2.8"; // 当前程序版本号
+    public const string CurrentVersion = "v1.2.8.1"; // 当前程序版本号
     private const string GitHubApiUrl = "https://api.github.com/repos/Suzimo506/MuseDashTOOL/releases/latest";
 
     private readonly HttpClient _httpClient;

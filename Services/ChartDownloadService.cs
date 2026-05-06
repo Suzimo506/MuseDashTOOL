@@ -34,13 +34,21 @@ public class ChartDownloadService : IChartDownloadService
     {
         try
         {
-            var url = $"https://api.mdmc.moe/v3/charts?page={page}&pageSize=20&sort={sort}&order={order}";
+            // v3 接口不再支持 id 和 uploadedAt 排序，映射到最新支持的 latest
+            var finalSort = (sort == "id" || sort == "uploadedAt") ? "latest" : sort.ToLowerInvariant();
+            var finalOrder = order.ToLowerInvariant();
+
+            // API 调整：pageSize 改为 limit，恢复为 20
+            // v3 接口对布尔值大小写敏感，必须使用 ToLower() 确保是全小写
+            var url = $"https://api.mdmc.moe/v3/charts?page={page}&limit=20&sort={finalSort}&order={finalOrder}&rankedOnly={(rankedOnly ? "true" : "false")}";
+            
             if (!string.IsNullOrWhiteSpace(query))
                 url += $"&q={Uri.EscapeDataString(query)}";
-            if (rankedOnly)
-                url += "&rankedOnly=true";
 
-            var result = await _http.GetFromJsonAsync<MdmcChartListResponse>(url, ct);
+            var json = await _http.GetStringAsync(url, ct);
+            var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var result = System.Text.Json.JsonSerializer.Deserialize<MdmcChartListResponse>(json, options);
+            
             if (result != null)
                 return (result.Charts, result.TotalPages);
         }
@@ -50,7 +58,12 @@ public class ChartDownloadService : IChartDownloadService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ChartDownloadService] FetchCharts error: {ex.Message}");
+            RuntimeLog.Write("ChartDownloadService", $"FetchCharts error for URL: {ex.Message}");
+            //日志
+            if (ex is System.Text.Json.JsonException)
+            {
+                RuntimeLog.Write("ChartDownloadService", $"JSON Deserialization failed. Check if API structure changed.");
+            }
         }
         return (new List<MdmcChart>(), 0);
     }
