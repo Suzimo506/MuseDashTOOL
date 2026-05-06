@@ -38,9 +38,9 @@ public class ChartDownloadService : IChartDownloadService
             var finalSort = (sort == "id" || sort == "uploadedAt") ? "latest" : sort.ToLowerInvariant();
             var finalOrder = order.ToLowerInvariant();
 
-            // API 调整：pageSize 改为 limit，恢复为 20
+            // API 调整：pageSize 改为 limit，恢复为 15 (与网页版一致)
             // v3 接口对布尔值大小写敏感，必须使用 ToLower() 确保是全小写
-            var url = $"https://api.mdmc.moe/v3/charts?page={page}&limit=20&sort={finalSort}&order={finalOrder}&rankedOnly={(rankedOnly ? "true" : "false")}";
+            var url = $"https://api.mdmc.moe/v3/charts?page={page}&limit=15&sort={finalSort}&order={finalOrder}&rankedOnly={(rankedOnly ? "true" : "false")}";
             
             if (!string.IsNullOrWhiteSpace(query))
                 url += $"&q={Uri.EscapeDataString(query)}";

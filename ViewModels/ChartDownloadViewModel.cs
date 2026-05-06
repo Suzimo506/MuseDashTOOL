@@ -149,7 +149,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     
     private double _currentScrollY = 0;
     private const int Columns = 4;
-    private const int PageSize = 20;
+    private const int PageSize = 15;
 
     public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
     public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
@@ -703,7 +703,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     /// <summary>异步并行加载封面图 (限制并发数为 7)</summary>
     private async Task LoadCoversAsync()
     {
-        // 翻页模式下直接加载全页封面（由于每页只有 20 个项，直接全部并行加载即可）
+        // 翻页模式下直接加载全页封面（由于每页只有 15 个项，直接全部并行加载即可）
         var tasks = new System.Collections.Generic.List<Task>();
 
         foreach (var chart in Charts)
