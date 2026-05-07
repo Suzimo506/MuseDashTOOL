@@ -679,140 +679,100 @@ public partial class AlbumCollectionViewModel : ObservableObject
     {
         try
         {
-            // 遵循设置中的下载域名
+            var targetDir = Path.Combine(AppContext.BaseDirectory, "Pictures");
+            if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
+
+            // 1. 收集所有需要的整合包名称
+            var requiredNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var cat in Categories) requiredNames.Add(cat.Category.Name);
+            foreach (var cat in CommunityCategories) requiredNames.Add(cat.Name);
+
+            // 2. 检查本地已经存在的封面
+            var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var file in Directory.GetFiles(targetDir))
+            {
+                existingNames.Add(Path.GetFileNameWithoutExtension(file));
+            }
+
+            // 3. 找出缺失的封面
+            var missingNames = requiredNames.Where(n => !existingNames.Contains(n)).ToList();
+            if (missingNames.Count == 0)
+            {
+                _notificationService.ShowSuccess("所有封面均已下载，无需更新！");
+                return;
+            }
+
             var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
             var downloadDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumDownloadDomain) 
                 ? MirrorDomainRegistry.AlbumDownloadDomain 
                 : $"download.{baseHost}";
 
-            // 添加时间戳绕过 Cloudflare 缓存
-            var url = $"https://{downloadDomain}/Pictures.zip?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+            var notification = _notificationService.ShowPersistentProgress($"准备下载 {missingNames.Count} 个新封面...");
+            using var client = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(15));
             
-            // 如果下载源不是 suzimo，则尝试通过镜像助手处理
-            if (_configService.Config.DownloadSource != "suzimo")
+            int successCount = 0;
+            int failCount = 0;
+
+            for (int i = 0; i < missingNames.Count; i++)
             {
-                url = GitHubMirrorHelper.ApplyMirror(url, _configService.Config.DownloadSource);
-            }
-            
-            var notification = _notificationService.ShowPersistentProgress("正在准备下载 Pictures 资源包...");
-            
-            try
-            {
-                var tempFile = Path.Combine(Path.GetTempPath(), "Pictures_temp.zip");
-                using var client = HttpHelper.CreateOptimizedClient(TimeSpan.FromMinutes(10));
-                
-                long downloadedBytes = 0;
-                long totalBytes = 0;
-                
-                // 如果本地已有临时文件，尝试读取其大小以支持断点续传
-                if (File.Exists(tempFile))
-                {
-                    downloadedBytes = new FileInfo(tempFile).Length;
-                }
-
-                int retryCount = 0;
-                int maxRetryCount = 20;
-
-                while (retryCount <= maxRetryCount)
-                {
-                    try
-                    {
-                        var fileMode = downloadedBytes > 0 ? FileMode.Append : FileMode.Create;
-                        using var dst = new FileStream(tempFile, fileMode, FileAccess.Write, FileShare.None, 81920, true);
-                        
-                        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                        if (downloadedBytes > 0)
-                        {
-                            request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(downloadedBytes, null);
-                        }
-
-                        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                        
-                        // 如果服务器不支持断点续传（返回 200 而非 206），则重置
-                        if (downloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.OK)
-                        {
-                            downloadedBytes = 0;
-                            dst.SetLength(0);
-                            dst.Seek(0, SeekOrigin.Begin);
-                        }
-                        
-                        response.EnsureSuccessStatusCode();
-
-                        if (totalBytes == 0)
-                        {
-                            totalBytes = response.Content.Headers.ContentLength ?? 0;
-                            if (downloadedBytes > 0 && response.StatusCode == System.Net.HttpStatusCode.PartialContent)
-                                totalBytes += downloadedBytes;
-                        }
-
-                        using var src = await response.Content.ReadAsStreamAsync();
-                        var buffer = new byte[81920];
-                        int read;
-
-                        // 看门狗保护：15秒无响应则断开重连
-                        while ((read = await src.ReadAsync(buffer, 0, buffer.Length).WaitAsync(TimeSpan.FromSeconds(15))) > 0)
-                        {
-                            await dst.WriteAsync(buffer, 0, read);
-                            downloadedBytes += read;
-                            
-                            if (totalBytes > 0)
-                            {
-                                var progress = (double)downloadedBytes / totalBytes * 100;
-                                Avalonia.Threading.Dispatcher.UIThread.Post(() => {
-                                    notification.ProgressValue = progress;
-                                    notification.Message = $"正在下载 Pictures (续传中: {progress:F1}%) - {(downloadedBytes / 1024.0 / 1024.0):F1}MB / {(totalBytes / 1024.0 / 1024.0):F1}MB";
-                                });
-                            }
-                        }
-                        
-                        await dst.FlushAsync();
-                        break; // 下载完成，跳出重试循环
-                    }
-                    catch (Exception ex)
-                    {
-                        retryCount++;
-                        RuntimeLog.Write("DownloadPictures", $"下载异常 (重试 {retryCount}/{maxRetryCount}): {ex.Message}");
-                        if (retryCount > maxRetryCount) throw;
-                        await Task.Delay(3000); // 停顿后重试
-                        
-                        // 更新已下载字节数，准备下一次续传
-                        if (File.Exists(tempFile))
-                            downloadedBytes = new FileInfo(tempFile).Length;
-                    }
-                }
-
-                _notificationService.RemoveNotification(notification);
-                var extractNotif = _notificationService.ShowPersistentProgress("正在解压 Pictures 资源...");
-                
-                await Task.Run(() =>
-                {
-                    var extractPath = AppContext.BaseDirectory;
-                    var targetDir = Path.Combine(extractPath, "Pictures");
-                    
-                    // 解压前先清理旧文件夹，防止文件名冲突或乱码残留
-                    if (Directory.Exists(targetDir))
-                    {
-                        Directory.Delete(targetDir, true);
-                    }
-
-                    // 强制指定 GBK 编码进行解压，防止中文文件名乱码
-                    ZipFile.ExtractToDirectory(tempFile, extractPath, System.Text.Encoding.GetEncoding(936), true);
+                var name = missingNames[i];
+                // 确保在主线程更新 UI
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+                    notification.ProgressValue = (double)i / missingNames.Count * 100;
+                    notification.Message = $"正在下载封面: {name} ({i + 1}/{missingNames.Count})";
                 });
 
-                _notificationService.RemoveNotification(extractNotif);
-                _notificationService.ShowSuccess("Pictures 资源同步完成！");
-                
-                if (File.Exists(tempFile)) File.Delete(tempFile);
-                
-                // 刷新封面
-                foreach (var cat in Categories) cat.LoadCoverImage();
-                foreach (var cat in CommunityCategories) cat.LoadCoverImage();
+                var encodedName = Uri.EscapeDataString(name);
+                // 默认尝试 png，如果失败再尝试 jpg 等常见格式
+                var extensions = new[] { ".png", ".jpg", ".jpeg" };
+                bool downloaded = false;
+
+                foreach (var ext in extensions)
+                {
+                    var url = $"https://{downloadDomain}/Pictures/{encodedName}{ext}";
+                    
+                    if (_configService.Config.DownloadSource != "suzimo")
+                    {
+                        url = GitHubMirrorHelper.ApplyMirror(url, _configService.Config.DownloadSource);
+                    }
+
+                    try
+                    {
+                        using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var targetPath = Path.Combine(targetDir, $"{name}{ext}");
+                            using var fs = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                            await response.Content.CopyToAsync(fs);
+                            downloaded = true;
+                            successCount++;
+                            break; // 成功下载后跳出后缀重试循环
+                        }
+                    }
+                    catch { } // 忽略 404 或网络错误，尝试下一个后缀
+                }
+
+                if (!downloaded)
+                {
+                    failCount++;
+                    RuntimeLog.Write("DownloadPictures", $"Failed to download cover for {name}");
+                }
             }
-            catch (Exception ex)
+
+            _notificationService.RemoveNotification(notification);
+
+            if (failCount > 0)
             {
-                _notificationService.RemoveNotification(notification);
-                _notificationService.ShowFailure("Pictures 下载失败", ex.Message);
+                _notificationService.ShowInfo($"封面更新完成！成功 {successCount} 个，失败 {failCount} 个。", 3000);
             }
+            else
+            {
+                _notificationService.ShowSuccess($"封面更新完成！成功下载 {successCount} 个新封面。");
+            }
+
+            // 刷新封面 (先释放旧资源，再重新加载，否则默认图不会被覆盖)
+            foreach (var cat in Categories) { cat.ReleaseResources(); cat.LoadCoverImage(); }
+            foreach (var cat in CommunityCategories) { cat.ReleaseResources(); cat.LoadCoverImage(); }
         }
         catch (Exception ex)
         {

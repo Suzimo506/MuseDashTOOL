@@ -1,8 +1,26 @@
-{
-    "id": "1.2.8",
-    "is_enabled": true,
-    "title": "v1.2.8 更新内容",
-    "content": "1、修复整合包描述不显示的问题\n2、修复了整合包全局搜索界面某些难度不显示的问题\n3、修复了整合包界面一键下载按键失效的问题。",
-    "action_button_text": "进入新版喵斯兔",
-    "cancel_button_text": "不再显示该弹窗"
-}
+[
+    {
+        "id": "1.2.9",
+        "is_enabled": true,
+        "title": "v1.2.9 更新内容",
+        "content": "1、优化了谱面下载界面mdmc的访问速度，旧版本的喵斯兔如果无法显示页面请更新至最新版本\n2、修复了若干个BUG，体验优化\n3、喵斯兔终于有自己的图标了！\n《使用说明》里有新内容，记得去看哦~",
+        "action_button_text": "进入新版喵斯兔",
+        "cancel_button_text": "不再显示该弹窗"
+    },
+    {
+        "id": "notice_20260507",
+        "is_enabled": true,
+        "title": "公告",
+        "content": "1、“我的账号”因musedash.moe后端挂掉了，暂时无法使用，需要查看定级可以进入Q群内使用bot查看mdb50\n2、mdmc.moe昨日起（2026.5.6）后端压力大，可能谱面下载界面会遇到无法加载、加载缓慢、下载缓慢的问题，请耐心等待恢复或切换网络环境，直接点击按键进入mdmc.moe可改善访问速度。（整合包下载不受影响）",
+        "action_button_text": "知道了",
+        "cancel_button_text": "不再提醒"
+    },
+    {
+        "id": "SuDa_Collection",
+        "is_enabled": true,
+        "title": "整合包更新公告",
+        "content": "增加新曲包《苏达的个人谱面仓库》！欢迎各位前往“谱面下载”的“整合包”分区进行下载体验！点击下载封面按键可以自动补全新封面。",
+        "action_button_text": "下次一定",
+        "cancel_button_text": "不再提醒"
+    }
+]

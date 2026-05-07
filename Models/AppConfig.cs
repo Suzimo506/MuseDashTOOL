@@ -117,6 +117,7 @@ public class NoticeInfo
 [JsonSerializable(typeof(ModInfo[]))]
 [JsonSerializable(typeof(GitHubRelease[]))]
 [JsonSerializable(typeof(NoticeInfo))]
+[JsonSerializable(typeof(System.Collections.Generic.List<NoticeInfo>))]
 [JsonSerializable(typeof(MirrorDomainsConfig))]
 [JsonSerializable(typeof(MuseDashAccountInfo))]
 [JsonSerializable(typeof(MdMoePlayerResponse))]

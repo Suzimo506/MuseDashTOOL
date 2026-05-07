@@ -9,7 +9,7 @@ namespace MdModManager.Services;
 
 public interface IAnnouncementService
 {
-    Task<NoticeInfo?> GetLatestAnnouncementAsync();
+    Task<System.Collections.Generic.List<NoticeInfo>?> GetLatestAnnouncementsAsync();
 }
 
 public class AnnouncementService : IAnnouncementService
@@ -23,7 +23,7 @@ public class AnnouncementService : IAnnouncementService
         // 设置较短的超时时间，避免网络环境差时卡顿
     }
 
-    public async Task<NoticeInfo?> GetLatestAnnouncementAsync()
+    public async Task<System.Collections.Generic.List<NoticeInfo>?> GetLatestAnnouncementsAsync()
     {
         try
         {
@@ -44,18 +44,36 @@ public class AnnouncementService : IAnnouncementService
                 }
             }
 
+            string jsonContent = "";
             if (localPath != null)
             {
                 System.Diagnostics.Debug.WriteLine($"Loading local announcement from: {System.IO.Path.GetFullPath(localPath)}");
-                var localJson = await System.IO.File.ReadAllTextAsync(localPath);
-                var notice = JsonSerializer.Deserialize<NoticeInfo>(localJson, AppJsonContext.Default.NoticeInfo);
-                if (notice != null) return notice;
+                jsonContent = await System.IO.File.ReadAllTextAsync(localPath);
+            }
+            else
+            {
+                // 本地没有则请求远程
+                System.Diagnostics.Debug.WriteLine("Fetching remote announcement...");
+                jsonContent = await _httpClient.GetStringAsync(AnnouncementUrl);
             }
 
-            // 本地没有则请求远程
-            System.Diagnostics.Debug.WriteLine("Fetching remote announcement...");
-            var response = await _httpClient.GetStringAsync(AnnouncementUrl);
-            return JsonSerializer.Deserialize<NoticeInfo>(response, AppJsonContext.Default.NoticeInfo);
+            if (!string.IsNullOrWhiteSpace(jsonContent))
+            {
+                try
+                {
+                    // 优先尝试解析为数组
+                    var list = JsonSerializer.Deserialize<System.Collections.Generic.List<NoticeInfo>>(jsonContent, AppJsonContext.Default.ListNoticeInfo);
+                    if (list != null) return list;
+                }
+                catch
+                {
+                    // 如果不是数组，则尝试解析为单个对象（向下兼容）
+                    var single = JsonSerializer.Deserialize<NoticeInfo>(jsonContent, AppJsonContext.Default.NoticeInfo);
+                    if (single != null) return new System.Collections.Generic.List<NoticeInfo> { single };
+                }
+            }
+
+            return null;
         }
         catch (Exception ex)
         {

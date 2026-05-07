@@ -133,12 +133,28 @@
                             <TextBlock FontSize="15" Foreground="{DynamicResource ThemeTextMainBrush}" Text="（非常推荐）"/>
                         </WrapPanel>
                         <TextBlock FontSize="15" Foreground="{DynamicResource ThemeTextMainBrush}" TextWrapping="Wrap"
-                                   Text="可以查看群文档解决你大部分的问题，或者在群里提问。这个群还有很多mdmc上没有的优质谱面"/>
+                                   Text="可以查看群文档解决你大部分的问题，或者在群里提问。GreenHub以及大部分群友的谱面都收录到了“整合包”分区，还有一些零散的谱面在群文件，等待你去发现！"/>
                     </StackPanel>
                 </Border>
 
                 <!-- 正文小节 -->
                 <StackPanel Spacing="25">
+                    <!-- 友情链接 -->
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="■ 友情链接" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
+                        <WrapPanel Orientation="Horizontal">
+                            <TextBlock Text="在此推荐一个网站 " Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                            <Button Theme="{StaticResource LinkTextBtn}" 
+                                    Command="{Binding OpenUrlCommand}" 
+                                    CommandParameter="https://euterpe-org.com">
+                                <TextBlock Text="Euterpe-org.com" Foreground="#FF6699" TextDecorations="Underline"/>
+                            </Button>
+                            <TextBlock Text="这上面收录了各类mod，支持谱面下载、上传等功能，是一个非常优秀的网站" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                        </WrapPanel>
+                        <TextBlock TextWrapping="Wrap" LineHeight="22" Foreground="{DynamicResource ThemeTextMainBrush}"
+                                   Text="（确切来说Euterpe不止网站，将来会非常宏大与全面），作者本人也参与了Euterpe的部分开发，欢迎各位前往体验。（在mod下载界面点击下载按键也会直接跳转）"/>
+                    </StackPanel>
+
                     <!-- 游玩前准备 (添加粉色跳转链接) -->
                     <StackPanel Spacing="10">
                         <TextBlock Text="■ 游玩前的准备" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>

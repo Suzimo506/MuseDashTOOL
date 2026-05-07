@@ -97,6 +97,8 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private NoticeInfo? _currentAnnouncement;
 
+    private readonly System.Collections.Generic.Queue<NoticeInfo> _pendingAnnouncements = new();
+
     /// <summary>使用说明按钮是否显示红点提示</summary>
     [ObservableProperty]
     private bool _showTutorialBadge;
@@ -933,22 +935,37 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (_announcementService == null || _configService == null) return;
 
-        var notice = await _announcementService.GetLatestAnnouncementAsync();
-        if (notice != null && notice.IsEnabled)
+        var notices = await _announcementService.GetLatestAnnouncementsAsync();
+        if (notices != null)
         {
-            // 检查该 ID 是否已被屏蔽
-            if (!_configService.Config.SuppressedAnnouncements.Contains(notice.Id))
+            foreach (var notice in notices)
             {
-                CurrentAnnouncement = notice;
-                IsAnnouncementVisible = true;
+                if (notice != null && notice.IsEnabled && !_configService.Config.SuppressedAnnouncements.Contains(notice.Id))
+                {
+                    _pendingAnnouncements.Enqueue(notice);
+                }
             }
+            ShowNextAnnouncement();
+        }
+    }
+
+    private void ShowNextAnnouncement()
+    {
+        if (_pendingAnnouncements.Count > 0)
+        {
+            CurrentAnnouncement = _pendingAnnouncements.Dequeue();
+            IsAnnouncementVisible = true;
+        }
+        else
+        {
+            IsAnnouncementVisible = false;
         }
     }
 
     [RelayCommand]
     private void CloseAnnouncement()
     {
-        IsAnnouncementVisible = false;
+        ShowNextAnnouncement();
     }
 
     [RelayCommand]
@@ -962,7 +979,7 @@ public partial class MainWindowViewModel : ObservableObject
                 await _configService.SaveAsync();
             }
         }
-        IsAnnouncementVisible = false;
+        ShowNextAnnouncement();
     }
 
     // ──────────────────────────────────────────────────────────
@@ -975,12 +992,12 @@ public partial class MainWindowViewModel : ObservableObject
     // ──────────────────────────────────────────────────────────
 
     /// <summary>当前程序版本号（与 UpdateService.CurrentVersion 保持一致）</summary>
-    private const string CurrentAppVersion = "1.2.8.2";
+    private const string CurrentAppVersion = "1.2.9";
 
     /// <summary>初始化所有红点提示状态</summary>
     private void InitializeBadges()
     {
-        // v1.2.8: 使用说明页有新内容
+        // v1.2.9: 使用说明页有新内容
         ShowTutorialBadge = ShouldShowBadge("Tutorial");
 
         // 未来版本可以在这里继续添加，例如:
