@@ -17,6 +17,7 @@ using MdModManager.Helpers;
 using System.Globalization;
 using System.IO.Compression;
 using System.Net.Http;
+using System.Text.Json;
 
 namespace MdModManager.ViewModels;
 
@@ -682,80 +683,103 @@ public partial class AlbumCollectionViewModel : ObservableObject
             var targetDir = Path.Combine(AppContext.BaseDirectory, "Pictures");
             if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
 
-            // 1. 收集所有需要的整合包名称
-            var requiredNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var cat in Categories) requiredNames.Add(cat.Category.Name);
-            foreach (var cat in CommunityCategories) requiredNames.Add(cat.Name);
-
-            // 2. 检查本地已经存在的封面
-            var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var file in Directory.GetFiles(targetDir))
-            {
-                existingNames.Add(Path.GetFileNameWithoutExtension(file));
-            }
-
-            // 3. 找出缺失的封面
-            var missingNames = requiredNames.Where(n => !existingNames.Contains(n)).ToList();
-            if (missingNames.Count == 0)
-            {
-                _notificationService.ShowSuccess("所有封面均已下载，无需更新！");
-                return;
-            }
-
             var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
+            var infoDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumInfoDomain) 
+                ? MirrorDomainRegistry.AlbumInfoDomain 
+                : $"workerdl.{baseHost}";
             var downloadDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumDownloadDomain) 
                 ? MirrorDomainRegistry.AlbumDownloadDomain 
                 : $"download.{baseHost}";
 
-            var notification = _notificationService.ShowPersistentProgress($"准备下载 {missingNames.Count} 个新封面...");
-            using var client = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(15));
+            using var client = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(30));
+            // 清除默认的 mdmc 引用来源，设置为自己的域名，防止 CDN 防盗链拦截
+            client.DefaultRequestHeaders.Referrer = new Uri($"https://{baseHost}/");
+
+            // 1. 获取远端 Pictures 目录下的所有文件清单
+            var listUrl = $"https://{infoDomain}/api/list_pictures";
+            var remoteFiles = new List<string>();
+            try
+            {
+                var json = await client.GetStringAsync(listUrl);
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("files", out var filesArray))
+                {
+                    foreach (var item in filesArray.EnumerateArray())
+                    {
+                        var fileName = item.GetString();
+                        if (!string.IsNullOrEmpty(fileName)) remoteFiles.Add(fileName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                RuntimeLog.Write("DownloadPictures", $"获取远端清单失败: {ex.Message}");
+                _notificationService.ShowFailure("同步失败", "无法获取远端文件清单，请检查网络或 Worker 配置。");
+                return;
+            }
+
+            if (remoteFiles.Count == 0)
+            {
+                _notificationService.ShowSuccess("远端仓库目前没有任何封面。");
+                return;
+            }
+
+            // 2. 检查本地已经存在的文件 (全名匹配)
+            var localFiles = new HashSet<string>(
+                Directory.GetFiles(targetDir).Select(f => Path.GetFileName(f) ?? string.Empty), 
+                StringComparer.OrdinalIgnoreCase);
+
+            // 3. 找出本地缺失的远端文件
+            var missingFiles = remoteFiles.Where(f => !localFiles.Contains(f)).ToList();
+            
+            if (missingFiles.Count == 0)
+            {
+                _notificationService.ShowSuccess("所有封面均已同步至最新，无需更新！");
+                return;
+            }
+
+            var notification = _notificationService.ShowPersistentProgress($"准备同步 {missingFiles.Count} 个新封面...");
             
             int successCount = 0;
             int failCount = 0;
 
-            for (int i = 0; i < missingNames.Count; i++)
+            for (int i = 0; i < missingFiles.Count; i++)
             {
-                var name = missingNames[i];
+                var fileName = missingFiles[i];
                 // 确保在主线程更新 UI
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => {
-                    notification.ProgressValue = (double)i / missingNames.Count * 100;
-                    notification.Message = $"正在下载封面: {name} ({i + 1}/{missingNames.Count})";
+                    notification.ProgressValue = (double)i / missingFiles.Count * 100;
+                    notification.Message = $"正在同步封面: {fileName} ({i + 1}/{missingFiles.Count})";
                 });
 
-                var encodedName = Uri.EscapeDataString(name);
-                // 默认尝试 png，如果失败再尝试 jpg 等常见格式
-                var extensions = new[] { ".png", ".jpg", ".jpeg" };
-                bool downloaded = false;
-
-                foreach (var ext in extensions)
+                var encodedName = Uri.EscapeDataString(fileName);
+                var url = $"https://{downloadDomain}/Pictures/{encodedName}";
+                
+                if (_configService.Config.DownloadSource != "suzimo")
                 {
-                    var url = $"https://{downloadDomain}/Pictures/{encodedName}{ext}";
-                    
-                    if (_configService.Config.DownloadSource != "suzimo")
-                    {
-                        url = GitHubMirrorHelper.ApplyMirror(url, _configService.Config.DownloadSource);
-                    }
-
-                    try
-                    {
-                        using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-                        if (response.IsSuccessStatusCode)
-                        {
-                            var targetPath = Path.Combine(targetDir, $"{name}{ext}");
-                            using var fs = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                            await response.Content.CopyToAsync(fs);
-                            downloaded = true;
-                            successCount++;
-                            break; // 成功下载后跳出后缀重试循环
-                        }
-                    }
-                    catch { } // 忽略 404 或网络错误，尝试下一个后缀
+                    url = GitHubMirrorHelper.ApplyMirror(url, _configService.Config.DownloadSource);
                 }
 
-                if (!downloaded)
+                try
+                {
+                    using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var targetPath = Path.Combine(targetDir, fileName);
+                        using var fs = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                        await response.Content.CopyToAsync(fs);
+                        successCount++;
+                    }
+                    else
+                    {
+                        failCount++;
+                        RuntimeLog.Write("DownloadPictures", $"[FAILURE] 无法下载: {fileName} (HTTP {response.StatusCode})");
+                    }
+                }
+                catch (Exception ex)
                 {
                     failCount++;
-                    RuntimeLog.Write("DownloadPictures", $"Failed to download cover for {name}");
+                    RuntimeLog.Write("DownloadPictures", $"[ERROR] 下载异常 {fileName}: {ex.Message}");
                 }
             }
 
@@ -763,14 +787,14 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
             if (failCount > 0)
             {
-                _notificationService.ShowInfo($"封面更新完成！成功 {successCount} 个，失败 {failCount} 个。", 3000);
+                _notificationService.ShowInfo($"同步完成！成功 {successCount} 个，失败 {failCount} 个。", 3000);
             }
             else
             {
-                _notificationService.ShowSuccess($"封面更新完成！成功下载 {successCount} 个新封面。");
+                _notificationService.ShowSuccess($"同步完成！成功下载 {successCount} 个新封面。");
             }
 
-            // 刷新封面 (先释放旧资源，再重新加载，否则默认图不会被覆盖)
+            // 4. 刷新封面 (先释放旧资源，再重新加载)
             foreach (var cat in Categories) { cat.ReleaseResources(); cat.LoadCoverImage(); }
             foreach (var cat in CommunityCategories) { cat.ReleaseResources(); cat.LoadCoverImage(); }
         }

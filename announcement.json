@@ -19,8 +19,8 @@
         "id": "SuDa_Collection",
         "is_enabled": true,
         "title": "整合包更新公告",
-        "content": "增加新曲包《苏达的个人谱面仓库》！欢迎各位前往“谱面下载”的“整合包”分区进行下载体验！点击下载封面按键可以自动补全新封面。",
-        "action_button_text": "下次一定",
+        "content": "增加新曲包《Dunno的谱面小库》！欢迎各位前往“谱面下载”的“整合包”分区进行下载体验！点击下载封面按键可以自动补全新封面。",
+        "action_button_text": "好耶！",
         "cancel_button_text": "不再提醒"
     }
 ]
