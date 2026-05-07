@@ -256,6 +256,7 @@ public static class HttpHelper
     {
         var handler = new SocketsHttpHandler
         {
+            AutomaticDecompression = DecompressionMethods.All,
             ConnectCallback = async (context, cancellationToken) =>
             {
                 var host = context.DnsEndPoint.Host;
@@ -327,13 +328,25 @@ public static class HttpHelper
         handler.ConnectTimeout = TimeSpan.FromSeconds(5);
 
         var resilientHandler = new ResilientHandler(handler, watchdogTimeout ?? TimeSpan.FromSeconds(10));
-        var client = new HttpClient(resilientHandler) { Timeout = timeout };
+        var client = new HttpClient(resilientHandler) 
+        { 
+            Timeout = timeout,
+            DefaultRequestVersion = new Version(2, 0) // 启用 HTTP/2
+        };
         
         // 伪装成真实浏览器，避免被 Cloudflare 或 MDMC 防火墙拦截
         client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
         client.DefaultRequestHeaders.Accept.ParseAdd("application/json, text/plain, */*");
         client.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
         
+        // 补全现代浏览器的特定安全报头 (Sec-Ch-Ua)
+        client.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\", \"Not-A.Brand\";v=\"99\"");
+        client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Mobile", "?0");
+        client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
+        client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
+        client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
+        client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "same-site");
+
         // 关键：模拟官方网页来源，绕过服务器的来源校验
         client.DefaultRequestHeaders.Add("Referer", "https://mdmc.moe/");
         client.DefaultRequestHeaders.Add("Origin", "https://mdmc.moe");

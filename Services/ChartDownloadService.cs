@@ -25,7 +25,7 @@ public interface IChartDownloadService
 
 public class ChartDownloadService : IChartDownloadService
 {
-    private static readonly HttpClient _http = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(30));
+    private static readonly HttpClient _http = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(30));
 
     public async Task<(IList<MdmcChart> charts, int totalPages)> FetchChartsAsync(
         int page, string sort, string order,
@@ -38,14 +38,32 @@ public class ChartDownloadService : IChartDownloadService
             var finalSort = (sort == "id" || sort == "uploadedAt") ? "latest" : sort.ToLowerInvariant();
             var finalOrder = order.ToLowerInvariant();
 
-            // API 调整：pageSize 改为 limit，恢复为 15 (与网页版一致)
-            // v3 接口对布尔值大小写敏感，必须使用 ToLower() 确保是全小写
-            var url = $"https://api.mdmc.moe/v3/charts?page={page}&limit=15&sort={finalSort}&order={finalOrder}&rankedOnly={(rankedOnly ? "true" : "false")}";
-            
-            if (!string.IsNullOrWhiteSpace(query))
-                url += $"&q={Uri.EscapeDataString(query)}";
+            // 深度模拟网页版的参数顺序和空值处理 (q 放在最前面，即使为空也带着)
+            var url = $"https://api.mdmc.moe/v3/charts?q={Uri.EscapeDataString(query ?? "")}&sort={finalSort}&order={finalOrder}&page={page}&rankedOnly={(rankedOnly ? "true" : "false")}";
 
-            var json = await _http.GetStringAsync(url, ct);
+            string json = "";
+            int retryCount = 3;
+            for (int i = 0; i < retryCount; i++)
+            {
+                try
+                {
+                    json = await _http.GetStringAsync(url, ct);
+                    
+                    // 额外检查：如果返回的是空列表 JSON，且不是第一页，尝试重试
+                    // 假设空列表 JSON 长度很短，例如 {"charts":[],"totalPages":...}
+                    if (json.Contains("\"charts\":[]") && page > 1 && i < retryCount - 1)
+                    {
+                        await Task.Delay(500 * (i + 1), ct); // 指数级退避
+                        continue;
+                    }
+                    break;
+                }
+                catch (Exception) when (i < retryCount - 1)
+                {
+                    await Task.Delay(1000 * (i + 1), ct);
+                }
+            }
+
             var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var result = System.Text.Json.JsonSerializer.Deserialize<MdmcChartListResponse>(json, options);
             

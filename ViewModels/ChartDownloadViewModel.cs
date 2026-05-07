@@ -447,6 +447,13 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         await ReloadAsync();
     }
 
+    /// <summary>强制重新加载当前页面（跳过缓存）</summary>
+    [RelayCommand]
+    public async Task ReloadCurrentPageAsync()
+    {
+        await ReloadAsync(force: true);
+    }
+
     /// <summary>跳转到指定页码</summary>
     [RelayCommand]
     private void StartEditPage()
@@ -569,8 +576,8 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             IList<MdmcChart> charts;
             int totalPages;
 
-            // 3. 尝试在缓存中查找
-            if (_pageCache.TryGetValue(cacheKey, out var cached))
+            // 3. 尝试在缓存中查找 (如果是强制刷新，则跳过缓存直接联网)
+            if (!force && _pageCache.TryGetValue(cacheKey, out var cached))
             {
                 charts = cached.charts;
                 totalPages = cached.totalPages;
@@ -589,8 +596,9 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                     CurrentPage, sort, order, query, !ShowUnranked, ct);
                 charts = result.charts;
                 totalPages = result.totalPages;
-                if (charts.Count == 0 && string.IsNullOrWhiteSpace(query))
+                if (charts.Count == 0 && !string.IsNullOrWhiteSpace(query))
                 {
+                    // 仅在搜索模式下尝试恢复
                     var recovered = await TryRecoverEmptyResultAsync(sort, order, ct);
                     if (recovered != null)
                     {
@@ -598,7 +606,12 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                         totalPages = recovered.Value.totalPages;
                     }
                 }
-                
+                else if (charts.Count == 0 && CurrentPage > 1)
+                {
+                    // 非搜索模式下，如果第 2 页及以后返回空，提示用户手动重试
+                    _notificationService.ShowFailure("翻页失败", "服务器未返回数据，请尝试重试");
+                }
+
                 // 加入缓存
                 AddToCache(cacheKey, (charts, totalPages));
             }
@@ -620,7 +633,12 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            if (myId == _currentLoadId) StatusMessage = "加载失败：" + ex.Message;
+            // 加载失败时，如果不是第一页，考虑恢复页码（可选，或者保持现状提示用户手动刷新）
+            if (myId == _currentLoadId)
+            {
+                StatusMessage = "加载失败：" + ex.Message;
+                _notificationService.ShowFailure("网络异常", "请检查网络或点击页码重试");
+            }
         }
         finally
         {
@@ -636,12 +654,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     /// <summary>由 View 调用，更新当前滚动位置并触发内存管理</summary>
     private async Task<(IList<MdmcChart> charts, int totalPages)?> TryRecoverEmptyResultAsync(string sort, string order, CancellationToken ct)
     {
-        if (CurrentPage > 1)
-        {
-            RuntimeLog.Write("ChartDownloadVM", $"Empty result on page {CurrentPage} for sort={sort}, reset to page 1.");
-            CurrentPage = 1;
-        }
-
+        // 彻底移除自动回跳逻辑，避免服务器波动导致翻页中断
         if (CurrentPage == 1 && !IsAscending)
         {
             var key = GetCacheKey(1, sort, order, "", !ShowUnranked);
