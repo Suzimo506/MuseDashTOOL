@@ -555,6 +555,10 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         var query = SearchText.Trim();
         var cacheKey = GetCacheKey(CurrentPage, sort, order, query, !ShowUnranked);
 
+        // 核心修复：无论是否提前返回，只要发起了新的 ReloadAsync，必须立刻取消上一个未完成的后台请求
+        // 否则如果触发提前返回，后台请求不会被取消，会在完成后强行篡改 UI 数据，导致 UI 与页码脱节
+        _listCts?.Cancel();
+
         // 2. 检查是否已经在显示该页面
         if (!force && cacheKey == _lastLoadedKey && Charts.Count > 0)
         {
@@ -563,7 +567,6 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             return;
         }
 
-        _listCts?.Cancel();
         _listCts = new CancellationTokenSource();
         StopPlayback();
 

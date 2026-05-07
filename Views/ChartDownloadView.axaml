@@ -114,7 +114,7 @@
                     Margin="0,0,16,0">
                 <StackPanel Orientation="Horizontal" Spacing="4">
                     <TextBlock Text="该页面所有谱面来自 mdmc.moe" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"/>
-                    <TextBlock Text="(前往网页可点赞、上传等)" FontSize="11" Foreground="{DynamicResource SvgIconBrush}" Opacity="0.8"/>
+                    <TextBlock Text="(点击前往网页可点赞、上传等)" FontSize="11" Foreground="{DynamicResource SvgIconBrush}" Opacity="0.8"/>
                 </StackPanel>
                 <ToolTip.Tip>
                     <TextBlock Text="点击访问 MDMC 官方网站"/>

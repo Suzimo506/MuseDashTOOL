@@ -866,12 +866,19 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 var remoteCollections = await _collectionService.GetCollectionsAsync();
                 
                 // 比对并刷新目录显示
-                if (remoteCollections.Count != collections.Count || !remoteCollections.Select(c => c.Name).SequenceEqual(collections.Select(c => c.Name)))
+                var remoteNames = remoteCollections.Select(c => c.Name).ToList();
+                var localNames = collections.Select(c => c.Name).ToList();
+                if (remoteNames.Count != localNames.Count || !remoteNames.SequenceEqual(localNames))
                 {
+                    var addedNames = remoteNames.Except(localNames).ToList();
+                    string updateMsg = addedNames.Any() 
+                        ? $"有内容更新了！《{string.Join("》、《", addedNames)}》"
+                        : "曲包目录检测到更新，已自动刷新~";
+
                     Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
                     {
                         await LoadCategoriesAsync(remoteCollections);
-                        _notificationService?.ShowSuccess("曲包目录检测到更新，已自动刷新~");
+                        _notificationService?.ShowSuccess(updateMsg);
                     });
                 }
 

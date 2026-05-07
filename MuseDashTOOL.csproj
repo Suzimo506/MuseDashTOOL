@@ -11,9 +11,9 @@
     <RootNamespace>MdModManager</RootNamespace>
     <AssemblyName>MuseDashTOOL</AssemblyName>
     <ApplicationIcon>Assets\MuseDashTOOL.ico</ApplicationIcon>
-    <Version>1.2.8.1</Version>
-    <AssemblyVersion>1.2.8.1</AssemblyVersion>
-    <FileVersion>1.2.8.1</FileVersion>
+    <Version>1.2.8.2</Version>
+    <AssemblyVersion>1.2.8.2</AssemblyVersion>
+    <FileVersion>1.2.8.2</FileVersion>
     <PublishSingleFile>true</PublishSingleFile>
     <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>true</SelfContained>
