@@ -21,12 +21,15 @@ public partial class AlbumCollectionView : UserControl
                     if (args.PropertyName == nameof(AlbumCollectionViewModel.RequestedSearchScrollY) 
                         && vm.RequestedSearchScrollY.HasValue)
                     {
-                        var y = vm.RequestedSearchScrollY.Value;
                         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                         {
                             var sv = this.FindControl<ScrollViewer>("AlbumScrollViewer");
                             if (sv != null)
                             {
+                                var searchAnchor = this.FindControl<Control>("SearchResultsAnchor");
+                                var y = searchAnchor != null && vm.HasSearchResults
+                                    ? Math.Max(0, searchAnchor.Bounds.Y)
+                                    : vm.RequestedSearchScrollY.Value;
                                 sv.Offset = new Avalonia.Vector(sv.Offset.X, y);
                             }
                         }, Avalonia.Threading.DispatcherPriority.Background);

@@ -628,6 +628,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
                     CustomDemoUrl = chart.DemoUrl,
                     CustomDemoMp3Url = chart.DemoMp3Url,
                     CustomDownloadUrl = chart.DownloadUrl,
+                    SourceCategoryName = cat.Name,
+                    IsCommunitySource = false,
                     Sheets = ExtractDifficultySheets(chart),
                     SearchText = query // 用于粉色高亮
                 });
@@ -637,6 +639,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
             foreach (var (catName, chart) in communitySearchResults)
             {
                 chart.SearchText = query; // 用于粉色高亮
+                chart.SourceCategoryName = catName;
+                chart.IsCommunitySource = true;
                 allChartResults.Add(chart);
             }
 
@@ -1090,6 +1094,35 @@ public partial class AlbumCollectionViewModel : ObservableObject
             mainVm.CurrentPage = detailVm;
             await detailVm.InitializeAsync(item.Name, item.RepoUrl);
         }
+    }
+
+    [RelayCommand]
+    private async Task OpenSearchResultCategoryAsync(MdmcChart chart)
+    {
+        if (chart == null || string.IsNullOrWhiteSpace(chart.SourceCategoryName))
+            return;
+
+        if (chart.IsCommunitySource)
+        {
+            var targetCommunityCategory = _allCommunityCategoriesBackup
+                .FirstOrDefault(x => string.Equals(x.Name, chart.SourceCategoryName, StringComparison.OrdinalIgnoreCase));
+
+            if (targetCommunityCategory != null)
+            {
+                await OpenCommunityCategoryAsync(targetCommunityCategory);
+            }
+
+            return;
+        }
+
+        var targetCategory = _allCategoriesBackup
+            .Concat(_allPersonalRepositoryCategoriesBackup)
+            .FirstOrDefault(x => string.Equals(x.Category.Name, chart.SourceCategoryName, StringComparison.OrdinalIgnoreCase));
+
+        if (targetCategory == null)
+            return;
+
+        await OpenCategoryAsync(targetCategory);
     }
 
     [RelayCommand]

@@ -355,7 +355,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         }
 
         var charts = new List<DesignerChart>();
-        foreach(var item in items) {
+        foreach(var item in items.AsEnumerable().Reverse()) {
            var cover = BuildR2ResourceUrl(baseHost, name, "covers", item.CoverUrl);
            var demo = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoUrl);
            var mp3 = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoMp3Url);
@@ -434,7 +434,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         if (items == null) return new List<DesignerChart>();
 
         var charts = new List<DesignerChart>();
-        foreach(var item in items) {
+        foreach(var item in items.AsEnumerable().Reverse()) {
            var cover = BuildR2ResourceUrl(baseHost, name, "covers", item.CoverUrl);
            var demo = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoUrl);
            var mp3 = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoMp3Url);

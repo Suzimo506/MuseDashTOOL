@@ -100,17 +100,45 @@
                     </StackPanel>
                 </Button>
             </Panel>
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0">
-                <TextBlock Text="整合包"
-                           FontSize="22"
-                           FontWeight="Bold">
-                    <TextBlock.Foreground>
-                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
-                            <GradientStop Color="#FF00FF" Offset="0"/>
-                            <GradientStop Color="#FF69B4" Offset="1"/>
-                        </LinearGradientBrush>
-                    </TextBlock.Foreground>
-                </TextBlock>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0" Spacing="2">
+                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="整合包"
+                               FontSize="22"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                <GradientStop Color="#FF00FF" Offset="0"/>
+                                <GradientStop Color="#FF69B4" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+                    <Button IsVisible="{Binding !IsSearching}"
+                            Theme="{StaticResource SmallRoundBtn}"
+                            ToolTip.Tip="跳转分类"
+                            VerticalAlignment="Center"
+                            Padding="8,5">
+                        <Button.Flyout>
+                            <Flyout Placement="Bottom">
+                                <StackPanel Spacing="8" Margin="4">
+                                    <Button Theme="{StaticResource SmallRoundBtn}" Click="OnJumpToCategoryClick" Tag="pack">
+                                        <TextBlock Text="曲包"/>
+                                    </Button>
+                                    <Button Theme="{StaticResource SmallRoundBtn}" Click="OnJumpToCategoryClick" Tag="personal">
+                                        <TextBlock Text="谱师个人仓库"/>
+                                    </Button>
+                                    <Button Theme="{StaticResource SmallRoundBtn}" Click="OnJumpToCategoryClick" Tag="community">
+                                        <TextBlock Text="群友自制谱面"/>
+                                    </Button>
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                        <PathIcon Data="M128 213.333333h170.666667a42.666667 42.666667 0 1 0 0-85.333333H128a42.666667 42.666667 0 1 0 0 85.333333zM128 554.666667h213.333333a42.666667 42.666667 0 0 0 0-85.333334H128a42.666667 42.666667 0 0 0 0 85.333334zM938.666667 304.768C938.666667 157.269333 824.064 42.666667 676.565333 42.666667 539.050667 42.666667 426.666667 159.573333 426.666667 304.768 426.666667 440.021333 541.269333 554.666667 676.565333 554.666667 821.76 554.666667 938.666667 442.282667 938.666667 304.768z m-426.666667 0C512 205.952 586.965333 128 676.565333 128 776.96 128 853.333333 204.373333 853.333333 304.768 853.333333 394.368 775.381333 469.333333 676.565333 469.333333 588.416 469.333333 512 392.96 512 304.768zM128 896h597.333333a42.666667 42.666667 0 0 0 0-85.333333H128a42.666667 42.666667 0 0 0 0 85.333333zM728.746667 528.810667l128 298.666666a42.666667 42.666667 0 1 0 78.506666-33.621333l-128-298.666667a42.666667 42.666667 0 1 0-78.506666 33.621334z"
+                                  Foreground="{DynamicResource SvgIconBrush}"
+                                  Width="20"
+                                  Height="20"/>
+                    </Button>
+                </StackPanel>
                 <!-- 搜索结果计数或下载/试听状态 -->
                 <TextBlock Text="{Binding StatusMessage}" 
                            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" 
@@ -121,34 +149,6 @@
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
-                <Button IsVisible="{Binding !IsSearching}"
-                        Theme="{StaticResource SmallRoundBtn}"
-                        Margin="0,0,15,0"
-                        ToolTip.Tip="跳转分类">
-                    <Button.Flyout>
-                        <Flyout Placement="Bottom">
-                            <StackPanel Spacing="8" Margin="4">
-                                <Button Theme="{StaticResource SmallRoundBtn}" Click="OnJumpToCategoryClick" Tag="pack">
-                                    <TextBlock Text="曲包"/>
-                                </Button>
-                                <Button Theme="{StaticResource SmallRoundBtn}" Click="OnJumpToCategoryClick" Tag="personal">
-                                    <TextBlock Text="谱师个人仓库"/>
-                                </Button>
-                                <Button Theme="{StaticResource SmallRoundBtn}" Click="OnJumpToCategoryClick" Tag="community">
-                                    <TextBlock Text="群友自制谱面"/>
-                                </Button>
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <PathIcon Data="M60.235294 90.352941m-60.235294 0a60.235294 60.235294 0 1 0 120.470588 0 60.235294 60.235294 0 1 0-120.470588 0Z M361.411765 150.588235h602.352941c36.141176 0 60.235294-24.094118 60.235294-60.235294s-24.094118-60.235294-60.235294-60.235294H361.411765c-36.141176 0-60.235294 24.094118-60.235294 60.235294s24.094118 60.235294 60.235294 60.235294z M60.235294 512m-60.235294 0a60.235294 60.235294 0 1 0 120.470588 0 60.235294 60.235294 0 1 0-120.470588 0Z M963.764706 451.764706H361.411765c-36.141176 0-60.235294 24.094118-60.235294 60.235294s24.094118 60.235294 60.235294 60.235294h602.352941c36.141176 0 60.235294-24.094118 60.235294-60.235294s-24.094118-60.235294-60.235294-60.235294z M60.235294 933.647059m-60.235294 0a60.235294 60.235294 0 1 0 120.470588 0 60.235294 60.235294 0 1 0-120.470588 0Z M963.764706 873.411765H361.411765c-36.141176 0-60.235294 24.094118-60.235294 60.235294s24.094118 60.235294 60.235294 60.235294h602.352941c36.141176 0 60.235294-24.094118 60.235294-60.235294s-24.094118-60.235294-60.235294-60.235294z"
-                                  Foreground="{DynamicResource SvgIconBrush}"
-                                  Width="18"
-                                  Height="18"/>
-                        <TextBlock Text="跳转分类" VerticalAlignment="Center" Foreground="{DynamicResource SvgIconBrush}"/>
-                    </StackPanel>
-                </Button>
-
                 <!-- 下载 Pictures 按钮 -->
                 <Button Command="{Binding DownloadPicturesCommand}"
                         Theme="{StaticResource RobustPlainIconBtn}"
@@ -221,7 +221,7 @@
                            VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,0,20">
                     <!-- 搜索出来的谱面列表 (仅在搜索且有结果时显示) -->
-                    <StackPanel IsVisible="{Binding HasSearchResults}" Margin="10,0,10,20">
+                    <StackPanel x:Name="SearchResultsAnchor" IsVisible="{Binding HasSearchResults}" Margin="10,0,10,20">
                         <ItemsControl ItemsSource="{Binding SearchResults}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -261,9 +261,10 @@
                                                     </ItemsControl>
                                                 </StackPanel>
 
-                                                <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+                                                <Grid ColumnDefinitions="*,*,*" Margin="0,4,0,0">
                                                     <Button Grid.Column="0" Theme="{StaticResource RobustPlainIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="试听 / 停止"><Panel><PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/><PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Panel></Button>
-                                                    <Button Grid.Column="1" Theme="{StaticResource RobustPlainIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="下载到 Custom_Albums"><PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Button>
+                                                    <Button Grid.Column="1" Theme="{StaticResource RobustPlainIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).OpenSearchResultCategoryCommand}" CommandParameter="{Binding}" ToolTip.Tip="打开所在整合包"><PathIcon Width="24" Height="24" Foreground="{DynamicResource SvgIconBrush}" Data="M730.624 685.568c-142.25-8.107-278.357 14.848-408.49 72.277A773.803 773.803 0 0 0 0 1024c1.707-10.41 3.243-20.736 5.12-31.147a782.507 782.507 0 0 1 5.803-31.146C38.4 834.133 82.432 713.3 151.296 602.88c70.656-113.067 161.28-203.776 280.576-261.973a645.973 645.973 0 0 1 243.456-62.976c18.005-1.28 36.096-1.707 54.784-2.646V5.461l3.328-2.645 460.885 477.867-463.701 475.989V685.568z"/></Button>
+                                                    <Button Grid.Column="2" Theme="{StaticResource RobustPlainIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="下载到 Custom_Albums"><PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Button>
                                                 </Grid>
                                             </StackPanel>
                                         </Grid>

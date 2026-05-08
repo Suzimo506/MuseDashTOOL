@@ -75,6 +75,12 @@ public partial class MdmcChart : ObservableObject
     [property: JsonIgnore]
     public string? CustomDownloadUrl { get; set; }
 
+    [property: JsonIgnore]
+    public string? SourceCategoryName { get; set; }
+
+    [property: JsonIgnore]
+    public bool IsCommunitySource { get; set; }
+
     // 派生 URL
     public string CoverUrl => !string.IsNullOrWhiteSpace(CustomCoverUrl) ? CustomCoverUrl : $"https://cdn.mdmc.moe/charts/{Id}/cover.png";
     public string DemoUrl  => !string.IsNullOrWhiteSpace(CustomDemoUrl) ? CustomDemoUrl : $"https://cdn.mdmc.moe/charts/{Id}/demo.ogg";
