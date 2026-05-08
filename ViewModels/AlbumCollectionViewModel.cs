@@ -344,6 +344,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
     private readonly List<CommunityCategoryItemViewModel> _allCommunityCategoriesBackup = new();
     private bool _isInitialized;
     private bool _isSyncing;
+    private bool _isDownloadViewModelSubscribed;
 
     [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _categories = new();
     [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _personalRepositoryCategories = new();
@@ -891,21 +892,27 @@ public partial class AlbumCollectionViewModel : ObservableObject
     public async Task InitializeAsync()
     {
         if (_isSyncing) return;
-        _isSyncing = true;
+
+        if (!_isDownloadViewModelSubscribed)
+        {
+            _chartDownloadViewModel.PropertyChanged += OnDownloadViewModelPropertyChanged;
+            _isDownloadViewModelSubscribed = true;
+        }
 
         if (_isInitialized && (Categories.Count > 0 || PersonalRepositoryCategories.Count > 0 || CommunityCategories.Count > 0))
         {
             IsLoading = false;
             IsEmpty = !Categories.Any() && !PersonalRepositoryCategories.Any() && !CommunityCategories.Any();
-            _isSyncing = false;
+            var baselineCollections = await _collectionService.GetLocalCollectionsAsync();
+            StartBackgroundSync(baselineCollections);
             return;
         }
 
+        _isSyncing = true;
         IsLoading = true;
         IsEmpty = false;
         
         ReleaseResources();
-        _chartDownloadViewModel.PropertyChanged += OnDownloadViewModelPropertyChanged;
 
         // 1. 优先加载本地缓存数据 (如果有的话)
         var collections = await _collectionService.GetLocalCollectionsAsync();
@@ -917,6 +924,16 @@ public partial class AlbumCollectionViewModel : ObservableObject
         }
 
         // 2. 后台静默全量刷新
+        StartBackgroundSync(collections);
+    }
+
+    private void StartBackgroundSync(List<DesignerCategory> baselineCollections)
+    {
+        if (_isSyncing)
+            return;
+
+        _isSyncing = true;
+
         _ = Task.Run(async () =>
         {
             try
@@ -926,13 +943,13 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 
                 // 比对并刷新目录显示
                 var remoteNames = remoteCollections.Select(c => c.Name).ToList();
-                var localNames = collections.Select(c => c.Name).ToList();
+                var localNames = baselineCollections.Select(c => c.Name).ToList();
                 if (remoteNames.Count != localNames.Count || !remoteNames.SequenceEqual(localNames))
                 {
                     var addedNames = remoteNames.Except(localNames).ToList();
                     string updateMsg = addedNames.Any() 
-                        ? $"有内容更新了！《{string.Join("》、《", addedNames)}》"
-                        : "曲包目录检测到更新，已自动刷新~";
+                        ? $"发现新增曲包：《{string.Join("》《", addedNames)}》"
+                        : "曲包目录已更新，已自动刷新~";
 
                     Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
                     {
@@ -943,16 +960,26 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
                 // 核心优化：全量预取所有曲包的歌曲索引 (Index Sync)
                 // 这样进入具体文件夹就是瞬开，且全局搜索速度极快且数据最新
+                var baselineCollectionNames = baselineCollections
+                    .Select(c => c.Name)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
                 var syncTasks = remoteCollections.Select(async col => 
                 {
+                    var hadLocalSnapshot = baselineCollectionNames.Contains(col.Name) && File.Exists(GetCollectionIndexCachePath(col.Name));
+                    List<DesignerChart> localCharts = hadLocalSnapshot
+                        ? await _collectionService.GetLocalChartsAsync(col.Name)
+                        : new List<DesignerChart>();
+
                     try
                     {
                         var charts = await _collectionService.GetChartsAsync(col.Name);
-                        return (Category: col, HasCharts: charts.Count > 0);
+                        var contentUpdated = hadLocalSnapshot && HasChartListChanged(localCharts, charts);
+                        return (Category: col, HasCharts: charts.Count > 0, ContentUpdated: contentUpdated);
                     }
                     catch
                     {
-                        return (Category: col, HasCharts: true);
+                        return (Category: col, HasCharts: true, ContentUpdated: false);
                     }
                 }).ToList();
 
@@ -963,10 +990,25 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 });
 
                 var syncResults = await Task.WhenAll(syncTasks);
+                var updatedCollections = syncResults
+                    .Where(x => x.ContentUpdated)
+                    .Select(x => x.Category.Name)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
                 var survivingCollections = syncResults
                     .Where(x => x.HasCharts)
                     .Select(x => x.Category)
                     .ToList();
+
+                if (updatedCollections.Count > 0)
+                {
+                    var updateMessage = BuildUpdatedCollectionsMessage(updatedCollections);
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        _notificationService?.ShowSuccess(updateMessage);
+                    });
+                }
 
                 if (survivingCollections.Count != remoteCollections.Count)
                 {
@@ -989,6 +1031,24 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => { IsLoading = false; _isInitialized = true; }); 
             }
         });
+    }
+
+    private static string GetCollectionIndexCachePath(string categoryName)
+        => Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes", $"{categoryName}.json");
+
+    private static bool HasChartListChanged(IReadOnlyList<DesignerChart> localCharts, IReadOnlyList<DesignerChart> remoteCharts)
+        => localCharts.Count != remoteCharts.Count ||
+           !remoteCharts.Select(c => c.Id).SequenceEqual(localCharts.Select(c => c.Id));
+
+    private static string BuildUpdatedCollectionsMessage(IReadOnlyList<string> updatedCollections)
+    {
+        if (updatedCollections.Count <= 3)
+        {
+            return $"检测到曲包内容更新：《{string.Join("》《", updatedCollections)}》";
+        }
+
+        var preview = string.Join("》《", updatedCollections.Take(3));
+        return $"检测到 {updatedCollections.Count} 个曲包内容更新：《{preview}》等";
     }
 
     private async Task LoadCategoriesAsync(List<DesignerCategory> collections)
