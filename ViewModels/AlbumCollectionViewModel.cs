@@ -333,11 +333,13 @@ public partial class AlbumCollectionViewModel : ObservableObject
     private readonly IConfigService _configService;
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
     private readonly List<DesignerCategoryItemViewModel> _allCategoriesBackup = new();
+    private readonly List<DesignerCategoryItemViewModel> _allPersonalRepositoryCategoriesBackup = new();
     private readonly List<CommunityCategoryItemViewModel> _allCommunityCategoriesBackup = new();
     private bool _isInitialized;
     private bool _isSyncing;
 
     [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _categories = new();
+    [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _personalRepositoryCategories = new();
     [ObservableProperty] private ObservableCollection<CommunityCategoryItemViewModel> _communityCategories = new();
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private bool _isEmpty;
@@ -542,6 +544,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             IsSearching = true;
             
             if (_allCategoriesBackup.Count == 0 && Categories.Count > 0) _allCategoriesBackup.AddRange(Categories);
+            if (_allPersonalRepositoryCategoriesBackup.Count == 0 && PersonalRepositoryCategories.Count > 0) _allPersonalRepositoryCategoriesBackup.AddRange(PersonalRepositoryCategories);
             if (_allCommunityCategoriesBackup.Count == 0 && CommunityCategories.Count > 0) _allCommunityCategoriesBackup.AddRange(CommunityCategories);
 
             var normalizedQuery = query.Trim().ToLowerInvariant();
@@ -592,6 +595,11 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 matchingDesignerCategoryNames.Contains(catVM.Category.Name ?? string.Empty)
             ).ToList();
 
+            var filteredPersonalRepoCats = _allPersonalRepositoryCategoriesBackup.Where(catVM =>
+                catVM.Category.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
+                matchingDesignerCategoryNames.Contains(catVM.Category.Name ?? string.Empty)
+            ).ToList();
+
             var filteredCommCats = _allCommunityCategoriesBackup.Where(catVM => 
                 catVM.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
                 matchingCommunityCategoryNames.Contains(catVM.Name ?? string.Empty)
@@ -608,6 +616,9 @@ public partial class AlbumCollectionViewModel : ObservableObject
             {
                 Categories.Clear();
                 foreach (var cat in filteredCats) Categories.Add(cat);
+
+                PersonalRepositoryCategories.Clear();
+                foreach (var cat in filteredPersonalRepoCats) PersonalRepositoryCategories.Add(cat);
                 
                 CommunityCategories.Clear();
                 foreach (var cat in filteredCommCats) CommunityCategories.Add(cat);
@@ -662,6 +673,11 @@ public partial class AlbumCollectionViewModel : ObservableObject
         {
             Categories.Clear();
             foreach (var cat in _allCategoriesBackup) Categories.Add(cat);
+        }
+        if (_allPersonalRepositoryCategoriesBackup.Count > 0)
+        {
+            PersonalRepositoryCategories.Clear();
+            foreach (var cat in _allPersonalRepositoryCategoriesBackup) PersonalRepositoryCategories.Add(cat);
         }
         if (_allCommunityCategoriesBackup.Count > 0)
         {
@@ -796,6 +812,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
             // 4. 刷新封面 (先释放旧资源，再重新加载)
             foreach (var cat in Categories) { cat.ReleaseResources(); cat.LoadCoverImage(); }
+            foreach (var cat in PersonalRepositoryCategories) { cat.ReleaseResources(); cat.LoadCoverImage(); }
             foreach (var cat in CommunityCategories) { cat.ReleaseResources(); cat.LoadCoverImage(); }
         }
         catch (Exception ex)
@@ -818,10 +835,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
         if (_isSyncing) return;
         _isSyncing = true;
 
-        if (_isInitialized && (Categories.Count > 0 || CommunityCategories.Count > 0))
+        if (_isInitialized && (Categories.Count > 0 || PersonalRepositoryCategories.Count > 0 || CommunityCategories.Count > 0))
         {
             IsLoading = false;
-            IsEmpty = !Categories.Any();
+            IsEmpty = !Categories.Any() && !PersonalRepositoryCategories.Any() && !CommunityCategories.Any();
             _isSyncing = false;
             return;
         }
@@ -870,7 +887,15 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 // 这样进入具体文件夹就是瞬开，且全局搜索速度极快且数据最新
                 var syncTasks = remoteCollections.Select(async col => 
                 {
-                    try { await _collectionService.GetChartsAsync(col.Name); } catch { }
+                    try
+                    {
+                        var charts = await _collectionService.GetChartsAsync(col.Name);
+                        return (Category: col, HasCharts: charts.Count > 0);
+                    }
+                    catch
+                    {
+                        return (Category: col, HasCharts: true);
+                    }
                 }).ToList();
 
                 // 同时同步社区曲包
@@ -879,7 +904,24 @@ public partial class AlbumCollectionViewModel : ObservableObject
                     try { await _collectionService.GetCommunityChartsAsync(config.Name, config.RepoUrl); } catch { }
                 });
 
-                await Task.WhenAll(syncTasks.Concat(communityTasks));
+                var syncResults = await Task.WhenAll(syncTasks);
+                var survivingCollections = syncResults
+                    .Where(x => x.HasCharts)
+                    .Select(x => x.Category)
+                    .ToList();
+
+                if (survivingCollections.Count != remoteCollections.Count)
+                {
+                    await _collectionService.SaveCollectionsCacheAsync(survivingCollections);
+
+                    Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                    {
+                        await LoadCategoriesAsync(survivingCollections);
+                        _notificationService?.ShowSuccess("检测到远端有曲包已删除，目录已自动同步。");
+                    });
+                }
+
+                await Task.WhenAll(communityTasks);
                 Log("Full background sync completed: All indexes are now up-to-date locally.");
             }
             catch (Exception ex) { Log($"Failed to sync collections in background: {ex.Message}"); }
@@ -894,6 +936,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
     private async Task LoadCategoriesAsync(List<DesignerCategory> collections)
     {
         Categories.Clear();
+        PersonalRepositoryCategories.Clear();
         CommunityCategories.Clear();
 
         var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
@@ -917,7 +960,14 @@ public partial class AlbumCollectionViewModel : ObservableObject
         var designerTasks = collections.Select(category => 
         {
             var item = new DesignerCategoryItemViewModel(category);
-            Categories.Add(item);
+            if (AlbumCollectionService.IsPersonalRepositoryName(category.Name))
+            {
+                PersonalRepositoryCategories.Add(item);
+            }
+            else
+            {
+                Categories.Add(item);
+            }
             return Task.Run(async () => {
                 await _coverSemaphore.WaitAsync();
                 try { item.LoadCoverImage(); } finally { _coverSemaphore.Release(); }
@@ -928,10 +978,12 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
         _allCategoriesBackup.Clear();
         _allCategoriesBackup.AddRange(Categories);
+        _allPersonalRepositoryCategoriesBackup.Clear();
+        _allPersonalRepositoryCategoriesBackup.AddRange(PersonalRepositoryCategories);
         _allCommunityCategoriesBackup.Clear();
         _allCommunityCategoriesBackup.AddRange(CommunityCategories);
 
-        IsEmpty = !Categories.Any();
+        IsEmpty = !Categories.Any() && !PersonalRepositoryCategories.Any() && !CommunityCategories.Any();
     }
 
     private void Log(string msg) => RuntimeLog.Write("AlbumCollectionVM", msg);
@@ -939,6 +991,9 @@ public partial class AlbumCollectionViewModel : ObservableObject
     public void ReleaseResources()
     {
         foreach (var item in Categories)
+            item.ReleaseResources();
+
+        foreach (var item in PersonalRepositoryCategories)
             item.ReleaseResources();
 
         foreach (var item in CommunityCategories)
@@ -953,6 +1008,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
         TotalPages = 1;
 
         Categories.Clear();
+        PersonalRepositoryCategories.Clear();
         CommunityCategories.Clear();
         ClearSearch(); // 释放搜索结果内存并清空文本框
         _chartDownloadViewModel.PropertyChanged -= OnDownloadViewModelPropertyChanged;

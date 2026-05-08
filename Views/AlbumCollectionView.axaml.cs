@@ -116,4 +116,33 @@ public partial class AlbumCollectionView : UserControl
             vm.JumpPageCommand.Execute(null);
         }
     }
+
+    private void OnJumpToCategoryClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var targetKey = (sender as Control)?.Tag as string;
+        if (string.IsNullOrWhiteSpace(targetKey))
+            return;
+
+        var scrollViewer = this.FindControl<ScrollViewer>("AlbumScrollViewer");
+        if (scrollViewer == null)
+            return;
+
+        var target = targetKey switch
+        {
+            "pack" => this.FindControl<Control>("PackSectionAnchor"),
+            "personal" => this.FindControl<Control>("PersonalRepositorySectionAnchor"),
+            "community" => this.FindControl<Control>("CommunitySectionAnchor"),
+            _ => null
+        };
+
+        if (target == null)
+            return;
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            scrollViewer.Offset = new Avalonia.Vector(
+                scrollViewer.Offset.X,
+                Math.Max(0, target.Bounds.Y));
+        }, Avalonia.Threading.DispatcherPriority.Loaded);
+    }
 }

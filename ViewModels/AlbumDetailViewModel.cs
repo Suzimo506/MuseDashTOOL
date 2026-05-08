@@ -13,6 +13,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Linq;
 using MdModManager.Helpers;
+using System.Diagnostics;
 
 namespace MdModManager.ViewModels;
 
@@ -30,6 +31,11 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private DesignerCategory? _category;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsPersonalRepository))]
+    [NotifyPropertyChangedFor(nameof(HasHomepageLink))]
+    private string _homepageUrl = string.Empty;
 
     [ObservableProperty]
     private ObservableCollection<MdmcChart> _charts = new();
@@ -90,6 +96,8 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
     public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
+    public bool IsPersonalRepository => AlbumCollectionService.IsPersonalRepositoryName(Category?.Name);
+    public bool HasHomepageLink => IsPersonalRepository && !string.IsNullOrWhiteSpace(HomepageUrl);
 
     [ObservableProperty] private double? _requestedScrollY;
 
@@ -197,6 +205,8 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     {
         Log($"Initializing album detail for '{category.Name}' with search query '{searchText}'.");
         Category = category;
+        HomepageUrl = AlbumCollectionService.GetPersonalRepositoryHomepage(category.Name);
+        OnPropertyChanged(nameof(IsPersonalRepository));
         SearchText = searchText;
         
         ClearPageCache();
@@ -549,6 +559,23 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         }
 
         await Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private void OpenHomepage()
+    {
+        if (string.IsNullOrWhiteSpace(HomepageUrl))
+            return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(HomepageUrl) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowFailure("打开失败", "无法打开个人主页链接");
+            Log($"Failed to open homepage for '{Category?.Name}': {ex.Message}");
+        }
     }
 
     private static void Log(string message)

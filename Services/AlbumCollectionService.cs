@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -18,6 +19,7 @@ public interface IAlbumCollectionService
 {
     Task<List<DesignerCategory>> GetLocalCollectionsAsync();
     Task<List<DesignerCategory>> GetCollectionsAsync();
+    Task SaveCollectionsCacheAsync(IEnumerable<DesignerCategory> collections);
     Task<List<DesignerChart>> GetLocalChartsAsync(string categoryName);
     Task<List<DesignerChart>> GetChartsAsync(string categoryName);
     Task<List<MdmcChart>> GetLocalCommunityChartsAsync(string name);
@@ -65,6 +67,33 @@ public class AlbumCollectionService : IAlbumCollectionService
         ("令人生草", "https://download.suzimo.site/令人生草"), 
         ("待定或有些小问题", "https://download.suzimo.site/待定或有些小问题")
     };
+
+    // 新增谱师个人仓库时，只需要把远端文件夹名加入这里，就会从“曲包”移动到“谱师个人仓库”分类。
+    public static readonly HashSet<string> PersonalRepositoryNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "桔子的谱面仓库",
+        "Greenhub的个人谱面",
+        "Dunno的谱面小库"
+    };
+
+    // 链接先留空，后续你只需要在这里填写对应主页地址即可。
+    public static readonly Dictionary<string, string> PersonalRepositoryHomepages = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["桔子的谱面仓库"] = "",
+        ["Greenhub的个人谱面"] = "https://space.bilibili.com/130793282?spm_id_from=333.1387.follow.user_card.click",
+        ["Dunno的谱面小库"] = "https://space.bilibili.com/1548500340?spm_id_from=333.1387.follow.user_card.click"
+    };
+
+    public static bool IsPersonalRepositoryName(string? name)
+        => !string.IsNullOrWhiteSpace(name) && PersonalRepositoryNames.Contains(name);
+
+    public static string GetPersonalRepositoryHomepage(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return string.Empty;
+
+        return PersonalRepositoryHomepages.TryGetValue(name, out var url) ? url : string.Empty;
+    }
 
     private readonly Dictionary<string, List<MdmcChart>> _communityChartsCache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -138,7 +167,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         {
             var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
             var infoDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumInfoDomain) ? MirrorDomainRegistry.AlbumInfoDomain : $"workerdl.{baseHost}";
-            var workerUrl = $"https://{infoDomain}/api/list"; // 去掉了时间戳
+            var workerUrl = $"https://{infoDomain}/api/list";
             var json = await _http.GetStringAsync(workerUrl);
             
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -223,6 +252,25 @@ public class AlbumCollectionService : IAlbumCollectionService
         }
     }
 
+    public async Task SaveCollectionsCacheAsync(IEnumerable<DesignerCategory> collections)
+    {
+        var cachePath = Path.Combine(AppContext.BaseDirectory, "Cache", "FoldersList.json");
+        var payload = new
+        {
+            collections = collections
+                .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(c => new
+                {
+                    name = c.Name,
+                    description = c.Description ?? string.Empty
+                })
+                .ToList()
+        };
+
+        var json = JsonSerializer.Serialize(payload);
+        await TrySaveCacheIfChangedAsync(cachePath, json);
+    }
+
     private async Task<List<DesignerChart>> FetchSpecialR2CategoryAsync(string name)
     {
         var encodedName = Uri.EscapeDataString(name);
@@ -245,6 +293,15 @@ public class AlbumCollectionService : IAlbumCollectionService
         }
         catch (Exception ex)
         {
+            if (ex is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
+            {
+                TryDeleteCollectionCache(name, cachePath);
+                _chartsCache.Remove(name);
+                _categoryCache?.RemoveAll(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
+                Log($"Collection '{name}' returned 404. Removed local cache and treating it as deleted.");
+                return new List<DesignerChart>();
+            }
+
             Log($"Remote fetch failed for '{name}': {ex.Message}. Falling back to local cache.");
             
             // 远端失败，回退到本地缓存读取，保证界面不为空
@@ -1023,6 +1080,21 @@ public class AlbumCollectionService : IAlbumCollectionService
         catch (Exception ex)
         {
             Log($"Failed to save cache to {cachePath}: {ex.Message}");
+        }
+    }
+
+    private void TryDeleteCollectionCache(string name, string cachePath)
+    {
+        try
+        {
+            if (File.Exists(cachePath))
+            {
+                File.Delete(cachePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Failed to delete cache for '{name}': {ex.Message}");
         }
     }
 
