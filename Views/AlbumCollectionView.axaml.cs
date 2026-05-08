@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.VisualTree;
 using MdModManager.ViewModels;
 
 namespace MdModManager.Views;
@@ -62,6 +63,8 @@ public partial class AlbumCollectionView : UserControl
                     {
                         vm.ScrollOffset = scrollViewer.Offset.Y;
                     }
+
+                    _ = LoadVisibleCategoryCoversAsync(scrollViewer, vm);
                 }
             };
 
@@ -79,6 +82,11 @@ public partial class AlbumCollectionView : UserControl
                     {
                         scrollViewer.Offset = new Avalonia.Vector(scrollViewer.Offset.X, vm.ScrollOffset);
                     }, Avalonia.Threading.DispatcherPriority.Loaded);
+                }
+
+                if (DataContext is AlbumCollectionViewModel loadedVm)
+                {
+                    _ = LoadVisibleCategoryCoversAsync(scrollViewer, loadedVm);
                 }
             };
 
@@ -144,5 +152,44 @@ public partial class AlbumCollectionView : UserControl
                 scrollViewer.Offset.X,
                 Math.Max(0, target.Bounds.Y));
         }, Avalonia.Threading.DispatcherPriority.Loaded);
+    }
+
+    private async Task LoadVisibleCategoryCoversAsync(ScrollViewer scrollViewer, AlbumCollectionViewModel vm)
+    {
+        var designerItems = new List<DesignerCategoryItemViewModel>();
+        var communityItems = new List<CommunityCategoryItemViewModel>();
+
+        foreach (var visual in this.GetSelfAndVisualDescendants())
+        {
+            if (visual is not Control control)
+                continue;
+
+            if (control.DataContext is not (DesignerCategoryItemViewModel or CommunityCategoryItemViewModel))
+                continue;
+
+            var top = control.Bounds.Top;
+            var bottom = control.Bounds.Bottom;
+            var viewportTop = scrollViewer.Offset.Y - 260;
+            var viewportBottom = scrollViewer.Offset.Y + scrollViewer.Viewport.Height + 260;
+            var isVisibleBand = bottom >= viewportTop && top <= viewportBottom;
+
+            if (!isVisibleBand)
+                continue;
+
+            switch (control.DataContext)
+            {
+                case DesignerCategoryItemViewModel designer when !designerItems.Contains(designer):
+                    designerItems.Add(designer);
+                    break;
+                case CommunityCategoryItemViewModel community when !communityItems.Contains(community):
+                    communityItems.Add(community);
+                    break;
+            }
+        }
+
+        if (designerItems.Count > 0)
+            await vm.EnsureCategoryCoversLoadedAsync(designerItems);
+        if (communityItems.Count > 0)
+            await vm.EnsureCommunityCoversLoadedAsync(communityItems);
     }
 }

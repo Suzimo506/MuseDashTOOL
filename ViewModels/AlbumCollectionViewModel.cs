@@ -24,6 +24,7 @@ namespace MdModManager.ViewModels;
 public partial class DesignerCategoryItemViewModel : ObservableObject
 {
     private static readonly string[] Extensions = [".png", ".jpg", ".jpeg", ".webp"];
+    private const int CoverDecodeWidth = 360;
 
     [ObservableProperty]
     private DesignerCategory _category;
@@ -60,7 +61,7 @@ public partial class DesignerCategoryItemViewModel : ObservableObject
         try
         {
             using var stream = File.OpenRead(filePath);
-            CoverImage = new Bitmap(stream);
+            CoverImage = DecodeCoverBitmap(stream);
             Log($"Loaded folder cover for '{Category.Name}': '{filePath}'");
         }
         catch (Exception ex)
@@ -79,7 +80,7 @@ public partial class DesignerCategoryItemViewModel : ObservableObject
             using var stream = assembly.GetManifestResourceStream(resourceName);
             if (stream != null)
             {
-                CoverImage = new Bitmap(stream);
+                CoverImage = DecodeCoverBitmap(stream);
                 Log($"Loaded embedded Normal cover for '{Category.Name}'");
             }
         }
@@ -230,6 +231,11 @@ public partial class DesignerCategoryItemViewModel : ObservableObject
         RuntimeLog.Write("AlbumCollectionVM", message);
     }
 
+    internal static Bitmap DecodeCoverBitmap(Stream stream)
+    {
+        return Bitmap.DecodeToWidth(stream, CoverDecodeWidth, BitmapInterpolationMode.MediumQuality);
+    }
+
     internal static string? ResolvePicturesPath() => FindPicturesPath();
 }
 
@@ -276,7 +282,7 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
         try
         {
             using var stream = File.OpenRead(filePath);
-            CoverImage = new Bitmap(stream);
+            CoverImage = DesignerCategoryItemViewModel.DecodeCoverBitmap(stream);
             RuntimeLog.Write("AlbumCollectionVM", $"Loaded community cover for '{Name}': '{filePath}'");
         }
         catch (Exception ex)
@@ -298,7 +304,7 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
             using var stream = assembly.GetManifestResourceStream(resourceName);
             if (stream != null)
             {
-                CoverImage = new Bitmap(stream);
+                CoverImage = DesignerCategoryItemViewModel.DecodeCoverBitmap(stream);
                 RuntimeLog.Write("AlbumCollectionVM", $"Loaded embedded community cover for {Name}");
             }
             else
@@ -308,7 +314,7 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
                 using var fallbackStream = assembly.GetManifestResourceStream(fallbackName);
                 if (fallbackStream != null)
                 {
-                    CoverImage = new Bitmap(fallbackStream);
+                    CoverImage = DesignerCategoryItemViewModel.DecodeCoverBitmap(fallbackStream);
                 }
             }
         }
@@ -332,6 +338,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
     private readonly INotificationService _notificationService;
     private readonly IConfigService _configService;
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
+    private readonly SemaphoreSlim _lazyCoverLoadSemaphore = new(1, 1);
     private readonly List<DesignerCategoryItemViewModel> _allCategoriesBackup = new();
     private readonly List<DesignerCategoryItemViewModel> _allPersonalRepositoryCategoriesBackup = new();
     private readonly List<CommunityCategoryItemViewModel> _allCommunityCategoriesBackup = new();
@@ -374,6 +381,12 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
     public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
+
+    public Task EnsureCategoryCoversLoadedAsync(IEnumerable<DesignerCategoryItemViewModel> items)
+        => EnsureCoverItemsLoadedCoreAsync(items.Cast<object>().ToList());
+
+    public Task EnsureCommunityCoversLoadedAsync(IEnumerable<CommunityCategoryItemViewModel> items)
+        => EnsureCoverItemsLoadedCoreAsync(items.Cast<object>().ToList());
 
     [RelayCommand]
     private async Task LoadNextPage()
@@ -466,6 +479,47 @@ public partial class AlbumCollectionViewModel : ObservableObject
             // 异步加载该页面的封面
             _ = LoadSearchResultsCoversAsync(pageItems);
         });
+    }
+
+    private async Task EnsureCoverItemsLoadedCoreAsync(IReadOnlyList<object> items)
+    {
+        if (items.Count == 0)
+            return;
+
+        if (!await _lazyCoverLoadSemaphore.WaitAsync(0))
+            return;
+
+        try
+        {
+            var tasks = new List<Task>();
+            foreach (var item in items)
+            {
+                switch (item)
+                {
+                    case DesignerCategoryItemViewModel designer when designer.CoverImage == null:
+                        tasks.Add(Task.Run(async () =>
+                        {
+                            await _coverSemaphore.WaitAsync();
+                            try { designer.LoadCoverImage(); } finally { _coverSemaphore.Release(); }
+                        }));
+                        break;
+                    case CommunityCategoryItemViewModel community when community.CoverImage == null:
+                        tasks.Add(Task.Run(async () =>
+                        {
+                            await _coverSemaphore.WaitAsync();
+                            try { community.LoadCoverImage(); } finally { _coverSemaphore.Release(); }
+                        }));
+                        break;
+                }
+            }
+
+            if (tasks.Count > 0)
+                await Task.WhenAll(tasks);
+        }
+        finally
+        {
+            _lazyCoverLoadSemaphore.Release();
+        }
     }
 
     [ObservableProperty]
@@ -947,17 +1001,12 @@ public partial class AlbumCollectionViewModel : ObservableObject
             ("待定或有些小问题", $"https://download.{baseHost}/待定或有些小问题")
         };
 
-        var communityTasks = communityConfigs.Select(config => 
+        foreach (var config in communityConfigs)
         {
-            var item = new CommunityCategoryItemViewModel(config.Item1, config.Item2);
-            CommunityCategories.Add(item);
-            return Task.Run(async () => {
-                await _coverSemaphore.WaitAsync();
-                try { item.LoadCoverImage(); } finally { _coverSemaphore.Release(); }
-            });
-        }).ToList();
+            CommunityCategories.Add(new CommunityCategoryItemViewModel(config.Item1, config.Item2));
+        }
 
-        var designerTasks = collections.Select(category => 
+        foreach (var category in collections)
         {
             var item = new DesignerCategoryItemViewModel(category);
             if (AlbumCollectionService.IsPersonalRepositoryName(category.Name))
@@ -968,13 +1017,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             {
                 Categories.Add(item);
             }
-            return Task.Run(async () => {
-                await _coverSemaphore.WaitAsync();
-                try { item.LoadCoverImage(); } finally { _coverSemaphore.Release(); }
-            });
-        }).ToList();
-
-        await Task.WhenAll(communityTasks.Concat(designerTasks));
+        }
 
         _allCategoriesBackup.Clear();
         _allCategoriesBackup.AddRange(Categories);
@@ -984,6 +1027,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
         _allCommunityCategoriesBackup.AddRange(CommunityCategories);
 
         IsEmpty = !Categories.Any() && !PersonalRepositoryCategories.Any() && !CommunityCategories.Any();
+
+        await EnsureCategoryCoversLoadedAsync(Categories.Take(6));
+        await EnsureCategoryCoversLoadedAsync(PersonalRepositoryCategories.Take(3));
+        await EnsureCommunityCoversLoadedAsync(CommunityCategories.Take(3));
     }
 
     private void Log(string msg) => RuntimeLog.Write("AlbumCollectionVM", msg);
