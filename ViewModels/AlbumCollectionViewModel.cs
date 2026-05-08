@@ -465,8 +465,6 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
         var pageItems = _allSearchItemsBackup.Skip((page - 1) * PageSize).Take(PageSize).ToList();
 
-        RequestedSearchScrollY = 0;
-
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             SearchResults.Clear();
@@ -476,6 +474,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             }
             OnPropertyChanged(nameof(HasSearchResults));
             UpdateStatusMessage();
+            RequestedSearchScrollY = 0;
 
             // 异步加载该页面的封面
             _ = LoadSearchResultsCoversAsync(pageItems);
@@ -891,16 +890,9 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     public async Task InitializeAsync()
     {
-        if (_isSyncing) return;
-
-        if (!_isDownloadViewModelSubscribed)
-        {
-            _chartDownloadViewModel.PropertyChanged += OnDownloadViewModelPropertyChanged;
-            _isDownloadViewModelSubscribed = true;
-        }
-
         if (_isInitialized && (Categories.Count > 0 || PersonalRepositoryCategories.Count > 0 || CommunityCategories.Count > 0))
         {
+            EnsureDownloadViewModelSubscription();
             IsLoading = false;
             IsEmpty = !Categories.Any() && !PersonalRepositoryCategories.Any() && !CommunityCategories.Any();
             var baselineCollections = await _collectionService.GetLocalCollectionsAsync();
@@ -908,11 +900,15 @@ public partial class AlbumCollectionViewModel : ObservableObject
             return;
         }
 
-        _isSyncing = true;
         IsLoading = true;
         IsEmpty = false;
-        
-        ReleaseResources();
+
+        if (!_isSyncing)
+        {
+            ReleaseResources();
+        }
+
+        EnsureDownloadViewModelSubscription();
 
         // 1. 优先加载本地缓存数据 (如果有的话)
         var collections = await _collectionService.GetLocalCollectionsAsync();
@@ -925,6 +921,15 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
         // 2. 后台静默全量刷新
         StartBackgroundSync(collections);
+    }
+
+    private void EnsureDownloadViewModelSubscription()
+    {
+        if (_isDownloadViewModelSubscribed)
+            return;
+
+        _chartDownloadViewModel.PropertyChanged += OnDownloadViewModelPropertyChanged;
+        _isDownloadViewModelSubscribed = true;
     }
 
     private void StartBackgroundSync(List<DesignerCategory> baselineCollections)
@@ -1123,6 +1128,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
         CommunityCategories.Clear();
         ClearSearch(); // 释放搜索结果内存并清空文本框
         _chartDownloadViewModel.PropertyChanged -= OnDownloadViewModelPropertyChanged;
+        _isDownloadViewModelSubscribed = false;
         _isInitialized = false;
         IsLoading = false;
         IsEmpty = false;

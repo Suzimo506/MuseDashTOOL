@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.VisualTree;
 using MdModManager.ViewModels;
 
@@ -21,6 +22,7 @@ public partial class AlbumCollectionView : UserControl
                     if (args.PropertyName == nameof(AlbumCollectionViewModel.RequestedSearchScrollY) 
                         && vm.RequestedSearchScrollY.HasValue)
                     {
+                        var requestedScrollY = vm.RequestedSearchScrollY.Value;
                         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                         {
                             var sv = this.FindControl<ScrollViewer>("AlbumScrollViewer");
@@ -29,7 +31,7 @@ public partial class AlbumCollectionView : UserControl
                                 var searchAnchor = this.FindControl<Control>("SearchResultsAnchor");
                                 var y = searchAnchor != null && vm.HasSearchResults
                                     ? Math.Max(0, searchAnchor.Bounds.Y)
-                                    : vm.RequestedSearchScrollY.Value;
+                                    : requestedScrollY;
                                 sv.Offset = new Avalonia.Vector(sv.Offset.X, y);
                             }
                         }, Avalonia.Threading.DispatcherPriority.Background);
@@ -41,7 +43,8 @@ public partial class AlbumCollectionView : UserControl
                     {
                         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                         {
-                            var tb = this.FindControl<TextBox>("PageJumpTextBox_Bottom");
+                            var tb = this.FindControl<TextBox>("PageJumpTextBox_Top")
+                                ?? this.FindControl<TextBox>("PageJumpTextBox_Bottom");
                             if (tb != null)
                             {
                                 tb.Focus();
@@ -126,6 +129,33 @@ public partial class AlbumCollectionView : UserControl
         {
             vm.JumpPageCommand.Execute(null);
         }
+    }
+
+    private void OnPageJumpKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not AlbumCollectionViewModel vm)
+            return;
+
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            vm.JumpPageCommand.Execute(null);
+            return;
+        }
+
+        if (e.Key == Key.Escape)
+        {
+            e.Handled = true;
+            vm.CancelEditPageCommand.Execute(null);
+        }
+    }
+
+    private void OnSearchBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+
+        e.Handled = true;
     }
 
     private void OnJumpToCategoryClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
