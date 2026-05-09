@@ -68,6 +68,9 @@
         <Style Selector="Border.Card:pointerover">
             <Setter Property="Background" Value="{DynamicResource CardHoverBgBrush}"/>
         </Style>
+        <Style Selector="Button.ListRow:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
@@ -149,6 +152,42 @@
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
+                <Canvas Width="22" Height="22" Margin="110,0,15,0" ClipToBounds="False">
+                    <Border IsVisible="{Binding ShowViewModeGuide}"
+                            Background="#FFF6D76B"
+                            CornerRadius="10"
+                            Padding="8,3"
+                            Canvas.Left="-88"
+                            Canvas.Top="-2">
+                        <TextBlock Text="试试列表模式"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="#5A4200"/>
+                    </Border>
+                    <Button Command="{Binding ToggleListModeCommand}"
+                            Theme="{StaticResource RobustPlainIconBtn}"
+                            ToolTip.Tip="{Binding ViewModeToolTip}"
+                            Canvas.Left="0"
+                            Canvas.Top="0">
+                        <Grid ClipToBounds="False">
+                            <PathIcon Data="{Binding ViewModeIconData}"
+                                      Foreground="{DynamicResource SvgIconBrush}"
+                                      Width="22"
+                                      Height="22"/>
+                            <Border IsVisible="{Binding ShowViewModeGuide}"
+                                    Width="10"
+                                    Height="10"
+                                    CornerRadius="5"
+                                    Background="#FF5AC8FA"
+                                    BorderBrush="#FFFDF3C9"
+                                    BorderThickness="2"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="0,-2,-4,0"/>
+                        </Grid>
+                    </Button>
+                </Canvas>
+
                 <!-- 下载 Pictures 按钮 -->
                 <Button Command="{Binding DownloadPicturesCommand}"
                         Theme="{StaticResource RobustPlainIconBtn}"
@@ -163,7 +202,7 @@
                 <Button Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).NavigateToDownloadManagerCommand}"
                         Theme="{StaticResource RobustPlainIconBtn}"
                         ToolTip.Tip="下载列表">
-                    <PathIcon Data="M60.235294 90.352941m-60.235294 0a60.235294 60.235294 0 1 0 120.470588 0 60.235294 60.235294 0 1 0-120.470588 0Z M361.411765 150.588235h602.352941c36.141176 0 60.235294-24.094118 60.235294-60.235294s-24.094118-60.235294-60.235294-60.235294H361.411765c-36.141176 0-60.235294 24.094118-60.235294 60.235294s24.094118 60.235294 60.235294 60.235294z M60.235294 512m-60.235294 0a60.235294 60.235294 0 1 0 120.470588 0 60.235294 60.235294 0 1 0-120.470588 0Z M963.764706 451.764706H361.411765c-36.141176 0-60.235294 24.094118-60.235294 60.235294s24.094118 60.235294 60.235294 60.235294h602.352941c36.141176 0 60.235294-24.094118 60.235294-60.235294s-24.094118-60.235294-60.235294-60.235294z M60.235294 933.647059m-60.235294 0a60.235294 60.235294 0 1 0 120.470588 0 60.235294 60.235294 0 1 0-120.470588 0Z M963.764706 873.411765H361.411765c-36.141176 0-60.235294 24.094118-60.235294 60.235294s24.094118 60.235294 60.235294 60.235294h602.352941c36.141176 0 60.235294-24.094118 60.235294-60.235294s-24.094118-60.235294-60.235294-60.235294z" 
+                    <PathIcon Data="M392 160h-304C75.2 160 64 148.8 64 136S75.2 112 88 112h304c12.8 0 24 11.2 24 24s-11.2 24-24 24zM360 411.2h-272c-12.8 0-24-11.2-24-24s11.2-24 24-24h272c12.8 0 24 11.2 24 24s-11.2 24-24 24zM488 660.8h-400c-12.8 0-24-11.2-24-24s11.2-24 24-24h400c12.8 0 24 11.2 24 24 0 14.4-11.2 24-24 24zM936 912h-848c-12.8 0-24-11.2-24-24S75.2 864 88 864h848c12.8 0 24 11.2 24 24s-11.2 24-24 24zM945.6 446.4c-9.6-9.6-24-9.6-33.6 0l-128 128V136c0-12.8-11.2-24-24-24S736 123.2 736 136v438.4L609.6 448c-9.6-9.6-24-9.6-33.6 0-9.6 9.6-9.6 24 0 33.6l168 168c1.6 1.6 4.8 3.2 8 4.8 3.2 1.6 6.4 1.6 8 1.6s6.4 0 8-1.6c3.2-1.6 6.4-3.2 8-4.8L944 481.6c9.6-9.6 9.6-25.6 1.6-35.2z" 
                               Foreground="{DynamicResource SvgIconBrush}" 
                               Width="22" Height="22"/>
                 </Button>
@@ -339,7 +378,7 @@
                         </StackPanel>
 
                         <!-- 官方/设计师分类列表 -->
-                        <ItemsControl ItemsSource="{Binding Categories}">
+                        <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding !IsListMode}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <UniformGrid Columns="3" HorizontalAlignment="Stretch"/>
@@ -401,6 +440,58 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
+                        <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding IsListMode}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" HorizontalAlignment="Stretch"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="ListRow"
+                                            Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).OpenCategoryCommand}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            HorizontalAlignment="Stretch"
+                                            Margin="8,0,8,10"
+                                            Cursor="Hand">
+                                        <ToolTip.Tip>
+                                            <TextBlock Text="{Binding Category.Description}"
+                                                       IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                       FontFamily="Segoe UI, Microsoft YaHei, sans-serif"
+                                                       FontSize="13"/>
+                                        </ToolTip.Tip>
+                                        <Border Background="{DynamicResource CardBgBrush}"
+                                                CornerRadius="10"
+                                                Padding="14,12">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Text="{Binding Category.Name}"
+                                                               FontSize="15"
+                                                               FontWeight="Bold"
+                                                               Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                               TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding Category.Description}"
+                                                               IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                               FontSize="12"
+                                                               Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                                <PathIcon Grid.Column="1"
+                                                          Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z"
+                                                          Width="16"
+                                                          Height="16"
+                                                          VerticalAlignment="Center"
+                                                          Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                                            </Grid>
+                                        </Border>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
 
                     <!-- 谱师个人仓库区域：搜索时不显示标题和分割线 -->
@@ -417,7 +508,7 @@
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
                         </StackPanel>
 
-                        <ItemsControl ItemsSource="{Binding PersonalRepositoryCategories}" IsVisible="{Binding PersonalRepositoryCategories.Count}">
+                        <ItemsControl ItemsSource="{Binding PersonalRepositoryCategories}" IsVisible="{Binding !IsListMode}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <UniformGrid Columns="3" HorizontalAlignment="Stretch"/>
@@ -479,6 +570,58 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
+                        <ItemsControl ItemsSource="{Binding PersonalRepositoryCategories}" IsVisible="{Binding IsListMode}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" HorizontalAlignment="Stretch"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="ListRow"
+                                            Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).OpenCategoryCommand}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            HorizontalAlignment="Stretch"
+                                            Margin="8,0,8,10"
+                                            Cursor="Hand">
+                                        <ToolTip.Tip>
+                                            <TextBlock Text="{Binding Category.Description}"
+                                                       IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                       FontFamily="Segoe UI, Microsoft YaHei, sans-serif"
+                                                       FontSize="13"/>
+                                        </ToolTip.Tip>
+                                        <Border Background="{DynamicResource CardBgBrush}"
+                                                CornerRadius="10"
+                                                Padding="14,12">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Text="{Binding Category.Name}"
+                                                               FontSize="15"
+                                                               FontWeight="Bold"
+                                                               Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                               TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding Category.Description}"
+                                                               IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                               FontSize="12"
+                                                               Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                                <PathIcon Grid.Column="1"
+                                                          Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z"
+                                                          Width="16"
+                                                          Height="16"
+                                                          VerticalAlignment="Center"
+                                                          Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                                            </Grid>
+                                        </Border>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
 
                     <!-- 群友自制谱面区域：搜索时不显示标题和分割线 -->
@@ -495,7 +638,7 @@
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
                         </StackPanel>
                         
-                        <ItemsControl ItemsSource="{Binding CommunityCategories}" IsVisible="{Binding CommunityCategories.Count}">
+                        <ItemsControl ItemsSource="{Binding CommunityCategories}" IsVisible="{Binding !IsListMode}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <UniformGrid Columns="3" HorizontalAlignment="Stretch"/>
@@ -544,6 +687,47 @@
                                                                Foreground="{DynamicResource ThemeTextMainBrush}"
                                                                TextWrapping="Wrap"/>
                                                 </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <ItemsControl ItemsSource="{Binding CommunityCategories}" IsVisible="{Binding IsListMode}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" HorizontalAlignment="Stretch"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="ListRow"
+                                            Command="{Binding $parent[UserControl].((vm:AlbumCollectionViewModel)DataContext).OpenCommunityCategoryCommand}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            HorizontalAlignment="Stretch"
+                                            Margin="8,0,8,10"
+                                            Cursor="Hand">
+                                        <Border Background="{DynamicResource CardBgBrush}"
+                                                CornerRadius="10"
+                                                Padding="14,12">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                <TextBlock
+                                                           Text="{Binding Name}"
+                                                           FontSize="15"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                           VerticalAlignment="Center"
+                                                           TextWrapping="Wrap"/>
+                                                <PathIcon Grid.Column="1"
+                                                          Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z"
+                                                          Width="16"
+                                                          Height="16"
+                                                          VerticalAlignment="Center"
+                                                          Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
                                             </Grid>
                                         </Border>
                                     </Button>

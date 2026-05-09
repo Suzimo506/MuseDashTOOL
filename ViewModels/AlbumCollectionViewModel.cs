@@ -333,6 +333,7 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
 
 public partial class AlbumCollectionViewModel : ObservableObject
 {
+    private const string ViewModeGuideBadgeKey = "AlbumCollectionViewModeGuide_v1.3.0";
     private readonly IAlbumCollectionService _collectionService;
     private readonly ChartDownloadViewModel _chartDownloadViewModel;
     private readonly INotificationService _notificationService;
@@ -342,6 +343,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
     private readonly List<DesignerCategoryItemViewModel> _allCategoriesBackup = new();
     private readonly List<DesignerCategoryItemViewModel> _allPersonalRepositoryCategoriesBackup = new();
     private readonly List<CommunityCategoryItemViewModel> _allCommunityCategoriesBackup = new();
+    private static readonly Dictionary<string, int> _personalRepositoryOrderMap =
+        AlbumCollectionService.PersonalRepositoryDisplayOrder
+            .Select((name, index) => (name, index))
+            .ToDictionary(x => x.name, x => x.index, StringComparer.OrdinalIgnoreCase);
     private bool _isInitialized;
     private bool _isSyncing;
     private bool _isDownloadViewModelSubscribed;
@@ -374,20 +379,62 @@ public partial class AlbumCollectionViewModel : ObservableObject
     [ObservableProperty] private string _jumpPageText = string.Empty;
     [ObservableProperty] private bool _isEditingPageNumber = false;
     [ObservableProperty] private double? _requestedSearchScrollY;
+    [ObservableProperty] private bool _showViewModeGuide;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ViewModeToolTip))]
+    [NotifyPropertyChangedFor(nameof(ViewModeIconData))]
+    private bool _isListMode;
 
     partial void OnCurrentPageChanged(int value)
     {
         JumpPageText = value.ToString();
     }
 
+    partial void OnIsListModeChanged(bool value)
+    {
+        if (_configService.Config.AlbumCollectionListMode != value)
+        {
+            _configService.Config.AlbumCollectionListMode = value;
+            _ = _configService.SaveAsync();
+        }
+
+        if (!value)
+            return;
+
+        foreach (var item in _allCategoriesBackup)
+            item.ReleaseResources();
+
+        foreach (var item in _allPersonalRepositoryCategoriesBackup)
+            item.ReleaseResources();
+
+        foreach (var item in _allCommunityCategoriesBackup)
+            item.ReleaseResources();
+    }
+
     public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
     public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
+    public string ViewModeToolTip => IsListMode ? "切换为封面模式" : "切换为列表模式";
+    public string ViewModeIconData => IsListMode
+        ? "M796.444444 1024 227.555556 1024C102.4 1024 0 921.6 0 796.444444L0 227.555556C0 102.4 102.4 0 227.555556 0L796.444444 0C921.6 0 1024 102.4 1024 227.555556L1024 796.444444C1024 921.6 921.6 1024 796.444444 1024ZM910.222222 227.555556C910.222222 164.807111 859.192889 113.777778 796.444444 113.777778L227.555556 113.777778C164.807111 113.777778 113.777778 164.807111 113.777778 227.555556L113.777778 796.444444C113.777778 859.192889 164.807111 910.222222 227.555556 910.222222L796.444444 910.222222C859.192889 910.222222 910.222222 859.192889 910.222222 796.444444L910.222222 227.555556ZM739.555556 796.444444 512 796.444444C480.711111 796.444444 455.111111 770.844444 455.111111 739.555556 455.111111 708.266667 480.711111 682.666667 512 682.666667L739.555556 682.666667C770.844444 682.666667 796.444444 708.266667 796.444444 739.555556 796.444444 770.844444 770.844444 796.444444 739.555556 796.444444ZM739.555556 568.888889 512 568.888889C480.711111 568.888889 455.111111 543.288889 455.111111 512 455.111111 480.711111 480.711111 455.111111 512 455.111111L739.555556 455.111111C770.844444 455.111111 796.444444 480.711111 796.444444 512 796.444444 543.288889 770.844444 568.888889 739.555556 568.888889ZM739.555556 341.333333 512 341.333333C480.711111 341.333333 455.111111 315.733333 455.111111 284.444444 455.111111 253.155556 480.711111 227.555556 512 227.555556L739.555556 227.555556C770.844444 227.555556 796.444444 253.155556 796.444444 284.444444 796.444444 315.733333 770.844444 341.333333 739.555556 341.333333ZM284.444444 796.444444C253.041778 796.444444 227.555556 770.958222 227.555556 739.555556 227.555556 708.152889 253.041778 682.666667 284.444444 682.666667 315.847111 682.666667 341.333333 708.152889 341.333333 739.555556 341.333333 770.958222 315.847111 796.444444 284.444444 796.444444ZM284.444444 568.888889C253.041778 568.888889 227.555556 543.402667 227.555556 512 227.555556 480.597333 253.041778 455.111111 284.444444 455.111111 315.847111 455.111111 341.333333 480.597333 341.333333 512 341.333333 543.402667 315.847111 568.888889 284.444444 568.888889ZM284.444444 341.333333C253.041778 341.333333 227.555556 315.847111 227.555556 284.444444 227.555556 253.041778 253.041778 227.555556 284.444444 227.555556 315.847111 227.555556 341.333333 253.041778 341.333333 284.444444 341.333333 315.847111 315.847111 341.333333 284.444444 341.333333Z"
+        : "M905.846154 0h-708.923077A196.923077 196.923077 0 0 0 0 196.923077v630.153846A196.923077 196.923077 0 0 0 196.923077 1024h708.923077a196.923077 196.923077 0 0 0 196.923077-196.923077v-630.153846A196.923077 196.923077 0 0 0 905.846154 0z m-708.923077 945.230769A118.153846 118.153846 0 0 1 78.769231 827.076923v-630.153846A118.153846 118.153846 0 0 1 196.923077 78.769231h708.923077A118.153846 118.153846 0 0 1 1024 196.923077V472.615385a464.738462 464.738462 0 0 0-393.846154 454.498461V945.230769z m708.923077 0H708.923077v-18.904615A385.969231 385.969231 0 0 1 1024 551.384615v275.692308a118.153846 118.153846 0 0 1-118.153846 118.153846z M393.846154 236.307692a157.538462 157.538462 0 1 0 157.538461 157.538462 157.538462 157.538462 0 0 0-157.538461-157.538462z m0 236.307693a78.769231 78.769231 0 1 1 78.769231-78.769231 78.769231 78.769231 0 0 1-78.769231 78.769231z";
 
     public Task EnsureCategoryCoversLoadedAsync(IEnumerable<DesignerCategoryItemViewModel> items)
         => EnsureCoverItemsLoadedCoreAsync(items.Cast<object>().ToList());
 
     public Task EnsureCommunityCoversLoadedAsync(IEnumerable<CommunityCategoryItemViewModel> items)
         => EnsureCoverItemsLoadedCoreAsync(items.Cast<object>().ToList());
+
+    [RelayCommand]
+    private async Task ToggleListMode()
+    {
+        if (ShowViewModeGuide)
+        {
+            ShowViewModeGuide = false;
+            await DismissOneTimeBadgeAsync(ViewModeGuideBadgeKey);
+        }
+
+        IsListMode = !IsListMode;
+    }
 
     [RelayCommand]
     private async Task LoadNextPage()
@@ -483,6 +530,9 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     private async Task EnsureCoverItemsLoadedCoreAsync(IReadOnlyList<object> items)
     {
+        if (IsListMode)
+            return;
+
         if (items.Count == 0)
             return;
 
@@ -546,6 +596,20 @@ public partial class AlbumCollectionViewModel : ObservableObject
         _notificationService = notificationService;
         _configService = configService;
         _chartDownloadViewModel = Ioc.Default.GetRequiredService<ChartDownloadViewModel>();
+        _isListMode = _configService.Config.AlbumCollectionListMode;
+        _showViewModeGuide = !_isListMode && ShouldShowOneTimeBadge(ViewModeGuideBadgeKey);
+    }
+
+    private bool ShouldShowOneTimeBadge(string badgeKey)
+        => !_configService.Config.DismissedBadges.Contains(badgeKey);
+
+    private async Task DismissOneTimeBadgeAsync(string badgeKey)
+    {
+        if (_configService.Config.DismissedBadges.Contains(badgeKey))
+            return;
+
+        _configService.Config.DismissedBadges.Add(badgeKey);
+        await _configService.SaveAsync();
     }
 
     private void OnDownloadViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -656,7 +720,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
             var filteredPersonalRepoCats = _allPersonalRepositoryCategoriesBackup.Where(catVM =>
                 catVM.Category.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
                 matchingDesignerCategoryNames.Contains(catVM.Category.Name ?? string.Empty)
-            ).ToList();
+            )
+            .OrderBy(GetPersonalRepositorySortIndex)
+            .ThenBy(x => x.Category.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
             var filteredCommCats = _allCommunityCategoriesBackup.Where(catVM => 
                 catVM.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
@@ -949,17 +1016,34 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 // 比对并刷新目录显示
                 var remoteNames = remoteCollections.Select(c => c.Name).ToList();
                 var localNames = baselineCollections.Select(c => c.Name).ToList();
-                if (remoteNames.Count != localNames.Count || !remoteNames.SequenceEqual(localNames))
-                {
-                    var addedNames = remoteNames.Except(localNames).ToList();
-                    string updateMsg = addedNames.Any() 
-                        ? $"发现新增曲包：《{string.Join("》《", addedNames)}》"
-                        : "曲包目录已更新，已自动刷新~";
+                var remoteNameSet = remoteNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var localNameSet = localNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var addedNames = remoteNames
+                    .Where(name => !localNameSet.Contains(name))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                var removedNames = localNames
+                    .Where(name => !remoteNameSet.Contains(name))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                var orderOrMetadataChanged =
+                    addedNames.Count == 0 &&
+                    removedNames.Count == 0 &&
+                    (remoteNames.Count != localNames.Count || !remoteNames.SequenceEqual(localNames));
 
+                if (addedNames.Count > 0)
+                {
                     Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
                     {
                         await LoadCategoriesAsync(remoteCollections);
-                        _notificationService?.ShowSuccess(updateMsg);
+                        _notificationService?.ShowSuccess($"发现新增曲包：《{string.Join("》《", addedNames)}》");
+                    });
+                }
+                else if (orderOrMetadataChanged)
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                    {
+                        await LoadCategoriesAsync(remoteCollections);
                     });
                 }
 
@@ -1042,8 +1126,57 @@ public partial class AlbumCollectionViewModel : ObservableObject
         => Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes", $"{categoryName}.json");
 
     private static bool HasChartListChanged(IReadOnlyList<DesignerChart> localCharts, IReadOnlyList<DesignerChart> remoteCharts)
-        => localCharts.Count != remoteCharts.Count ||
-           !remoteCharts.Select(c => c.Id).SequenceEqual(localCharts.Select(c => c.Id));
+    {
+        if (localCharts.Count != remoteCharts.Count)
+            return true;
+
+        var localFingerprints = localCharts
+            .Select(BuildChartUpdateFingerprint)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+
+        var remoteFingerprints = remoteCharts
+            .Select(BuildChartUpdateFingerprint)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+
+        return !localFingerprints.SequenceEqual(remoteFingerprints, StringComparer.Ordinal);
+    }
+
+    private static string BuildChartUpdateFingerprint(DesignerChart chart)
+    {
+        static string Normalize(string? value)
+            => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant();
+
+        var primaryIdentity = Normalize(chart.DownloadUrl);
+        if (string.IsNullOrEmpty(primaryIdentity))
+            primaryIdentity = Normalize(chart.Id);
+
+        if (string.IsNullOrEmpty(primaryIdentity))
+        {
+            primaryIdentity = string.Join("|",
+                Normalize(chart.Title),
+                Normalize(chart.Author),
+                Normalize(chart.Artist),
+                Normalize(chart.Bpm));
+        }
+
+        var difficulties = chart.Difficulties == null
+            ? string.Empty
+            : string.Join(",",
+                chart.Difficulties
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(Normalize)
+                    .OrderBy(x => x, StringComparer.Ordinal));
+
+        return string.Join("||",
+            primaryIdentity,
+            Normalize(chart.Title),
+            Normalize(chart.Author),
+            Normalize(chart.Artist),
+            Normalize(chart.Bpm),
+            difficulties);
+    }
 
     private static string BuildUpdatedCollectionsMessage(IReadOnlyList<string> updatedCollections)
     {
@@ -1088,6 +1221,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
             }
         }
 
+        ReorderPersonalRepositoryCategories();
+
         _allCategoriesBackup.Clear();
         _allCategoriesBackup.AddRange(Categories);
         _allPersonalRepositoryCategoriesBackup.Clear();
@@ -1100,6 +1235,31 @@ public partial class AlbumCollectionViewModel : ObservableObject
         await EnsureCategoryCoversLoadedAsync(Categories.Take(6));
         await EnsureCategoryCoversLoadedAsync(PersonalRepositoryCategories.Take(3));
         await EnsureCommunityCoversLoadedAsync(CommunityCategories.Take(3));
+    }
+
+    private void ReorderPersonalRepositoryCategories()
+    {
+        var orderedItems = PersonalRepositoryCategories
+            .OrderBy(GetPersonalRepositorySortIndex)
+            .ThenBy(x => x.Category.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        PersonalRepositoryCategories.Clear();
+        foreach (var item in orderedItems)
+        {
+            PersonalRepositoryCategories.Add(item);
+        }
+    }
+
+    private static int GetPersonalRepositorySortIndex(DesignerCategoryItemViewModel item)
+    {
+        if (item.Category?.Name != null &&
+            _personalRepositoryOrderMap.TryGetValue(item.Category.Name, out var index))
+        {
+            return index;
+        }
+
+        return int.MaxValue;
     }
 
     private void Log(string msg) => RuntimeLog.Write("AlbumCollectionVM", msg);

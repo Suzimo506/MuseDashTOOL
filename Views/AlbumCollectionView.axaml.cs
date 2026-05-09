@@ -52,6 +52,19 @@ public partial class AlbumCollectionView : UserControl
                             }
                         }, Avalonia.Threading.DispatcherPriority.Loaded);
                     }
+
+                    if (args.PropertyName == nameof(AlbumCollectionViewModel.IsListMode)
+                        && !vm.IsListMode)
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            var sv = this.FindControl<ScrollViewer>("AlbumScrollViewer");
+                            if (sv != null)
+                            {
+                                _ = LoadVisibleCategoryCoversAsync(sv, vm);
+                            }
+                        }, Avalonia.Threading.DispatcherPriority.Background);
+                    }
                 };
             }
         };
@@ -189,6 +202,9 @@ public partial class AlbumCollectionView : UserControl
 
     private async Task LoadVisibleCategoryCoversAsync(ScrollViewer scrollViewer, AlbumCollectionViewModel vm)
     {
+        if (vm.IsListMode)
+            return;
+
         var designerItems = new List<DesignerCategoryItemViewModel>();
         var communityItems = new List<CommunityCategoryItemViewModel>();
 

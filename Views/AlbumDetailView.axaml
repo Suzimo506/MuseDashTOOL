@@ -81,13 +81,7 @@
                             VerticalAlignment="Center"
                             Padding="12,5"
                             ToolTip.Tip="前往个人主页">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <PathIcon Data="M864 64H160C107.2 64 64 107.2 64 160v704c0 52.8 43.2 96 96 96h704c52.8 0 96-43.2 96-96V160c0-52.8-43.2-96-96-96z m-64 512H576v224c0 17.6-14.4 32-32 32s-32-14.4-32-32V576H288c-17.6 0-32-14.4-32-32s14.4-32 32-32h224V288c0-17.6 14.4-32 32-32s32 14.4 32 32v224h224c17.6 0 32 14.4 32 32s-14.4 32-32 32z"
-                                      Width="14"
-                                      Height="14"
-                                      Foreground="{DynamicResource SvgIconBrush}"/>
-                            <TextBlock Text="前往个人主页" FontSize="12" Foreground="{DynamicResource SvgIconBrush}" VerticalAlignment="Center"/>
-                        </StackPanel>
+                        <TextBlock Text="神秘传送门" FontSize="12" Foreground="{DynamicResource SvgIconBrush}" VerticalAlignment="Center"/>
                     </Button>
                 </StackPanel>
                 <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}"/>

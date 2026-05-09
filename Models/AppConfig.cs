@@ -89,6 +89,9 @@ public class AppConfig
 
     /// <summary>用户已点击确认过的红点标记列表（格式: "版本号:标记名"，如 "1.2.6:Tutorial"）</summary>
     public System.Collections.Generic.List<string> DismissedBadges { get; set; } = new();
+
+    /// <summary>整合包页是否使用列表模式</summary>
+    public bool AlbumCollectionListMode { get; set; } = false;
 }
 
 public class NoticeInfo

@@ -69,19 +69,53 @@ public class AlbumCollectionService : IAlbumCollectionService
     };
 
     // 新增谱师个人仓库时，只需要把远端文件夹名加入这里，就会从“曲包”移动到“谱师个人仓库”分类。
-    public static readonly HashSet<string> PersonalRepositoryNames = new(StringComparer.OrdinalIgnoreCase)
+    public static readonly string[] PersonalRepositoryDisplayOrder =
     {
         "桔子的谱面仓库",
         "Greenhub的个人谱面",
-        "Dunno的谱面小库"
+        "Dunno的谱面小库",
+        "石井圣人的谱面仓库",
+        "布布西里的谱面",
+        "独家特供抽象谱面（宋Jerry）",
+        "MC谱面（虚无）",
+        "MC谱面（鱼，好大的鱼）",
+        "超高难度奉上!!!（HuRew_奇迹）",
+        "MC谱面（云星雨）",
+        "MC谱面（谱师：龙星）",
+        "MC谱面（是陌灬鸭 老哥）",
+        "MC谱面（星云）",
+        "MC谱面（懒惰的sans)",
+        "MC谱面（小赖赖酱）",
+        "EX谱面（霞诗子）",
+        "MC谱面（土味刻晴）",
+        "EX谱面（谱师：XXX7）",
+        "MC谱师（中二的救赎）"
     };
+
+    public static readonly HashSet<string> PersonalRepositoryNames = new(PersonalRepositoryDisplayOrder, StringComparer.OrdinalIgnoreCase);
 
     // 链接先留空，后续你只需要在这里填写对应主页地址即可。
     public static readonly Dictionary<string, string> PersonalRepositoryHomepages = new(StringComparer.OrdinalIgnoreCase)
     {
         ["桔子的谱面仓库"] = "",
         ["Greenhub的个人谱面"] = "https://space.bilibili.com/130793282?spm_id_from=333.1387.follow.user_card.click",
-        ["Dunno的谱面小库"] = "https://space.bilibili.com/1548500340?spm_id_from=333.1387.follow.user_card.click"
+        ["Dunno的谱面小库"] = "https://space.bilibili.com/1548500340?spm_id_from=333.1387.follow.user_card.click",
+        ["石井圣人的谱面仓库"] = "https://v.douyin.com/JPY1Nk6P6bM/ 3@9.com :2pm",
+        ["布布西里的谱面"] = "",
+        ["独家特供抽象谱面（宋Jerry）"] = "",
+        ["MC谱面（虚无）"] = "",
+        ["MC谱面（鱼，好大的鱼）"] = "",
+        ["超高难度奉上!!!（HuRew_奇迹）"] = "",
+        ["MC谱面（云星雨）"] = "",
+        ["MC谱面（谱师：龙星）"] = "",
+        ["MC谱面（是陌灬鸭 老哥）"] = "",
+        ["MC谱面（星云）"] = "",
+        ["MC谱面（懒惰的sans)"] = "",
+        ["MC谱面（小赖赖酱）"] = "",
+        ["EX谱面（霞诗子）"] = "",
+        ["MC谱面（土味刻晴）"] = "",
+        ["EX谱面（谱师：XXX7）"] = "",
+        ["MC谱师（中二的救赎）"] = ""
     };
 
     public static bool IsPersonalRepositoryName(string? name)

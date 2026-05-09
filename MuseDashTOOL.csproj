@@ -6,7 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;publish_output\**</DefaultItemExcludes>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationDefinition>App.axaml</ApplicationDefinition>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>MdModManager</RootNamespace>
     <AssemblyName>MuseDashTOOL</AssemblyName>
