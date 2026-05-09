@@ -1,5 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -24,6 +26,8 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     private readonly IDownloadManagerService _downloadManagerService;
     private static readonly HttpClient _coverHttp = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(15));
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
+    private readonly Lock _coverLoadLock = new();
+    private readonly HashSet<string> _coverLoadingIds = new(StringComparer.Ordinal);
 
     static ChartDownloadViewModel()
     {
@@ -284,6 +288,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         {
             _ = UpdateTodayUpdatesCountAsync();
             UpdateStatusMessage();
+            _ = EnsureCurrentPageCoversLoadedAsync();
             return;
         }
 
@@ -564,6 +569,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         {
             IsLoading = false;
             UpdateStatusMessage();
+            _ = EnsureCurrentPageCoversLoadedAsync();
             return;
         }
 
@@ -650,7 +656,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
                 IsLoading = false;
                 UpdateStatusMessage();
             }
-            _ = LoadCoversAsync();
+            _ = EnsureCurrentPageCoversLoadedAsync();
         }
     }
 
@@ -688,7 +694,6 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     {
         _currentScrollY = yOffset;
         UpdateStatusMessage();
-        _ = LoadCoversAsync();
     }
 
     private void UpdateStatusMessage()
@@ -715,45 +720,78 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     }
 
 
-    /// <summary>异步并行加载封面图 (限制并发数为 7)</summary>
-    /// <summary>异步并行加载封面图 (限制并发数为 7)</summary>
-    private async Task LoadCoversAsync()
+    /// <summary>异步并行加载当前页缺失的封面图，避免重复排队同一张封面。</summary>
+    private async Task EnsureCurrentPageCoversLoadedAsync()
     {
-        // 翻页模式下直接加载全页封面（由于每页只有 15 个项，直接全部并行加载即可）
-        var tasks = new System.Collections.Generic.List<Task>();
-
-        foreach (var chart in Charts)
+        var chartsSnapshot = Charts.ToList();
+        if (chartsSnapshot.Count == 0)
         {
-            if (chart.CoverImage != null) continue;
-            
-            tasks.Add(Task.Run(async () =>
+            return;
+        }
+
+        var tasks = new List<Task>();
+
+        foreach (var chart in chartsSnapshot)
+        {
+            if (!TryMarkCoverLoadStarted(chart))
             {
-                await _coverSemaphore.WaitAsync();
-                try
-                {
-                    // 再次检查，防止并发重复加载
-                    if (chart.CoverImage != null) return;
+                continue;
+            }
 
-                    var bytes = await _coverHttp.GetByteArrayAsync(chart.CoverUrl);
-                    using var ms = new MemoryStream(bytes);
-                    var bmp = new Bitmap(ms);
-
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    {
-                        chart.CoverImage = bmp;
-                    });
-                }
-                catch { /* 封面不可用 */ }
-                finally
-                {
-                    _coverSemaphore.Release();
-                }
-            }));
+            tasks.Add(LoadSingleCoverTrackedAsync(chart));
         }
 
         if (tasks.Count > 0)
         {
             await Task.WhenAll(tasks);
+        }
+    }
+
+    private bool TryMarkCoverLoadStarted(MdmcChart chart)
+    {
+        if (chart.CoverImage != null || string.IsNullOrWhiteSpace(chart.CoverUrl))
+        {
+            return false;
+        }
+
+        lock (_coverLoadLock)
+        {
+            return _coverLoadingIds.Add(chart.Id);
+        }
+    }
+
+    private void MarkCoverLoadFinished(MdmcChart chart)
+    {
+        lock (_coverLoadLock)
+        {
+            _coverLoadingIds.Remove(chart.Id);
+        }
+    }
+
+    private async Task LoadSingleCoverTrackedAsync(MdmcChart chart)
+    {
+        await _coverSemaphore.WaitAsync();
+        try
+        {
+            if (chart.CoverImage != null)
+            {
+                return;
+            }
+
+            var bytes = await _coverHttp.GetByteArrayAsync(chart.CoverUrl);
+            using var ms = new MemoryStream(bytes);
+            var bmp = new Bitmap(ms);
+
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.CoverImage = bmp);
+        }
+        catch (Exception ex)
+        {
+            RuntimeLog.Write("ChartDownloadVM", $"Cover load failed: id='{chart.Id}', title='{chart.Title}', error='{ex.Message}'");
+        }
+        finally
+        {
+            MarkCoverLoadFinished(chart);
+            _coverSemaphore.Release();
         }
     }
 
