@@ -319,13 +319,11 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
     {
         var tasks = pageCharts.Select(async chart =>
         {
-            if (chart.CoverImage != null || string.IsNullOrEmpty(chart.CustomCoverUrl)) return;
+            if (chart.HasDisplayCoverSource || string.IsNullOrEmpty(chart.CustomCoverUrl)) return;
             await _coverSemaphore.WaitAsync();
             try
             {
-                var bytes = await _httpClient.GetByteArrayAsync(chart.CustomCoverUrl);
-                using var stream = new MemoryStream(bytes);
-                chart.CoverImage = new Avalonia.Media.Imaging.Bitmap(stream);
+                chart.ResolvedCoverSource = chart.CustomCoverUrl;
             }
             catch { }
             finally { _coverSemaphore.Release(); }

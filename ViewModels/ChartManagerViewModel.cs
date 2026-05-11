@@ -68,6 +68,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private void Reload()
     {
         StopCurrentPlayback();
+        foreach (var existingChart in _allCharts.ToList())
+            existingChart.CleanupCoverResources();
+
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             _allCharts.Clear();
@@ -224,7 +227,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         try
         {
             _chartService.DeleteChart(chart);
-            chart.CoverImage?.Dispose();
+            chart.CleanupCoverResources();
             _allCharts.Remove(chart);
             Charts.Remove(chart);
             IsEmpty = _allCharts.Count == 0;
@@ -292,7 +295,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     {
         StopCurrentPlayback();
         foreach (var c in _allCharts)
-            c.CoverImage?.Dispose();
+            c.CleanupCoverResources();
     }
 
     [RelayCommand]

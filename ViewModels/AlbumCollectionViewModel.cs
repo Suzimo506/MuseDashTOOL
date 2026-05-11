@@ -689,6 +689,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
                     Charter = chart.Author,
                     Bpm = chart.Bpm,
                     CustomCoverUrl = chart.CoverUrl,
+                    ResolvedCoverSource = chart.CoverUrl,
                     CustomDemoUrl = chart.DemoUrl,
                     CustomDemoMp3Url = chart.DemoMp3Url,
                     CustomDownloadUrl = chart.DownloadUrl,
@@ -705,6 +706,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 chart.SearchText = query; // 用于粉色高亮
                 chart.SourceCategoryName = catName;
                 chart.IsCommunitySource = true;
+                ChartCoverSourceResolver.ApplyDirectCoverSource(chart);
                 allChartResults.Add(chart);
             }
 
@@ -760,18 +762,13 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     private async Task LoadSearchResultsCoversAsync(List<MdmcChart> charts)
     {
-        var configService = Ioc.Default.GetRequiredService<IConfigService>();
-        var httpClient = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-        
         var tasks = charts.Select(async chart =>
         {
-            if (chart.CoverImage != null || string.IsNullOrEmpty(chart.CoverUrl)) return;
+            if (chart.HasDisplayCoverSource || string.IsNullOrEmpty(chart.CoverUrl)) return;
             await _coverSemaphore.WaitAsync();
             try
             {
-                var bytes = await httpClient.GetByteArrayAsync(chart.CoverUrl);
-                using var stream = new MemoryStream(bytes);
-                chart.CoverImage = new Bitmap(stream);
+                chart.ResolvedCoverSource = chart.CoverUrl;
             }
             catch { }
             finally { _coverSemaphore.Release(); }

@@ -2,6 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MdModManager.ViewModels"
              xmlns:models="using:MdModManager.Models"
+             xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             xmlns:animated="clr-namespace:AnimatedImage.Avalonia;assembly=AnimatedImage.Avalonia"
              x:Class="MdModManager.Views.DownloadManagerView"
              x:DataType="vm:DownloadManagerViewModel">
     <UserControl.Resources>
@@ -113,8 +115,9 @@
                                 <!-- 封面图 -->
                                 <Border Grid.RowSpan="2" Grid.Column="0" Width="40" Height="40" Background="#333333" CornerRadius="4" Margin="0,0,15,0" ClipToBounds="True">
                                     <Panel>
-                                        <TextBlock Text="🎵" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" Foreground="#555555"/>
-                                        <Image Source="{Binding Chart.CoverImage}" Stretch="UniformToFill"/>
+                                        <TextBlock Text="🎵" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" Foreground="#555555" IsVisible="{Binding !Chart.HasDisplayCoverSource}"/>
+                                        <Image IsVisible="{Binding Chart.HasAnimatedDisplayCoverSource}" Stretch="UniformToFill" animated:ImageBehavior.AnimatedSource="{Binding Chart.AnimatedDisplayCoverSource}"/>
+                                        <asyncImageLoader:AdvancedImage Source="{Binding Chart.StaticDisplayCoverSource}" Stretch="UniformToFill" IsVisible="{Binding Chart.HasStaticDisplayCoverSource}"/>
                                     </Panel>
                                 </Border>
 

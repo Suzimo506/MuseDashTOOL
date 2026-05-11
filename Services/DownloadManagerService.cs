@@ -84,10 +84,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     {
         try
         {
-            var bytes = await _http.GetByteArrayAsync(item.Chart.CoverUrl);
-            using var ms = new MemoryStream(bytes);
-            var bmp = new Avalonia.Media.Imaging.Bitmap(ms);
-            Dispatcher.UIThread.Post(() => item.Chart.CoverImage = bmp);
+            await ChartCoverSourceResolver.EnsureResolvedAsync(item.Chart);
         }
         catch
         {

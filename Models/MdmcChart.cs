@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -45,6 +46,16 @@ public partial class MdmcChart : ObservableObject
     [property: JsonIgnore]
     private bool _isPlaying;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayCoverSource))]
+    [NotifyPropertyChangedFor(nameof(HasDisplayCoverSource))]
+    [NotifyPropertyChangedFor(nameof(HasAnimatedDisplayCoverSource))]
+    [NotifyPropertyChangedFor(nameof(HasStaticDisplayCoverSource))]
+    [NotifyPropertyChangedFor(nameof(AnimatedDisplayCoverSource))]
+    [NotifyPropertyChangedFor(nameof(StaticDisplayCoverSource))]
+    [property: JsonIgnore]
+    private string? _resolvedCoverSource;
+
     /// <summary>搜索关键词，用于高亮显示</summary>
     [ObservableProperty]
     [property: JsonIgnore]
@@ -82,6 +93,26 @@ public partial class MdmcChart : ObservableObject
     public bool IsCommunitySource { get; set; }
 
     // 派生 URL
+    [JsonIgnore]
+    public string? DisplayCoverSource => !string.IsNullOrWhiteSpace(ResolvedCoverSource)
+        ? ResolvedCoverSource
+        : (!string.IsNullOrWhiteSpace(CustomCoverUrl) ? CustomCoverUrl : null);
+
+    [JsonIgnore]
+    public bool HasDisplayCoverSource => !string.IsNullOrWhiteSpace(DisplayCoverSource);
+
+    [JsonIgnore]
+    public bool HasAnimatedDisplayCoverSource => HasGifLikeSource(DisplayCoverSource);
+
+    [JsonIgnore]
+    public bool HasStaticDisplayCoverSource => HasDisplayCoverSource && !HasAnimatedDisplayCoverSource;
+
+    [JsonIgnore]
+    public string? AnimatedDisplayCoverSource => HasAnimatedDisplayCoverSource ? DisplayCoverSource : null;
+
+    [JsonIgnore]
+    public string? StaticDisplayCoverSource => HasStaticDisplayCoverSource ? DisplayCoverSource : null;
+
     public string CoverUrl => !string.IsNullOrWhiteSpace(CustomCoverUrl) ? CustomCoverUrl : $"https://cdn.mdmc.moe/charts/{Id}/cover.png";
     public string DemoUrl  => !string.IsNullOrWhiteSpace(CustomDemoUrl) ? CustomDemoUrl : $"https://cdn.mdmc.moe/charts/{Id}/demo.ogg";
     public string DemoMp3Url => !string.IsNullOrWhiteSpace(CustomDemoMp3Url) ? CustomDemoMp3Url : $"https://cdn.mdmc.moe/charts/{Id}/demo.mp3";
@@ -109,6 +140,20 @@ public partial class MdmcChart : ObservableObject
                 if (!string.IsNullOrEmpty(s.Difficulty)) labels.Add(s.Difficulty);
             return labels;
         }
+    }
+
+    private static bool HasGifLikeSource(string? source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+            return false;
+
+        if (Uri.TryCreate(source, UriKind.Absolute, out var uri))
+        {
+            var path = uri.IsFile ? uri.LocalPath : uri.AbsolutePath;
+            return string.Equals(Path.GetExtension(path), ".gif", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return string.Equals(Path.GetExtension(source), ".gif", StringComparison.OrdinalIgnoreCase);
     }
 }
 

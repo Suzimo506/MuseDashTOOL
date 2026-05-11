@@ -235,10 +235,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                 var remoteCharts = await _collectionService.GetChartsAsync(category.Name);
                 if (remoteCharts.Count > 0)
                 {
-                    // 简单比对：如果本地为空，或者数量/标题不一致，则刷新
-                    bool needsUpdate = localCharts.Count == 0 || 
-                                     remoteCharts.Count != localCharts.Count ||
-                                     !remoteCharts.Select(c => c.Id).SequenceEqual(localCharts.Select(c => c.Id));
+                    bool needsUpdate = HasChartListChanged(localCharts, remoteCharts);
 
                     if (needsUpdate)
                     {
@@ -254,7 +251,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             }
             catch (Exception ex)
             {
-                Log($"Background remote sync failed for '{category.Name}': {ex.Message}");
+                Log($"Background remote sync failed for '{category.Name}': {ex}");
             }
             finally
             {
@@ -299,6 +296,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                 Charter = c.Author,
                 Bpm = NormalizeBpm(c.Bpm),
                 CustomCoverUrl = ResolveResourceUrl(c.CoverUrl),
+                ResolvedCoverSource = ResolveResourceUrl(c.CoverUrl),
                 CustomDownloadUrl = ResolveResourceUrl(c.DownloadUrl),
                 CustomDemoUrl = ResolveResourceUrl(c.DemoUrl),
                 CustomDemoMp3Url = ResolveResourceUrl(c.DemoMp3Url),
@@ -499,10 +497,6 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     private async Task LoadCoversAsync(List<MdmcChart> pageCharts)
     {
-        using var http = MdModManager.Helpers.HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(15));
-        http.DefaultRequestHeaders.Remove("User-Agent");
-        http.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0");
-
         var tasks = new List<Task>();
 
         foreach (var chart in pageCharts)
@@ -510,14 +504,14 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             if (string.IsNullOrWhiteSpace(chart.CustomCoverUrl))
                 continue;
 
-            if (chart.CoverImage != null) continue;
+            if (chart.HasDisplayCoverSource) continue;
 
             tasks.Add(Task.Run(async () =>
             {
                 await _coverSemaphore.WaitAsync();
                 try
                 {
-                    if (chart.CoverImage != null) return;
+                    if (chart.HasDisplayCoverSource) return;
 
                     var fetchUrl = chart.CustomCoverUrl;
                     if (!string.IsNullOrEmpty(fetchUrl) && (fetchUrl.Contains("~%23FFFFFF~") || fetchUrl.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true)))
@@ -526,10 +520,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                         fetchUrl = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
                     }
 
-                    var bytes = await http.GetByteArrayAsync(fetchUrl);
-                    using var ms = new System.IO.MemoryStream(bytes);
-                    var bmp = new Avalonia.Media.Imaging.Bitmap(ms);
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.CoverImage = bmp);
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.ResolvedCoverSource = fetchUrl);
                 }
                 catch (Exception)
                 {
@@ -581,5 +572,58 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     private static void Log(string message)
     {
         RuntimeLog.Write("AlbumDetailViewModel", message);
+    }
+
+    private static bool HasChartListChanged(IReadOnlyList<DesignerChart> localCharts, IReadOnlyList<DesignerChart> remoteCharts)
+    {
+        if (localCharts.Count != remoteCharts.Count)
+            return true;
+
+        var localFingerprints = localCharts
+            .Select(BuildChartUpdateFingerprint)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+
+        var remoteFingerprints = remoteCharts
+            .Select(BuildChartUpdateFingerprint)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+
+        return !localFingerprints.SequenceEqual(remoteFingerprints, StringComparer.Ordinal);
+    }
+
+    private static string BuildChartUpdateFingerprint(DesignerChart chart)
+    {
+        static string Normalize(string? value)
+            => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant();
+
+        var primaryIdentity = Normalize(chart.DownloadUrl);
+        if (string.IsNullOrEmpty(primaryIdentity))
+            primaryIdentity = Normalize(chart.Id);
+
+        if (string.IsNullOrEmpty(primaryIdentity))
+        {
+            primaryIdentity = string.Join("|",
+                Normalize(chart.Title),
+                Normalize(chart.Author),
+                Normalize(chart.Artist),
+                Normalize(chart.Bpm));
+        }
+
+        var difficulties = chart.Difficulties == null
+            ? string.Empty
+            : string.Join(",",
+                chart.Difficulties
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(Normalize)
+                    .OrderBy(x => x, StringComparer.Ordinal));
+
+        return string.Join("||",
+            primaryIdentity,
+            Normalize(chart.Title),
+            Normalize(chart.Author),
+            Normalize(chart.Artist),
+            Normalize(chart.Bpm),
+            difficulties);
     }
 }

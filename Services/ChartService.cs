@@ -4,7 +4,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Avalonia.Media.Imaging;
 using MdModManager.Models;
 
 namespace MdModManager.Services;
@@ -20,6 +19,10 @@ public class ChartService : IChartService
 {
     private static readonly HashSet<string> AudioExtensions =
         new(StringComparer.OrdinalIgnoreCase) { ".ogg", ".wav", ".mp3", ".flac" };
+    private static readonly HashSet<string> ImageExtensions =
+        new(StringComparer.OrdinalIgnoreCase) { ".gif", ".png", ".jpg", ".jpeg", ".webp", ".bmp" };
+    private static readonly string[] PreferredCoverNames =
+        ["cover.gif", "cover.png", "cover.jpg", "cover.jpeg", "cover.webp", "cover.bmp"];
 
     /// <summary>
     /// Filenames present at app startup. Files added after startup are "new".
@@ -83,22 +86,34 @@ public class ChartService : IChartService
         };
 
         using var zip = ZipFile.OpenRead(filePath);
+        var coverEntry = FindPreferredCoverEntry(zip);
+        if (coverEntry != null)
+        {
+            var coverExtension = Path.GetExtension(coverEntry.Name);
+            if (string.Equals(coverExtension, ".gif", StringComparison.OrdinalIgnoreCase))
+            {
+                chart.CoverSource = ExtractCoverToTempFile(coverEntry);
+                chart.HasTemporaryCoverFile = !string.IsNullOrWhiteSpace(chart.CoverSource);
+            }
+            else
+            {
+                try
+                {
+                    using var stream = coverEntry.Open();
+                    using var ms = new MemoryStream();
+                    stream.CopyTo(ms);
+                    ms.Position = 0;
+                    chart.CoverImage = new Avalonia.Media.Imaging.Bitmap(ms);
+                }
+                catch
+                {
+                }
+            }
+        }
 
         foreach (var entry in zip.Entries)
         {
             var ext = Path.GetExtension(entry.Name);
-
-            // Cover image
-            if (chart.CoverImage == null &&
-                ext.Equals(".png", StringComparison.OrdinalIgnoreCase))
-            {
-                using var stream = entry.Open();
-                using var ms = new MemoryStream();
-                stream.CopyTo(ms);
-                ms.Position = 0;
-                ms.Position = 0;
-                chart.CoverImage = new Bitmap(ms);
-            }
 
             // Demo audio
             if (chart.DemoEntryName == null && AudioExtensions.Contains(ext))
@@ -125,6 +140,43 @@ public class ChartService : IChartService
         }
 
         return chart;
+    }
+
+    private static ZipArchiveEntry? FindPreferredCoverEntry(ZipArchive zip)
+    {
+        foreach (var preferredName in PreferredCoverNames)
+        {
+            var exactMatch = zip.Entries.FirstOrDefault(entry =>
+                string.Equals(entry.Name, preferredName, StringComparison.OrdinalIgnoreCase));
+            if (exactMatch != null)
+                return exactMatch;
+        }
+
+        return zip.Entries
+            .Where(entry => ImageExtensions.Contains(Path.GetExtension(entry.Name)))
+            .OrderBy(entry => string.Equals(Path.GetFileNameWithoutExtension(entry.Name), "cover", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(entry => entry.FullName.Length)
+            .FirstOrDefault();
+    }
+
+    private static string? ExtractCoverToTempFile(ZipArchiveEntry entry)
+    {
+        try
+        {
+            var extension = Path.GetExtension(entry.Name);
+            if (string.IsNullOrWhiteSpace(extension))
+                extension = ".png";
+
+            var tempPath = Path.Combine(Path.GetTempPath(), $"mdm_cover_{Guid.NewGuid():N}{extension}");
+            using var source = entry.Open();
+            using var destination = File.Create(tempPath);
+            source.CopyTo(destination);
+            return new Uri(tempPath).AbsoluteUri;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static void ParseInfoJson(Stream jsonStream, ChartInfo chart)
@@ -250,6 +302,7 @@ public class ChartService : IChartService
 
     public void DeleteChart(ChartInfo chart)
     {
+        chart.CleanupCoverResources();
         if (File.Exists(chart.FilePath))
             File.Delete(chart.FilePath);
     }

@@ -54,44 +54,20 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     public string SearchText
     {
         get => _searchText;
-        set
-        {
-            if (SetProperty(ref _searchText, value))
-            {
-                CurrentPage = 1; // 搜索时重置回第一页
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    _searchCts?.Cancel();
-                    _ = ReloadAsync();
-                }
-                else
-                {
-                    _ = ReloadDebouncedAsync();
-                }
-            }
-        }
+        private set => SetProperty(ref _searchText, value);
+    }
+
+    private string _searchDraftText = string.Empty;
+    public string SearchDraftText
+    {
+        get => _searchDraftText;
+        set => SetProperty(ref _searchDraftText, value);
     }
 
     /// <summary>是否启用谱面名称滚动</summary>
     public bool EnableMarquee => _configService.Config.EnableChartNameMarquee;
 
     private CancellationTokenSource? _searchCts;
-    private async Task ReloadDebouncedAsync()
-    {
-        _searchCts?.Cancel();
-        _searchCts = new CancellationTokenSource();
-        var ct = _searchCts.Token;
-
-        try
-        {
-            await Task.Delay(500, ct); // 500ms 延迟，避免输入过快频繁请求
-            if (!ct.IsCancellationRequested)
-            {
-                await ReloadAsync(ct);
-            }
-        }
-        catch (TaskCanceledException) { /* 已忽略 */ }
-    }
 
     // ── 排序 ──────────────────────────────────────────────────────────────────
     /// <summary>排序方式列表，显示中文，Value 是 API 参数</summary>
@@ -267,15 +243,12 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
     private async Task LoadSingleCoverAsync(MdmcChart chart)
     {
-        if (chart.CoverImage != null) return;
+        if (chart.HasDisplayCoverSource) return;
         await _coverSemaphore.WaitAsync();
         try
         {
-            if (chart.CoverImage != null) return;
-            var bytes = await _coverHttp.GetByteArrayAsync(chart.CoverUrl);
-            using var ms = new MemoryStream(bytes);
-            var bmp = new Bitmap(ms);
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.CoverImage = bmp);
+            if (chart.HasDisplayCoverSource) return;
+            await ChartCoverSourceResolver.EnsureResolvedAsync(chart);
         }
         catch { /* 已忽略 */ }
         finally { _coverSemaphore.Release(); }
@@ -283,6 +256,8 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
+        SearchDraftText = SearchText;
+
         // 优化：如果已经在点赞榜首页且已经有数据，不再触发重载
         if (Charts.Count > 0 && CurrentPage == 1 && SelectedSortIndex == 0 && string.IsNullOrWhiteSpace(SearchText) && !IsAscending)
         {
@@ -370,9 +345,31 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void ClearSearch()
+    private async Task ClearSearch()
     {
-        SearchText = string.Empty;
+        _searchCts?.Cancel();
+        SearchDraftText = string.Empty;
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            SearchText = string.Empty;
+            CurrentPage = 1;
+            await ReloadAsync();
+        }
+    }
+
+    [RelayCommand]
+    public async Task ApplySearchAsync()
+    {
+        _searchCts?.Cancel();
+        var newQuery = SearchDraftText?.Trim() ?? string.Empty;
+        var currentQuery = SearchText?.Trim() ?? string.Empty;
+
+        if (string.Equals(newQuery, currentQuery, StringComparison.Ordinal))
+            return;
+
+        SearchText = newQuery;
+        CurrentPage = 1;
+        await ReloadAsync();
     }
 
     [RelayCommand]
@@ -749,7 +746,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
     private bool TryMarkCoverLoadStarted(MdmcChart chart)
     {
-        if (chart.CoverImage != null || string.IsNullOrWhiteSpace(chart.CoverUrl))
+        if (chart.HasDisplayCoverSource || string.IsNullOrWhiteSpace(chart.Id))
         {
             return false;
         }
@@ -773,16 +770,12 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
         await _coverSemaphore.WaitAsync();
         try
         {
-            if (chart.CoverImage != null)
+            if (chart.HasDisplayCoverSource)
             {
                 return;
             }
 
-            var bytes = await _coverHttp.GetByteArrayAsync(chart.CoverUrl);
-            using var ms = new MemoryStream(bytes);
-            var bmp = new Bitmap(ms);
-
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.CoverImage = bmp);
+            await ChartCoverSourceResolver.EnsureResolvedAsync(chart);
         }
         catch (Exception ex)
         {

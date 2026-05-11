@@ -6,6 +6,8 @@
              xmlns:models="using:MdModManager.Models"
              xmlns:controls="using:MdModManager.Views.Controls"
              xmlns:helpers="using:MdModManager.Helpers"
+             xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             xmlns:animated="clr-namespace:AnimatedImage.Avalonia;assembly=AnimatedImage.Avalonia"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="MdModManager.Views.ChartManagerView"
              x:DataType="vm:ChartManagerViewModel"
@@ -180,12 +182,18 @@
                                     <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
                                         <Panel>
                                             <!-- 有封面时显示 -->
-                                            <Image Source="{Binding CoverImage}"
-                                                   IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            <Image IsVisible="{Binding HasAnimatedCoverSource}"
                                                    Stretch="UniformToFill"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   animated:ImageBehavior.AnimatedSource="{Binding AnimatedCoverSource}"/>
+                                            <Image Source="{Binding CoverImage}"
+                                                   IsVisible="{Binding HasCoverBitmap}"
+                                                   Stretch="UniformToFill"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
                                             <!-- 无封面占位 -->
-                                            <Border IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNull}}"
+                                            <Border IsVisible="{Binding !HasAnyCover}"
                                                     Background="#333333"
                                                     CornerRadius="10,10,0,0">
                                                 <TextBlock Text="🎵" FontSize="56"

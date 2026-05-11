@@ -6,6 +6,8 @@
              xmlns:helpers="using:MdModManager.Helpers"
              xmlns:models="using:MdModManager.Models"
              xmlns:controls="using:MdModManager.Views.Controls"
+             xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             xmlns:animated="clr-namespace:AnimatedImage.Avalonia;assembly=AnimatedImage.Avalonia"
              mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
              x:Class="MdModManager.Views.ChartDownloadView"
              x:DataType="vm:ChartDownloadViewModel">
@@ -136,9 +138,9 @@
         <!-- 工具栏：搜索 + 顶部分页栏 + 排序方式 (Row 1) -->
         <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,14">
             <!-- 搜索框 -->
-            <TextBox Grid.Column="0" Text="{Binding SearchText}" Watermark="搜索谱面名称、作者或谱师..." VerticalAlignment="Center" Padding="10,8" IsHitTestVisible="{Binding !IsLoading}" IsReadOnly="{Binding IsLoading}">
+            <TextBox Grid.Column="0" Name="SearchTextBox" Text="{Binding SearchDraftText}" Watermark="搜索谱面名称、作者或谱师..." VerticalAlignment="Center" Padding="10,8" IsHitTestVisible="{Binding !IsLoading}" IsReadOnly="{Binding IsLoading}" LostFocus="OnSearchBoxLostFocus" KeyDown="OnSearchBoxKeyDown">
                 <TextBox.InnerLeftContent><PathIcon Data="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1C567.2 143.9 492.3 112 413 112s-154.2 31.9-211.1 88.9C145.5 257.5 114 332.7 114 412c0 79.3 31.3 154.5 88 211.4C259.3 680.3 334.4 712 413 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0 0 11.6 0l42.6-42.6a8.2 8.2 0 0 0 0-11.5zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z" Foreground="#888888" Width="16" Height="16" Margin="4,0,0,0"/></TextBox.InnerLeftContent>
-                <TextBox.InnerRightContent><Button Command="{Binding ClearSearchCommand}" IsVisible="{Binding SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Theme="{StaticResource RobustPlainIconBtn}" Margin="0,0,10,0"><TextBlock Text="清空" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource SvgIconBrush}"/></Button></TextBox.InnerRightContent>
+                <TextBox.InnerRightContent><Button Command="{Binding ClearSearchCommand}" IsVisible="{Binding SearchDraftText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Theme="{StaticResource RobustPlainIconBtn}" Margin="0,0,10,0"><TextBlock Text="清空" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource SvgIconBrush}"/></Button></TextBox.InnerRightContent>
             </TextBox>
 
             <!-- 顶部分页栏 (紧凑型，Row1 Col1) -->
@@ -225,8 +227,9 @@
                                     <Grid RowDefinitions="Auto,*">
                                         <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
                                             <Panel>
-                                                <Border Background="#333333" CornerRadius="10,10,0,0" IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNull}}"><TextBlock Text="🎵" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555"/></Border>
-                                                <Image Source="{Binding CoverImage}" IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNotNull}}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                <Border Background="#333333" CornerRadius="10,10,0,0" IsVisible="{Binding !HasDisplayCoverSource}"><TextBlock Text="🎵" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555"/></Border>
+                                                <Image IsVisible="{Binding HasAnimatedDisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" animated:ImageBehavior.AnimatedSource="{Binding AnimatedDisplayCoverSource}" />
+                                                <asyncImageLoader:AdvancedImage Source="{Binding StaticDisplayCoverSource}" IsVisible="{Binding HasStaticDisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0"><TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                                                 <Border Background="#cc000000" CornerRadius="4" Padding="6,2" Margin="0,0,6,6" HorizontalAlignment="Right" VerticalAlignment="Bottom"><StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="♥" FontSize="11" Foreground="{DynamicResource SvgIconBrush}" VerticalAlignment="Center"/><TextBlock Text="{Binding LikesCount}" FontSize="11" Foreground="White" VerticalAlignment="Center"/></StackPanel></Border>
                                                 <Border IsVisible="{Binding Ranked}" Background="#cc1a4a1a" CornerRadius="4" Padding="6,2" Margin="6,0,0,6" HorizontalAlignment="Left" VerticalAlignment="Bottom"><TextBlock Text="✓ 评级" FontSize="10" Foreground="#44ff44"/></Border>
