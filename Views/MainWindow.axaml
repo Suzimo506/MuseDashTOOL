@@ -122,15 +122,55 @@
                                 <ScaleTransform ScaleX="{Binding FontScale}" ScaleY="{Binding FontScale}"/>
                             </LayoutTransformControl.LayoutTransform>
                             <StackPanel Spacing="10">
-                                <Button Classes="NavBtn" Command="{Binding NavigateToModManagerCommand}"><TextBlock Text="Mod管理" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
-                                <Button Classes="NavBtn" Command="{Binding NavigateToChartManagerCommand}"><TextBlock Text="谱面管理" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
-                                <Button Classes="NavBtn" Command="{Binding NavigateToChartDownloadCommand}"><TextBlock Text="谱面下载" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
+                                <Button Classes="NavBtn" Command="{Binding NavigateToModManagerCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <PathIcon Data="M821.333333 85.333333H202.666667C136.533333 85.333333 85.333333 136.533333 85.333333 202.666667v618.666666C85.333333 887.466667 136.533333 938.666667 202.666667 938.666667h618.666666c66.133333 0 117.333333-51.2 117.333334-117.333334V202.666667C938.666667 136.533333 887.466667 85.333333 821.333333 85.333333zM298.666667 768H192v-85.333333h106.666667v85.333333z m0-170.666667H192v-85.333333h106.666667v85.333333z m0-170.666666H192V341.333333h106.666667v85.333334z m533.333333 341.333333H362.666667v-85.333333h469.333333v85.333333z m0-170.666667H362.666667v-85.333333h469.333333v85.333333z m0-170.666666H362.666667V341.333333h469.333333v85.333334z"
+                                                  Width="18" Height="18"
+                                                  Foreground="{DynamicResource NavButtonMainBrush}"/>
+                                        <TextBlock Text="Mod管理" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="NavBtn" Command="{Binding NavigateToChartManagerCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <PathIcon Data="M768 128H256c-70.4 0-128 57.6-128 128v512c0 70.4 57.6 128 128 128h512c70.4 0 128-57.6 128-128V256c0-70.4-57.6-128-128-128z m42.666667 640c0 23.466667-19.2 42.666667-42.666667 42.666667H256c-23.466667 0-42.666667-19.2-42.666667-42.666667V256c0-23.466667 19.2-42.666667 42.666667-42.666667h512c23.466667 0 42.666667 19.2 42.666667 42.666667v512zM341.333333 362.666667h341.333334v85.333333H341.333333V362.666667z m0 213.333333h341.333334v85.333333H341.333333v-85.333333z"
+                                                  Width="18" Height="18"
+                                                  Foreground="{DynamicResource NavButtonMainBrush}"/>
+                                        <TextBlock Text="谱面管理" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="NavBtn" Command="{Binding NavigateToChartDownloadCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z"
+                                                  Width="18" Height="18"
+                                                  Foreground="{DynamicResource NavButtonMainBrush}"/>
+                                        <TextBlock Text="谱面下载" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                    </StackPanel>
+                                </Button>
                                 <!-- <Button Classes="NavBtn" Command="{Binding NavigateToChartUploadCommand}"><TextBlock Text="谱面上传" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button> -->
-                                <Button Classes="NavBtn" Command="{Binding NavigateToConfigManagerCommand}"><TextBlock Text="配置文件" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
-                                <Button Classes="NavBtn" Command="{Binding NavigateToAccountCommand}"><TextBlock Text="我的账号" LetterSpacing="{Binding NavButtonLetterSpacing}"/></Button>
+                                <Button Classes="NavBtn" Command="{Binding NavigateToConfigManagerCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <PathIcon Data="M170.666667 213.333333h682.666666v85.333334H170.666667V213.333333z m0 256h682.666666v85.333334H170.666667v-85.333334z m0 256h682.666666v85.333334H170.666667v-85.333334z"
+                                                  Width="18" Height="18"
+                                                  Foreground="{DynamicResource NavButtonMainBrush}"/>
+                                        <TextBlock Text="配置文件" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="NavBtn" Command="{Binding NavigateToAccountCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <PathIcon Data="M512 128a192 192 0 1 0 192 192A192 192 0 0 0 512 128z m0 469.333333c-128 0-384 64-384 192v42.666667h768v-42.666667c0-128-256-192-384-192z"
+                                                  Width="18" Height="18"
+                                                  Foreground="{DynamicResource NavButtonMainBrush}"/>
+                                        <TextBlock Text="我的账号" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                    </StackPanel>
+                                </Button>
                                 <Button Classes="NavBtn" Command="{Binding NavigateToTutorialCommand}">
                                     <Grid>
-                                        <TextBlock Text="使用说明" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                            <PathIcon Data="M512 85.333333C276.266667 85.333333 85.333333 276.266667 85.333333 512s190.933333 426.666667 426.666667 426.666667 426.666667-190.933333 426.666667-426.666667S747.733333 85.333333 512 85.333333z m42.666667 640h-85.333334v-256h85.333334v256z m0-341.333333h-85.333334v-85.333333h85.333334v85.333333z"
+                                                      Width="18" Height="18"
+                                                      Foreground="{DynamicResource NavButtonMainBrush}"/>
+                                            <TextBlock Text="使用说明" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                        </StackPanel>
                                         <!-- 红点提示：有新内容时显示，点击后消失 -->
                                         <Ellipse Width="8" Height="8" Fill="#FF4444"
                                                  HorizontalAlignment="Right" VerticalAlignment="Top"
@@ -210,7 +250,14 @@
                             </LayoutTransformControl.LayoutTransform>
                             <StackPanel Spacing="8">
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <Button Grid.Column="0" Classes="NavBtn" Command="{Binding LaunchGameCommand}"><TextBlock Text="启动/重启游戏"/></Button>
+                                    <Button Grid.Column="0" Classes="NavBtn" Command="{Binding LaunchGameCommand}">
+                                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                            <PathIcon Data="M896 512L128 1024V0z"
+                                                      Width="18" Height="18"
+                                                      Foreground="{DynamicResource NavButtonSubBrush}"/>
+                                            <TextBlock Text="启动/重启游戏"/>
+                                        </StackPanel>
+                                    </Button>
                                     <TextBlock Grid.Column="1"
                                                Text="!!!"
                                                IsVisible="{Binding HasStagedMods}"
@@ -221,11 +268,32 @@
                                                Margin="4,0,8,0"
                                                ToolTip.Tip="有 Mod 已暂存，将在游戏关闭后自动安装"/>
                                 </Grid>
-                                <Button Classes="NavBtn" Command="{Binding NavigateToMelonLoaderCommand}"><TextBlock Text="MelonLoader 管理"/></Button>
-                                <Button Classes="NavBtn" Command="{Binding NavigateToSettingsCommand}"><TextBlock Text="设置"/></Button>
+                                <Button Classes="NavBtn" Command="{Binding NavigateToMelonLoaderCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <PathIcon Data="M128 256h768v85.333333H128V256z m85.333333 213.333333h597.333334v85.333334H213.333333v-85.333334z m128 213.333334h341.333334v85.333333H341.333333v-85.333333z"
+                                                  Width="18" Height="18"
+                                                  Foreground="{DynamicResource NavButtonSubBrush}"/>
+                                        <TextBlock Text="MelonLoader 管理"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="NavBtn" Command="{Binding NavigateToSettingsCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <PathIcon Data="M896 554.666667v-85.333334l-94.293333-12.373333a292.266667 292.266667 0 0 0-24.746667-59.733333l57.173333-76.373334-60.373333-60.373333-76.373333 57.173333a292.266667 292.266667 0 0 0-59.733334-24.746666L554.666667 128h-85.333334l-12.373333 94.293333a292.266667 292.266667 0 0 0-59.733333 24.746667l-76.373334-57.173333-60.373333 60.373333 57.173333 76.373333a292.266667 292.266667 0 0 0-24.746666 59.733334L128 469.333333v85.333334l94.293333 12.373333a292.266667 292.266667 0 0 0 24.746667 59.733333l-57.173333 76.373334 60.373333 60.373333 76.373333-57.173333a292.266667 292.266667 0 0 0 59.733334 24.746666L469.333333 896h85.333334l12.373333-94.293333a292.266667 292.266667 0 0 0 59.733333-24.746667l76.373334 57.173333 60.373333-60.373333-57.173333-76.373333a292.266667 292.266667 0 0 0 24.746666-59.733334L896 554.666667zM512 682.666667a170.666667 170.666667 0 1 1 170.666667-170.666667 170.666667 170.666667 0 0 1-170.666667 170.666667z"
+                                                  Width="18" Height="18"
+                                                  Foreground="{DynamicResource NavButtonSubBrush}"/>
+                                        <TextBlock Text="设置"/>
+                                    </StackPanel>
+                                </Button>
                                 
                                 <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.2" Margin="10,10,10,5"/>
-                                <Button Classes="NavBtn" Click="OnSelectGamePathClick"><TextBlock Text="选择游戏目录"/></Button>
+                                <Button Classes="NavBtn" Click="OnSelectGamePathClick">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <PathIcon Data="M928 352v-48c0-35.3-28.7-64-64-64H485.2c-21 0-40.7-10.3-52.6-27.6l-61.5-88.9c-12-17.3-31.6-27.6-52.6-27.6H64c-35.3 0-64 28.7-64 64v656c0 70.7 57.3 128 128 128h638c57.8 0 108.5-38.8 123.6-94.6L928 707.2l74.2-274.5c11-40.7-19.6-80.7-61.8-80.7H928z"
+                                                  Width="18" Height="18"
+                                                  Foreground="{DynamicResource NavButtonSubBrush}"/>
+                                        <TextBlock Text="选择游戏目录"/>
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
                         </LayoutTransformControl>
                     </StackPanel>

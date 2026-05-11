@@ -29,6 +29,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
     private readonly INotificationService _notificationService;
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
     private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(15) };
+    private CancellationTokenSource? _gifPlaybackCts;
 
     [ObservableProperty]
     private string _categoryName = string.Empty;
@@ -152,23 +153,36 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         if (e.PropertyName == nameof(ChartDownloadViewModel.PreviewStatusText)) UpdateStatusMessage();
     }
 
-    public async Task InitializeAsync(string categoryName, string repoUrl = "")
+    public void PrepareForNavigation(string categoryName, string repoUrl = "")
     {
-        _chartDownloadViewModel.PropertyChanged -= OnDownloadViewModelPropertyChanged;
-        _chartDownloadViewModel.PropertyChanged += OnDownloadViewModelPropertyChanged;
+        _gifPlaybackCts?.Cancel();
+        _gifPlaybackCts?.Dispose();
+        _gifPlaybackCts = null;
 
         CategoryName = categoryName;
-        RepoUrl = repoUrl; 
-        
+        RepoUrl = repoUrl;
+
         ClearPageCache();
         _allFullIndex.Clear();
         _filteredIndex.Clear();
         _defaultReleaseTags.Clear();
+        Charts.Clear();
         CurrentPage = 1;
+        TotalPages = 1;
+        JumpPageText = "1";
+        RequestedScrollY = null;
         SearchText = string.Empty;
 
+        IsEmpty = false;
         IsLoading = true;
         StatusMessage = "正在获取远程索引...";
+    }
+
+    public async Task InitializeAsync(string categoryName, string repoUrl = "")
+    {
+        _chartDownloadViewModel.PropertyChanged -= OnDownloadViewModelPropertyChanged;
+        _chartDownloadViewModel.PropertyChanged += OnDownloadViewModelPropertyChanged;
+        PrepareForNavigation(categoryName, repoUrl);
 
         var collectionService = Ioc.Default.GetRequiredService<IAlbumCollectionService>();
 
@@ -226,6 +240,9 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
 
     public void Dispose()
     {
+        _gifPlaybackCts?.Cancel();
+        _gifPlaybackCts?.Dispose();
+        _gifPlaybackCts = null;
         _chartDownloadViewModel.PropertyChanged -= OnDownloadViewModelPropertyChanged;
         _httpClient.Dispose();
     }
@@ -304,7 +321,12 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         if (CurrentPage < 1) CurrentPage = 1;
 
         var pageCharts = _filteredIndex.Skip((CurrentPage - 1) * pageSize).Take(pageSize).ToList();
-        foreach (var c in pageCharts) { c.SearchText = SearchText; Charts.Add(c); }
+        foreach (var c in pageCharts)
+        {
+            c.SearchText = SearchText;
+            c.IsAnimatedCoverPlaybackEnabled = false;
+            Charts.Add(c);
+        }
 
         AddToCache(cacheKey, (pageCharts, TotalPages));
         IsEmpty = Charts.Count == 0;
@@ -313,6 +335,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         RequestedScrollY = 0;
 
         _ = LoadCoversAsync(pageCharts);
+        _ = EnableAnimatedCoversDeferredAsync(pageCharts);
     }
 
     private async Task LoadCoversAsync(IEnumerable<MdmcChart> pageCharts)
@@ -323,12 +346,32 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             await _coverSemaphore.WaitAsync();
             try
             {
-                chart.ResolvedCoverSource = chart.CustomCoverUrl;
+                await ChartCoverSourceResolver.EnsureResolvedAsync(chart);
             }
             catch { }
             finally { _coverSemaphore.Release(); }
         });
         await Task.WhenAll(tasks);
+    }
+
+    private async Task EnableAnimatedCoversDeferredAsync(IEnumerable<MdmcChart> pageCharts)
+    {
+        _gifPlaybackCts?.Cancel();
+        _gifPlaybackCts?.Dispose();
+        _gifPlaybackCts = new CancellationTokenSource();
+        var ct = _gifPlaybackCts.Token;
+
+        try
+        {
+            await Task.Delay(350, ct);
+            foreach (var chart in pageCharts)
+            {
+                chart.IsAnimatedCoverPlaybackEnabled = true;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanLoadNext))]

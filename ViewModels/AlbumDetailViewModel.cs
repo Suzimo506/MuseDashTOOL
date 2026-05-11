@@ -21,6 +21,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 {
     private const int UpdateNotificationDurationMs = 5000;
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
+    private CancellationTokenSource? _gifPlaybackCts;
 
     [ObservableProperty]
     private string _statusMessage = string.Empty;
@@ -114,6 +115,32 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand<MdmcChart> DownloadChartCommand => _chartDownloadViewModel.DownloadChartCommand;
     public bool EnableMarquee => _chartDownloadViewModel.EnableMarquee;
 
+    public void PrepareForNavigation(DesignerCategory category, string searchText = "")
+    {
+        _gifPlaybackCts?.Cancel();
+        _gifPlaybackCts?.Dispose();
+        _gifPlaybackCts = null;
+
+        Category = category;
+        HomepageUrl = AlbumCollectionService.GetPersonalRepositoryHomepage(category.Name);
+        OnPropertyChanged(nameof(IsPersonalRepository));
+
+        SearchText = searchText;
+
+        ClearPageCache();
+        _allFullIndex.Clear();
+        _filteredIndex.Clear();
+        Charts.Clear();
+        CurrentPage = 1;
+        TotalPages = 1;
+        JumpPageText = "1";
+        RequestedScrollY = null;
+
+        IsEmpty = false;
+        IsLoading = true;
+        StatusMessage = "正在获取整合包谱面...";
+    }
+
     public AlbumDetailViewModel(
         ChartDownloadViewModel chartDownloadViewModel,
         IAlbumCollectionService collectionService,
@@ -140,6 +167,9 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        _gifPlaybackCts?.Cancel();
+        _gifPlaybackCts?.Dispose();
+        _gifPlaybackCts = null;
         _chartDownloadViewModel.PropertyChanged -= OnChartDownloadViewModelPropertyChanged;
     }
 
@@ -205,19 +235,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     public async Task InitializeAsync(DesignerCategory category, string searchText = "")
     {
         Log($"Initializing album detail for '{category.Name}' with search query '{searchText}'.");
-        Category = category;
-        HomepageUrl = AlbumCollectionService.GetPersonalRepositoryHomepage(category.Name);
-        OnPropertyChanged(nameof(IsPersonalRepository));
-        SearchText = searchText;
-        
-        ClearPageCache();
-        _allFullIndex.Clear();
-        _filteredIndex.Clear();
-        CurrentPage = 1;
-
-        IsLoading = true;
-        IsEmpty = false;
-        StatusMessage = "正在获取整合包谱面...";
+        PrepareForNavigation(category, searchText);
 
         // 1. 优先加载本地缓存
         var localCharts = await _collectionService.GetLocalChartsAsync(category.Name);
@@ -296,8 +314,8 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                 Artist = c.Artist,
                 Charter = c.Author,
                 Bpm = NormalizeBpm(c.Bpm),
+                IsAnimatedCoverPlaybackEnabled = false,
                 CustomCoverUrl = ResolveResourceUrl(c.CoverUrl),
-                ResolvedCoverSource = ResolveResourceUrl(c.CoverUrl),
                 CustomDownloadUrl = ResolveResourceUrl(c.DownloadUrl),
                 CustomDemoUrl = ResolveResourceUrl(c.DemoUrl),
                 CustomDemoMp3Url = ResolveResourceUrl(c.DemoMp3Url),
@@ -372,6 +390,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         RequestedScrollY = 0;
 
         _ = LoadCoversAsync(pageCharts);
+        _ = EnableAnimatedCoversDeferredAsync(pageCharts);
     }
 
     [RelayCommand(CanExecute = nameof(CanLoadPrev))]
@@ -521,7 +540,8 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                         fetchUrl = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
                     }
 
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() => chart.ResolvedCoverSource = fetchUrl);
+                    chart.CustomCoverUrl = fetchUrl;
+                    await ChartCoverSourceResolver.EnsureResolvedAsync(chart);
                 }
                 catch (Exception)
                 {
@@ -567,6 +587,26 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         {
             _notificationService.ShowFailure("打开失败", "无法打开个人主页链接");
             Log($"Failed to open homepage for '{Category?.Name}': {ex.Message}");
+        }
+    }
+
+    private async Task EnableAnimatedCoversDeferredAsync(IEnumerable<MdmcChart> pageCharts)
+    {
+        _gifPlaybackCts?.Cancel();
+        _gifPlaybackCts?.Dispose();
+        _gifPlaybackCts = new CancellationTokenSource();
+        var ct = _gifPlaybackCts.Token;
+
+        try
+        {
+            await Task.Delay(350, ct);
+            foreach (var chart in pageCharts)
+            {
+                chart.IsAnimatedCoverPlaybackEnabled = true;
+            }
+        }
+        catch (OperationCanceledException)
+        {
         }
     }
 

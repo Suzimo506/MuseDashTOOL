@@ -49,7 +49,7 @@ public class AppConfig
     public string RightPanelTextColor { get; set; } = "";
 
     /// <summary>左侧按键字体横向间隔</summary>
-    public double NavButtonLetterSpacing { get; set; } = 0.0;
+    public double NavButtonLetterSpacing { get; set; } = 5.0;
 
     /// <summary>背景模糊程度</summary>
     public double BackgroundBlurRadius { get; set; } = 0.0;
@@ -67,7 +67,7 @@ public class AppConfig
     public string CustomFontFamily { get; set; } = "";
 
     /// <summary>自定义字体大小</summary>
-    public double CustomFontSize { get; set; } = 14.0;
+    public double CustomFontSize { get; set; } = 15.0;
 
     /// <summary>以原版启动游戏（禁用 MelonLoader）</summary>
     public bool IsOriginalModeEnabled { get; set; } = false;

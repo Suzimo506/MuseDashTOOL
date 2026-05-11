@@ -47,12 +47,20 @@ public partial class MdmcChart : ObservableObject
     private bool _isPlaying;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShouldShowAnimatedCover))]
+    [NotifyPropertyChangedFor(nameof(ShouldShowStaticCover))]
+    [property: JsonIgnore]
+    private bool _isAnimatedCoverPlaybackEnabled = true;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayCoverSource))]
     [NotifyPropertyChangedFor(nameof(HasDisplayCoverSource))]
     [NotifyPropertyChangedFor(nameof(HasAnimatedDisplayCoverSource))]
     [NotifyPropertyChangedFor(nameof(HasStaticDisplayCoverSource))]
     [NotifyPropertyChangedFor(nameof(AnimatedDisplayCoverSource))]
     [NotifyPropertyChangedFor(nameof(StaticDisplayCoverSource))]
+    [NotifyPropertyChangedFor(nameof(ShouldShowAnimatedCover))]
+    [NotifyPropertyChangedFor(nameof(ShouldShowStaticCover))]
     [property: JsonIgnore]
     private string? _resolvedCoverSource;
 
@@ -112,6 +120,12 @@ public partial class MdmcChart : ObservableObject
 
     [JsonIgnore]
     public string? StaticDisplayCoverSource => HasStaticDisplayCoverSource ? DisplayCoverSource : null;
+
+    [JsonIgnore]
+    public bool ShouldShowAnimatedCover => HasAnimatedDisplayCoverSource && IsAnimatedCoverPlaybackEnabled;
+
+    [JsonIgnore]
+    public bool ShouldShowStaticCover => HasStaticDisplayCoverSource || (HasAnimatedDisplayCoverSource && !IsAnimatedCoverPlaybackEnabled);
 
     public string CoverUrl => !string.IsNullOrWhiteSpace(CustomCoverUrl) ? CustomCoverUrl : $"https://cdn.mdmc.moe/charts/{Id}/cover.png";
     public string DemoUrl  => !string.IsNullOrWhiteSpace(CustomDemoUrl) ? CustomDemoUrl : $"https://cdn.mdmc.moe/charts/{Id}/demo.ogg";

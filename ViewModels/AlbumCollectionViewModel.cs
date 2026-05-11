@@ -1249,10 +1249,13 @@ public partial class AlbumCollectionViewModel : ObservableObject
         {
             Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
             var detailVm = Ioc.Default.GetRequiredService<AlbumDetailViewModel>();
+            detailVm.PrepareForNavigation(item.Category, string.Empty);
             mainVm.CurrentPage = detailVm;
             // 不传递 SearchText，避免用户搜索“整合包名称”进入后，因为谱面不包含该名称而导致列表为空
-            await detailVm.InitializeAsync(item.Category, string.Empty);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => _ = detailVm.InitializeAsync(item.Category, string.Empty));
         }
+
+        await Task.CompletedTask;
     }
 
     [RelayCommand]
@@ -1263,9 +1266,12 @@ public partial class AlbumCollectionViewModel : ObservableObject
         {
             Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
             var detailVm = Ioc.Default.GetRequiredService<CommunityCategoryDetailViewModel>();
+            detailVm.PrepareForNavigation(item.Name, item.RepoUrl);
             mainVm.CurrentPage = detailVm;
-            await detailVm.InitializeAsync(item.Name, item.RepoUrl);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => _ = detailVm.InitializeAsync(item.Name, item.RepoUrl));
         }
+
+        await Task.CompletedTask;
     }
 
     [RelayCommand]

@@ -197,7 +197,7 @@
                 <TextBlock Text="暂时没有谱面" FontSize="18" Foreground="Gray" HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding !IsEmpty}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding !IsLoading}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Charts}" Margin="10,0,10,20">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -214,8 +214,8 @@
                                             <Border Background="#333333" CornerRadius="10,10,0,0" IsVisible="{Binding !HasDisplayCoverSource}">
                                                 <TextBlock Text="🎵" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555"/>
                                             </Border>
-                                            <Image IsVisible="{Binding HasAnimatedDisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" animated:ImageBehavior.AnimatedSource="{Binding AnimatedDisplayCoverSource}"/>
-                                            <asyncImageLoader:AdvancedImage Source="{Binding StaticDisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasStaticDisplayCoverSource}"/>
+                                            <Image IsVisible="{Binding ShouldShowAnimatedCover}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" animated:ImageBehavior.AnimatedSource="{Binding AnimatedDisplayCoverSource}"/>
+                                            <asyncImageLoader:AdvancedImage Source="{Binding DisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShouldShowStaticCover}"/>
                                             <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0">
                                                 <TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
