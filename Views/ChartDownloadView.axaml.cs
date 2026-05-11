@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using MdModManager.ViewModels;
 
@@ -102,6 +103,23 @@ public partial class ChartDownloadView : UserControl
                 vm.ClearSearchCommand.Execute(null);
             }
             e.Handled = true;
+        }
+    }
+
+    private async void OnSearchBoxLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is ChartDownloadViewModel vm)
+        {
+            await vm.ApplySearchAsync();
+        }
+    }
+
+    private async void OnSearchBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && DataContext is ChartDownloadViewModel vm)
+        {
+            e.Handled = true;
+            await vm.ApplySearchAsync();
         }
     }
 
