@@ -19,6 +19,7 @@ namespace MdModManager.ViewModels;
 
 public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 {
+    private const int UpdateNotificationDurationMs = 5000;
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
 
     [ObservableProperty]
@@ -235,7 +236,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                 var remoteCharts = await _collectionService.GetChartsAsync(category.Name);
                 if (remoteCharts.Count > 0)
                 {
-                    bool needsUpdate = HasChartListChanged(localCharts, remoteCharts);
+                    bool needsUpdate = DesignerChartUpdateComparer.HasChartListChanged(localCharts, remoteCharts);
 
                     if (needsUpdate)
                     {
@@ -243,7 +244,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                         {
                             ProcessAndLoadCharts(remoteCharts);
                             await ReloadAsync();
-                            _notificationService.ShowSuccess("曲包检测到更新，已强制刷新界面~");
+                            _notificationService.ShowSuccess("曲包检测到更新，已强制刷新界面~", UpdateNotificationDurationMs);
                             Log($"Remote update detected and applied for '{category.Name}'.");
                         });
                     }
@@ -574,56 +575,4 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         RuntimeLog.Write("AlbumDetailViewModel", message);
     }
 
-    private static bool HasChartListChanged(IReadOnlyList<DesignerChart> localCharts, IReadOnlyList<DesignerChart> remoteCharts)
-    {
-        if (localCharts.Count != remoteCharts.Count)
-            return true;
-
-        var localFingerprints = localCharts
-            .Select(BuildChartUpdateFingerprint)
-            .OrderBy(x => x, StringComparer.Ordinal)
-            .ToList();
-
-        var remoteFingerprints = remoteCharts
-            .Select(BuildChartUpdateFingerprint)
-            .OrderBy(x => x, StringComparer.Ordinal)
-            .ToList();
-
-        return !localFingerprints.SequenceEqual(remoteFingerprints, StringComparer.Ordinal);
-    }
-
-    private static string BuildChartUpdateFingerprint(DesignerChart chart)
-    {
-        static string Normalize(string? value)
-            => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant();
-
-        var primaryIdentity = Normalize(chart.DownloadUrl);
-        if (string.IsNullOrEmpty(primaryIdentity))
-            primaryIdentity = Normalize(chart.Id);
-
-        if (string.IsNullOrEmpty(primaryIdentity))
-        {
-            primaryIdentity = string.Join("|",
-                Normalize(chart.Title),
-                Normalize(chart.Author),
-                Normalize(chart.Artist),
-                Normalize(chart.Bpm));
-        }
-
-        var difficulties = chart.Difficulties == null
-            ? string.Empty
-            : string.Join(",",
-                chart.Difficulties
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Select(Normalize)
-                    .OrderBy(x => x, StringComparer.Ordinal));
-
-        return string.Join("||",
-            primaryIdentity,
-            Normalize(chart.Title),
-            Normalize(chart.Author),
-            Normalize(chart.Artist),
-            Normalize(chart.Bpm),
-            difficulties);
-    }
 }

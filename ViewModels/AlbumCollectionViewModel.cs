@@ -333,6 +333,8 @@ public partial class CommunityCategoryItemViewModel : ObservableObject
 
 public partial class AlbumCollectionViewModel : ObservableObject
 {
+    private const int UpdateNotificationDurationMs = 5000;
+
     private const string ViewModeGuideBadgeKey = "AlbumCollectionViewModeGuide_v1.3.0";
     private readonly IAlbumCollectionService _collectionService;
     private readonly ChartDownloadViewModel _chartDownloadViewModel;
@@ -1033,7 +1035,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
                     Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
                     {
                         await LoadCategoriesAsync(remoteCollections);
-                        _notificationService?.ShowSuccess($"发现新增曲包：《{string.Join("》《", addedNames)}》");
+                        _notificationService?.ShowSuccess($"发现新增曲包：《{string.Join("》《", addedNames)}》", UpdateNotificationDurationMs);
                     });
                 }
                 else if (orderOrMetadataChanged)
@@ -1060,7 +1062,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
                     try
                     {
                         var charts = await _collectionService.GetChartsAsync(col.Name);
-                        var contentUpdated = hadLocalSnapshot && HasChartListChanged(localCharts, charts);
+                        var contentUpdated = hadLocalSnapshot && DesignerChartUpdateComparer.HasChartListChanged(localCharts, charts);
                         return (Category: col, HasCharts: charts.Count > 0, ContentUpdated: contentUpdated);
                     }
                     catch
@@ -1092,7 +1094,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
                     var updateMessage = BuildUpdatedCollectionsMessage(updatedCollections);
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
-                        _notificationService?.ShowSuccess(updateMessage);
+                        _notificationService?.ShowSuccess(updateMessage, UpdateNotificationDurationMs);
                     });
                 }
 
@@ -1103,7 +1105,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
                     Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
                     {
                         await LoadCategoriesAsync(survivingCollections);
-                        _notificationService?.ShowSuccess("检测到远端有曲包已删除，目录已自动同步。");
+                        _notificationService?.ShowSuccess("检测到远端有曲包已删除，目录已自动同步。", UpdateNotificationDurationMs);
                     });
                 }
 
@@ -1121,59 +1123,6 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     private static string GetCollectionIndexCachePath(string categoryName)
         => Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes", $"{categoryName}.json");
-
-    private static bool HasChartListChanged(IReadOnlyList<DesignerChart> localCharts, IReadOnlyList<DesignerChart> remoteCharts)
-    {
-        if (localCharts.Count != remoteCharts.Count)
-            return true;
-
-        var localFingerprints = localCharts
-            .Select(BuildChartUpdateFingerprint)
-            .OrderBy(x => x, StringComparer.Ordinal)
-            .ToList();
-
-        var remoteFingerprints = remoteCharts
-            .Select(BuildChartUpdateFingerprint)
-            .OrderBy(x => x, StringComparer.Ordinal)
-            .ToList();
-
-        return !localFingerprints.SequenceEqual(remoteFingerprints, StringComparer.Ordinal);
-    }
-
-    private static string BuildChartUpdateFingerprint(DesignerChart chart)
-    {
-        static string Normalize(string? value)
-            => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant();
-
-        var primaryIdentity = Normalize(chart.DownloadUrl);
-        if (string.IsNullOrEmpty(primaryIdentity))
-            primaryIdentity = Normalize(chart.Id);
-
-        if (string.IsNullOrEmpty(primaryIdentity))
-        {
-            primaryIdentity = string.Join("|",
-                Normalize(chart.Title),
-                Normalize(chart.Author),
-                Normalize(chart.Artist),
-                Normalize(chart.Bpm));
-        }
-
-        var difficulties = chart.Difficulties == null
-            ? string.Empty
-            : string.Join(",",
-                chart.Difficulties
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Select(Normalize)
-                    .OrderBy(x => x, StringComparer.Ordinal));
-
-        return string.Join("||",
-            primaryIdentity,
-            Normalize(chart.Title),
-            Normalize(chart.Author),
-            Normalize(chart.Artist),
-            Normalize(chart.Bpm),
-            difficulties);
-    }
 
     private static string BuildUpdatedCollectionsMessage(IReadOnlyList<string> updatedCollections)
     {

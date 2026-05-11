@@ -22,6 +22,7 @@ namespace MdModManager.ViewModels;
 
 public partial class CommunityCategoryDetailViewModel : ObservableObject, IDisposable
 {
+    private const int UpdateNotificationDurationMs = 5000;
     private readonly ChartDownloadViewModel _chartDownloadViewModel;
     private readonly IConfigService _configService;
     private readonly IDownloadManagerService _downloadManagerService;
@@ -188,9 +189,8 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
                 var remoteCharts = await collectionService.GetCommunityChartsAsync(categoryName, repoUrl);
                 if (remoteCharts.Count > 0)
                 {
-                    bool needsUpdate = localCharts.Count == 0 || 
-                                     remoteCharts.Count != localCharts.Count ||
-                                     !remoteCharts.Select(c => c.Id).SequenceEqual(localCharts.Select(c => c.Id));
+                    bool needsUpdate = localCharts.Count == 0 ||
+                        DesignerChartUpdateComparer.HasChartListChanged(localCharts, remoteCharts);
 
                     if (needsUpdate)
                     {
@@ -198,7 +198,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
                         {
                             _allFullIndex = remoteCharts;
                             await ReloadAsync();
-                            _notificationService.ShowSuccess("曲包检测到更新，已强制刷新界面~");
+                            _notificationService.ShowSuccess("曲包检测到更新，已强制刷新界面~", UpdateNotificationDurationMs);
                             Log($"Remote update applied for '{categoryName}'.");
                         });
                     }

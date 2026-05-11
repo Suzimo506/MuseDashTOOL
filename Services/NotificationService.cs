@@ -9,7 +9,7 @@ namespace MdModManager.Services;
 public interface INotificationService
 {
     ObservableCollection<DownloadNotification> Notifications { get; }
-    void ShowSuccess(string message);
+    void ShowSuccess(string message, int durationMs = 1500);
     void ShowFailure(string message, string reason);
     void ShowInfo(string message, int durationMs = 1500);
     DownloadNotification ShowPersistentProgress(string message);
@@ -43,8 +43,8 @@ public class NotificationService : INotificationService
 
     public ObservableCollection<DownloadNotification> Notifications { get; } = new();
 
-    public void ShowSuccess(string message) =>
-        ShowNotification(new DownloadNotification { Message = message, IsSuccess = true });
+    public void ShowSuccess(string message, int durationMs = 1500) =>
+        ShowNotification(new DownloadNotification { Message = message, IsSuccess = true, DurationMs = durationMs });
 
     public void ShowFailure(string message, string reason) =>
         ShowNotification(new DownloadNotification { Message = $"失败：{reason}", IsSuccess = false });
