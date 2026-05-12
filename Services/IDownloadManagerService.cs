@@ -11,5 +11,7 @@ public interface IDownloadManagerService
     void PauseDownload(DownloadTaskItem item);
     void ResumeDownload(DownloadTaskItem item);
     void CancelDownload(DownloadTaskItem item);
+    void TogglePauseResumeAll();
+    void CancelAllDownloads();
     void ClearCompletedAndCanceled();
 }

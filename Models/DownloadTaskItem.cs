@@ -35,12 +35,15 @@ public partial class DownloadTaskItem : ObservableObject
         OnPropertyChanged(nameof(IsError));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(IsCompleted));
+        StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public bool CanPause => Status == DownloadStatus.Downloading || Status == DownloadStatus.Waiting;
     public bool CanResume => Status == DownloadStatus.Paused || Status == DownloadStatus.Error;
     public bool IsError => Status == DownloadStatus.Error;
     public bool IsCompleted => Status == DownloadStatus.Completed;
+
+    public event EventHandler? StatusChanged;
 
     public string StatusText => Status switch
     {
@@ -65,6 +68,7 @@ public partial class DownloadTaskItem : ObservableObject
     public DateTimeOffset? ResumeLastModified { get; set; }
 
     public string DestinationPath { get; set; } = string.Empty;
+    public string PartialDownloadPath { get; set; } = string.Empty;
 
     public DownloadTaskItem(MdmcChart chart)
     {

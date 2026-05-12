@@ -356,6 +356,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
     [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _categories = new();
     [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _personalRepositoryCategories = new();
     [ObservableProperty] private ObservableCollection<CommunityCategoryItemViewModel> _communityCategories = new();
+    [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _categoryListLeftColumn = new();
+    [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _categoryListRightColumn = new();
+    [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _personalRepositoryListLeftColumn = new();
+    [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _personalRepositoryListRightColumn = new();
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private bool _isEmpty;
     [ObservableProperty] private double _scrollOffset;
@@ -751,6 +755,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 
                 CommunityCategories.Clear();
                 foreach (var cat in filteredCommCats) CommunityCategories.Add(cat);
+
+                RefreshListModeColumns();
             });
 
             await LoadPageAsync(1);
@@ -808,6 +814,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             CommunityCategories.Clear();
             foreach (var cat in _allCommunityCategoriesBackup) CommunityCategories.Add(cat);
         }
+        RefreshListModeColumns();
         UpdateStatusMessage();
     }
 
@@ -1168,6 +1175,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
         }
 
         ReorderPersonalRepositoryCategories();
+        RefreshListModeColumns();
 
         _allCategoriesBackup.Clear();
         _allCategoriesBackup.AddRange(Categories);
@@ -1194,6 +1202,30 @@ public partial class AlbumCollectionViewModel : ObservableObject
         foreach (var item in orderedItems)
         {
             PersonalRepositoryCategories.Add(item);
+        }
+    }
+
+    private void RefreshListModeColumns()
+    {
+        SplitIntoColumns(Categories, CategoryListLeftColumn, CategoryListRightColumn);
+        SplitIntoColumns(PersonalRepositoryCategories, PersonalRepositoryListLeftColumn, PersonalRepositoryListRightColumn);
+    }
+
+    private static void SplitIntoColumns<T>(
+        IEnumerable<T> source,
+        ObservableCollection<T> leftColumn,
+        ObservableCollection<T> rightColumn)
+    {
+        leftColumn.Clear();
+        rightColumn.Clear();
+
+        var index = 0;
+        foreach (var item in source)
+        {
+            if (index++ % 2 == 0)
+                leftColumn.Add(item);
+            else
+                rightColumn.Add(item);
         }
     }
 

@@ -47,6 +47,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
             var item = new DownloadTaskItem(chart);
             item.DestinationPath = GetUniqueDestinationPath(chart);
+            item.PartialDownloadPath = GetPartialDownloadPath(item.DestinationPath);
 
             Tasks.Add(item);
 
@@ -93,10 +94,11 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
     public void PauseDownload(DownloadTaskItem item)
     {
-        if (item.Status == DownloadStatus.Downloading)
+        if (item.Status == DownloadStatus.Downloading || item.Status == DownloadStatus.Waiting)
         {
             item.Cts?.Cancel();
             item.Status = DownloadStatus.Paused;
+            UpdateDownloadInfo(item);
         }
     }
 
@@ -104,6 +106,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     {
         if (item.Status == DownloadStatus.Paused || item.Status == DownloadStatus.Error)
         {
+            item.Cts = new CancellationTokenSource();
             item.Status = DownloadStatus.Waiting;
             _ = ProcessDownloadAsync(item);
         }
@@ -114,8 +117,36 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         item.Cts?.Cancel();
         item.Status = DownloadStatus.Canceled;
 
-        TryDeleteFile(item.DestinationPath);
+        CleanupCanceledDownload(item);
         Dispatcher.UIThread.Post(() => Tasks.Remove(item));
+    }
+
+    public void TogglePauseResumeAll()
+    {
+        var snapshot = Tasks.ToList();
+        var hasActiveTasks = snapshot.Any(t => t.Status == DownloadStatus.Waiting || t.Status == DownloadStatus.Downloading);
+
+        foreach (var item in snapshot)
+        {
+            if (hasActiveTasks)
+            {
+                if (item.Status == DownloadStatus.Waiting || item.Status == DownloadStatus.Downloading)
+                    PauseDownload(item);
+            }
+            else if (item.Status == DownloadStatus.Paused || item.Status == DownloadStatus.Error)
+            {
+                ResumeDownload(item);
+            }
+        }
+    }
+
+    public void CancelAllDownloads()
+    {
+        var snapshot = Tasks.Where(t => t.Status != DownloadStatus.Completed && t.Status != DownloadStatus.Canceled).ToList();
+        foreach (var item in snapshot)
+        {
+            CancelDownload(item);
+        }
     }
 
     public void ClearCompletedAndCanceled()
@@ -129,16 +160,21 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
     private async Task ProcessDownloadAsync(DownloadTaskItem item)
     {
+        if (item.Status == DownloadStatus.Paused || item.Status == DownloadStatus.Canceled)
+            return;
+
         item.Status = DownloadStatus.Waiting;
         UpdateDownloadInfo(item);
 
         bool acquired = false;
+        CancellationTokenSource? currentCts = null;
         try
         {
-            if (item.Cts == null)
+            if (item.Cts == null || item.Cts.IsCancellationRequested)
                 item.Cts = new CancellationTokenSource();
 
-            var ct = item.Cts.Token;
+            currentCts = item.Cts;
+            var ct = currentCts.Token;
 
             await _concurrencySemaphore.WaitAsync(ct);
             acquired = true;
@@ -163,11 +199,14 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                     if (string.IsNullOrEmpty(item.DestinationPath))
                         throw new Exception("无法确定下载路径，请检查游戏目录设置");
 
+                    if (string.IsNullOrEmpty(item.PartialDownloadPath))
+                        item.PartialDownloadPath = GetPartialDownloadPath(item.DestinationPath);
+
                     RuntimeLog.Write("DownloadManager", $"Download start/resume: title='{item.Chart.Title}', url='{item.Chart.DownloadUrl}', downloaded={item.DownloadedBytes}, retry={retryCount}");
 
                     await DownloadToFileAsync(item, ct);
 
-                    var validationError = await ValidateMdmIntegrityAsync(item.DestinationPath, ct);
+                    var validationError = await ValidateMdmIntegrityAsync(item.PartialDownloadPath, ct);
                     if (validationError != null)
                     {
                         retryCount++;
@@ -187,6 +226,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                         return;
                     }
 
+                    MoveCompletedDownload(item.PartialDownloadPath, item.DestinationPath);
                     item.Status = DownloadStatus.Completed;
                     item.Progress = 100;
                     _notificationService.ShowSuccess($"《{item.Chart.Title}》下载完成");
@@ -200,7 +240,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                     if (item.Status == DownloadStatus.Canceled)
                         return;
 
-                    if (item.Cts != null && item.Cts.IsCancellationRequested)
+                    if (ct.IsCancellationRequested && ReferenceEquals(item.Cts, currentCts))
                     {
                         item.Status = DownloadStatus.Paused;
                         UpdateDownloadInfo(item);
@@ -240,7 +280,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             if (item.Status == DownloadStatus.Canceled)
                 return;
 
-            if (item.Cts != null && item.Cts.IsCancellationRequested)
+            if (currentCts != null && currentCts.IsCancellationRequested && ReferenceEquals(item.Cts, currentCts))
             {
                 item.Status = DownloadStatus.Paused;
                 UpdateDownloadInfo(item);
@@ -257,15 +297,32 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             if (acquired)
                 _concurrencySemaphore.Release();
 
-            item.Cts?.Dispose();
-            item.Cts = null;
+            if (item.Status == DownloadStatus.Canceled)
+                CleanupCanceledDownload(item);
+
+            if (ReferenceEquals(item.Cts, currentCts))
+                item.Cts = null;
+
+            currentCts?.Dispose();
         }
     }
 
     private async Task DownloadToFileAsync(DownloadTaskItem item, CancellationToken ct)
     {
+        if (item.DownloadedBytes > 0)
+        {
+            var partialFile = new FileInfo(item.PartialDownloadPath);
+            if (!partialFile.Exists || partialFile.Length != item.DownloadedBytes)
+            {
+                item.DownloadedBytes = 0;
+                item.TotalBytes = 0;
+                item.ResumeEntityTag = null;
+                item.ResumeLastModified = null;
+            }
+        }
+
         var fileMode = item.DownloadedBytes > 0 ? FileMode.Append : FileMode.Create;
-        using var dst = new FileStream(item.DestinationPath, fileMode, FileAccess.Write, FileShare.None, 81920, true);
+        using var dst = new FileStream(item.PartialDownloadPath, fileMode, FileAccess.Write, FileShare.None, 81920, true);
         using var request = new HttpRequestMessage(HttpMethod.Get, item.Chart.DownloadUrl);
 
         if (item.DownloadedBytes > 0)
@@ -418,7 +475,58 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         item.ErrorMessage = string.Empty;
         item.ResumeEntityTag = null;
         item.ResumeLastModified = null;
-        TryDeleteFile(item.DestinationPath);
+        TryDeleteFile(item.PartialDownloadPath);
+    }
+
+    private static string GetPartialDownloadPath(string destinationPath)
+    {
+        if (string.IsNullOrWhiteSpace(destinationPath))
+            return string.Empty;
+
+        return destinationPath + ".download";
+    }
+
+    private static void MoveCompletedDownload(string partialPath, string destinationPath)
+    {
+        if (string.IsNullOrWhiteSpace(partialPath) || string.IsNullOrWhiteSpace(destinationPath))
+            return;
+
+        if (File.Exists(destinationPath))
+            File.Delete(destinationPath);
+
+        File.Move(partialPath, destinationPath);
+    }
+
+    private static void CleanupCanceledDownload(DownloadTaskItem item)
+    {
+        TryDeleteFile(item.PartialDownloadPath);
+
+        if (IsIncompleteOrInvalidMdm(item.DestinationPath))
+            TryDeleteFile(item.DestinationPath);
+
+        item.DownloadedBytes = 0;
+        item.TotalBytes = 0;
+        item.Progress = 0;
+        item.ErrorMessage = string.Empty;
+        item.ResumeEntityTag = null;
+        item.ResumeLastModified = null;
+    }
+
+    private static bool IsIncompleteOrInvalidMdm(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return false;
+
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920);
+            using var zip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
+            return zip.Entries.Count == 0;
+        }
+        catch
+        {
+            return true;
+        }
     }
 
     private static bool UsesOptimizedIpStrategy(string? downloadUrl)
