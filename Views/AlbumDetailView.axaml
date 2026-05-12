@@ -214,6 +214,14 @@
                                             <Border Background="#333333" CornerRadius="10,10,0,0" IsVisible="{Binding !HasDisplayCoverSource}">
                                                 <TextBlock Text="🎵" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555"/>
                                             </Border>
+                                            <Border Background="{DynamicResource ControlBgBrush}" CornerRadius="10,10,0,0" IsVisible="{Binding IsFolder}">
+                                                <PathIcon Data="M85.333 234.667C85.333 187.541 123.541 149.333 170.667 149.333H384L469.333 234.667H853.333C900.459 234.667 938.667 272.875 938.667 320V789.333C938.667 836.459 900.459 874.667 853.333 874.667H170.667C123.541 874.667 85.333 836.459 85.333 789.333V234.667Z"
+                                                          Width="82"
+                                                          Height="82"
+                                                          Foreground="{DynamicResource SvgIconBrush}"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"/>
+                                            </Border>
                                             <Image IsVisible="{Binding ShouldShowAnimatedCover}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" animated:ImageBehavior.AnimatedSource="{Binding AnimatedDisplayCoverSource}"/>
                                             <asyncImageLoader:AdvancedImage Source="{Binding DisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShouldShowStaticCover}"/>
                                             <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0">
@@ -238,7 +246,7 @@
                                             </ItemsControl>
                                         </StackPanel>
                                         
-                                        <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+                                        <Grid ColumnDefinitions="*,*" Margin="0,4,0,0" IsVisible="{Binding !IsFolder}">
                                             <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="试听 / 停止">
                                                 <Panel>
                                                     <PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
@@ -250,6 +258,18 @@
                                             </Button>
                                         </Grid>
                                     </StackPanel>
+                                    <Button Grid.RowSpan="2"
+                                            Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).OpenFolderCommand}"
+                                            CommandParameter="{Binding}"
+                                            IsVisible="{Binding IsFolder}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            HorizontalContentAlignment="Stretch"
+                                            VerticalContentAlignment="Stretch"
+                                            ToolTip.Tip="打开文件夹"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>

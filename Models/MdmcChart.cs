@@ -100,6 +100,15 @@ public partial class MdmcChart : ObservableObject
     [property: JsonIgnore]
     public bool IsCommunitySource { get; set; }
 
+    [property: JsonIgnore]
+    public bool IsFolder { get; set; }
+
+    [property: JsonIgnore]
+    public string FolderPath { get; set; } = string.Empty;
+
+    [property: JsonIgnore]
+    public int ChildFolderCount { get; set; }
+
     // 派生 URL
     [JsonIgnore]
     public string? DisplayCoverSource => !string.IsNullOrWhiteSpace(ResolvedCoverSource)
@@ -137,6 +146,13 @@ public partial class MdmcChart : ObservableObject
     {
         get
         {
+            if (IsFolder)
+            {
+                return ChildFolderCount > 0
+                    ? $"文件夹  {ChildFolderCount} 个子文件夹"
+                    : "文件夹";
+            }
+
             var parts = new List<string>();
             if (!string.IsNullOrEmpty(Artist))  parts.Add($"曲：{Artist}");
             if (!string.IsNullOrEmpty(Charter)) parts.Add($"谱：{Charter}");

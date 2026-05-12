@@ -110,6 +110,8 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     private List<MdmcChart> _allFullIndex = new();
     private List<MdmcChart> _filteredIndex = new();
+    private string _currentCategoryPath = string.Empty;
+    private string _rootCategoryName = string.Empty;
 
     public IAsyncRelayCommand<MdmcChart> TogglePreviewCommand => _chartDownloadViewModel.TogglePreviewCommand;
     public IAsyncRelayCommand<MdmcChart> DownloadChartCommand => _chartDownloadViewModel.DownloadChartCommand;
@@ -122,6 +124,8 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         _gifPlaybackCts = null;
 
         Category = category;
+        _rootCategoryName = category.Name;
+        _currentCategoryPath = category.Name;
         HomepageUrl = AlbumCollectionService.GetPersonalRepositoryHomepage(category.Name);
         OnPropertyChanged(nameof(IsPersonalRepository));
 
@@ -173,7 +177,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         _chartDownloadViewModel.PropertyChanged -= OnChartDownloadViewModelPropertyChanged;
     }
 
-    private string GetCacheKey(int page, string query) => $"{Category?.Name}|{query.Trim()}|{page}";
+    private string GetCacheKey(int page, string query) => $"{_currentCategoryPath}|{query.Trim()}|{page}";
 
     private void AddToCache(string key, (IList<MdmcChart> charts, int totalPages) result)
     {
@@ -229,7 +233,11 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             return;
         }
 
-        StatusMessage = $"第 {CurrentPage} / {TotalPages} 页，共 {_filteredIndex.Count} 张谱面";
+        var folderCount = _filteredIndex.Count(c => c.IsFolder);
+        var chartCount = _filteredIndex.Count - folderCount;
+        StatusMessage = folderCount > 0
+            ? $"第 {CurrentPage} / {TotalPages} 页，共 {folderCount} 个文件夹，{chartCount} 张谱面"
+            : $"第 {CurrentPage} / {TotalPages} 页，共 {chartCount} 张谱面";
     }
 
     public async Task InitializeAsync(DesignerCategory category, string searchText = "")
@@ -238,7 +246,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         PrepareForNavigation(category, searchText);
 
         // 1. 优先加载本地缓存
-        var localCharts = await _collectionService.GetLocalChartsAsync(category.Name);
+        var localCharts = await _collectionService.GetLocalChartsAsync(_currentCategoryPath);
         if (localCharts.Count > 0)
         {
             ProcessAndLoadCharts(localCharts);
@@ -251,7 +259,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         {
             try
             {
-                var remoteCharts = await _collectionService.GetChartsAsync(category.Name);
+                var remoteCharts = await _collectionService.GetChartsAsync(_currentCategoryPath);
                 if (remoteCharts.Count > 0)
                 {
                     bool needsUpdate = DesignerChartUpdateComparer.HasChartListChanged(localCharts, remoteCharts);
@@ -263,7 +271,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                             ProcessAndLoadCharts(remoteCharts);
                             await ReloadAsync();
                             _notificationService.ShowSuccess("曲包检测到更新，已强制刷新界面~", UpdateNotificationDurationMs);
-                            Log($"Remote update detected and applied for '{category.Name}'.");
+                            Log($"Remote update detected and applied for '{_currentCategoryPath}'.");
                         });
                     }
                 }
@@ -284,6 +292,19 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         _allFullIndex.Clear();
         foreach (var c in charts)
         {
+            if (c.IsFolder)
+            {
+                _allFullIndex.Add(new MdmcChart
+                {
+                    Id = c.Id,
+                    Title = c.Title,
+                    IsFolder = true,
+                    FolderPath = c.FolderPath,
+                    ChildFolderCount = c.ChildFolderCount
+                });
+                continue;
+            }
+
             List<string> difficultyLabels = new List<string>();
             if (c.Difficulties != null && c.Difficulties.Count > 0)
             {
@@ -321,7 +342,10 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
                 CustomDemoMp3Url = ResolveResourceUrl(c.DemoMp3Url),
                 Sheets = difficultyLabels
                     .Select(label => new MdmcSheet { Difficulty = label })
-                    .ToList()
+                    .ToList(),
+                IsFolder = c.IsFolder,
+                FolderPath = c.FolderPath,
+                ChildFolderCount = c.ChildFolderCount
             });
         }
     }
@@ -341,7 +365,8 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             _filteredIndex = _allFullIndex.Where(c => 
                 c.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
                 c.Artist?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
-                c.Charter?.Contains(query, StringComparison.OrdinalIgnoreCase) == true
+                c.Charter?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
+                c.FolderPath?.Contains(query, StringComparison.OrdinalIgnoreCase) == true
             ).ToList();
         }
 
@@ -450,6 +475,9 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         var queued = 0;
         foreach (var chart in _filteredIndex)
         {
+            if (chart.IsFolder)
+                continue;
+
             var url = chart.CustomDownloadUrl;
             if (string.IsNullOrWhiteSpace(url))
                 continue;
@@ -560,8 +588,81 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private async Task OpenFolderAsync(MdmcChart chart)
+    {
+        if (chart == null || !chart.IsFolder || string.IsNullOrWhiteSpace(chart.FolderPath))
+            return;
+
+        _chartDownloadViewModel.StopPlayback();
+        _currentCategoryPath = chart.FolderPath;
+        SearchText = string.Empty;
+        ClearPageCache();
+        _allFullIndex.Clear();
+        _filteredIndex.Clear();
+        Charts.Clear();
+        CurrentPage = 1;
+        TotalPages = 1;
+        JumpPageText = "1";
+        IsEmpty = false;
+        IsLoading = true;
+        StatusMessage = $"正在打开 {chart.Title}...";
+
+        var localCharts = await _collectionService.GetLocalChartsAsync(_currentCategoryPath);
+        if (localCharts.Count > 0)
+        {
+            ProcessAndLoadCharts(localCharts);
+            await ReloadAsync();
+            IsLoading = false;
+        }
+
+        try
+        {
+            var remoteCharts = await _collectionService.GetChartsAsync(_currentCategoryPath);
+            ProcessAndLoadCharts(remoteCharts);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            Log($"Failed to open nested folder '{_currentCategoryPath}': {ex.Message}");
+            if (localCharts.Count == 0)
+            {
+                IsLoading = false;
+                IsEmpty = true;
+                UpdateStatusMessage();
+            }
+        }
+    }
+
+    [RelayCommand]
     private async Task GoBackAsync()
     {
+        if (!string.Equals(_currentCategoryPath, _rootCategoryName, StringComparison.OrdinalIgnoreCase))
+        {
+            var parentPath = GetParentRemotePath(_currentCategoryPath);
+            if (!string.IsNullOrWhiteSpace(parentPath))
+            {
+                _currentCategoryPath = parentPath;
+                SearchText = string.Empty;
+                ClearPageCache();
+                _allFullIndex.Clear();
+                _filteredIndex.Clear();
+                Charts.Clear();
+                CurrentPage = 1;
+                TotalPages = 1;
+                JumpPageText = "1";
+                IsLoading = true;
+                StatusMessage = "正在返回上一级...";
+
+                var charts = await _collectionService.GetLocalChartsAsync(_currentCategoryPath);
+                if (charts.Count == 0)
+                    charts = await _collectionService.GetChartsAsync(_currentCategoryPath);
+
+                ProcessAndLoadCharts(charts);
+                await ReloadAsync();
+                return;
+            }
+        }
+
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
             desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
@@ -571,6 +672,13 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         }
 
         await Task.CompletedTask;
+    }
+
+    private static string GetParentRemotePath(string path)
+    {
+        var normalized = (path ?? string.Empty).Replace("\\", "/").Trim('/');
+        var slashIndex = normalized.LastIndexOf('/');
+        return slashIndex > 0 ? normalized[..slashIndex] : normalized;
     }
 
     [RelayCommand]
