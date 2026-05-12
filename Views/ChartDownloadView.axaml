@@ -89,6 +89,25 @@
         <Style Selector="Button.SortBtn:pointerover /template/ ContentPresenter#MySortPresenter"><Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/><Setter Property="BorderBrush" Value="#4a4a4a"/></Style>
         <Style Selector="Button.SortBtn:pressed /template/ ContentPresenter#MySortPresenter"><Setter Property="Background" Value="{DynamicResource ControlPressedBgBrush}"/><Setter Property="BorderBrush" Value="#5a5a5a"/></Style>
         <Style Selector="Button.SortBtn.Active"><Setter Property="Foreground" Value="{DynamicResource SvgIconBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource SvgIconBrush}"/><Setter Property="FontWeight" Value="Bold"/></Style>
+        <Style Selector="ToggleButton.FilterBtn">
+            <Setter Property="Background" Value="{DynamicResource ControlBgBrush}"/>
+            <Setter Property="Foreground" Value="#cccccc"/>
+            <Setter Property="BorderBrush" Value="#3a3a3a"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Name="MyFilterPresenter" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" Content="{TemplateBinding Content}" Padding="{TemplateBinding Padding}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleButton.FilterBtn:pointerover /template/ ContentPresenter#MyFilterPresenter"><Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/><Setter Property="BorderBrush" Value="#4a4a4a"/></Style>
+        <Style Selector="ToggleButton.FilterBtn:pressed /template/ ContentPresenter#MyFilterPresenter"><Setter Property="Background" Value="{DynamicResource ControlPressedBgBrush}"/><Setter Property="BorderBrush" Value="#5a5a5a"/></Style>
+        <Style Selector="ToggleButton.FilterBtn:checked"><Setter Property="Foreground" Value="{DynamicResource SvgIconBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource SvgIconBrush}"/><Setter Property="FontWeight" Value="Bold"/></Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
@@ -173,7 +192,33 @@
 
             <!-- 排序与工具 (Row 1 Col 2) -->
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" Margin="10,0,0,0" VerticalAlignment="Center">
-                <Button Classes="SortBtn" Content="整合包" Command="{Binding OpenAlbumCollectionCommand}"/>
+                <ToggleButton Classes="FilterBtn"
+                              IsChecked="{Binding RankedOnly}"
+                              IsEnabled="{Binding !IsLoading}"
+                              ToolTip.Tip="只显示已评级谱面">
+                    <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                        <Panel Width="14" Height="14">
+                            <Border CornerRadius="3"
+                                    BorderThickness="1.5"
+                                    BorderBrush="{DynamicResource ThemeTextSubBrush}"
+                                    Background="Transparent"
+                                    IsVisible="{Binding !RankedOnly}"/>
+                            <Border CornerRadius="3"
+                                    BorderThickness="1.5"
+                                    BorderBrush="{DynamicResource SvgIconBrush}"
+                                    Background="Transparent"
+                                    IsVisible="{Binding RankedOnly}">
+                                <PathIcon Data="M384 704L160 480l45.248-45.248L384 613.504l434.752-434.752L864 224z"
+                                          Width="11"
+                                          Height="11"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Foreground="{DynamicResource SvgIconBrush}"/>
+                            </Border>
+                        </Panel>
+                        <TextBlock Text="只看评级"/>
+                    </StackPanel>
+                </ToggleButton>
                 <Button Classes="SortBtn" Classes.Active="{Binding IsSortByLikes}" Content="点赞数" Click="OnSortClick" Tag="0" Name="SortBtn0"/>
                 <Button Classes="SortBtn" Classes.Active="{Binding IsSortByLatest}" Content="最新" Click="OnSortClick" Tag="1"/>
                 <Button Classes="SortBtn" Classes.Active="{Binding IsSortByDifficulty}" Content="难度" Click="OnSortClick" Tag="2"/>

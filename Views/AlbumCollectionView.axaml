@@ -122,19 +122,6 @@
     <Grid RowDefinitions="Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="10,10,10,14">
             <Panel Grid.Column="0" VerticalAlignment="Center">
-                <Button Command="{Binding GoBackCommand}"
-                        IsVisible="{Binding !IsSearching}"
-                        Theme="{StaticResource SmallRoundBtn}"
-                        ToolTip.Tip="返回谱面下载">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                        <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
-                              Fill="{DynamicResource SvgIconBrush}"
-                              Stretch="Uniform"
-                              Width="22"
-                              Height="22"
-                              VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
                 <Button Command="{Binding ClearSearchCommand}"
                         IsVisible="{Binding IsSearching}"
                         Theme="{StaticResource SmallRoundBtn}"
@@ -149,7 +136,12 @@
                     </StackPanel>
                 </Button>
             </Panel>
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0" Spacing="2">
+            <StackPanel Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        VerticalAlignment="Center"
+                        Margin="15,0,0,0"
+                        Spacing="2"
+                        IsVisible="{Binding !IsSearching}">
                 <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <TextBlock Text="整合包"
                                FontSize="22"
@@ -162,8 +154,7 @@
                             </LinearGradientBrush>
                         </TextBlock.Foreground>
                     </TextBlock>
-                    <Button IsVisible="{Binding !IsSearching}"
-                            Theme="{StaticResource SmallRoundBtn}"
+                    <Button Theme="{StaticResource SmallRoundBtn}"
                             ToolTip.Tip="跳转分类"
                             VerticalAlignment="Center"
                             Padding="8,5">
@@ -187,6 +178,32 @@
                                   Width="20"
                                   Height="20"/>
                     </Button>
+                </StackPanel>
+                <!-- 搜索结果计数或下载/试听状态 -->
+                <TextBlock Text="{Binding StatusMessage}" 
+                           IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" 
+                           FontSize="12" 
+                           FontWeight="Medium"
+                           Foreground="{DynamicResource ThemeTextTertiaryBrush}" 
+                           Margin="0,2,0,0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Margin="15,0,0,0"
+                        Spacing="2"
+                        IsVisible="{Binding IsSearching}">
+                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="整合包"
+                               FontSize="22"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                <GradientStop Color="#FF00FF" Offset="0"/>
+                                <GradientStop Color="#FF69B4" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
                 </StackPanel>
                 <!-- 搜索结果计数或下载/试听状态 -->
                 <TextBlock Text="{Binding StatusMessage}" 

@@ -101,7 +101,24 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     public bool IsSortByDifficulty => SelectedSortIndex == 2;
 
     [ObservableProperty] private bool _isAscending = false;   // 默认从高到低 (desc)
-    [ObservableProperty] private bool _showUnranked = true;   // 显示未评级
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RankedOnly))]
+    private bool _showUnranked = true;   // 显示未评级
+
+    public bool RankedOnly
+    {
+        get => !ShowUnranked;
+        set
+        {
+            if (ShowUnranked == !value)
+                return;
+
+            ShowUnranked = !value;
+            OnPropertyChanged();
+            CurrentPage = 1;
+            _ = ReloadAsync();
+        }
+    }
 
     // ── 分页 ──────────────────────────────────────────────────────────────────
     [ObservableProperty] 

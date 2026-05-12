@@ -89,6 +89,9 @@ public partial class MainWindowViewModel : ObservableObject
     private double _navButtonLetterSpacing = 0.0;
 
     [ObservableProperty]
+    private bool _isChartDownloadMenuExpanded;
+
+    [ObservableProperty]
     private double _backgroundBlurRadius = 0.0;
 
     [ObservableProperty]
@@ -818,6 +821,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task NavigateToChartDownloadAsync()
     {
+        IsChartDownloadMenuExpanded = true;
         CleanupCurrentPage();
 
         var vm = Ioc.Default.GetRequiredService<ChartDownloadViewModel>();
@@ -883,12 +887,19 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task NavigateToAlbumCollectionAsync()
     {
+        IsChartDownloadMenuExpanded = true;
         CleanupCurrentPage();
 
 
         var vm = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
         CurrentPage = vm;
         await vm.InitializeAsync();
+    }
+
+    [RelayCommand]
+    private void ToggleChartDownloadMenu()
+    {
+        IsChartDownloadMenuExpanded = !IsChartDownloadMenuExpanded;
     }
 
     [RelayCommand]
