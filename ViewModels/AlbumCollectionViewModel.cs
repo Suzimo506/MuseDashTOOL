@@ -335,7 +335,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
 {
     private const int UpdateNotificationDurationMs = 5000;
 
-    private const string ViewModeGuideBadgeKey = "AlbumCollectionViewModeGuide_v1.3.0";
+    private const string ViewModeGuideBadgeKey = "AlbumCollectionViewModeGuide_v1.3.1";
     private readonly IAlbumCollectionService _collectionService;
     private readonly ChartDownloadViewModel _chartDownloadViewModel;
     private readonly INotificationService _notificationService;
