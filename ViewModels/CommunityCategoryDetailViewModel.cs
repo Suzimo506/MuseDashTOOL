@@ -366,7 +366,28 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             await Task.Delay(350, ct);
             foreach (var chart in pageCharts)
             {
-                chart.IsAnimatedCoverPlaybackEnabled = true;
+                if (ct.IsCancellationRequested) break;
+
+                if (!chart.HasAnimatedDisplayCoverSource)
+                {
+                    chart.IsAnimatedCoverPlaybackEnabled = true;
+                    continue;
+                }
+
+                // GIF 封面: 先在后台下载到本地临时文件，再启用动画
+                try
+                {
+                    var localSource = await ChartCoverSourceResolver.PrepareAnimatedSourceAsync(
+                        chart.DisplayCoverSource, ct);
+
+                    if (!string.IsNullOrWhiteSpace(localSource) && !ct.IsCancellationRequested)
+                    {
+                        chart.IsAnimatedCoverPlaybackEnabled = true;
+                        chart.ResolvedCoverSource = localSource;
+                    }
+                }
+                catch (OperationCanceledException) { throw; }
+                catch { }
             }
         }
         catch (OperationCanceledException)

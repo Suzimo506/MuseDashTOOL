@@ -116,7 +116,19 @@ public partial class MdmcChart : ObservableObject
     public bool HasStaticDisplayCoverSource => HasDisplayCoverSource && !HasAnimatedDisplayCoverSource;
 
     [JsonIgnore]
-    public string? AnimatedDisplayCoverSource => HasAnimatedDisplayCoverSource ? DisplayCoverSource : null;
+    public string? AnimatedDisplayCoverSource
+    {
+        get
+        {
+            if (!HasAnimatedDisplayCoverSource) return null;
+            var source = DisplayCoverSource;
+            if (string.IsNullOrWhiteSpace(source)) return null;
+            // 只返回本地文件路径，防止 AnimatedImage 库在 UI 线程同步下载远程 GIF
+            if (Uri.TryCreate(source, UriKind.Absolute, out var uri))
+                return uri.IsFile ? source : null;
+            return source;
+        }
+    }
 
     [JsonIgnore]
     public string? StaticDisplayCoverSource => HasStaticDisplayCoverSource ? DisplayCoverSource : null;

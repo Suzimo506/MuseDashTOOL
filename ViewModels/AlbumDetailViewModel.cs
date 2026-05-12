@@ -602,7 +602,29 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             await Task.Delay(350, ct);
             foreach (var chart in pageCharts)
             {
-                chart.IsAnimatedCoverPlaybackEnabled = true;
+                if (ct.IsCancellationRequested) break;
+
+                if (!chart.HasAnimatedDisplayCoverSource)
+                {
+                    chart.IsAnimatedCoverPlaybackEnabled = true;
+                    continue;
+                }
+
+                // GIF 封面: 先在后台下载到本地临时文件，再启用动画
+                try
+                {
+                    var localSource = await ChartCoverSourceResolver.PrepareAnimatedSourceAsync(
+                        chart.DisplayCoverSource, ct);
+
+                    if (!string.IsNullOrWhiteSpace(localSource) && !ct.IsCancellationRequested)
+                    {
+                        // 先让 Image 可见，再设置源，这样库在可见状态下收到源变更才能正确启动动画
+                        chart.IsAnimatedCoverPlaybackEnabled = true;
+                        chart.ResolvedCoverSource = localSource;
+                    }
+                }
+                catch (OperationCanceledException) { throw; }
+                catch { }
             }
         }
         catch (OperationCanceledException)

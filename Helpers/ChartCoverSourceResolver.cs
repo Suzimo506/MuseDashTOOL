@@ -30,6 +30,7 @@ public static class ChartCoverSourceResolver
         if (chart == null || !string.IsNullOrWhiteSpace(chart.ResolvedCoverSource) || string.IsNullOrWhiteSpace(chart.CustomCoverUrl))
             return;
 
+        // GIF 封面由详情页的 EnableAnimatedCoversDeferredAsync 异步处理
         if (!LooksLikeGifSource(chart.CustomCoverUrl))
             SetResolvedCoverSource(chart, chart.CustomCoverUrl);
     }
@@ -95,6 +96,18 @@ public static class ChartCoverSourceResolver
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// 将远程 GIF 下载到本地临时文件，返回 file:// URI。
+    /// 非 GIF 源返回 null。供详情页在后台预下载后再启用动画播放。
+    /// </summary>
+    public static async Task<string?> PrepareAnimatedSourceAsync(string? source, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(source) || !LooksLikeGifSource(source))
+            return null;
+
+        return await PrepareDisplaySourceAsync(source, ct);
     }
 
     private static async Task<string> PrepareDisplaySourceAsync(string source, CancellationToken ct)
