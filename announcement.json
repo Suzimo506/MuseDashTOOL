@@ -16,10 +16,10 @@
         "cancel_button_text": "不再提醒"
     },
     {
-        "id": "Collection_help",
-        "is_enabled": false,
-        "title": "谱师个人仓库请求",
-        "content": "作者的梦想就是喵斯兔存放了所有谱师的优质谱面，所以如果你有多个谱面想要在喵斯兔里留下自己的仓库的话\n请点击“使用说明”跳转作者个人主页进行私信，或者直接QQ联系，未来有新谱面的话，作者可以提供更新仓库的工具",
+        "id": "Emergency_20260512",
+        "is_enabled": true,
+        "title": "紧急修复",
+        "content": "在有gif（动态曲绘）的页面加载会大幅减慢，现已修复",
         "action_button_text": "OK",
         "cancel_button_text": "不再提醒"
     }
