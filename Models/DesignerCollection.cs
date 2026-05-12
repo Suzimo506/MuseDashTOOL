@@ -18,6 +18,12 @@ public partial class DesignerCategory : CommunityToolkit.Mvvm.ComponentModel.Obs
 
     [JsonPropertyName("charts")]
     public List<DesignerChart> Charts { get; set; } = new();
+
+    [JsonIgnore]
+    public List<DesignerCategory> SubCategories { get; set; } = new();
+
+    [JsonIgnore]
+    public bool IsVirtualGroup => SubCategories.Count > 0;
 }
 
 public class DesignerChart

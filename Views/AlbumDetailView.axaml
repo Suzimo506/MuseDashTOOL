@@ -137,6 +137,7 @@
 
             <Button Grid.Column="4"
                     Command="{Binding DownloadAllCommand}"
+                    IsVisible="{Binding !IsVirtualCategory}"
                     Theme="{StaticResource SmallRoundBtn}"
                     ToolTip.Tip="一键下载当前页面全部谱面"
                     VerticalAlignment="Center"
@@ -153,7 +154,7 @@
         </Grid>
 
         <!-- 工具栏：分页栏 -->
-        <Grid Grid.Row="1" Margin="10,0,10,14">
+        <Grid Grid.Row="1" Margin="10,0,10,14" IsVisible="{Binding !IsVirtualCategory}">
             <Border Background="Transparent" HorizontalAlignment="Center" Padding="12,6" CornerRadius="10" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="第一页">
@@ -197,7 +198,66 @@
                 <TextBlock Text="暂时没有谱面" FontSize="18" Foreground="Gray" HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding !IsLoading}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer IsVisible="{Binding IsVirtualCategory}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding SubCategories}" Margin="10,0,10,20">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="4" HorizontalAlignment="Stretch"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DesignerCategoryItemViewModel">
+                            <Button Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).OpenSubCategoryCommand}"
+                                    CommandParameter="{Binding}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="0"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Top"
+                                    Margin="8,0,8,16"
+                                    Cursor="Hand">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                    </Style>
+                                </Button.Styles>
+                                <Border Classes="Card"
+                                        Background="{DynamicResource CardBgBrush}"
+                                        CornerRadius="10"
+                                        ClipToBounds="True">
+                                    <Grid RowDefinitions="180,*">
+                                        <Border Grid.Row="0" ClipToBounds="True" Background="#333333">
+                                            <Panel>
+                                                <TextBlock Text="📁"
+                                                           FontSize="56"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="#555555"
+                                                           IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNull}}"/>
+                                                <Image Source="{Binding CoverImage}"
+                                                       Stretch="UniformToFill"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                            </Panel>
+                                        </Border>
+
+                                        <StackPanel Grid.Row="1" Margin="12,12,12,14" Spacing="6">
+                                            <TextBlock Text="{Binding Category.Name}"
+                                                       FontSize="16"
+                                                       FontWeight="Bold"
+                                                       Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding !IsVirtualCategory}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Charts}" Margin="10,0,10,20">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>

@@ -349,6 +349,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
         AlbumCollectionService.PersonalRepositoryDisplayOrder
             .Select((name, index) => (name, index))
             .ToDictionary(x => x.name, x => x.index, StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, int> _tEdgeoolChildOrderMap =
+        AlbumCollectionService.TEdgeoolChildCategoryNames
+            .Select((name, index) => (name, index))
+            .ToDictionary(x => x.name, x => x.index, StringComparer.OrdinalIgnoreCase);
     private bool _isInitialized;
     private bool _isSyncing;
     private bool _isDownloadViewModelSubscribed;
@@ -719,10 +723,15 @@ public partial class AlbumCollectionViewModel : ObservableObject
             // 4. 计算匹配的分类，用于保留文件夹显示
             var matchingDesignerCategoryNames = designerResults.Select(r => r.Category.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var matchingCommunityCategoryNames = communitySearchResults.Select(r => r.CategoryName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var hasMatchingTEdgeoolChild =
+                matchingDesignerCategoryNames.Any(AlbumCollectionService.IsTEdgeoolChildCategoryName) ||
+                AlbumCollectionService.TEdgeoolChildCategoryNames.Any(name =>
+                    name.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase));
 
             var filteredCats = _allCategoriesBackup.Where(catVM => 
                 catVM.Category.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
-                matchingDesignerCategoryNames.Contains(catVM.Category.Name ?? string.Empty)
+                matchingDesignerCategoryNames.Contains(catVM.Category.Name ?? string.Empty) ||
+                (hasMatchingTEdgeoolChild && AlbumCollectionService.IsTEdgeoolGroupName(catVM.Category.Name))
             ).ToList();
 
             var filteredPersonalRepoCats = _allPersonalRepositoryCategoriesBackup.Where(catVM =>
@@ -1161,7 +1170,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             CommunityCategories.Add(new CommunityCategoryItemViewModel(config.Item1, config.Item2));
         }
 
-        foreach (var category in collections)
+        foreach (var category in BuildDisplayCollections(collections))
         {
             var item = new DesignerCategoryItemViewModel(category);
             if (AlbumCollectionService.IsPersonalRepositoryName(category.Name))
@@ -1190,6 +1199,40 @@ public partial class AlbumCollectionViewModel : ObservableObject
         await EnsureCategoryCoversLoadedAsync(PersonalRepositoryCategories.Take(3));
         await EnsureCommunityCoversLoadedAsync(CommunityCategories.Take(3));
     }
+
+    private static List<DesignerCategory> BuildDisplayCollections(IEnumerable<DesignerCategory> collections)
+    {
+        var source = collections.ToList();
+        var tEdgeoolChildren = source
+            .Where(c => AlbumCollectionService.IsTEdgeoolChildCategoryName(c.Name))
+            .OrderBy(GetTEdgeoolChildSortIndex)
+            .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (tEdgeoolChildren.Count == 0)
+            return source;
+
+        var displayCollections = source
+            .Where(c => !AlbumCollectionService.IsTEdgeoolChildCategoryName(c.Name) &&
+                        !AlbumCollectionService.IsTEdgeoolGroupName(c.Name))
+            .ToList();
+
+        displayCollections.Add(new DesignerCategory
+        {
+            Name = AlbumCollectionService.TEdgeoolGroupName,
+            Description = "包含 Anime / Touhou / Rhythm / Vocal &idol 四个 TEdgeool 曲包",
+            SubCategories = tEdgeoolChildren
+        });
+
+        return displayCollections
+            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static int GetTEdgeoolChildSortIndex(DesignerCategory category)
+        => category.Name != null && _tEdgeoolChildOrderMap.TryGetValue(category.Name, out var index)
+            ? index
+            : int.MaxValue;
 
     private void ReorderPersonalRepositoryCategories()
     {
@@ -1328,6 +1371,14 @@ public partial class AlbumCollectionViewModel : ObservableObject
         var targetCategory = _allCategoriesBackup
             .Concat(_allPersonalRepositoryCategoriesBackup)
             .FirstOrDefault(x => string.Equals(x.Category.Name, chart.SourceCategoryName, StringComparison.OrdinalIgnoreCase));
+
+        if (targetCategory == null)
+        {
+            targetCategory = _allCategoriesBackup
+                .Concat(_allPersonalRepositoryCategoriesBackup)
+                .SelectMany(x => x.Category.SubCategories.Select(child => new DesignerCategoryItemViewModel(child)))
+                .FirstOrDefault(x => string.Equals(x.Category.Name, chart.SourceCategoryName, StringComparison.OrdinalIgnoreCase));
+        }
 
         if (targetCategory == null)
             return;

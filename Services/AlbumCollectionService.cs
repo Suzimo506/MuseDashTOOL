@@ -30,6 +30,16 @@ public interface IAlbumCollectionService
 
 public class AlbumCollectionService : IAlbumCollectionService
 {
+    public const string TEdgeoolGroupName = "TEdgeool";
+
+    public static readonly string[] TEdgeoolChildCategoryNames =
+    {
+        "Anime TEdgeool",
+        "Touhou TEdgeool",
+        "Rhythm TEdgeool",
+        "Vocal &idol TEdgeool"
+    };
+
     private const string Owner = "KuoKing506";
     private const string Repo = "CustomAlbums_Collection";
     private const string Branch = "main";
@@ -120,6 +130,13 @@ public class AlbumCollectionService : IAlbumCollectionService
 
     public static bool IsPersonalRepositoryName(string? name)
         => !string.IsNullOrWhiteSpace(name) && PersonalRepositoryNames.Contains(name);
+
+    public static bool IsTEdgeoolGroupName(string? name)
+        => string.Equals(name, TEdgeoolGroupName, StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsTEdgeoolChildCategoryName(string? name)
+        => !string.IsNullOrWhiteSpace(name) &&
+           TEdgeoolChildCategoryNames.Contains(name, StringComparer.OrdinalIgnoreCase);
 
     public static string GetPersonalRepositoryHomepage(string? name)
     {

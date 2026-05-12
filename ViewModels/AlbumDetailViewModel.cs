@@ -32,6 +32,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     private readonly INotificationService _notificationService;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsVirtualCategory))]
     private DesignerCategory? _category;
 
     [ObservableProperty]
@@ -41,6 +42,9 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private ObservableCollection<MdmcChart> _charts = new();
+
+    [ObservableProperty]
+    private ObservableCollection<DesignerCategoryItemViewModel> _subCategories = new();
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanLoadNext))]
@@ -100,6 +104,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
     public bool IsPersonalRepository => AlbumCollectionService.IsPersonalRepositoryName(Category?.Name);
     public bool HasHomepageLink => IsPersonalRepository && !string.IsNullOrWhiteSpace(HomepageUrl);
+    public bool IsVirtualCategory => Category?.IsVirtualGroup == true;
 
     [ObservableProperty] private double? _requestedScrollY;
 
@@ -110,6 +115,8 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     private List<MdmcChart> _allFullIndex = new();
     private List<MdmcChart> _filteredIndex = new();
+    private readonly List<DesignerCategoryItemViewModel> _allSubCategories = new();
+    private DesignerCategory? _parentVirtualCategory;
 
     public IAsyncRelayCommand<MdmcChart> TogglePreviewCommand => _chartDownloadViewModel.TogglePreviewCommand;
     public IAsyncRelayCommand<MdmcChart> DownloadChartCommand => _chartDownloadViewModel.DownloadChartCommand;
@@ -124,13 +131,20 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         Category = category;
         HomepageUrl = AlbumCollectionService.GetPersonalRepositoryHomepage(category.Name);
         OnPropertyChanged(nameof(IsPersonalRepository));
-
-        SearchText = searchText;
+        OnPropertyChanged(nameof(IsVirtualCategory));
 
         ClearPageCache();
         _allFullIndex.Clear();
         _filteredIndex.Clear();
+        _allSubCategories.Clear();
         Charts.Clear();
+        SubCategories.Clear();
+        foreach (var child in category.SubCategories)
+        {
+            var item = new DesignerCategoryItemViewModel(child);
+            _allSubCategories.Add(item);
+            SubCategories.Add(item);
+        }
         CurrentPage = 1;
         TotalPages = 1;
         JumpPageText = "1";
@@ -138,7 +152,8 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
         IsEmpty = false;
         IsLoading = true;
-        StatusMessage = "正在获取整合包谱面...";
+        StatusMessage = category.IsVirtualGroup ? "正在载入子曲包..." : "正在获取整合包谱面...";
+        SearchText = searchText;
     }
 
     public AlbumDetailViewModel(
@@ -225,7 +240,13 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
         if (IsEmpty)
         {
-            StatusMessage = "未找到符合条件的谱面";
+            StatusMessage = IsVirtualCategory ? "未找到符合条件的子曲包" : "未找到符合条件的谱面";
+            return;
+        }
+
+        if (IsVirtualCategory)
+        {
+            StatusMessage = $"共 {SubCategories.Count} 个子曲包";
             return;
         }
 
@@ -236,6 +257,16 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     {
         Log($"Initializing album detail for '{category.Name}' with search query '{searchText}'.");
         PrepareForNavigation(category, searchText);
+
+        if (category.IsVirtualGroup)
+        {
+            _parentVirtualCategory = null;
+            ReloadSubCategories();
+            await LoadSubCategoryCoversAsync(SubCategories);
+            IsLoading = false;
+            UpdateStatusMessage();
+            return;
+        }
 
         // 1. 优先加载本地缓存
         var localCharts = await _collectionService.GetLocalChartsAsync(category.Name);
@@ -328,6 +359,13 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     private async Task ReloadAsync()
     {
+        if (IsVirtualCategory)
+        {
+            ReloadSubCategories();
+            await Task.CompletedTask;
+            return;
+        }
+
         IsLoading = true;
         IsEmpty = false;
         UpdateStatusMessage();
@@ -393,6 +431,47 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         _ = EnableAnimatedCoversDeferredAsync(pageCharts);
     }
 
+    private void ReloadSubCategories()
+    {
+        var query = SearchText.Trim();
+        var filtered = _allSubCategories;
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            filtered = _allSubCategories
+                .Where(item =>
+                    item.Category.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    item.Category.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        SubCategories.Clear();
+        foreach (var item in filtered)
+            SubCategories.Add(item);
+
+        CurrentPage = 1;
+        TotalPages = 1;
+        IsEmpty = SubCategories.Count == 0;
+        IsLoading = false;
+        UpdateStatusMessage();
+    }
+
+    private static async Task LoadSubCategoryCoversAsync(IEnumerable<DesignerCategoryItemViewModel> items)
+    {
+        var tasks = items
+            .Where(item => item.CoverImage == null)
+            .Select(async item =>
+            {
+                await _coverSemaphore.WaitAsync();
+                try { item.LoadCoverImage(); }
+                finally { _coverSemaphore.Release(); }
+            })
+            .ToList();
+
+        if (tasks.Count > 0)
+            await Task.WhenAll(tasks);
+    }
+
     [RelayCommand(CanExecute = nameof(CanLoadPrev))]
     private async Task LoadFirstPageAsync() { CurrentPage = 1; await ReloadAsync(); }
 
@@ -404,6 +483,17 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     [RelayCommand(CanExecute = nameof(CanLoadNext))]
     private async Task LoadLastPageAsync() { CurrentPage = TotalPages; await ReloadAsync(); }
+
+    [RelayCommand]
+    private async Task OpenSubCategoryAsync(DesignerCategoryItemViewModel item)
+    {
+        if (item?.Category == null)
+            return;
+
+        _chartDownloadViewModel.StopPlayback();
+        _parentVirtualCategory = Category?.IsVirtualGroup == true ? Category : null;
+        await InitializeAsync(item.Category, string.Empty);
+    }
 
     [RelayCommand]
     private void StartEditPage() { JumpPageText = CurrentPage.ToString(); IsEditingPageNumber = true; }
@@ -562,6 +652,14 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task GoBackAsync()
     {
+        if (_parentVirtualCategory != null)
+        {
+            var parent = _parentVirtualCategory;
+            _parentVirtualCategory = null;
+            await InitializeAsync(parent, string.Empty);
+            return;
+        }
+
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
             desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
