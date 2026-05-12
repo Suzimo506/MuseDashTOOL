@@ -51,13 +51,4 @@ public class DesignerChart
 
     [JsonPropertyName("difficulties")]
     public List<string>? Difficulties { get; set; }
-
-    [JsonIgnore]
-    public bool IsFolder { get; set; }
-
-    [JsonIgnore]
-    public string FolderPath { get; set; } = string.Empty;
-
-    [JsonIgnore]
-    public int ChildFolderCount { get; set; }
 }

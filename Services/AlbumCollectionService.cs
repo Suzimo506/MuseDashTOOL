@@ -75,7 +75,6 @@ public class AlbumCollectionService : IAlbumCollectionService
         "Greenhub的个人谱面",
         "Dunno的谱面小库",
         "石井圣人的谱面仓库",
-        "浅时肆的谱面仓库",
         "布布西里的谱面",
         "独家特供抽象谱面（宋Jerry）",
         "MC谱面（虚无）",
@@ -102,7 +101,6 @@ public class AlbumCollectionService : IAlbumCollectionService
         ["Greenhub的个人谱面"] = "https://space.bilibili.com/130793282?spm_id_from=333.1387.follow.user_card.click",
         ["Dunno的谱面小库"] = "https://space.bilibili.com/1548500340?spm_id_from=333.1387.follow.user_card.click",
         ["石井圣人的谱面仓库"] = "https://v.douyin.com/JPY1Nk6P6bM/ 3@9.com :2pm",
-        ["浅时肆的谱面仓库"]="https://space.bilibili.com/87417184/upload/video",
         ["布布西里的谱面"] = "",
         ["独家特供抽象谱面（宋Jerry）"] = "",
         ["MC谱面（虚无）"] = "",
@@ -260,8 +258,7 @@ public class AlbumCollectionService : IAlbumCollectionService
                         foreach (var file in localFiles)
                         {
                             var fileName = Path.GetFileNameWithoutExtension(file);
-                            var rootName = GetRootCollectionNameFromCacheFileName(fileName);
-                            if (!remoteFolderSet.Contains(rootName))
+                            if (!remoteFolderSet.Contains(fileName))
                             {
                                 File.Delete(file);
                                 Log($"Cleaned up orphaned cache file: {fileName}");
@@ -310,12 +307,12 @@ public class AlbumCollectionService : IAlbumCollectionService
 
     private async Task<List<DesignerChart>> FetchSpecialR2CategoryAsync(string name)
     {
-        var encodedName = EncodePathSegments(name);
+        var encodedName = Uri.EscapeDataString(name);
         var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
         
         string? json = null;
         var cacheDir = Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes");
-        var cachePath = Path.Combine(cacheDir, $"{BuildCollectionCacheFileName(name)}.json");
+        var cachePath = Path.Combine(cacheDir, $"{name}.json");
 
         // 1. 尝试从远端获取（去掉 ?t=）
         try
@@ -332,29 +329,10 @@ public class AlbumCollectionService : IAlbumCollectionService
         {
             if (ex is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
             {
-                var nestedFolderEntries = await FetchFolderEntriesFromListApiAsync(name);
-                if (nestedFolderEntries.Count > 0)
-                {
-                    var folderJson = JsonSerializer.Serialize(new FolderIndexWrapper
-                    {
-                        Folders = nestedFolderEntries.Select(x => x.Title).ToList()
-                    });
-                    await TrySaveCacheIfChangedAsync(cachePath, folderJson);
-                    return nestedFolderEntries;
-                }
-
                 TryDeleteCollectionCache(name, cachePath);
                 _chartsCache.Remove(name);
-                if (!name.Contains('/', StringComparison.Ordinal) && !name.Contains('\\', StringComparison.Ordinal))
-                {
-                    _categoryCache?.RemoveAll(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
-                    Log($"Collection '{name}' returned 404. Removed local cache and treating it as deleted.");
-                }
-                else
-                {
-                    Log($"Nested collection path '{name}' returned 404. Removed nested cache only.");
-                }
-
+                _categoryCache?.RemoveAll(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
+                Log($"Collection '{name}' returned 404. Removed local cache and treating it as deleted.");
                 return new List<DesignerChart>();
             }
 
@@ -370,12 +348,6 @@ public class AlbumCollectionService : IAlbumCollectionService
         if (string.IsNullOrEmpty(json))
         {
             return new List<DesignerChart>();
-        }
-
-        var folderEntries = ExtractFolderEntries(json, name);
-        if (folderEntries.Count > 0)
-        {
-            return folderEntries;
         }
 
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
@@ -412,15 +384,35 @@ public class AlbumCollectionService : IAlbumCollectionService
         }
 
         if (items == null || items.Count == 0) {
-            var apiFolderEntries = await FetchFolderEntriesFromListApiAsync(name);
-            if (apiFolderEntries.Count > 0)
-                return apiFolderEntries;
-
             Log($"Failed to extract charts array from JSON for '{name}'. JSON length: {json.Length}");
             return new List<DesignerChart>();
         }
 
-        return MapR2Charts(items, name, baseHost);
+        var charts = new List<DesignerChart>();
+        foreach(var item in items.AsEnumerable().Reverse()) {
+           var cover = BuildR2ResourceUrl(baseHost, name, "covers", item.CoverUrl);
+           var demo = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoUrl);
+           var mp3 = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoMp3Url);
+           
+           var dlUrl = BuildR2ResourceUrl(baseHost, name, "mdm", item.DownloadUrl);
+
+           string cleanTitle = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : (item.Title ?? "");
+           cleanTitle = Regex.Replace(cleanTitle, @"^\[(?:Lv|LV|lv)[.\s]?\s*[^\]]+\]\s*", "", RegexOptions.IgnoreCase);
+
+           charts.Add(new DesignerChart {
+               Id = !string.IsNullOrWhiteSpace(item.Id) ? item.Id : (item.DownloadUrl ?? Guid.NewGuid().ToString()),
+               Title = cleanTitle,
+               Artist = item.Artist,
+               Author = item.Charter,
+               Bpm = item.Bpm,
+               CoverUrl = cover,
+               DemoUrl = demo,
+               DemoMp3Url = mp3,
+               DownloadUrl = dlUrl,
+               Difficulties = item.Difficulties
+           });
+        }
+        return charts;
     }
 
     public async Task<List<DesignerChart>> GetLocalChartsAsync(string categoryName)
@@ -429,7 +421,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         if (_chartsCache.TryGetValue(categoryName, out var cached))
             return cached;
 
-        var cachePath = Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes", $"{BuildCollectionCacheFileName(categoryName)}.json");
+        var cachePath = Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes", $"{categoryName}.json");
         if (!File.Exists(cachePath)) return new List<DesignerChart>();
         try
         {
@@ -451,12 +443,6 @@ public class AlbumCollectionService : IAlbumCollectionService
     private List<DesignerChart> ParseDesignerCharts(string json, string name)
     {
         var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
-        var folderEntries = ExtractFolderEntries(json, name);
-        if (folderEntries.Count > 0)
-        {
-            return folderEntries;
-        }
-
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
         List<CommunityIndexItem>? items = null;
         try {
@@ -481,17 +467,12 @@ public class AlbumCollectionService : IAlbumCollectionService
         }
         if (items == null) return new List<DesignerChart>();
 
-        return MapR2Charts(items, name, baseHost);
-    }
-
-    private static List<DesignerChart> MapR2Charts(IEnumerable<CommunityIndexItem> items, string folderPath, string baseHost)
-    {
         var charts = new List<DesignerChart>();
         foreach(var item in items.AsEnumerable().Reverse()) {
-           var cover = BuildR2ResourceUrl(baseHost, folderPath, "covers", item.CoverUrl);
-           var demo = BuildR2ResourceUrl(baseHost, folderPath, "demos", item.DemoUrl);
-           var mp3 = BuildR2ResourceUrl(baseHost, folderPath, "demos", item.DemoMp3Url);
-           var dlUrl = BuildR2ResourceUrl(baseHost, folderPath, "mdm", item.DownloadUrl);
+           var cover = BuildR2ResourceUrl(baseHost, name, "covers", item.CoverUrl);
+           var demo = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoUrl);
+           var mp3 = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoMp3Url);
+           var dlUrl = BuildR2ResourceUrl(baseHost, name, "mdm", item.DownloadUrl);
            string cleanTitle = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : (item.Title ?? "");
            cleanTitle = Regex.Replace(cleanTitle, @"^\[(?:Lv|LV|lv)[.\s]?\s*[^\]]+\]\s*", "", RegexOptions.IgnoreCase);
            charts.Add(new DesignerChart {
@@ -502,252 +483,6 @@ public class AlbumCollectionService : IAlbumCollectionService
            });
         }
         return charts;
-    }
-
-    private async Task<List<DesignerChart>> FetchFolderEntriesFromListApiAsync(string parentPath)
-    {
-        var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
-        var infoDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumInfoDomain) ? MirrorDomainRegistry.AlbumInfoDomain : $"workerdl.{baseHost}";
-        var encodedPath = Uri.EscapeDataString(parentPath);
-        var candidates = new[]
-        {
-            $"https://{infoDomain}/api/list?path={encodedPath}",
-            $"https://{infoDomain}/api/list?prefix={encodedPath}",
-            $"https://{infoDomain}/api/list/{EncodePathSegments(parentPath)}"
-        };
-
-        foreach (var url in candidates)
-        {
-            try
-            {
-                var json = await _http.GetStringAsync(url);
-                var entries = ExtractFolderEntries(json, parentPath);
-                if (entries.Count > 0)
-                {
-                    Log($"Fetched {entries.Count} child folders for '{parentPath}' from {url}");
-                    return entries;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"Nested folder list failed for '{parentPath}' from {url}: {ex.Message}");
-            }
-        }
-
-        return new List<DesignerChart>();
-    }
-
-    private static List<DesignerChart> ExtractFolderEntries(string json, string parentPath)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-            return new List<DesignerChart>();
-
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
-        var folderNames = new List<string>();
-
-        try
-        {
-            var wrapper = JsonSerializer.Deserialize<FolderIndexWrapper>(json, options);
-            AddFolderNames(folderNames, wrapper?.Folders);
-            AddFolderNames(folderNames, wrapper?.Directories);
-            AddFolderNames(folderNames, wrapper?.SubFolders);
-        }
-        catch { }
-
-        if (folderNames.Count == 0)
-        {
-            try
-            {
-                using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip });
-                if (doc.RootElement.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var element in doc.RootElement.EnumerateArray())
-                    {
-                        if (element.ValueKind == JsonValueKind.String)
-                        {
-                            folderNames.Add(element.GetString() ?? string.Empty);
-                        }
-                        else if (element.ValueKind == JsonValueKind.Object &&
-                                 TryGetStringProperty(element, out var name, "name", "path", "prefix", "key") &&
-                                 LooksLikeDirectoryElement(element, name))
-                        {
-                            folderNames.Add(name);
-                        }
-                    }
-                }
-                else if (doc.RootElement.ValueKind == JsonValueKind.Object)
-                {
-                    AddStringArrayProperty(folderNames, doc.RootElement, "folders", "directories", "subFolders", "subfolders");
-                    AddObjectArrayProperty(folderNames, doc.RootElement, "items", "entries", "objects");
-                }
-            }
-            catch { }
-        }
-
-        return folderNames
-            .Select(x => NormalizeChildFolderName(parentPath, x))
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-            .Select(x => CreateFolderChart(parentPath, x))
-            .ToList();
-    }
-
-    private static void AddFolderNames(List<string> target, IEnumerable<string>? names)
-    {
-        if (names == null)
-            return;
-
-        target.AddRange(names.Where(x => !string.IsNullOrWhiteSpace(x)));
-    }
-
-    private static void AddStringArrayProperty(List<string> target, JsonElement root, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (!root.TryGetProperty(name, out var array) || array.ValueKind != JsonValueKind.Array)
-                continue;
-
-            foreach (var element in array.EnumerateArray())
-            {
-                if (element.ValueKind == JsonValueKind.String)
-                    target.Add(element.GetString() ?? string.Empty);
-            }
-        }
-    }
-
-    private static void AddObjectArrayProperty(List<string> target, JsonElement root, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (!root.TryGetProperty(name, out var array) || array.ValueKind != JsonValueKind.Array)
-                continue;
-
-            foreach (var element in array.EnumerateArray())
-            {
-                if (element.ValueKind == JsonValueKind.Object &&
-                    TryGetStringProperty(element, out var value, "name", "path", "prefix", "key") &&
-                    LooksLikeDirectoryElement(element, value))
-                {
-                    target.Add(value);
-                }
-            }
-        }
-    }
-
-    private static bool TryGetStringProperty(JsonElement element, out string value, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (element.TryGetProperty(name, out var property) && property.ValueKind == JsonValueKind.String)
-            {
-                value = property.GetString() ?? string.Empty;
-                return true;
-            }
-        }
-
-        value = string.Empty;
-        return false;
-    }
-
-    private static bool LooksLikeDirectoryElement(JsonElement element, string name)
-    {
-        if (element.TryGetProperty("type", out var typeProperty) &&
-            typeProperty.ValueKind == JsonValueKind.String)
-        {
-            var type = typeProperty.GetString();
-            return string.Equals(type, "dir", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(type, "directory", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(type, "folder", StringComparison.OrdinalIgnoreCase);
-        }
-
-        return name.EndsWith("/", StringComparison.Ordinal) ||
-               !Path.HasExtension(name);
-    }
-
-    private static string NormalizeChildFolderName(string parentPath, string rawValue)
-    {
-        var normalized = WebUtility.UrlDecode(rawValue ?? string.Empty)
-            .Replace("\\", "/")
-            .Trim()
-            .Trim('/');
-
-        if (string.IsNullOrWhiteSpace(normalized))
-            return string.Empty;
-
-        var parent = parentPath.Replace("\\", "/").Trim('/');
-        if (!string.IsNullOrWhiteSpace(parent) &&
-            normalized.StartsWith(parent + "/", StringComparison.OrdinalIgnoreCase))
-        {
-            normalized = normalized[(parent.Length + 1)..];
-        }
-
-        if (normalized.Contains('/', StringComparison.Ordinal))
-            normalized = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
-
-        return normalized;
-    }
-
-    private static DesignerChart CreateFolderChart(string parentPath, string folderName)
-    {
-        var folderPath = CombineRemotePath(parentPath, folderName);
-        return new DesignerChart
-        {
-            Id = $"folder:{folderPath}",
-            Title = folderName,
-            Author = "文件夹",
-            IsFolder = true,
-            FolderPath = folderPath
-        };
-    }
-
-    private static string CombineRemotePath(string parentPath, string childName)
-    {
-        var parent = (parentPath ?? string.Empty).Replace("\\", "/").Trim('/');
-        var child = (childName ?? string.Empty).Replace("\\", "/").Trim('/');
-        return string.IsNullOrWhiteSpace(parent) ? child : $"{parent}/{child}";
-    }
-
-    private static string EncodePathSegments(string path)
-    {
-        var normalized = (path ?? string.Empty).Replace("\\", "/").Trim('/');
-        return string.Join("/", normalized.Split('/', StringSplitOptions.RemoveEmptyEntries).Select(Uri.EscapeDataString));
-    }
-
-    private static string BuildCollectionCacheFileName(string categoryPath)
-    {
-        var normalized = (categoryPath ?? string.Empty).Replace("\\", "/").Trim('/');
-        if (!normalized.Contains('/', StringComparison.Ordinal))
-            return normalized;
-
-        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(normalized))
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
-    }
-
-    private static string GetRootCollectionNameFromCacheFileName(string cacheFileName)
-    {
-        try
-        {
-            var base64 = cacheFileName.Replace('-', '+').Replace('_', '/');
-            switch (base64.Length % 4)
-            {
-                case 2:
-                    base64 += "==";
-                    break;
-                case 3:
-                    base64 += "=";
-                    break;
-            }
-
-            var decoded = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
-            return decoded.Replace("\\", "/").Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? decoded;
-        }
-        catch
-        {
-            return cacheFileName;
-        }
     }
 
     public async Task<List<(DesignerCategory Category, DesignerChart Chart)>> SearchChartsAsync(string query)
@@ -1010,7 +745,6 @@ public class AlbumCollectionService : IAlbumCollectionService
 
     private class NewCollectionIndex { [JsonPropertyName("collections")] public List<NewCollectionEntry> Collections { get; set; } = new(); }
     private class NewCollectionEntry { [JsonPropertyName("name")] public string Name { get; set; } = ""; [JsonPropertyName("description")] public string Description { get; set; } = ""; [JsonPropertyName("charts")] public List<CommunityIndexItem> Charts { get; set; } = new(); }
-    private class FolderIndexWrapper { [JsonPropertyName("folders")] public List<string> Folders { get; set; } = new(); [JsonPropertyName("directories")] public List<string> Directories { get; set; } = new(); [JsonPropertyName("subFolders")] public List<string> SubFolders { get; set; } = new(); }
 
     private async Task<List<GitHubContentItem>> GetRepoContentsAsync(string path)
     {
@@ -1348,7 +1082,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         if (fileName.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return fileName;
 
         // 对每一段路径进行 URL 编码
-        var encodedCategory = EncodePathSegments(categoryName);
+        var encodedCategory = Uri.EscapeDataString(categoryName.Trim().Replace("\\", "/").Trim('/'));
         var encodedSubFolder = Uri.EscapeDataString(subFolder.Trim().Trim('/'));
         
         // 文件名可能本身包含子路径 mdm/xxx.mdm，需要拆分处理
