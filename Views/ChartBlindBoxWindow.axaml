@@ -1,0 +1,222 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MdModManager.ViewModels"
+        xmlns:models="using:MdModManager.Models"
+        xmlns:controls="using:MdModManager.Views.Controls"
+        xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+        xmlns:animated="clr-namespace:AnimatedImage.Avalonia;assembly=AnimatedImage.Avalonia"
+        x:Class="MdModManager.Views.ChartBlindBoxWindow"
+        x:DataType="vm:ChartBlindBoxViewModel"
+        Title="谱面盲盒"
+        Width="1200" Height="820"
+        MinWidth="900" MinHeight="650"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner"
+        Background="#252525"
+        Foreground="White">
+
+    <Window.Background>
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+            <GradientStop Color="#2d2d2d" Offset="0"/>
+            <GradientStop Color="#1a1a1a" Offset="1"/>
+        </LinearGradientBrush>
+    </Window.Background>
+
+    <Window.Resources>
+        <ControlTheme x:Key="RobustIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBorder">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed">
+                <Setter Property="RenderTransform" Value="scale(0.92)"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBorder">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.6"/>
+            </Style>
+        </ControlTheme>
+    </Window.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- 功能区域: 过滤按钮(左) + 标题(中) + 换一批(右) 一行显示 -->
+        <!-- 定位于谱面正上方，对应 5 列布局 -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*,*" Margin="15,20,15,10">
+            <!-- 左侧: 难度过滤 (第 1 列) -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <StackPanel.Styles>
+                    <Style Selector="Button.FilterBtn">
+                        <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
+                        <Setter Property="BorderBrush" Value="#3a3a3a"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="Transitions">
+                            <Transitions>
+                                <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                                <ThicknessTransition Property="BorderThickness" Duration="0:0:0.1"/>
+                            </Transitions>
+                        </Setter>
+                    </Style>
+                    <Style Selector="Button.FilterBtn:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#333333"/>
+                    </Style>
+                    <Style Selector="Button.FilterBtn.selected">
+                        <Setter Property="BorderBrush" Value="{DynamicResource SvgIconBrush}"/>
+                        <Setter Property="BorderThickness" Value="1.5"/>
+                        <Setter Property="Background" Value="#2a2a2a"/>
+                    </Style>
+                </StackPanel.Styles>
+
+                <Button Click="OnFilterClick" Tag="0" Classes="FilterBtn"
+                        Classes.selected="{Binding IsFilterAll}"
+                        Cursor="Hand" Padding="12,6" CornerRadius="8"
+                        Foreground="White">
+                    <TextBlock Text="全部" FontSize="13"/>
+                </Button>
+                <Button Click="OnFilterClick" Tag="1" Classes="FilterBtn"
+                        Classes.selected="{Binding IsFilterHigh}"
+                        Cursor="Hand" Padding="12,6" CornerRadius="8"
+                        Foreground="White">
+                    <TextBlock Text="🔥高难" FontSize="13"/>
+                </Button>
+                <Button Click="OnFilterClick" Tag="2" Classes="FilterBtn"
+                        Classes.selected="{Binding IsFilterLow}"
+                        Cursor="Hand" Padding="12,6" CornerRadius="8"
+                        Foreground="White">
+                    <TextBlock Text="🌱低难" FontSize="13"/>
+                </Button>
+            </StackPanel>
+
+            <!-- 中间: 标题 (第 3 列) -->
+            <StackPanel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="谱面盲盒" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center">
+                    <TextBlock.Foreground>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Color="#FF00FF" Offset="0"/>
+                            <GradientStop Color="#FF69B4" Offset="0.5"/>
+                            <GradientStop Color="#FFB6C1" Offset="1"/>
+                        </LinearGradientBrush>
+                    </TextBlock.Foreground>
+                </TextBlock>
+                <TextBlock Text="{Binding StatusMessage}" FontSize="11" 
+                           Foreground="#888888" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- 右侧: 换一批 (第 5 列) -->
+            <Button Grid.Column="4" Command="{Binding RefreshCommand}"
+                    Cursor="Hand" Padding="12,8" CornerRadius="10"
+                    BorderThickness="1"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center">
+                <Button.Styles>
+                    <Style Selector="Button">
+                        <Setter Property="Background">
+                            <Setter.Value>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                    <GradientStop Color="#d4237a" Offset="0"/>
+                                    <GradientStop Color="#FF69B4" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Setter.Value>
+                        </Setter>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="Foreground" Value="White"/>
+                    </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Opacity" Value="0.85"/>
+                    </Style>
+                    <Style Selector="Button:pressed /template/ ContentPresenter">
+                        <Setter Property="Opacity" Value="0.7"/>
+                        <Setter Property="RenderTransform" Value="scale(0.96)"/>
+                    </Style>
+                </Button.Styles>
+                <TextBlock Text="换一批" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+            </Button>
+        </Grid>
+
+        <!-- 加载中提示 -->
+        <StackPanel Grid.Row="1" IsVisible="{Binding IsLoading}" 
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+            <TextBlock Text="正在加载谱面池..." FontSize="18" Foreground="#888888" HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- 谱面卡片区域 -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding !IsLoading}"
+                      HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Charts}" Margin="10,0,10,20">
+
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="5" HorizontalAlignment="Stretch"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="models:MdmcChart">
+                        <Border Classes="Card" Background="{DynamicResource CardBgBrush}" CornerRadius="10" Margin="8,0,8,16" VerticalAlignment="Top" ClipToBounds="True">
+                            <Grid RowDefinitions="Auto,*">
+                                <!-- 封面 -->
+                                <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
+                                    <Panel>
+                                        <Border Background="#333333" CornerRadius="10,10,0,0" IsVisible="{Binding !HasDisplayCoverSource}"><TextBlock Text="🎵" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555"/></Border>
+                                        <Image IsVisible="{Binding ShouldShowAnimatedCover}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" animated:ImageBehavior.AnimatedSource="{Binding AnimatedDisplayCoverSource}" />
+                                        <asyncImageLoader:AdvancedImage Source="{Binding DisplayCoverSource}" IsVisible="{Binding ShouldShowStaticCover}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0"><TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                        <!-- 来源标签 -->
+                                        <Border Background="#cc000000" CornerRadius="4" Padding="6,2" Margin="6,6,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                            <TextBlock Text="{Binding SourceCategoryName}" FontSize="9" Foreground="#aaaaaa" MaxWidth="120" TextTrimming="CharacterEllipsis"/>
+                                        </Border>
+                                    </Panel>
+                                </Border>
+
+                                <!-- 信息区域 -->
+                                <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
+                                    <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Title}"/>
+
+                                    <TextBlock Text="{Binding SubInfo}" 
+                                               FontSize="11" 
+                                               Foreground="{DynamicResource ThemeTextSubBrush}" 
+                                               TextWrapping="NoWrap" 
+                                               TextTrimming="CharacterEllipsis"
+                                               Height="16"
+                                               HorizontalAlignment="Center"
+                                               ToolTip.Tip="{Binding SubInfo}"/>
+
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2,0,0" MinHeight="16" HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}" IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" VerticalAlignment="Center"/>
+                                        <ItemsControl ItemsControl.ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center">
+                                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate><DataTemplate><Border Background="#331a3a1a" CornerRadius="3" Padding="4,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/></Border></DataTemplate></ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+
+                                    <!-- 试听和下载 -->
+                                    <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+                                        <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[Window].((vm:ChartBlindBoxViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="试听 / 停止"><Panel><PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/><PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Panel></Button>
+                                        <Button Grid.Column="1" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[Window].((vm:ChartBlindBoxViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="下载到 Custom_Albums"><PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Button>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- 底部免责声明 -->
+        <TextBlock Grid.Row="2" Text="该功能为实验性功能，盲盒结果为完全随机抽取，仅供娱乐，无任何参考价值" 
+                   FontSize="10" Foreground="HotPink" 
+                   HorizontalAlignment="Center" Margin="0,5,0,10"/>
+    </Grid>
+</Window>

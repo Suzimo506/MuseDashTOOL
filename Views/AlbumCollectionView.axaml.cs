@@ -241,4 +241,10 @@ public partial class AlbumCollectionView : UserControl
         if (communityItems.Count > 0)
             await vm.EnsureCommunityCoversLoadedAsync(communityItems);
     }
+    private async void OnBlindBoxClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var owner = TopLevel.GetTopLevel(this) as Window;
+        var dialog = new ChartBlindBoxWindow();
+        await dialog.ShowBlindBoxAsync(owner);
+    }
 }

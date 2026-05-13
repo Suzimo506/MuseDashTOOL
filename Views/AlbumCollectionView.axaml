@@ -178,6 +178,17 @@
                                   Width="20"
                                   Height="20"/>
                     </Button>
+                    <Button Theme="{StaticResource SmallRoundBtn}"
+                            ToolTip.Tip="谱面盲盒"
+                            VerticalAlignment="Center"
+                            Padding="8"
+                            Click="OnBlindBoxClick"
+                            Margin="5,0,0,0">
+                        <PathIcon Data="M20,6H17.62A3,3,0,0,0,12,4.68,3,3,0,0,0,6.38,6H4A2,2,0,0,0,2,8V20a2,2,0,0,0,2,2H20a2,2,0,0,0,2-2V8A2,2,0,0,0,20,6ZM11,13H4V11h7Zm9,0H13V11h7ZM10.5,6A1.5,1.5,0,1,1,12,7.5,1.5,1.5,0,0,1,10.5,6ZM13.5,6A1.5,1.5,0,1,1,12,4.5,1.5,1.5,0,0,1,13.5,6ZM4,8H20v2H4ZM20,20H13V15h7Zm-9,0H4V15h7Z"
+                                  Foreground="{DynamicResource SvgIconBrush}"
+                                  Width="18"
+                                  Height="18"/>
+                    </Button>
                 </StackPanel>
                 <!-- 搜索结果计数或下载/试听状态 -->
                 <TextBlock Text="{Binding StatusMessage}" 
