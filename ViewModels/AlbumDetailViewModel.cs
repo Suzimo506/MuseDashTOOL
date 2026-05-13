@@ -237,6 +237,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        ReleaseResources();
         _gifPlaybackCts?.Cancel();
         _gifPlaybackCts?.Dispose();
         _gifPlaybackCts = null;
@@ -258,7 +259,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             if (_pageCache.TryGetValue(oldKey, out var oldResult))
             {
                 foreach (var c in oldResult.charts)
-                    c.CoverImage = null; // 释放位图内存
+                    c.ReleaseResources();
             }
             _pageCache.Remove(oldKey);
         }
@@ -272,10 +273,65 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         foreach (var kvp in _pageCache)
         {
             foreach (var c in kvp.Value.charts)
-                c.CoverImage = null;
+                c.ReleaseResources();
         }
         _pageCache.Clear();
         _cacheKeys.Clear();
+    }
+
+    public void ReleaseResources()
+    {
+        _chartDownloadViewModel.StopPlayback();
+
+        _gifPlaybackCts?.Cancel();
+        _gifPlaybackCts?.Dispose();
+        _gifPlaybackCts = null;
+
+        ClearPageCache();
+
+        foreach (var chart in _allFullIndex)
+        {
+            ChartCoverSourceResolver.ReleaseChartCache(chart);
+            chart.ReleaseResources();
+        }
+        foreach (var chart in _filteredIndex)
+        {
+            ChartCoverSourceResolver.ReleaseChartCache(chart);
+            chart.ReleaseResources();
+        }
+        foreach (var chart in Charts)
+        {
+            ChartCoverSourceResolver.ReleaseChartCache(chart);
+            chart.ReleaseResources();
+        }
+
+        _allFullIndex.Clear();
+        _filteredIndex.Clear();
+        Charts.Clear();
+
+        foreach (var item in _allSubCategories)
+            item.ReleaseResources();
+        foreach (var item in SubCategories)
+            item.ReleaseResources();
+        foreach (var item in SubCategoryListLeftColumn)
+            item.ReleaseResources();
+        foreach (var item in SubCategoryListRightColumn)
+            item.ReleaseResources();
+
+        _allSubCategories.Clear();
+        SubCategories.Clear();
+        SubCategoryListLeftColumn.Clear();
+        SubCategoryListRightColumn.Clear();
+
+        RequestedScrollY = null;
+        IsEditingPageNumber = false;
+        IsLoading = false;
+        IsEmpty = false;
+        StatusMessage = string.Empty;
+        AsyncImageLoaderCacheHelper.ClearMemoryCache();
+
+        if (Category?.Name != null)
+            _collectionService.ReleaseCollectionChartsCache(Category.Name);
     }
 
     private void UpdateStatusMessage()
@@ -564,6 +620,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             return;
 
         _chartDownloadViewModel.StopPlayback();
+        ReleaseResources();
         _parentVirtualCategory = Category?.IsVirtualGroup == true ? Category : null;
         await InitializeAsync(item.Category, string.Empty);
     }
@@ -723,7 +780,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         if (_parentVirtualCategory != null)
         {
             var parent = _parentVirtualCategory;
-            _parentVirtualCategory = null;
+            ReleaseResources();
             await InitializeAsync(parent, string.Empty);
             return;
         }
@@ -733,6 +790,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         {
             Ioc.Default.GetRequiredService<ChartDownloadViewModel>().StopPlayback();
             var collectionVm = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
+            ReleaseResources();
             mainVm.CurrentPage = collectionVm;
         }
 

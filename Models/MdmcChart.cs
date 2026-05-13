@@ -168,6 +168,14 @@ public partial class MdmcChart : ObservableObject
         }
     }
 
+    public void ReleaseResources()
+    {
+        CoverImage?.Dispose();
+        CoverImage = null;
+        ResolvedCoverSource = null;
+        IsAnimatedCoverPlaybackEnabled = false;
+    }
+
     private static bool HasGifLikeSource(string? source)
     {
         if (string.IsNullOrWhiteSpace(source))

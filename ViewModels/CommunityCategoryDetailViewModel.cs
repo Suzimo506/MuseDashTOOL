@@ -240,6 +240,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
 
     public void Dispose()
     {
+        ReleaseResources();
         _gifPlaybackCts?.Cancel();
         _gifPlaybackCts?.Dispose();
         _gifPlaybackCts = null;
@@ -258,7 +259,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             var oldKey = _cacheKeys[0];
             _cacheKeys.RemoveAt(0);
             if (_pageCache.TryGetValue(oldKey, out var oldResult))
-                foreach (var c in oldResult.charts) c.CoverImage = null;
+                foreach (var c in oldResult.charts) c.ReleaseResources();
             _pageCache.Remove(oldKey);
         }
         _pageCache[key] = result;
@@ -268,9 +269,50 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
     private void ClearPageCache()
     {
         foreach (var kvp in _pageCache)
-            foreach (var c in kvp.Value.charts) c.CoverImage = null;
+            foreach (var c in kvp.Value.charts) c.ReleaseResources();
         _pageCache.Clear();
         _cacheKeys.Clear();
+    }
+
+    public void ReleaseResources()
+    {
+        _chartDownloadViewModel.StopPlayback();
+
+        _gifPlaybackCts?.Cancel();
+        _gifPlaybackCts?.Dispose();
+        _gifPlaybackCts = null;
+
+        ClearPageCache();
+
+        foreach (var chart in _allFullIndex)
+        {
+            ChartCoverSourceResolver.ReleaseChartCache(chart);
+            chart.ReleaseResources();
+        }
+        foreach (var chart in _filteredIndex)
+        {
+            ChartCoverSourceResolver.ReleaseChartCache(chart);
+            chart.ReleaseResources();
+        }
+        foreach (var chart in Charts)
+        {
+            ChartCoverSourceResolver.ReleaseChartCache(chart);
+            chart.ReleaseResources();
+        }
+
+        _allFullIndex.Clear();
+        _filteredIndex.Clear();
+        Charts.Clear();
+
+        RequestedScrollY = null;
+        IsEditingPageNumber = false;
+        IsLoading = false;
+        IsEmpty = false;
+        StatusMessage = string.Empty;
+        AsyncImageLoaderCacheHelper.ClearMemoryCache();
+
+        if (!string.IsNullOrWhiteSpace(CategoryName))
+            Ioc.Default.GetRequiredService<IAlbumCollectionService>().ReleaseCommunityChartsCache(CategoryName);
     }
 
     private async Task ReloadAsync()
@@ -427,6 +469,7 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
         {
             _chartDownloadViewModel.StopPlayback();
+            ReleaseResources();
             mainVm.CurrentPage = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
         }
     }

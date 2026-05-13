@@ -146,7 +146,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var albumsDir = System.IO.Path.Combine(gamePath, "Custom_Albums");
         bool isCustomAlbumsMissing = !System.IO.Directory.Exists(albumsDir);
 
-        var charts = _chartService.LoadCharts(gamePath)
+        var charts = _chartService.LoadCharts(gamePath, _downloadManagerService.SessionDownloadedFiles)
             .OrderByDescending(chart => chart.IsNewDownload)
             .ThenBy(chart => chart.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(chart => System.IO.Path.GetFileName(chart.FilePath), StringComparer.OrdinalIgnoreCase)
@@ -386,6 +386,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
             var destFile = System.IO.Path.Combine(albumsDir, destFileName);
             System.IO.File.Copy(sourceFile, destFile, true);
+            _downloadManagerService.SessionDownloadedFiles.Add(System.IO.Path.GetFullPath(destFile));
 
             StatusMessage = $"导入成功: {destFileName}";
             Reload();

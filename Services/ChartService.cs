@@ -10,7 +10,7 @@ namespace MdModManager.Services;
 
 public interface IChartService
 {
-    IEnumerable<ChartInfo> LoadCharts(string gamePath);
+    IEnumerable<ChartInfo> LoadCharts(string gamePath, IReadOnlySet<string>? sessionDownloadedFiles = null);
     void DeleteChart(ChartInfo chart);
     Stream? OpenDemoStream(ChartInfo chart);
 }
@@ -31,7 +31,7 @@ public class ChartService : IChartService
     private static HashSet<string>? _snapshotFilenames = null;
     private static readonly object _snapshotLock = new();
 
-    public IEnumerable<ChartInfo> LoadCharts(string gamePath)
+    public IEnumerable<ChartInfo> LoadCharts(string gamePath, IReadOnlySet<string>? sessionDownloadedFiles = null)
     {
         var albumsDir = Path.Combine(gamePath, "Custom_Albums");
         if (!Directory.Exists(albumsDir))
@@ -72,6 +72,13 @@ public class ChartService : IChartService
                 {
                     info.IsNewDownload = true;
                 }
+
+                if (sessionDownloadedFiles != null &&
+                    sessionDownloadedFiles.Contains(Path.GetFullPath(file)))
+                {
+                    info.IsNewDownload = true;
+                }
+
                 yield return info;
             }
         }

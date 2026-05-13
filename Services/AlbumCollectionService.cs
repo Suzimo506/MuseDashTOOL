@@ -26,6 +26,8 @@ public interface IAlbumCollectionService
     Task<List<MdmcChart>> GetCommunityChartsAsync(string name, string repoUrl);
     Task<List<(DesignerCategory Category, DesignerChart Chart)>> SearchChartsAsync(string query);
     Task<List<(string CategoryName, MdmcChart Chart)>> SearchCommunityChartsAsync(string query);
+    void ReleaseCollectionChartsCache(string categoryName);
+    void ReleaseCommunityChartsCache(string name);
 }
 
 public class AlbumCollectionService : IAlbumCollectionService
@@ -628,6 +630,24 @@ public class AlbumCollectionService : IAlbumCollectionService
         }
 
         return ParseCommunityCharts(json, name, repoUrl);
+    }
+
+    public void ReleaseCollectionChartsCache(string categoryName)
+    {
+        if (string.IsNullOrWhiteSpace(categoryName))
+            return;
+
+        _chartsCache.Remove(categoryName);
+        Log($"Released collection charts cache: {categoryName}");
+    }
+
+    public void ReleaseCommunityChartsCache(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return;
+
+        _communityChartsCache.Remove(name);
+        Log($"Released community charts cache: {name}");
     }
 
     private List<MdmcChart> ParseCommunityCharts(string json, string name, string repoUrl)

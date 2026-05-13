@@ -761,6 +761,11 @@ public partial class MainWindowViewModel : ObservableObject
         var isLeavingAlbumCollectionSection = IsAlbumCollectionSectionPage(CurrentPage);
         if (isLeavingAlbumCollectionSection)
         {
+            if (CurrentPage is AlbumDetailViewModel albumDetailVm)
+                albumDetailVm.ReleaseResources();
+            else if (CurrentPage is CommunityCategoryDetailViewModel communityDetailVm)
+                communityDetailVm.ReleaseResources();
+
             Ioc.Default.GetRequiredService<AlbumCollectionViewModel>().ReleaseResources();
             ViewLocator.ClearCache(); // 彻底清理视图单例，释放内存
         }

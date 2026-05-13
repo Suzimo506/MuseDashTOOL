@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -83,6 +84,51 @@ public static class ChartCoverSourceResolver
         {
             gate.Release();
         }
+    }
+
+    public static void ReleaseChartCache(MdmcChart? chart)
+    {
+        if (chart == null)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(chart.Id))
+        {
+            var cacheKey = $"mdmc:{chart.Id.Trim()}";
+            ResolvedCache.TryRemove(cacheKey, out _);
+            ResolveLocks.TryRemove(cacheKey, out var resolveLock);
+            resolveLock?.Dispose();
+        }
+
+        ReleaseAnimatedSourceCache(chart.DisplayCoverSource);
+        ReleaseAnimatedSourceCache(chart.CustomCoverUrl);
+        ReleaseAnimatedSourceCache(chart.ResolvedCoverSource);
+    }
+
+    public static void ReleaseChartsCache(IEnumerable<MdmcChart>? charts)
+    {
+        if (charts == null)
+            return;
+
+        foreach (var chart in charts)
+            ReleaseChartCache(chart);
+    }
+
+    public static void ClearAllCaches()
+    {
+        ResolvedCache.Clear();
+
+        foreach (var pair in ResolveLocks)
+            pair.Value.Dispose();
+        ResolveLocks.Clear();
+
+        foreach (var source in AnimatedTempCache.Keys)
+            ReleaseAnimatedSourceCache(source);
+
+        AnimatedTempCache.Clear();
+
+        foreach (var pair in AnimatedTempLocks)
+            pair.Value.Dispose();
+        AnimatedTempLocks.Clear();
     }
 
     private static async Task<string?> ResolveMdmcCoverUrlAsync(string chartId, CancellationToken ct)
@@ -214,5 +260,44 @@ public static class ChartCoverSourceResolver
         }
 
         await Dispatcher.UIThread.InvokeAsync(() => chart.ResolvedCoverSource = resolvedSource);
+    }
+
+    private static void ReleaseAnimatedSourceCache(string? source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+            return;
+
+        if (AnimatedTempCache.TryRemove(source, out var cachedPath) &&
+            Uri.TryCreate(cachedPath, UriKind.Absolute, out var cachedUri) &&
+            cachedUri.IsFile)
+        {
+            TryDeleteLocalFile(cachedUri.LocalPath);
+        }
+
+        if (AnimatedTempLocks.TryRemove(source, out var animatedLock))
+            animatedLock.Dispose();
+
+        if (Uri.TryCreate(source, UriKind.Absolute, out var uri) && uri.IsFile)
+        {
+            TryDeleteLocalFile(uri.LocalPath);
+        }
+    }
+
+    private static void TryDeleteLocalFile(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        try
+        {
+            if (File.Exists(path) &&
+                Path.GetFileName(path).StartsWith("mdm_anim_cover_", StringComparison.OrdinalIgnoreCase))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+        }
     }
 }
