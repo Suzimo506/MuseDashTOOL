@@ -352,7 +352,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
     private static readonly Dictionary<string, int> _tEdgeoolChildOrderMap =
         AlbumCollectionService.TEdgeoolChildCategoryNames
             .Select((name, index) => (name, index))
-            .ToDictionary(x => x.name, x => x.index, StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(x => AlbumCollectionService.NormalizeTEdgeoolName(x.name), x => x.index, StringComparer.OrdinalIgnoreCase);
     private bool _isInitialized;
     private bool _isSyncing;
     private bool _isDownloadViewModelSubscribed;
@@ -726,7 +726,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
             var hasMatchingTEdgeoolChild =
                 matchingDesignerCategoryNames.Any(AlbumCollectionService.IsTEdgeoolChildCategoryName) ||
                 AlbumCollectionService.TEdgeoolChildCategoryNames.Any(name =>
-                    name.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase));
+                    name.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+                    AlbumCollectionService.NormalizeTEdgeoolName(name).Contains(
+                        AlbumCollectionService.NormalizeTEdgeoolName(normalizedQuery),
+                        StringComparison.OrdinalIgnoreCase));
 
             var filteredCats = _allCategoriesBackup.Where(catVM => 
                 catVM.Category.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
@@ -885,8 +888,12 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 Directory.GetFiles(targetDir).Select(f => Path.GetFileName(f) ?? string.Empty), 
                 StringComparer.OrdinalIgnoreCase);
 
-            // 3. 找出本地缺失的远端文件
-            var missingFiles = remoteFiles.Where(f => !localFiles.Contains(f)).ToList();
+            // 3. 找出当前可见曲包、虚拟子曲包对应的缺失远端封面
+            var desiredCoverNames = GetDesiredAlbumCoverNames();
+            var missingFiles = remoteFiles
+                .Where(f => !localFiles.Contains(f))
+                .Where(f => desiredCoverNames.Contains(NormalizeCoverName(Path.GetFileNameWithoutExtension(f))))
+                .ToList();
             
             if (missingFiles.Count == 0)
             {
@@ -951,8 +958,11 @@ public partial class AlbumCollectionViewModel : ObservableObject
             }
 
             // 4. 刷新封面 (先释放旧资源，再重新加载)
-            foreach (var cat in Categories) { cat.ReleaseResources(); cat.LoadCoverImage(); }
-            foreach (var cat in PersonalRepositoryCategories) { cat.ReleaseResources(); cat.LoadCoverImage(); }
+            foreach (var cat in EnumerateDesignerCategoryItemsForCoverRefresh())
+            {
+                cat.ReleaseResources();
+                cat.LoadCoverImage();
+            }
             foreach (var cat in CommunityCategories) { cat.ReleaseResources(); cat.LoadCoverImage(); }
         }
         catch (Exception ex)
@@ -960,6 +970,47 @@ public partial class AlbumCollectionViewModel : ObservableObject
             _notificationService.ShowFailure("操作失败", ex.Message);
         }
     }
+
+    private HashSet<string> GetDesiredAlbumCoverNames()
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var item in EnumerateDesignerCategoryItemsForCoverRefresh())
+        {
+            if (!string.IsNullOrWhiteSpace(item.Category.Name))
+                names.Add(NormalizeCoverName(item.Category.Name));
+        }
+
+        foreach (var item in CommunityCategories)
+        {
+            if (!string.IsNullOrWhiteSpace(item.Name))
+                names.Add(NormalizeCoverName(item.Name));
+        }
+
+        return names;
+    }
+
+    private IEnumerable<DesignerCategoryItemViewModel> EnumerateDesignerCategoryItemsForCoverRefresh()
+    {
+        foreach (var item in Categories)
+        {
+            yield return item;
+
+            foreach (var child in item.Category.SubCategories)
+                yield return new DesignerCategoryItemViewModel(child);
+        }
+
+        foreach (var item in PersonalRepositoryCategories)
+        {
+            yield return item;
+
+            foreach (var child in item.Category.SubCategories)
+                yield return new DesignerCategoryItemViewModel(child);
+        }
+    }
+
+    private static string NormalizeCoverName(string? name)
+        => AlbumCollectionService.NormalizeTEdgeoolName(name);
 
 
     // ── 试听与下载命令 (转发自 ChartDownloadViewModel) ───────────────────
@@ -1220,17 +1271,18 @@ public partial class AlbumCollectionViewModel : ObservableObject
         displayCollections.Add(new DesignerCategory
         {
             Name = AlbumCollectionService.TEdgeoolGroupName,
-            Description = "包含 Anime / Touhou / Rhythm / Vocal &idol 四个 TEdgeool 曲包",
+            Description = AlbumCollectionService.TEdgeoolDescription,
             SubCategories = tEdgeoolChildren
         });
 
         return displayCollections
-            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => AlbumCollectionService.IsTEdgeoolGroupName(c.Name) ? 0 : 1)
+            .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
     private static int GetTEdgeoolChildSortIndex(DesignerCategory category)
-        => category.Name != null && _tEdgeoolChildOrderMap.TryGetValue(category.Name, out var index)
+        => category.Name != null && _tEdgeoolChildOrderMap.TryGetValue(AlbumCollectionService.NormalizeTEdgeoolName(category.Name), out var index)
             ? index
             : int.MaxValue;
 

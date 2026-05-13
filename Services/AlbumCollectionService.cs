@@ -40,6 +40,9 @@ public class AlbumCollectionService : IAlbumCollectionService
         "Vocal &idol TEdgeool"
     };
 
+    public const string TEdgeoolDescription = "『TEdegool』是一个由浅浅小饼干组织的，专为喵斯兔提供的长期多系列曲包，不定时更新，欢迎投稿，或许下一次更新就会出现你的谱面！";
+    public const string TEdgeoolHomepageUrl = "https://space.bilibili.com/87417184/upload/video";
+
     private const string Owner = "KuoKing506";
     private const string Repo = "CustomAlbums_Collection";
     private const string Branch = "main";
@@ -136,7 +139,13 @@ public class AlbumCollectionService : IAlbumCollectionService
 
     public static bool IsTEdgeoolChildCategoryName(string? name)
         => !string.IsNullOrWhiteSpace(name) &&
-           TEdgeoolChildCategoryNames.Contains(name, StringComparer.OrdinalIgnoreCase);
+           TEdgeoolChildCategoryNames.Any(child =>
+               string.Equals(NormalizeTEdgeoolName(child), NormalizeTEdgeoolName(name), StringComparison.OrdinalIgnoreCase));
+
+    public static string NormalizeTEdgeoolName(string? name)
+        => string.IsNullOrWhiteSpace(name)
+            ? string.Empty
+            : Regex.Replace(name, @"\s+", string.Empty).Trim();
 
     public static string GetPersonalRepositoryHomepage(string? name)
     {
@@ -145,6 +154,9 @@ public class AlbumCollectionService : IAlbumCollectionService
 
         return PersonalRepositoryHomepages.TryGetValue(name, out var url) ? url : string.Empty;
     }
+
+    public static string GetTEdgeoolHomepage(string? name)
+        => IsTEdgeoolGroupName(name) ? TEdgeoolHomepageUrl : string.Empty;
 
     private readonly Dictionary<string, List<MdmcChart>> _communityChartsCache = new(StringComparer.OrdinalIgnoreCase);
 

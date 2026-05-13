@@ -22,5 +22,13 @@
         "content": "在有gif（动态曲绘）的页面加载会大幅减慢，现已修复",
         "action_button_text": "OK",
         "cancel_button_text": "不再提醒"
+    },
+        {
+        "id": "New_Collection_01",
+        "is_enabled": true,
+        "title": "新大型曲包更新",
+        "content": "浅浅小饼干组织的，专为喵斯兔提供的长期多系列曲包『TEdegool』更新！目前内含四个曲包，不定时更新，欢迎各位前往游玩！",
+        "action_button_text": "太好啦！",
+        "cancel_button_text": "不再提醒"
     }
 ]

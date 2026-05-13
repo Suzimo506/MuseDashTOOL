@@ -1003,7 +1003,7 @@ public partial class MainWindowViewModel : ObservableObject
     // ──────────────────────────────────────────────────────────
 
     /// <summary>当前程序版本号（与 UpdateService.CurrentVersion 保持一致）</summary>
-    private const string CurrentAppVersion = "1.3.1";
+    private const string CurrentAppVersion = "1.3.1.2";
 
     /// <summary>初始化所有红点提示状态</summary>
     private void InitializeBadges()

@@ -33,6 +33,9 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsVirtualCategory))]
+    [NotifyPropertyChangedFor(nameof(ShowChartContent))]
+    [NotifyPropertyChangedFor(nameof(ShowVirtualCardMode))]
+    [NotifyPropertyChangedFor(nameof(ShowVirtualListMode))]
     private DesignerCategory? _category;
 
     [ObservableProperty]
@@ -45,6 +48,12 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private ObservableCollection<DesignerCategoryItemViewModel> _subCategories = new();
+
+    [ObservableProperty]
+    private ObservableCollection<DesignerCategoryItemViewModel> _subCategoryListLeftColumn = new();
+
+    [ObservableProperty]
+    private ObservableCollection<DesignerCategoryItemViewModel> _subCategoryListRightColumn = new();
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanLoadNext))]
@@ -100,11 +109,50 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isEditingPageNumber;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ViewModeToolTip))]
+    [NotifyPropertyChangedFor(nameof(ViewModeIconData))]
+    [NotifyPropertyChangedFor(nameof(ShowVirtualCardMode))]
+    [NotifyPropertyChangedFor(nameof(ShowVirtualListMode))]
+    private bool _isListMode;
+
     public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
     public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
     public bool IsPersonalRepository => AlbumCollectionService.IsPersonalRepositoryName(Category?.Name);
-    public bool HasHomepageLink => IsPersonalRepository && !string.IsNullOrWhiteSpace(HomepageUrl);
+    public bool HasHomepageLink => IsVirtualCategory || (IsPersonalRepository && !string.IsNullOrWhiteSpace(HomepageUrl));
     public bool IsVirtualCategory => Category?.IsVirtualGroup == true;
+    public bool ShowChartContent => !IsVirtualCategory;
+    public bool ShowVirtualCardMode => IsVirtualCategory && !IsListMode;
+    public bool ShowVirtualListMode => IsVirtualCategory && IsListMode;
+    public string ViewModeToolTip => IsListMode ? "切换为封面模式" : "切换为列表模式";
+    public string ViewModeIconData => IsListMode
+        ? "M796.444444 1024 227.555556 1024C102.4 1024 0 921.6 0 796.444444L0 227.555556C0 102.4 102.4 0 227.555556 0L796.444444 0C921.6 0 1024 102.4 1024 227.555556L1024 796.444444C1024 921.6 921.6 1024 796.444444 1024ZM910.222222 227.555556C910.222222 164.807111 859.192889 113.777778 796.444444 113.777778L227.555556 113.777778C164.807111 113.777778 113.777778 164.807111 113.777778 227.555556L113.777778 796.444444C113.777778 859.192889 164.807111 910.222222 227.555556 910.222222L796.444444 910.222222C859.192889 910.222222 910.222222 859.192889 910.222222 796.444444L910.222222 227.555556ZM739.555556 796.444444 512 796.444444C480.711111 796.444444 455.111111 770.844444 455.111111 739.555556 455.111111 708.266667 480.711111 682.666667 512 682.666667L739.555556 682.666667C770.844444 682.666667 796.444444 708.266667 796.444444 739.555556 796.444444 770.844444 770.844444 796.444444 739.555556 796.444444ZM739.555556 568.888889 512 568.888889C480.711111 568.888889 455.111111 543.288889 455.111111 512 455.111111 480.711111 480.711111 455.111111 512 455.111111L739.555556 455.111111C770.844444 455.111111 796.444444 480.711111 796.444444 512 796.444444 543.288889 770.844444 568.888889 739.555556 568.888889ZM739.555556 341.333333 512 341.333333C480.711111 341.333333 455.111111 315.733333 455.111111 284.444444 455.111111 253.155556 480.711111 227.555556 512 227.555556L739.555556 227.555556C770.844444 227.555556 796.444444 253.155556 796.444444 284.444444 796.444444 315.847111 770.844444 341.333333 739.555556 341.333333ZM284.444444 796.444444C253.041778 796.444444 227.555556 770.958222 227.555556 739.555556 227.555556 708.152889 253.041778 682.666667 284.444444 682.666667 315.847111 682.666667 341.333333 708.152889 341.333333 739.555556 341.333333 770.958222 315.847111 796.444444 284.444444 796.444444ZM284.444444 568.888889C253.041778 568.888889 227.555556 543.402667 227.555556 512 227.555556 480.597333 253.041778 455.111111 284.444444 455.111111 315.847111 455.111111 341.333333 480.597333 341.333333 512 341.333333 543.402667 315.847111 568.888889 284.444444 568.888889ZM284.444444 341.333333C253.041778 341.333333 227.555556 315.847111 227.555556 284.444444 227.555556 253.041778 253.041778 227.555556 284.444444 227.555556 315.847111 227.555556 341.333333 253.041778 341.333333 284.444444 341.333333 315.847111 315.847111 341.333333 284.444444 341.333333Z"
+        : "M905.846154 0h-708.923077A196.923077 196.923077 0 0 0 0 196.923077v630.153846A196.923077 196.923077 0 0 0 196.923077 1024h708.923077a196.923077 196.923077 0 0 0 196.923077-196.923077v-630.153846A196.923077 196.923077 0 0 0 905.846154 0z m-708.923077 945.230769A118.153846 118.153846 0 0 1 78.769231 827.076923v-630.153846A118.153846 118.153846 0 0 1 196.923077 78.769231h708.923077A118.153846 118.153846 0 0 1 1024 196.923077V472.615385a464.738462 464.738462 0 0 0-393.846154 454.498461V945.230769z m708.923077 0H708.923077v-18.904615A385.969231 385.969231 0 0 1 1024 551.384615v275.692308a118.153846 118.153846 0 0 1-118.153846 118.153846z M393.846154 236.307692a157.538462 157.538462 0 1 0 157.538461 157.538462 157.538462 157.538462 0 0 0-157.538461-157.538462z m0 236.307693a78.769231 78.769231 0 1 1 78.769231-78.769231 78.769231 78.769231 0 0 1-78.769231 78.769231z";
+
+    partial void OnIsListModeChanged(bool value)
+    {
+        if (_configService.Config.AlbumCollectionListMode != value)
+        {
+            _configService.Config.AlbumCollectionListMode = value;
+            _ = _configService.SaveAsync();
+        }
+
+        if (value)
+        {
+            foreach (var item in _allSubCategories)
+                item.ReleaseResources();
+        }
+        else
+        {
+            _ = LoadSubCategoryCoversAsync(SubCategories);
+        }
+
+        var collectionVm = Ioc.Default.GetService<AlbumCollectionViewModel>();
+        if (collectionVm != null && collectionVm.IsListMode != value)
+        {
+            collectionVm.IsListMode = value;
+        }
+    }
 
     [ObservableProperty] private double? _requestedScrollY;
 
@@ -129,9 +177,15 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         _gifPlaybackCts = null;
 
         Category = category;
-        HomepageUrl = AlbumCollectionService.GetPersonalRepositoryHomepage(category.Name);
+        IsListMode = _configService.Config.AlbumCollectionListMode;
+        HomepageUrl = category.IsVirtualGroup
+            ? AlbumCollectionService.GetTEdgeoolHomepage(category.Name)
+            : AlbumCollectionService.GetPersonalRepositoryHomepage(category.Name);
         OnPropertyChanged(nameof(IsPersonalRepository));
         OnPropertyChanged(nameof(IsVirtualCategory));
+        OnPropertyChanged(nameof(ShowChartContent));
+        OnPropertyChanged(nameof(ShowVirtualCardMode));
+        OnPropertyChanged(nameof(ShowVirtualListMode));
 
         ClearPageCache();
         _allFullIndex.Clear();
@@ -168,6 +222,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         _configService = configService;
         _downloadManagerService = downloadManagerService;
         _notificationService = notificationService;
+        _isListMode = _configService.Config.AlbumCollectionListMode;
 
         _chartDownloadViewModel.PropertyChanged += OnChartDownloadViewModelPropertyChanged;
     }
@@ -433,22 +488,11 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     private void ReloadSubCategories()
     {
-        var query = SearchText.Trim();
-        var filtered = _allSubCategories;
-
-        if (!string.IsNullOrWhiteSpace(query))
-        {
-            filtered = _allSubCategories
-                .Where(item =>
-                    item.Category.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                    item.Category.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
         SubCategories.Clear();
-        foreach (var item in filtered)
+        foreach (var item in _allSubCategories)
             SubCategories.Add(item);
 
+        RefreshSubCategoryListModeColumns();
         CurrentPage = 1;
         TotalPages = 1;
         IsEmpty = SubCategories.Count == 0;
@@ -470,6 +514,35 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
         if (tasks.Count > 0)
             await Task.WhenAll(tasks);
+    }
+
+    private void RefreshSubCategoryListModeColumns()
+    {
+        SplitIntoColumns(SubCategories, SubCategoryListLeftColumn, SubCategoryListRightColumn);
+    }
+
+    private static void SplitIntoColumns<T>(
+        IEnumerable<T> source,
+        ObservableCollection<T> leftColumn,
+        ObservableCollection<T> rightColumn)
+    {
+        leftColumn.Clear();
+        rightColumn.Clear();
+
+        var index = 0;
+        foreach (var item in source)
+        {
+            if (index++ % 2 == 0)
+                leftColumn.Add(item);
+            else
+                rightColumn.Add(item);
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleListMode()
+    {
+        IsListMode = !IsListMode;
     }
 
     [RelayCommand(CanExecute = nameof(CanLoadPrev))]

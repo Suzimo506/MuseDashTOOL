@@ -59,7 +59,7 @@
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
-        <!-- 顶部栏：返回按钮 + 标题 + 搜索框 -->
+        <!-- 顶部栏：返回按钮 + 标题 + 工具按钮 -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="10,10,10,14">
             <Button Grid.Column="0" Command="{Binding GoBackCommand}" Theme="{StaticResource SmallRoundBtn}" ToolTip.Tip="返回上方极简菜单">
                 <StackPanel Orientation="Horizontal" Spacing="4">
@@ -88,9 +88,23 @@
                 </StackPanel>
                 <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}"/>
             </StackPanel>
+
+            <Button Grid.Column="2"
+                    Command="{Binding ToggleListModeCommand}"
+                    IsVisible="{Binding IsVirtualCategory}"
+                    Theme="{StaticResource RobustIconBtn}"
+                    ToolTip.Tip="{Binding ViewModeToolTip}"
+                    VerticalAlignment="Center"
+                    Margin="0,0,15,0">
+                <PathIcon Data="{Binding ViewModeIconData}"
+                          Foreground="{DynamicResource SvgIconBrush}"
+                          Width="22"
+                          Height="22"/>
+            </Button>
             
             <TextBox Grid.Column="3"
                      Text="{Binding SearchText}"
+                     IsVisible="{Binding ShowChartContent}"
                      Classes="ExpandableSearch"
                      Classes.HasText="{Binding SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                      Margin="0,0,10,0"
@@ -137,7 +151,7 @@
 
             <Button Grid.Column="4"
                     Command="{Binding DownloadAllCommand}"
-                    IsVisible="{Binding !IsVirtualCategory}"
+                    IsVisible="{Binding ShowChartContent}"
                     Theme="{StaticResource SmallRoundBtn}"
                     ToolTip.Tip="一键下载当前页面全部谱面"
                     VerticalAlignment="Center"
@@ -154,7 +168,7 @@
         </Grid>
 
         <!-- 工具栏：分页栏 -->
-        <Grid Grid.Row="1" Margin="10,0,10,14" IsVisible="{Binding !IsVirtualCategory}">
+        <Grid Grid.Row="1" Margin="10,0,10,14" IsVisible="{Binding ShowChartContent}">
             <Border Background="Transparent" HorizontalAlignment="Center" Padding="12,6" CornerRadius="10" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="第一页">
@@ -198,16 +212,17 @@
                 <TextBlock Text="暂时没有谱面" FontSize="18" Foreground="Gray" HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <ScrollViewer IsVisible="{Binding IsVirtualCategory}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer IsVisible="{Binding ShowVirtualCardMode}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding SubCategories}" Margin="10,0,10,20">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <UniformGrid Columns="4" HorizontalAlignment="Stretch"/>
+                            <UniformGrid Columns="3" HorizontalAlignment="Stretch"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:DesignerCategoryItemViewModel">
-                            <Button Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).OpenSubCategoryCommand}"
+                            <Button x:Name="SubCategoryCardButton"
+                                    Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).OpenSubCategoryCommand}"
                                     CommandParameter="{Binding}"
                                     Background="Transparent"
                                     BorderThickness="0"
@@ -226,8 +241,10 @@
                                         CornerRadius="10"
                                         ClipToBounds="True">
                                     <Grid RowDefinitions="180,*">
-                                        <Border Grid.Row="0" ClipToBounds="True" Background="#333333">
-                                            <Panel>
+                                        <Border Grid.Row="0"
+                                                ClipToBounds="True"
+                                                Background="#333333">
+                                            <Grid>
                                                 <TextBlock Text="📁"
                                                            FontSize="56"
                                                            HorizontalAlignment="Center"
@@ -239,7 +256,17 @@
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"
                                                        IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                                            </Panel>
+                                                <Border Classes="HoverDescription"
+                                                        Background="#CC000000"
+                                                        Padding="12"
+                                                        IsVisible="{Binding #SubCategoryCardButton.IsPointerOver}">
+                                                    <TextBlock Text="{Binding Category.Description}"
+                                                               FontSize="12"
+                                                               Foreground="White"
+                                                               TextWrapping="Wrap"
+                                                               VerticalAlignment="Bottom"/>
+                                                </Border>
+                                            </Grid>
                                         </Border>
 
                                         <StackPanel Grid.Row="1" Margin="12,12,12,14" Spacing="6">
@@ -257,7 +284,103 @@
                 </ItemsControl>
             </ScrollViewer>
 
-            <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding !IsVirtualCategory}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer IsVisible="{Binding ShowVirtualListMode}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <Grid ColumnDefinitions="*,*" Margin="10,0,10,20">
+                    <ItemsControl Grid.Column="0" ItemsSource="{Binding SubCategoryListLeftColumn}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:DesignerCategoryItemViewModel">
+                                <Button Classes="ListRow"
+                                        Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).OpenSubCategoryCommand}"
+                                        CommandParameter="{Binding}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="0"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="8,0,8,10"
+                                        Cursor="Hand">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <Border Background="{DynamicResource CardBgBrush}"
+                                            CornerRadius="10"
+                                            Padding="14,12">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Category.Name}"
+                                                           FontSize="15"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                           TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding Category.Description}"
+                                                           IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                           TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                            <PathIcon Grid.Column="1"
+                                                      Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z"
+                                                      Width="16"
+                                                      Height="16"
+                                                      VerticalAlignment="Center"
+                                                      Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                                        </Grid>
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <ItemsControl Grid.Column="1" ItemsSource="{Binding SubCategoryListRightColumn}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:DesignerCategoryItemViewModel">
+                                <Button Classes="ListRow"
+                                        Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).OpenSubCategoryCommand}"
+                                        CommandParameter="{Binding}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="0"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="8,0,8,10"
+                                        Cursor="Hand">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <Border Background="{DynamicResource CardBgBrush}"
+                                            CornerRadius="10"
+                                            Padding="14,12">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Category.Name}"
+                                                           FontSize="15"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                           TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding Category.Description}"
+                                                           IsVisible="{Binding Category.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                           TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                            <PathIcon Grid.Column="1"
+                                                      Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z"
+                                                      Width="16"
+                                                      Height="16"
+                                                      VerticalAlignment="Center"
+                                                      Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                                        </Grid>
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding ShowChartContent}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Charts}" Margin="10,0,10,20">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
