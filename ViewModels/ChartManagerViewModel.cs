@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
@@ -18,12 +19,19 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private readonly IChartService _chartService;
     private readonly IConfigService _configService;
     private readonly IDownloadManagerService _downloadManagerService;
+    private const int PageSize = 16;
 
     /// <summary>全量谱面列表（原始数据）</summary>
     private ObservableCollection<ChartInfo> _allCharts = new();
+    private readonly List<ChartInfo> _filteredCharts = new();
 
     /// <summary>搜索过滤后展示的列表</summary>
     public ObservableCollection<ChartInfo> Charts { get; } = new();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    private bool _isLoading;
 
     [ObservableProperty]
     private string _statusMessage = "就绪";
@@ -35,12 +43,49 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private bool _isEmpty = true;
 
     [ObservableProperty]
+    private bool _hasNoSearchResults;
+
+    [ObservableProperty]
+    private bool _hasVisibleCharts;
+
+    [ObservableProperty]
     private string _searchText = string.Empty;
 
-    partial void OnSearchTextChanged(string value) => ApplyFilter();
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    private int _currentPage = 1;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadNext))]
+    [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
+    private int _totalPages = 1;
+
+    [ObservableProperty]
+    private string _jumpPageText = "1";
+
+    [ObservableProperty]
+    private bool _isEditingPageNumber;
+
+    [ObservableProperty]
+    private double? _requestedScrollY;
+
+    partial void OnSearchTextChanged(string value)
+    {
+        CurrentPage = 1;
+        ApplyFilter();
+    }
+
+    partial void OnCurrentPageChanged(int value)
+    {
+        JumpPageText = value.ToString();
+    }
 
     /// <summary>是否启用谱面名称滚动</summary>
     public bool EnableMarquee => _configService.Config.EnableChartNameMarquee;
+
+    public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
+    public bool CanLoadPrev => CurrentPage > 1 && !IsLoading;
 
     // Audio playback
     private WaveOutEvent? _waveOut;
@@ -60,7 +105,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void Refresh() => Reload();
+    private async Task RefreshAsync() => await Task.Run(() => Reload());
 
     [RelayCommand]
     private void ClearSearch() => SearchText = string.Empty;
@@ -74,8 +119,16 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             _allCharts.Clear();
+            _filteredCharts.Clear();
             Charts.Clear();
             IsEmpty = true;
+            HasNoSearchResults = false;
+            HasVisibleCharts = false;
+            IsCustomAlbumsMissing = false;
+            CurrentPage = 1;
+            TotalPages = 1;
+            IsEditingPageNumber = false;
+            IsLoading = true;
             StatusMessage = "正在加载...";
         });
 
@@ -83,32 +136,38 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         if (string.IsNullOrEmpty(gamePath))
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                StatusMessage = "游戏路径未设置，请先在设置中配置游戏目录");
+            {
+                IsLoading = false;
+                StatusMessage = "游戏路径未设置，请先在设置中配置游戏目录";
+            });
             return;
         }
 
-        var charts = _chartService.LoadCharts(gamePath);
-        foreach (var chart in charts)
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                _allCharts.Add(chart);
-            });
-        }
+        var albumsDir = System.IO.Path.Combine(gamePath, "Custom_Albums");
+        bool isCustomAlbumsMissing = !System.IO.Directory.Exists(albumsDir);
+
+        var charts = _chartService.LoadCharts(gamePath)
+            .OrderByDescending(chart => chart.IsNewDownload)
+            .ThenBy(chart => chart.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(chart => System.IO.Path.GetFileName(chart.FilePath), StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
+            IsCustomAlbumsMissing = isCustomAlbumsMissing;
+            foreach (var chart in charts)
+                _allCharts.Add(chart);
+
             ApplyFilter();
-            StatusMessage = _allCharts.Count == 0
-                ? "未找到谱面（Custom_Albums 目录为空）"
-                : $"共 {_allCharts.Count} 张谱面";
+            IsLoading = false;
         });
     }
 
     private void ApplyFilter()
     {
-        Charts.Clear();
         var search = SearchText?.Trim();
+        _filteredCharts.Clear();
+
         foreach (var chart in _allCharts)
         {
             if (string.IsNullOrEmpty(search)
@@ -116,10 +175,59 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 || (chart.MusicAuthor?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
                 || (chart.ChartAuthor?.Contains(search, StringComparison.OrdinalIgnoreCase) == true))
             {
-                Charts.Add(chart);
+                _filteredCharts.Add(chart);
             }
         }
-        IsEmpty = Charts.Count == 0 && _allCharts.Count == 0;
+
+        TotalPages = Math.Max(1, (int)Math.Ceiling((double)_filteredCharts.Count / PageSize));
+        if (CurrentPage > TotalPages)
+            CurrentPage = TotalPages;
+
+        RefreshPagedCharts();
+        UpdateStateAndStatus();
+    }
+
+    private void RefreshPagedCharts()
+    {
+        Charts.Clear();
+
+        foreach (var chart in _filteredCharts
+                     .Skip((CurrentPage - 1) * PageSize)
+                     .Take(PageSize))
+        {
+            Charts.Add(chart);
+        }
+
+        HasVisibleCharts = Charts.Count > 0;
+        RequestedScrollY = 0;
+    }
+
+    private void UpdateStateAndStatus()
+    {
+        IsEmpty = _allCharts.Count == 0;
+        HasNoSearchResults = _allCharts.Count > 0 && _filteredCharts.Count == 0;
+
+        if (IsCustomAlbumsMissing)
+        {
+            StatusMessage = "请先创建 Custom_Albums 文件夹";
+            return;
+        }
+
+        if (IsEmpty)
+        {
+            StatusMessage = "未找到谱面（Custom_Albums 目录为空）";
+            return;
+        }
+
+        if (HasNoSearchResults)
+        {
+            StatusMessage = $"没有找到匹配的谱面（共 {_allCharts.Count} 张）";
+            return;
+        }
+
+        StatusMessage = string.IsNullOrWhiteSpace(SearchText)
+            ? $"第 {CurrentPage} / {TotalPages} 页，共 {_allCharts.Count} 张谱面"
+            : $"第 {CurrentPage} / {TotalPages} 页，筛选结果 {_filteredCharts.Count} 张（总 {_allCharts.Count} 张）";
     }
 
     [RelayCommand]
@@ -229,9 +337,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             _chartService.DeleteChart(chart);
             chart.CleanupCoverResources();
             _allCharts.Remove(chart);
-            Charts.Remove(chart);
-            IsEmpty = _allCharts.Count == 0;
-            StatusMessage = $"共 {_allCharts.Count} 张谱面";
+            ApplyFilter();
         }
         catch (Exception ex)
         {
@@ -296,6 +402,66 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         StopCurrentPlayback();
         foreach (var c in _allCharts)
             c.CleanupCoverResources();
+    }
+
+    [RelayCommand]
+    private void LoadFirstPage() => ChangePage(1);
+
+    [RelayCommand]
+    private void LoadPrevPage()
+    {
+        if (CanLoadPrev)
+            ChangePage(CurrentPage - 1);
+    }
+
+    [RelayCommand]
+    private void LoadNextPage()
+    {
+        if (CanLoadNext)
+            ChangePage(CurrentPage + 1);
+    }
+
+    [RelayCommand]
+    private void LoadLastPage() => ChangePage(TotalPages);
+
+    [RelayCommand]
+    private void StartEditPage()
+    {
+        JumpPageText = CurrentPage.ToString();
+        IsEditingPageNumber = true;
+    }
+
+    [RelayCommand]
+    private void CancelEditPage()
+    {
+        JumpPageText = CurrentPage.ToString();
+        IsEditingPageNumber = false;
+    }
+
+    [RelayCommand]
+    private void JumpPage()
+    {
+        if (!IsEditingPageNumber)
+            return;
+
+        IsEditingPageNumber = false;
+        if (int.TryParse(JumpPageText.Trim(), out int page))
+        {
+            ChangePage(Math.Clamp(page, 1, TotalPages));
+            return;
+        }
+
+        JumpPageText = CurrentPage.ToString();
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page < 1 || page > TotalPages)
+            return;
+
+        CurrentPage = page;
+        RefreshPagedCharts();
+        UpdateStateAndStatus();
     }
 
     [RelayCommand]

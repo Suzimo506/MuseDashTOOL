@@ -13,6 +13,49 @@
              x:DataType="vm:ChartManagerViewModel"
              DragDrop.AllowDrop="True">
 
+    <UserControl.Resources>
+        <ControlTheme x:Key="PagingIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            CornerRadius="6"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBorder">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="RenderTransform" Value="scale(0.92)"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBorder">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.6"/>
+            </Style>
+            <Style Selector="^:disabled /template/ Border#RootBorder">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.45"/>
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+
     <UserControl.Styles>
         <!-- 卡片悬浮效果 -->
         <Style Selector="Border.ChartCard:pointerover">
@@ -44,7 +87,7 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
+    <Grid RowDefinitions="Auto,Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
 
         <!-- 顶部标题行 -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
@@ -137,8 +180,53 @@
             </StackPanel>
         </Grid>
 
+        <!-- 工具栏：顶部分页栏 -->
+        <Grid Grid.Row="1" Margin="0,0,0,14">
+            <Border HorizontalAlignment="Center"
+                    Background="Transparent"
+                    Padding="8,4"
+                    VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="第一页">
+                        <PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z" Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
+                    </Button>
+                    <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="上一页">
+                        <PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                    </Button>
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="第" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
+                        <Panel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="ExtraBold" FontSize="12" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
+                            <TextBox Name="PageJumpTextBox_Top" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="12" Width="42" Height="22" Padding="2,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" CornerRadius="4" LostFocus="OnPageJumpLostFocus" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}">
+                                <TextBox.KeyBindings>
+                                    <KeyBinding Command="{Binding JumpPageCommand}" Gesture="Enter"/>
+                                    <KeyBinding Command="{Binding CancelEditPageCommand}" Gesture="Escape"/>
+                                </TextBox.KeyBindings>
+                            </TextBox>
+                        </Panel>
+                        <TextBlock Text="/" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
+                        <TextBlock Text="{Binding TotalPages}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
+                        <TextBlock Text="页" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
+                    </StackPanel>
+                    <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="下一页">
+                        <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                    </Button>
+                    <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="最末页">
+                        <PathIcon Data="M706.19 106m41.47 0l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47Z M240.46 865l375.81-344.25-375.81-344.21a39.32 39.32 0 0 1-13.11-29c0-36.51 48.2-54.79 76.38-29L679.55 462.8c35 32 35 83.9 0 115.9L303.73 922.92c-28.18 25.81-76.38 7.53-76.38-29A39.33 39.33 0 0 1 240.46 865z" Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Grid>
+
         <!-- 主体 -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
+            <StackPanel IsVisible="{Binding IsLoading}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="16">
+                <TextBlock Text="正在加载…" FontSize="18" Foreground="#888888" HorizontalAlignment="Center"/>
+            </StackPanel>
+
             <!-- 缺少 Custom_Albums 文件夹提示 -->
             <StackPanel IsVisible="{Binding IsCustomAlbumsMissing}"
                         HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="15">
@@ -158,146 +246,190 @@
                 <TextBlock Text="请将 .mdm 文件放入游戏目录下的 Custom_Albums 文件夹" FontSize="13" Foreground="#555555" HorizontalAlignment="Center"/>
             </StackPanel>
 
+            <StackPanel IsVisible="{Binding HasNoSearchResults}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="15">
+                <TextBlock Text="没有找到符合条件的谱面" FontSize="18" Foreground="Gray" HorizontalAlignment="Center"/>
+                <TextBlock Text="试试别的关键词，或清空搜索后查看全部谱面" FontSize="13" Foreground="#666666" HorizontalAlignment="Center"/>
+            </StackPanel>
+
             <!-- 谱面卡片网格 -->
-            <!-- 隐藏水平滚动条，但显示垂直滚动条 -->
-            <ScrollViewer IsVisible="{Binding !IsEmpty}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding Charts}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Columns="4" HorizontalAlignment="Stretch"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="models:ChartInfo">
-                            <Border Classes="ChartCard"
-                                    Background="{DynamicResource CardBgBrush}"
-                                    CornerRadius="10"
-                                    Width="208"
-                                    Margin="2,0,2,16"
-                                    VerticalAlignment="Top"
-                                    ClipToBounds="True">
-                                <Grid RowDefinitions="Auto,*">
+            <ScrollViewer x:Name="ChartScrollViewer"
+                          IsVisible="{Binding HasVisibleCharts}"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+                <Grid RowDefinitions="*,Auto">
+                    <ItemsControl ItemsSource="{Binding Charts}" Grid.Row="0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="4" HorizontalAlignment="Stretch"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:ChartInfo">
+                                <Border Classes="ChartCard"
+                                        Background="{DynamicResource CardBgBrush}"
+                                        CornerRadius="10"
+                                        Width="208"
+                                        Margin="2,0,2,16"
+                                        VerticalAlignment="Top"
+                                        ClipToBounds="True">
+                                    <Grid RowDefinitions="Auto,*">
 
-                                    <!-- 封面图 -->
-                                    <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
-                                        <Panel>
-                                            <!-- 有封面时显示 -->
-                                            <Image IsVisible="{Binding HasAnimatedCoverSource}"
-                                                   Stretch="UniformToFill"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"
-                                                   animated:ImageBehavior.AnimatedSource="{Binding AnimatedCoverSource}"/>
-                                            <Image Source="{Binding CoverImage}"
-                                                   IsVisible="{Binding HasCoverBitmap}"
-                                                   Stretch="UniformToFill"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                            <!-- 无封面占位 -->
-                                            <Border IsVisible="{Binding !HasAnyCover}"
-                                                    Background="#333333"
-                                                    CornerRadius="10,10,0,0">
-                                                <TextBlock Text="🎵" FontSize="56"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                           Foreground="#555555"/>
-                                            </Border>
+                                        <!-- 封面图 -->
+                                        <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
+                                            <Panel>
+                                                <!-- 有封面时显示 -->
+                                                <Image IsVisible="{Binding HasAnimatedCoverSource}"
+                                                       Stretch="UniformToFill"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       animated:ImageBehavior.AnimatedSource="{Binding AnimatedCoverSource}"/>
+                                                <Image Source="{Binding CoverImage}"
+                                                       IsVisible="{Binding HasCoverBitmap}"
+                                                       Stretch="UniformToFill"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                                <!-- 无封面占位 -->
+                                                <Border IsVisible="{Binding !HasAnyCover}"
+                                                        Background="#333333"
+                                                        CornerRadius="10,10,0,0">
+                                                    <TextBlock Text="🎵" FontSize="56"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                               Foreground="#555555"/>
+                                                </Border>
 
-                                            <!-- 正在播放叠加 -->
-                                            <Border IsVisible="{Binding IsPlaying}"
-                                                    Background="#80000000"
-                                                    CornerRadius="10,10,0,0">
-                                                <TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold"
-                                                           Foreground="White"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
+                                                <!-- 正在播放叠加 -->
+                                                <Border IsVisible="{Binding IsPlaying}"
+                                                        Background="#80000000"
+                                                        CornerRadius="10,10,0,0">
+                                                    <TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold"
+                                                               Foreground="White"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
 
-                                            <!-- New 标签叠加 -->
-                                            <Border IsVisible="{Binding IsNewDownload}" 
-                                                    Background="#e6aa1a1a" CornerRadius="4" Padding="6,2" Margin="6,0,0,6" 
-                                                    HorizontalAlignment="Left" VerticalAlignment="Bottom">
-                                                <TextBlock Text="New" FontSize="10" FontWeight="Bold" Foreground="#ff4444"/>
-                                            </Border>
-                                        </Panel>
-                                    </Border>
+                                                <!-- New 标签叠加 -->
+                                                <Border IsVisible="{Binding IsNewDownload}" 
+                                                        Background="#e6aa1a1a" CornerRadius="4" Padding="6,2" Margin="6,0,0,6" 
+                                                        HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                                                    <TextBlock Text="New" FontSize="10" FontWeight="Bold" Foreground="#ff4444"/>
+                                                </Border>
+                                            </Panel>
+                                        </Border>
 
-                                    <!-- 下方信息区 -->
-                                    <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="5">
+                                        <!-- 下方信息区 -->
+                                        <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="5">
 
-                                        <!-- 歌曲名称 (带滚动动画) -->
-                                        <controls:MarqueeText Text="{Binding Name}"
-                                                              HighlightText="{Binding Name}"
-                                                              SearchText="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).SearchText}"
-                                                              FontSize="14" FontWeight="Bold"
-                                                              Foreground="{DynamicResource ThemeTextMainBrush}"
-                                                              Height="20"
-                                                              IsScrollingEnabled="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).EnableMarquee}"
-                                                              ToolTip.Tip="{Binding Name}"/>
+                                            <!-- 歌曲名称 (带滚动动画) -->
+                                            <controls:MarqueeText Text="{Binding Name}"
+                                                                  HighlightText="{Binding Name}"
+                                                                  SearchText="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).SearchText}"
+                                                                  FontSize="14" FontWeight="Bold"
+                                                                  Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                                  Height="20"
+                                                                  IsScrollingEnabled="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).EnableMarquee}"
+                                                                  ToolTip.Tip="{Binding Name}"/>
 
-                                        <!-- 作曲 / 谱师 -->
-                                        <TextBlock Text="{Binding SubInfo}"
-                                                   helpers:TextBlockHelper.HighlightText="{Binding SubInfo}"
-                                                   helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).SearchText}"
-                                                   IsVisible="{Binding SubInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                                   FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"
-                                                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
-                                                   ToolTip.Tip="{Binding SubInfo}"/>
+                                            <!-- 作曲 / 谱师 -->
+                                            <TextBlock Text="{Binding SubInfo}"
+                                                       helpers:TextBlockHelper.HighlightText="{Binding SubInfo}"
+                                                       helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).SearchText}"
+                                                       IsVisible="{Binding SubInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                       FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                       ToolTip.Tip="{Binding SubInfo}"/>
 
-                                        <!-- BPM和难度同行显示 -->
-                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
-                                            <TextBlock
-                                                IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                                Text="{Binding Bpm, StringFormat='BPM: \{0\}'}"
-                                                FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}"
-                                                VerticalAlignment="Center"/>
-                                            <ItemsControl ItemsSource="{Binding Difficulties}" VerticalAlignment="Center">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <StackPanel Orientation="Horizontal" Spacing="3"/>
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Border Background="#331a3a1a" CornerRadius="3" Padding="4,1">
-                                                            <TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
+                                            <!-- BPM和难度同行显示 -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
+                                                <TextBlock
+                                                    IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                    Text="{Binding Bpm, StringFormat='BPM: \{0\}'}"
+                                                    FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                                    VerticalAlignment="Center"/>
+                                                <ItemsControl ItemsSource="{Binding Difficulties}" VerticalAlignment="Center">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal" Spacing="3"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#331a3a1a" CornerRadius="3" Padding="4,1">
+                                                                <TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+
+                                            <!-- 操作按钮行 -->
+                                            <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+                                                <!-- 试听按钮 -->
+                                                <Button Grid.Column="0"
+                                                        Classes="IconBtn"
+                                                        HorizontalAlignment="Center"
+                                                        Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).TogglePreviewCommand}"
+                                                        CommandParameter="{Binding}">
+                                                    <Panel>
+                                                        <PathIcon Data="M896 512L128 1024V0z"
+                                                                  Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"
+                                                                  IsVisible="{Binding !IsPlaying}"/>
+                                                        <PathIcon Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z"
+                                                                  Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"
+                                                                  IsVisible="{Binding IsPlaying}"/>
+                                                    </Panel>
+                                                </Button>
+
+                                                <!-- 卸载按钮 -->
+                                                <Button Grid.Column="1"
+                                                        Classes="IconBtn"
+                                                        HorizontalAlignment="Center"
+                                                        Click="OnDeleteChartClick"
+                                                        Tag="{Binding}">
+                                                    <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341z m0 0"
+                                                               Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"/>
+                                                </Button>
+                                            </Grid>
                                         </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                                        <!-- 操作按钮行 -->
-                                        <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
-                                            <!-- 试听按钮 -->
-                                            <Button Grid.Column="0"
-                                                    Classes="IconBtn"
-                                                    HorizontalAlignment="Center"
-                                                    Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).TogglePreviewCommand}"
-                                                    CommandParameter="{Binding}">
-                                                <Panel>
-                                                    <PathIcon Data="M896 512L128 1024V0z"
-                                                              Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"
-                                                              IsVisible="{Binding !IsPlaying}"/>
-                                                    <PathIcon Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z"
-                                                              Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"
-                                                              IsVisible="{Binding IsPlaying}"/>
-                                                </Panel>
-                                            </Button>
-
-                                            <!-- 卸载按钮 -->
-                                            <Button Grid.Column="1"
-                                                    Classes="IconBtn"
-                                                    HorizontalAlignment="Center"
-                                                    Click="OnDeleteChartClick"
-                                                    Tag="{Binding}">
-                                                <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341z m0 0"
-                                                           Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"/>
-                                            </Button>
-                                        </Grid>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    <Border Grid.Row="1" Background="Transparent" Margin="10,20,10,30" Padding="15,8" CornerRadius="10">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
+                            <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="第一页">
+                                <PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                            </Button>
+                            <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="上一页">
+                                <PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="18" Height="18"/>
+                            </Button>
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="第" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
+                                <Panel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="14" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
+                                    <TextBox Name="PageJumpTextBox_Bottom" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="14" Width="50" Height="28" Padding="4,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" CornerRadius="4" LostFocus="OnPageJumpLostFocus" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Command="{Binding JumpPageCommand}" Gesture="Enter"/>
+                                            <KeyBinding Command="{Binding CancelEditPageCommand}" Gesture="Escape"/>
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
+                                </Panel>
+                                <TextBlock Text="/" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Text="{Binding TotalPages}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Text="页" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
+                            </StackPanel>
+                            <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="下一页">
+                                <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="18" Height="18"/>
+                            </Button>
+                            <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="最末页">
+                                <PathIcon Data="M706.19 106m41.47 0l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47Z M240.46 865l375.81-344.25-375.81-344.21a39.32 39.32 0 0 1-13.11-29c0-36.51 48.2-54.79 76.38-29L679.55 462.8c35 32 35 83.9 0 115.9L303.73 922.92c-28.18 25.81-76.38 7.53-76.38-29A39.33 39.33 0 0 1 240.46 865z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </ScrollViewer>
         </Grid>
     </Grid>

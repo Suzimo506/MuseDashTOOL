@@ -12,11 +12,54 @@ namespace MdModManager.Views;
 
 public partial class ChartManagerView : UserControl
 {
+    private ScrollViewer? _chartScrollViewer;
+
     public ChartManagerView()
     {
         InitializeComponent();
         AddHandler(DragDrop.DragOverEvent, DragOver);
         AddHandler(DragDrop.DropEvent, Drop);
+
+        _chartScrollViewer = this.FindControl<ScrollViewer>("ChartScrollViewer");
+
+        this.DataContextChanged += (s, e) =>
+        {
+            if (DataContext is ChartManagerViewModel vm)
+            {
+                vm.PropertyChanged += (sender, args) =>
+                {
+                    if (args.PropertyName == nameof(ChartManagerViewModel.RequestedScrollY)
+                        && vm.RequestedScrollY.HasValue)
+                    {
+                        var y = vm.RequestedScrollY.Value;
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            if (_chartScrollViewer != null)
+                            {
+                                _chartScrollViewer.Offset = new Avalonia.Vector(_chartScrollViewer.Offset.X, y);
+                            }
+                        }, Avalonia.Threading.DispatcherPriority.Background);
+
+                        vm.RequestedScrollY = null;
+                    }
+
+                    if (args.PropertyName == nameof(ChartManagerViewModel.IsEditingPageNumber)
+                        && vm.IsEditingPageNumber)
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            var tb = this.FindControl<TextBox>("PageJumpTextBox_Top")
+                                ?? this.FindControl<TextBox>("PageJumpTextBox_Bottom");
+                            if (tb != null)
+                            {
+                                tb.Focus();
+                                tb.SelectAll();
+                            }
+                        }, Avalonia.Threading.DispatcherPriority.Loaded);
+                    }
+                };
+            }
+        };
     }
     
     private void OnBackgroundPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -129,6 +172,22 @@ public partial class ChartManagerView : UserControl
         if (DataContext is ChartManagerViewModel cvm)
         {
             await cvm.ImportChartAsync(filePath);
+        }
+    }
+
+    private void OnPageNumberClick(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is ChartManagerViewModel vm)
+        {
+            vm.StartEditPageCommand.Execute(null);
+        }
+    }
+
+    private void OnPageJumpLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is ChartManagerViewModel vm)
+        {
+            vm.JumpPageCommand.Execute(null);
         }
     }
 }
