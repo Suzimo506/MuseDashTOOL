@@ -143,7 +143,7 @@
                         Spacing="2"
                         IsVisible="{Binding !IsSearching}">
                 <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <TextBlock Text="整合包"
+                    <TextBlock Text="QQ群谱面"
                                FontSize="22"
                                FontWeight="Bold"
                                VerticalAlignment="Center">
@@ -193,7 +193,7 @@
                         Spacing="2"
                         IsVisible="{Binding IsSearching}">
                 <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <TextBlock Text="整合包"
+                    <TextBlock Text="QQ群谱面"
                                FontSize="22"
                                FontWeight="Bold"
                                VerticalAlignment="Center">

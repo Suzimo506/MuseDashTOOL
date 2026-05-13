@@ -40,6 +40,7 @@ public class PlayerProfileData
 
 public class PlayerSongRecord
 {
+    public int DisplayIndex { get; set; }
     public string Title { get; set; } = "";
     public string Author { get; set; } = "";
     public string CoverUrl { get; set; } = "";

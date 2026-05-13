@@ -141,6 +141,7 @@
                                     CommandParameter="https://v.douyin.com/EsV7a27lsdI/">
                                 <TextBlock FontSize="15" FontWeight="Bold" Foreground="#FF6699" Text="猫猫头" TextDecorations="Underline"/>
                             </Button>
+                            <TextBlock FontSize="15" Foreground="#FF6699" Text="（好像有点好看？）"/>
                         </WrapPanel>
                     </StackPanel>
                 </Border>

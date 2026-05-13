@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MdModManager.Helpers;
 using MdModManager.Models;
 using MdModManager.Services;
 using MdModManager.Views;
@@ -644,12 +645,7 @@ public partial class ModManagerViewModel : ObservableObject
 
     private bool IsDotNet6Installed()
     {
-        var gamePath = _configService.Config.GamePath;
-        if (string.IsNullOrEmpty(gamePath)) return false;
-        
-        // 检查 MelonLoader 的 net6 运行时库是否存在
-        var net6Path = System.IO.Path.Combine(gamePath, "MelonLoader", "net6", "MelonLoader.dll");
-        return System.IO.File.Exists(net6Path);
+        return DotNetRuntimeHelper.IsDotNet6Installed();
     }
 
     private async Task PerformDownloadAsync(ModInfo remoteInfo, bool isUpdate = false, LocalMod? localMod = null)
@@ -666,7 +662,7 @@ public partial class ModManagerViewModel : ObservableObject
             var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow as MainWindow : null;
             if (mainWindow != null)
             {
-                await mainWindow.ShowMessageBoxAsync("请先在mod列表顶部下载.net6运行环境！");
+                await mainWindow.ShowMessageBoxAsync("请先安装.net6环境！");
                 return;
             }
         }

@@ -604,7 +604,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
             if (mainWindow != null)
             {
-                await mainWindow.ShowMessageBoxAsync("请先在Mod列表顶部下载.net6运行环境！");
+                await mainWindow.ShowMessageBoxAsync("请先安装.net6环境！");
             }
 
             return;
@@ -638,12 +638,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
     private bool IsDotNet6Installed()
     {
-        var gamePath = _configService.Config.GamePath;
-        if (string.IsNullOrEmpty(gamePath))
-            return false;
-
-        var net6Path = System.IO.Path.Combine(gamePath, "MelonLoader", "net6", "MelonLoader.dll");
-        return System.IO.File.Exists(net6Path);
+        return DotNetRuntimeHelper.IsDotNet6Installed();
     }
 
     private static List<string> ExtractDifficultyLabels(Match match)

@@ -528,10 +528,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
     private bool IsDotNet6Installed()
     {
-        var gamePath = _configService.Config.GamePath;
-        if (string.IsNullOrEmpty(gamePath)) return false;
-        var net6Path = Path.Combine(gamePath, "MelonLoader", "net6", "MelonLoader.dll");
-        return File.Exists(net6Path);
+        return DotNetRuntimeHelper.IsDotNet6Installed();
     }
 
     /// <summary>加入下载队列</summary>
@@ -543,7 +540,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow as MainWindow : null;
             if (mainWindow != null)
             {
-                await mainWindow.ShowMessageBoxAsync("请先在mod列表顶部下载.net6运行环境！");
+                await mainWindow.ShowMessageBoxAsync("请先安装.net6环境！");
                 return;
             }
         }

@@ -3,144 +3,220 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:conv="using:MdModManager.Converters"
              xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
              mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="800"
              x:Class="MdModManager.Views.AccountView"
              x:DataType="vm:AccountViewModel">
 
-    <!-- Match musedash.moe dark theme perfectly -->
+    <UserControl.Resources>
+        <conv:AccuracyColorConverter x:Key="AccuracyColorConverter"/>
+        <ControlTheme x:Key="AccountIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Root"
+                            Background="Transparent"
+                            CornerRadius="6"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#Root">
+                <Setter Property="Opacity" Value="0.78"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#Root">
+                <Setter Property="Opacity" Value="0.58"/>
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+
     <UserControl.Styles>
-        <Style Selector="Border.HeaderCard">
+        <Style Selector="Border.ProfileBand">
             <Setter Property="Background" Value="{DynamicResource ModCardBgBrush}"/>
-            <Setter Property="Opacity" Value="0.95"/>
-            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="22,18"/>
+        </Style>
+
+        <Style Selector="Border.RecordRow">
+            <Setter Property="Background" Value="#12000000"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
     </UserControl.Styles>
 
-    <!-- Main Container: Dark gradient background matching the site glow -->
-    <Border Background="Transparent">
-        <Grid RowDefinitions="Auto,*">
-
-            <!-- Top Header containing Username & Relative Level -->
-            <Border Grid.Row="0" Margin="32,32,32,0" Classes="HeaderCard" Padding="32,48">
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                    
-                    <!-- Left: Names -->
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Nickname}" Foreground="{DynamicResource ThemeTextMainBrush}" FontSize="32" FontWeight="Bold" Margin="0,0,0,4"/>
-                        <TextBlock Text="{Binding Uid}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="18"/>
+    <Grid RowDefinitions="Auto,*" Margin="24">
+        <!-- 个人信息 -->
+        <Border Grid.Row="0" Classes="ProfileBand" Margin="0,0,0,18">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" RowDefinitions="Auto">
+                <StackPanel Grid.Column="0" Spacing="8" VerticalAlignment="Center" Margin="0,0,30,0">
+                    <TextBlock Text="{Binding Nickname}"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource ThemeTextMainBrush}"
+                               TextTrimming="CharacterEllipsis"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Background="#22000000" CornerRadius="4" Padding="8,2">
+                            <TextBlock Text="{Binding StatusMessage}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource ThemeTextSubBrush}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
                     </StackPanel>
-                    
-                    <!-- Middle: Relative Level -->
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding RelativeLevel}" Foreground="{DynamicResource ThemeTextMainBrush}" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                        <TextBlock Text="→ 定级" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="14" HorizontalAlignment="Center"/>
-                    </StackPanel>
-                    
-                    <!-- Right: Status / Refresh -->
-                    <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
-                        <TextBlock Text="{Binding StatusMessage}" 
-                                   Foreground="{DynamicResource ThemeTextSubBrush}" 
-                                   FontSize="14" 
-                                   TextWrapping="Wrap"
-                                   MaxWidth="200"
-                                   HorizontalAlignment="Right"
-                                   TextAlignment="Right"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Loading overlay -->
-            <Border Grid.Row="1" IsVisible="{Binding IsLoading}" Background="Transparent" ZIndex="10">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
-                    <ProgressBar IsIndeterminate="True" Width="200" Foreground="#3290b0" Background="#333333" Height="2" CornerRadius="1"/>
-                    <TextBlock Text="Loading player data..." Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center" FontSize="14"/>
                 </StackPanel>
-            </Border>
 
-            <!-- Content Area (Scrollable) -->
-            <ScrollViewer Grid.Row="1" IsVisible="{Binding !IsLoading}" ScrollChanged="OnScrollChanged">
-                <StackPanel Margin="32,0,32,32">
-                    
-                    <!-- Stat Row -->
-                    <Grid ColumnDefinitions="*,*,*" Margin="0,24,0,48">
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="上榜歌曲" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="15" Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding RecordsCount}" Foreground="{DynamicResource ThemeTextMainBrush}" FontSize="32" FontWeight="Bold"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="金S数" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="15" Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding PerfectsCount}" Foreground="{DynamicResource ThemeTextMainBrush}" FontSize="32" FontWeight="Bold"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="平均准确率" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="15" Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding AverageAccuracy}" Foreground="{DynamicResource ThemeTextMainBrush}" FontSize="32" FontWeight="Bold"/>
-                        </StackPanel>
-                    </Grid>
+                <StackPanel Grid.Column="1"
+                            Spacing="6"
+                            Width="110"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right">
+                    <TextBlock Text="上榜歌曲" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding RecordsCount}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Right"/>
+                </StackPanel>
 
-                    <!-- Chart Placeholder (We could draw a real chart later, but keeping it empty/subtle for now) -->
-                    <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.2" Margin="0,0,0,32"/>
+                <StackPanel Grid.Column="2"
+                            Spacing="6"
+                            Width="90"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right">
+                    <TextBlock Text="金S数" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding PerfectsCount}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Right"/>
+                </StackPanel>
 
-                    <!-- Songs List -->
-                    <ItemsControl ItemsSource="{Binding RecentPlays}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid ColumnDefinitions="Auto,*,Auto,120" Margin="0,0,0,32" VerticalAlignment="Center">
-                                    
-                                    <!-- Cover Art: actual webp from musedash.moe -->
-                                    <Border Grid.Column="0" Width="100" Height="100" CornerRadius="50" Margin="0,0,24,0" ClipToBounds="True">
+                <Grid Grid.Column="3" RowDefinitions="Auto,Auto" ColumnDefinitions="92,Auto" Margin="26,0,18,0" VerticalAlignment="Center" RowSpacing="8" ColumnSpacing="14">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="定级" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding RelativeLevel}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="平均准确率" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AverageAccuracy}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                </Grid>
+
+                <Button Grid.Column="4"
+                        Theme="{StaticResource AccountIconBtn}"
+                        Command="{Binding RefreshCommand}"
+                        IsEnabled="{Binding !IsLoading}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Margin="0,0,-8,0"
+                        ToolTip.Tip="刷新账号数据">
+                    <PathIcon Data="M874.666667 512a362.666667 362.666667 0 0 1-623.36 252.16l-72.533334 72.533333A465.066667 465.066667 0 0 0 977.066667 512h-102.4zM149.333333 512a362.666667 362.666667 0 0 1 623.36-252.16l-92.16 92.16H938.666667V93.866667l-93.44 93.44A465.066667 465.066667 0 0 0 46.933333 512h102.4z"
+                              Width="22"
+                              Height="22"
+                              Foreground="{DynamicResource SvgIconBrush}"/>
+                </Button>
+
+            </Grid>
+        </Border>
+
+        <!-- 加载态 -->
+        <Border Grid.Row="1" IsVisible="{Binding IsLoading}" Background="Transparent">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
+                <ProgressBar IsIndeterminate="True"
+                             Width="220"
+                             Height="3"
+                             Foreground="{DynamicResource SvgIconBrush}"
+                             Background="#333333"/>
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="{DynamicResource ThemeTextSubBrush}"
+                           HorizontalAlignment="Center"
+                           FontSize="14"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 成绩列表 -->
+        <ScrollViewer Grid.Row="1"
+                      IsVisible="{Binding !IsLoading}"
+                      ScrollChanged="OnScrollChanged">
+            <StackPanel Spacing="10">
+                <ItemsControl ItemsSource="{Binding RecentPlays}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Classes="RecordRow">
+                                <Grid ColumnDefinitions="32,Auto,*,150" VerticalAlignment="Center">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding DisplayIndex}"
+                                               FontSize="16"
+                                               FontWeight="Bold"
+                                               Foreground="#FFD700"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+
+                                    <Border Grid.Column="1"
+                                            Width="56"
+                                            Height="56"
+                                            CornerRadius="28"
+                                            Margin="0,0,14,0"
+                                            ClipToBounds="True"
+                                            Background="Transparent">
                                         <Panel>
-                                            <!-- Fallback gradient background -->
-                                            <Border>
-                                                <Border.Background>
-                                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                                                        <GradientStop Color="#0f2027" Offset="0"/>
-                                                        <GradientStop Color="#2c5364" Offset="1"/>
-                                                    </LinearGradientBrush>
-                                                </Border.Background>
-                                            </Border>
-                                            <!-- Real cover image via AsyncImageLoader (supports HTTP URLs) -->
-                                            <asyncImageLoader:AdvancedImage Source="{Binding CoverUrl}" Stretch="UniformToFill"
-                                                   IsVisible="{Binding CoverUrl, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                                            <!-- Musical note shown if no cover -->
-                                            <PathIcon Data="M 12 3 v 10.55 c -0.59 -0.34 -1.27 -0.55 -2 -0.55 c -2.21 0 -4 1.79 -4 4 s 1.79 4 4 4 s 4 -1.79 4 -4 V 7 h 4 V 3 h -6 z"
-                                                      Foreground="#33ffffff" Width="40" Height="40"
-                                                      IsVisible="{Binding CoverUrl, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+                                            <asyncImageLoader:AdvancedImage Source="{Binding CoverUrl}"
+                                                                           Stretch="UniformToFill"
+                                                                           IsVisible="{Binding HasCoverUrl}"/>
+                                            <PathIcon Data="M512 128v533.333333a128 128 0 1 0 85.333333 120.533334V298.666667h213.333334V128H512z"
+                                                      Foreground="#40FFFFFF"
+                                                      Width="28"
+                                                      Height="28"
+                                                      IsVisible="{Binding !HasCoverUrl}"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"/>
                                         </Panel>
                                     </Border>
 
-                                    <!-- Song Title & Info -->
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
-                                        <WrapPanel VerticalAlignment="Center" Margin="0,0,0,4">
-                                            <TextBlock Text="{Binding Title}" Foreground="{DynamicResource ThemeTextMainBrush}" FontSize="26" FontWeight="Bold" Margin="0,0,8,0" TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding Level}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="13" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
-                                        </WrapPanel>
-                                        <TextBlock Text="{Binding Author}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="15"/>
-                                    </StackPanel>
-
-                                    <!-- Acc & Score & Gear -->
-                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,32,0" MinWidth="180">
-                                        <TextBlock Text="{Binding Accuracy}" Foreground="{DynamicResource ThemeTextMainBrush}" FontSize="26" FontWeight="Bold" Margin="0,0,0,2"/>
-                                        <TextBlock Text="{Binding Score}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="15" Margin="0,0,0,4"/>
-                                        <TextBlock Text="{Binding Gear}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="13"/>
-                                    </StackPanel>
-
-                                    <!-- Rank -->
-                                    <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,0,0,4">
-                                            <!-- Desktop icon SVG path -->
-                                            <PathIcon Data="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z" 
-                                                      Foreground="{DynamicResource ThemeTextMainBrush}" Width="20" Height="20" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{Binding Rank}" Foreground="{DynamicResource ThemeTextMainBrush}" FontSize="26" FontWeight="Bold"/>
+                                    <StackPanel Grid.Column="2" Spacing="5" VerticalAlignment="Center" Margin="0,0,18,0">
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Author}"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <Border Background="#22FF6699" CornerRadius="3" Padding="5,1">
+                                                <TextBlock Text="{Binding Level}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource SvgIconBrush}"/>
+                                            </Border>
+                                            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                <PathIcon Data="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z"
+                                                          Width="13"
+                                                          Height="13"
+                                                          Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                                <TextBlock Text="{Binding Rank}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
 
-                </StackPanel>
-            </ScrollViewer>
-        </Grid>
-    </Border>
+                                    <StackPanel Grid.Column="3" Spacing="5" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                        <TextBlock Text="{Binding Accuracy}"
+                                                   FontSize="18"
+                                                   FontWeight="Bold"
+                                                   Foreground="{Binding Accuracy, Converter={StaticResource AccuracyColorConverter}}"
+                                                   TextAlignment="Right"
+                                                   HorizontalAlignment="Right"/>
+                                        <TextBlock Text="{Binding Score}"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                   TextAlignment="Right"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

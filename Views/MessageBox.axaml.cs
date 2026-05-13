@@ -10,8 +10,6 @@ namespace MdModManager.Views;
 public partial class MessageBox : Window
 {
     private bool _confirmed;
-    private TaskCompletionSource<bool> _tcs = new();
-
     public MessageBox()
     {
         InitializeComponent();
@@ -20,6 +18,11 @@ public partial class MessageBox : Window
     public static async Task<bool> ShowDialogAsync(Window owner, string message, bool showCancel = false)
     {
         var dialog = new MessageBox();
+        if (message.Length > 70)
+        {
+            dialog.Width = 520;
+            dialog.Height = 240;
+        }
         dialog.FindControl<TextBlock>("MessageText")!.Text = message;
         
         if (showCancel)

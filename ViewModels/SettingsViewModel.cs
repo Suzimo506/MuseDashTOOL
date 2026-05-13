@@ -4,9 +4,9 @@ using MdModManager.Services;
 using MdModManager.Helpers;
 using ICSharpCode.SharpZipLib.Zip;
 using System.IO;
-using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -675,16 +675,15 @@ public partial class SettingsViewModel : ObservableObject
             return;
         }
 
+        if (!await ConfirmCustomChartInstallerAsync())
+            return;
+
         await DownloadAndExtractCustomChartInstallerAsync();
     }
 
     private bool IsDotNet6Installed()
     {
-        var gamePath = _configService.Config.GamePath;
-        if (string.IsNullOrWhiteSpace(gamePath)) return false;
-
-        var net6Path = Path.Combine(gamePath, "MelonLoader", "net6", "MelonLoader.dll");
-        return File.Exists(net6Path);
+        return DotNetRuntimeHelper.IsDotNet6Installed();
     }
 
     private async System.Threading.Tasks.Task ShowDotNet6InstallGuideAsync()
@@ -749,11 +748,10 @@ public partial class SettingsViewModel : ObservableObject
 
             await System.Threading.Tasks.Task.Run(() =>
             {
-                using var archive = System.IO.Compression.ZipFile.OpenRead(tempZipPath);
-                if (archive.Entries.Count == 0)
+                if (!ZipHasEntries(tempZipPath))
                     throw new InvalidDataException("压缩包为空");
 
-                System.IO.Compression.ZipFile.ExtractToDirectory(tempZipPath, gamePath, overwriteFiles: true);
+                ExtractZipWithEncodingFallback(tempZipPath, gamePath);
             });
 
             _notificationService?.ShowSuccess("自制谱安装包安装完成");
@@ -779,6 +777,103 @@ public partial class SettingsViewModel : ObservableObject
                 RuntimeLog.Write("SettingsViewModel", $"清理自制谱安装包临时文件失败：{ex.Message}");
             }
         }
+    }
+
+    private static async System.Threading.Tasks.Task<bool> ConfirmCustomChartInstallerAsync()
+    {
+        const string message = "建议安装时游戏处于纯净环境（纯原版游戏没有安装过任何东西）。如果不是，请在打开游戏目录的情况下，点击卸载游戏后删除游戏目录下的所有文件，再重新安装游戏，以免不必要的问题出现。";
+
+        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+            && desktop.MainWindow is MdModManager.Views.MainWindow mainWindow)
+        {
+            return await mainWindow.ShowConfirmMessageBoxAsync(message);
+        }
+
+        return true;
+    }
+
+    private static bool ZipHasEntries(string zipPath)
+    {
+        using var stream = File.OpenRead(zipPath);
+        using var zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(stream);
+        return zip.Count > 0;
+    }
+
+    private static void ExtractZipWithEncodingFallback(string zipPath, string destinationDirectory)
+    {
+        var codecs = new[]
+        {
+            ICSharpCode.SharpZipLib.Zip.StringCodec.FromEncoding(Encoding.UTF8),
+            ICSharpCode.SharpZipLib.Zip.StringCodec.FromEncoding(Encoding.GetEncoding("gb18030")),
+            ICSharpCode.SharpZipLib.Zip.StringCodec.FromEncoding(Encoding.GetEncoding(932))
+        };
+
+        Exception? lastException = null;
+        foreach (var codec in codecs)
+        {
+            try
+            {
+                ExtractZipWithCodec(zipPath, destinationDirectory, codec, allowSuspiciousNames: false);
+                return;
+            }
+            catch (InvalidDataException ex) when (ex.Message.Contains("文件名编码", StringComparison.Ordinal))
+            {
+                lastException = ex;
+            }
+        }
+
+        // 最后兜底：即使名字包含问号也解压，避免因为极少数符号阻塞整个安装。
+        ExtractZipWithCodec(zipPath, destinationDirectory, codecs[0], allowSuspiciousNames: true);
+    }
+
+    private static void ExtractZipWithCodec(
+        string zipPath,
+        string destinationDirectory,
+        ICSharpCode.SharpZipLib.Zip.StringCodec codec,
+        bool allowSuspiciousNames)
+    {
+        var destinationRoot = Path.GetFullPath(destinationDirectory);
+        if (!destinationRoot.EndsWith(Path.DirectorySeparatorChar))
+            destinationRoot += Path.DirectorySeparatorChar;
+
+        using var stream = File.OpenRead(zipPath);
+        using var zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(stream, leaveOpen: false, codec);
+        var buffer = new byte[81920];
+
+        foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry entry in zip)
+        {
+            if (!entry.IsFile)
+                continue;
+
+            var entryName = entry.Name.Replace('\\', '/').TrimStart('/');
+            if (!allowSuspiciousNames && IsSuspiciousZipEntryName(entryName))
+                throw new InvalidDataException("文件名编码疑似不正确，正在尝试其它编码。");
+
+            var fullPath = Path.GetFullPath(Path.Combine(destinationRoot, entryName));
+            if (!fullPath.StartsWith(destinationRoot, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("压缩包包含不安全的路径。");
+
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+            using var input = zip.GetInputStream(entry);
+            using var output = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, buffer.Length);
+            int read;
+            while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                output.Write(buffer, 0, read);
+            }
+        }
+    }
+
+    private static bool IsSuspiciousZipEntryName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return true;
+
+        var fileName = Path.GetFileName(value);
+        return value.Contains('\uFFFD', StringComparison.Ordinal) ||
+               value.Contains("�", StringComparison.Ordinal) ||
+               fileName.Contains("??", StringComparison.Ordinal) ||
+               fileName.Contains("��", StringComparison.Ordinal);
     }
 
     private static string BuildCustomChartInstallerUrl()

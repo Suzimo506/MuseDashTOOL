@@ -139,8 +139,8 @@ public class AlbumCollectionService : IAlbumCollectionService
 
     public static bool IsTEdgeoolChildCategoryName(string? name)
         => !string.IsNullOrWhiteSpace(name) &&
-           TEdgeoolChildCategoryNames.Any(child =>
-               string.Equals(NormalizeTEdgeoolName(child), NormalizeTEdgeoolName(name), StringComparison.OrdinalIgnoreCase));
+           !IsTEdgeoolGroupName(name) &&
+           name.Contains(TEdgeoolGroupName, StringComparison.OrdinalIgnoreCase);
 
     public static string NormalizeTEdgeoolName(string? name)
         => string.IsNullOrWhiteSpace(name)

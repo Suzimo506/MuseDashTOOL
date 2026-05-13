@@ -727,11 +727,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             var matchingCommunityCategoryNames = communitySearchResults.Select(r => r.CategoryName).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var hasMatchingTEdgeoolChild =
                 matchingDesignerCategoryNames.Any(AlbumCollectionService.IsTEdgeoolChildCategoryName) ||
-                AlbumCollectionService.TEdgeoolChildCategoryNames.Any(name =>
-                    name.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
-                    AlbumCollectionService.NormalizeTEdgeoolName(name).Contains(
-                        AlbumCollectionService.NormalizeTEdgeoolName(normalizedQuery),
-                        StringComparison.OrdinalIgnoreCase));
+                AlbumCollectionService.TEdgeoolGroupName.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase);
 
             var filteredCats = _allCategoriesBackup.Where(catVM => 
                 catVM.Category.Name?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||

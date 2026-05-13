@@ -1008,8 +1008,8 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>初始化所有红点提示状态</summary>
     private void InitializeBadges()
     {
-        // v1.3.2: 使用说明页本版本不再显示红点
-        ShowTutorialBadge = false;
+        // v1.3.2: 使用说明页有新增内容，显示一次红点提示
+        ShowTutorialBadge = ShouldShowBadge("Tutorial");
 
         // 未来版本可以在这里继续添加，例如:
         // ShowSettingsBadge = ShouldShowBadge("Settings");

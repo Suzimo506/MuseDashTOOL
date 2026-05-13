@@ -301,6 +301,7 @@ public static class MuseDashAccountService
             
             if (resp.Plays != null)
             {
+                var displayIndex = 1;
                 foreach (var p in resp.Plays)
                 {
                     var acc = p.Accuracy ?? 0m;
@@ -349,6 +350,7 @@ public static class MuseDashAccountService
 
                     data.RecentPlays.Add(new PlayerSongRecord
                     {
+                        DisplayIndex = displayIndex++,
                         Title = songName,
                         Author = songAuthor,
                         CoverUrl = songCover,
