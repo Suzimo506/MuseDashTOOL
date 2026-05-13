@@ -4,6 +4,9 @@ using MdModManager.Services;
 using MdModManager.Helpers;
 using ICSharpCode.SharpZipLib.Zip;
 using System.IO;
+using System.IO.Compression;
+using System.Net;
+using System.Net.Http;
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,6 +19,8 @@ namespace MdModManager.ViewModels;
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly IConfigService _configService;
+    private static readonly HttpClient CustomChartInstallerHttp = HttpHelper.CreateOptimizedClient(TimeSpan.FromMinutes(15), TimeSpan.FromSeconds(20));
+    private const string CustomChartInstallerFileName = "懒人自制谱安装包.zip";
 
     // 可用的下载源列表
     [ObservableProperty]
@@ -656,6 +661,169 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async System.Threading.Tasks.Task InstallCustomChartsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_configService.Config.GamePath) || !Directory.Exists(_configService.Config.GamePath))
+        {
+            _notificationService?.ShowFailure("一键安装自制谱", "游戏路径未设置");
+            return;
+        }
+
+        if (!IsDotNet6Installed())
+        {
+            await ShowDotNet6InstallGuideAsync();
+            return;
+        }
+
+        await DownloadAndExtractCustomChartInstallerAsync();
+    }
+
+    private bool IsDotNet6Installed()
+    {
+        var gamePath = _configService.Config.GamePath;
+        if (string.IsNullOrWhiteSpace(gamePath)) return false;
+
+        var net6Path = Path.Combine(gamePath, "MelonLoader", "net6", "MelonLoader.dll");
+        return File.Exists(net6Path);
+    }
+
+    private async System.Threading.Tasks.Task ShowDotNet6InstallGuideAsync()
+    {
+        const string dotNet6DownloadUrl = "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.428-windows-x64-installer";
+        const string installMessage = "请在打开的浏览器页面中下载.net6，下载完成后一定要双击图中的这个exe，走完安装程序";
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = dotNet6DownloadUrl,
+                UseShellExecute = true
+            });
+        }
+        catch (System.Exception ex)
+        {
+            System.Console.WriteLine($"[SettingsViewModel] Open .NET 6 download page error: {ex.Message}");
+        }
+
+        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+            && desktop.MainWindow is MdModManager.Views.MainWindow mainWindow)
+        {
+            await mainWindow.ShowMessageBoxWithImageAsync(installMessage, "avares://MuseDashTOOL/Assets/Step.png");
+        }
+        else
+        {
+            _notificationService?.ShowFailure("环境检查", installMessage);
+        }
+    }
+
+    private async System.Threading.Tasks.Task DownloadAndExtractCustomChartInstallerAsync()
+    {
+        var downloadUrl = BuildCustomChartInstallerUrl();
+        if (string.IsNullOrWhiteSpace(downloadUrl))
+        {
+            _notificationService?.ShowFailure("一键安装自制谱", "镜像域名未加载，请重启软件或检查 mirror-domains.json");
+            return;
+        }
+
+        var gamePath = _configService.Config.GamePath;
+        var tempDir = Path.Combine(Path.GetTempPath(), "MuseDashTOOL_CustomChartInstaller");
+        var tempZipPath = Path.Combine(tempDir, CustomChartInstallerFileName);
+        DownloadNotification? notification = null;
+
+        try
+        {
+            Directory.CreateDirectory(tempDir);
+            if (File.Exists(tempZipPath))
+                File.Delete(tempZipPath);
+
+            notification = _notificationService?.ShowPersistentProgress("正在下载自制谱安装包...");
+            RuntimeLog.Write("SettingsViewModel", $"开始下载自制谱安装包：{downloadUrl}");
+
+            await DownloadFileWithProgressAsync(downloadUrl, tempZipPath, notification);
+
+            if (notification != null)
+            {
+                notification.Message = "正在解压自制谱安装包...";
+                notification.ProgressValue = 100;
+            }
+
+            await System.Threading.Tasks.Task.Run(() =>
+            {
+                using var archive = System.IO.Compression.ZipFile.OpenRead(tempZipPath);
+                if (archive.Entries.Count == 0)
+                    throw new InvalidDataException("压缩包为空");
+
+                System.IO.Compression.ZipFile.ExtractToDirectory(tempZipPath, gamePath, overwriteFiles: true);
+            });
+
+            _notificationService?.ShowSuccess("自制谱安装包安装完成");
+            RuntimeLog.Write("SettingsViewModel", $"自制谱安装包已解压到游戏目录：{gamePath}");
+        }
+        catch (Exception ex)
+        {
+            RuntimeLog.Write("SettingsViewModel", $"自制谱安装包安装失败：{ex}");
+            _notificationService?.ShowFailure("一键安装自制谱", ex.Message);
+        }
+        finally
+        {
+            if (notification != null)
+                _notificationService?.RemoveNotification(notification);
+
+            try
+            {
+                if (File.Exists(tempZipPath))
+                    File.Delete(tempZipPath);
+            }
+            catch (Exception ex)
+            {
+                RuntimeLog.Write("SettingsViewModel", $"清理自制谱安装包临时文件失败：{ex.Message}");
+            }
+        }
+    }
+
+    private static string BuildCustomChartInstallerUrl()
+    {
+        var host = MirrorDomainRegistry.DownloadDomain;
+        if (string.IsNullOrWhiteSpace(host))
+            return string.Empty;
+
+        return $"https://{host}/{Uri.EscapeDataString(CustomChartInstallerFileName)}";
+    }
+
+    private static async System.Threading.Tasks.Task DownloadFileWithProgressAsync(string url, string destinationPath, DownloadNotification? notification)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var response = await CustomChartInstallerHttp.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            throw new FileNotFoundException("远端未找到懒人自制谱安装包.zip");
+
+        response.EnsureSuccessStatusCode();
+
+        var totalBytes = response.Content.Headers.ContentLength ?? 0;
+        var downloadedBytes = 0L;
+        var buffer = new byte[81920];
+
+        await using var source = await response.Content.ReadAsStreamAsync();
+        await using var destination = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, buffer.Length, useAsync: true);
+
+        int read;
+        while ((read = await source.ReadAsync(buffer.AsMemory(0, buffer.Length))) > 0)
+        {
+            await destination.WriteAsync(buffer.AsMemory(0, read));
+            downloadedBytes += read;
+
+            if (notification != null && totalBytes > 0)
+            {
+                var progress = Math.Clamp((double)downloadedBytes / totalBytes * 100, 0, 100);
+                notification.ProgressValue = progress;
+                notification.Message = $"正在下载自制谱安装包... {progress:F0}%";
+            }
+        }
+
+        await destination.FlushAsync();
+    }
+
+    [RelayCommand]
     private async System.Threading.Tasks.Task ConfirmCustomIpAsync()
     {
         if (UseCustomIp && string.IsNullOrWhiteSpace(CustomIpAddress))
@@ -896,7 +1064,7 @@ public partial class SettingsViewModel : ObservableObject
                 else if (ext == ".zip")
                 {
                     using var fs = File.OpenRead(path);
-                    using var zf = new ZipFile(fs);
+                    using var zf = new ICSharpCode.SharpZipLib.Zip.ZipFile(fs);
                     foreach (ZipEntry zipEntry in zf)
                     {
                         if (!zipEntry.IsFile) continue;

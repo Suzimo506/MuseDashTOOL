@@ -335,7 +335,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
 {
     private const int UpdateNotificationDurationMs = 5000;
 
-    private const string ViewModeGuideBadgeKey = "AlbumCollectionViewModeGuide_v1.3.1";
+    private const string ViewModeGuideBadgeKey = "AlbumCollectionViewModeGuide";
+    private const string LegacyViewModeGuideBadgeKey = "AlbumCollectionViewModeGuide_v1.3.1";
     private readonly IAlbumCollectionService _collectionService;
     private readonly ChartDownloadViewModel _chartDownloadViewModel;
     private readonly INotificationService _notificationService;
@@ -611,7 +612,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
     }
 
     private bool ShouldShowOneTimeBadge(string badgeKey)
-        => !_configService.Config.DismissedBadges.Contains(badgeKey);
+        => !_configService.Config.DismissedBadges.Contains(badgeKey)
+           && _configService.Config.DismissedBadges.Contains(LegacyViewModeGuideBadgeKey) == false;
 
     private async Task DismissOneTimeBadgeAsync(string badgeKey)
     {

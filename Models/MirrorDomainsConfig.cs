@@ -12,4 +12,7 @@ public class MirrorDomainsConfig
 
     [JsonPropertyName("album_info_domain")]
     public string AlbumInfoDomain { get; set; } = "";
+
+    [JsonPropertyName("download_domain")]
+    public string DownloadDomain { get; set; } = "";
 }

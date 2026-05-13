@@ -9,7 +9,7 @@
         Foreground="White"
         SystemDecorations="Full">
 
-    <Grid RowDefinitions="*, Auto" Margin="24">
+    <Grid RowDefinitions="Auto, Auto, Auto" Margin="24" VerticalAlignment="Center">
         <!-- 提示文本 -->
         <TextBlock x:Name="MessageText"
                    Grid.Row="0"
@@ -21,8 +21,22 @@
                    HorizontalAlignment="Center"
                    TextAlignment="Center"/>
 
+        <Border x:Name="MessageImageHost"
+                Grid.Row="1"
+                IsVisible="False"
+                Margin="0,16,0,0"
+                CornerRadius="6"
+                ClipToBounds="True"
+                HorizontalAlignment="Center"
+                Background="#111111">
+            <Image x:Name="MessageImage"
+                   Width="480"
+                   MaxHeight="260"
+                   Stretch="Uniform"/>
+        </Border>
+
         <!-- 底部按钮区 -->
-        <StackPanel Grid.Row="1"
+        <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
                     Spacing="16"
                     HorizontalAlignment="Center"

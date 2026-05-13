@@ -94,4 +94,9 @@ public partial class MainWindow : Window
     {
         await MessageBox.ShowDialogAsync(this, message);
     }
+
+    public async Task ShowMessageBoxWithImageAsync(string message, string imageAssetUri)
+    {
+        await MessageBox.ShowDialogWithImageAsync(this, message, imageAssetUri);
+    }
 }

@@ -246,6 +246,7 @@ public static class HttpHelper
     public static bool IsOptimizedAccelerationHost(string? host)
     {
         return MirrorDomainRegistry.IsSuzimoHost(host) ||
+               MirrorDomainRegistry.IsConfiguredDownloadHost(host) ||
                (!string.IsNullOrWhiteSpace(host) &&
                 (host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase) ||
                  host.Contains("musedash.moe", StringComparison.OrdinalIgnoreCase) ||

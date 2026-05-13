@@ -102,7 +102,7 @@ public class MirrorDomainService : IMirrorDomainService
         if (Interlocked.Exchange(ref _hasStartedBackgroundRefresh, 1) == 1)
             return;
 
-        var currentCombined = $"{MirrorDomainRegistry.SuzimoHost}|{MirrorDomainRegistry.AlbumDownloadDomain}|{MirrorDomainRegistry.AlbumInfoDomain}";
+        var currentCombined = $"{MirrorDomainRegistry.SuzimoHost}|{MirrorDomainRegistry.AlbumDownloadDomain}|{MirrorDomainRegistry.AlbumInfoDomain}|{MirrorDomainRegistry.DownloadDomain}";
         var remoteResult = await TryLoadFromRemoteAsync(cancellationToken, compareOnly: true).ConfigureAwait(false);
 
         if (remoteResult.Result == RemoteLoadResult.Failed)
@@ -250,7 +250,10 @@ public class MirrorDomainService : IMirrorDomainService
 
             if (compareOnly)
             {
-                var combinedRemote = $"{normalizedHost}|{MirrorDomainRegistry.NormalizeHost(config.AlbumDownloadDomain)}|{MirrorDomainRegistry.NormalizeHost(config.AlbumInfoDomain)}";
+                var remoteDownloadDomain = MirrorDomainRegistry.NormalizeHost(config.DownloadDomain);
+                if (string.IsNullOrWhiteSpace(remoteDownloadDomain))
+                    remoteDownloadDomain = $"download.{normalizedHost}";
+                var combinedRemote = $"{normalizedHost}|{MirrorDomainRegistry.NormalizeHost(config.AlbumDownloadDomain)}|{MirrorDomainRegistry.NormalizeHost(config.AlbumInfoDomain)}|{remoteDownloadDomain}";
                 RuntimeLog.Write("MirrorDomainService", $"已检查远端镜像配置：{combinedRemote}");
                 return (RemoteLoadResult.Loaded, combinedRemote);
             }

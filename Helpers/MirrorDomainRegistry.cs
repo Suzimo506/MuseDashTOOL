@@ -12,6 +12,7 @@ public static class MirrorDomainRegistry
     private static string _suzimoHost = string.Empty;
     private static string _albumDownloadDomain = string.Empty;
     private static string _albumInfoDomain = string.Empty;
+    private static string _downloadDomain = string.Empty;
 
     public static string SuzimoHost
     {
@@ -46,6 +47,17 @@ public static class MirrorDomainRegistry
         }
     }
 
+    public static string DownloadDomain
+    {
+        get
+        {
+            lock (Sync)
+            {
+                return _downloadDomain;
+            }
+        }
+    }
+
     public static bool HasSuzimoHost => !string.IsNullOrWhiteSpace(SuzimoHost);
 
     public static void Update(MirrorDomainsConfig? config)
@@ -62,6 +74,9 @@ public static class MirrorDomainRegistry
             _suzimoHost = normalizedHost;
             _albumDownloadDomain = NormalizeHost(config.AlbumDownloadDomain);
             _albumInfoDomain = NormalizeHost(config.AlbumInfoDomain);
+            _downloadDomain = NormalizeHost(config.DownloadDomain);
+            if (string.IsNullOrWhiteSpace(_downloadDomain))
+                _downloadDomain = $"download.{normalizedHost}";
         }
     }
 
@@ -95,6 +110,21 @@ public static class MirrorDomainRegistry
         return !string.IsNullOrWhiteSpace(normalized) &&
                !string.IsNullOrWhiteSpace(currentHost) &&
                normalized.Equals(currentHost, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsConfiguredDownloadHost(string? host)
+    {
+        var normalized = NormalizeHost(host);
+        if (string.IsNullOrWhiteSpace(normalized))
+            return false;
+
+        var albumDownloadDomain = AlbumDownloadDomain;
+        var albumInfoDomain = AlbumInfoDomain;
+        var downloadDomain = DownloadDomain;
+
+        return (!string.IsNullOrWhiteSpace(albumDownloadDomain) && normalized.Equals(albumDownloadDomain, StringComparison.OrdinalIgnoreCase)) ||
+               (!string.IsNullOrWhiteSpace(albumInfoDomain) && normalized.Equals(albumInfoDomain, StringComparison.OrdinalIgnoreCase)) ||
+               (!string.IsNullOrWhiteSpace(downloadDomain) && normalized.Equals(downloadDomain, StringComparison.OrdinalIgnoreCase));
     }
 
     public static string? ResolveMirrorHost(string? downloadSource)

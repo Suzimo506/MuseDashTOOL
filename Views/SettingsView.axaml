@@ -126,6 +126,19 @@
                                 </LinearGradientBrush>
                             </TextBlock.Foreground>
                         </TextBlock>
+                        <Button Grid.Column="1"
+                                Command="{Binding InstallCustomChartsCommand}"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Padding="14,7"
+                                Background="#FF6699"
+                                Foreground="White"
+                                BorderThickness="0"
+                                CornerRadius="6"
+                                Cursor="Hand"
+                                ToolTip.Tip="检查环境并安装自制谱">
+                            <TextBlock Text="一键安装自制谱" FontSize="14" FontWeight="Bold"/>
+                        </Button>
                     </Grid>
 
                     <!-- 设置列表 -->
