@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:models="using:MdModManager.Models"
              xmlns:conv="using:MdModManager.Converters"
              xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
              mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="800"
@@ -37,6 +38,44 @@
                 <Setter Property="Opacity" Value="0.58"/>
             </Style>
         </ControlTheme>
+
+        <!-- 工具栏小按钮主题：强力隔离方案，彻底解决灰色背景 -->
+        <ControlTheme x:Key="ToolbarSmallBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextSubBrush}"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1"/>
+                </Transitions>
+            </Setter>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Root"
+                            Background="Transparent"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            RenderTransform="none">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#Root">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.75"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#Root">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="RenderTransform" Value="scale(0.95)"/>
+            </Style>
+        </ControlTheme>
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -52,9 +91,14 @@
             <Setter Property="Padding" Value="12"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
+
+        <!-- 搜索匹配高亮样式 -->
+        <Style Selector="Border.RecordRow.SearchMatch">
+            <Setter Property="Background" Value="#45FF69B4"/>
+        </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,*" Margin="24">
+    <Grid RowDefinitions="Auto,Auto,*" Margin="24">
         <!-- 个人信息 -->
         <Border Grid.Row="0" Classes="ProfileBand" Margin="0,0,0,18">
             <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" RowDefinitions="Auto">
@@ -116,8 +160,95 @@
             </Grid>
         </Border>
 
+        <!-- 工具栏：排序 + 搜索 -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource ModCardBgBrush}"
+                CornerRadius="8"
+                Padding="12,8"
+                Margin="0,0,0,14"
+                IsVisible="{Binding !IsLoading}">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- 左侧：排序按钮 -->
+                <Button Grid.Column="0"
+                        Theme="{StaticResource ToolbarSmallBtn}"
+                        Command="{Binding CycleSortModeCommand}"
+                        ToolTip.Tip="点击切换排序方式：默认 → 排名最高 → 准确率最高 → 最难">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <PathIcon Data="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"
+                                  Width="14"
+                                  Height="14"
+                                  Foreground="{DynamicResource SvgIconBrush}"/>
+                        <TextBlock Text="{Binding SortLabel}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource ThemeTextSubBrush}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- 右侧：搜索区域 -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                    <!-- 上一项 -->
+                    <Button Theme="{StaticResource ToolbarSmallBtn}"
+                            Command="{Binding SearchPrevCommand}"
+                            Padding="6,6"
+                            ToolTip.Tip="上一项">
+                        <PathIcon Data="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
+                                  Width="14"
+                                  Height="14"
+                                  Foreground="{DynamicResource SvgIconBrush}"/>
+                    </Button>
+
+                    <!-- 搜索状态 -->
+                    <TextBlock Text="{Binding SearchStatus}"
+                               FontSize="11"
+                               Foreground="{DynamicResource ThemeTextSubBrush}"
+                               VerticalAlignment="Center"
+                               MinWidth="36"
+                               TextAlignment="Center"/>
+
+                    <!-- 下一项 -->
+                    <Button Theme="{StaticResource ToolbarSmallBtn}"
+                            Command="{Binding SearchNextCommand}"
+                            Padding="6,6"
+                            ToolTip.Tip="下一项">
+                        <PathIcon Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"
+                                  Width="14"
+                                  Height="14"
+                                  Foreground="{DynamicResource SvgIconBrush}"/>
+                    </Button>
+
+                    <!-- 搜索框 -->
+                    <Border Background="Transparent" CornerRadius="6" Padding="8,0">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Grid.Column="0"
+                                     x:Name="SearchBox"
+                                     Text="{Binding SearchText, Mode=TwoWay}"
+                                     Watermark="搜索歌曲..."
+                                     FontSize="12"
+                                     MinWidth="140"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="0,6"
+                                     Foreground="{DynamicResource ThemeTextMainBrush}"
+                                     KeyDown="OnSearchBoxKeyDown"/>
+                            <Button Grid.Column="1"
+                                    Theme="{StaticResource ToolbarSmallBtn}"
+                                    Command="{Binding SearchConfirmCommand}"
+                                    Padding="4,4"
+                                    ToolTip.Tip="搜索">
+                                <PathIcon Data="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+                                          Width="14"
+                                          Height="14"
+                                          Foreground="{DynamicResource SvgIconBrush}"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
         <!-- 加载态 -->
-        <Border Grid.Row="1" IsVisible="{Binding IsLoading}" Background="Transparent">
+        <Border Grid.Row="2" IsVisible="{Binding IsLoading}" Background="Transparent">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
                 <ProgressBar IsIndeterminate="True"
                              Width="220"
@@ -132,14 +263,16 @@
         </Border>
 
         <!-- 成绩列表 -->
-        <ScrollViewer Grid.Row="1"
+        <ScrollViewer Grid.Row="2"
+                      x:Name="RecordScroller"
                       IsVisible="{Binding !IsLoading}"
                       ScrollChanged="OnScrollChanged">
             <StackPanel Spacing="10">
-                <ItemsControl ItemsSource="{Binding RecentPlays}">
+                <ItemsControl ItemsSource="{Binding RecentPlays}" x:Name="RecordsItemsControl">
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Classes="RecordRow">
+                        <DataTemplate x:DataType="models:PlayerSongRecord">
+                            <Border Classes="RecordRow"
+                                    Classes.SearchMatch="{Binding IsSearchMatch}">
                                 <Grid ColumnDefinitions="32,Auto,*,150" VerticalAlignment="Center">
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding DisplayIndex}"

@@ -333,9 +333,8 @@ public static class MuseDashAccountService
                         songAuthor = songInfo.Author;
                         songCover = songInfo.CoverUrl;
 
-                        // difficulty index: 0=Easy 1=Hard 2=Master 3=Hidden 4=Extra (same order as difficulty array)
                         int diffIdx = p.Difficulty ?? 0;
-                        if (diffIdx > 0) diffIdx--; // API indexes from 1, array is 0-based
+                        if (diffIdx > 0) diffIdx--;
                         if (songInfo.Levels.Length > diffIdx)
                             lvl = $"Lv.{songInfo.Levels[diffIdx]}";
                     }
@@ -348,6 +347,11 @@ public static class MuseDashAccountService
                         songName = p.Uid ?? "Unknown";
                     }
 
+                    // 解析难度等级数值用于排序
+                    int rawDiff = 0;
+                    if (lvl.StartsWith("Lv.") && int.TryParse(lvl[3..], out var parsedLvl))
+                        rawDiff = (p.Difficulty ?? 0) * 100 + parsedLvl;
+
                     data.RecentPlays.Add(new PlayerSongRecord
                     {
                         DisplayIndex = displayIndex++,
@@ -358,7 +362,10 @@ public static class MuseDashAccountService
                         Accuracy = $"{acc:0.00}%",
                         Score = p.Score?.ToString() ?? "0",
                         Rank = p.Rank.HasValue ? $"#{p.Rank}" : "-",
-                        Gear = $"{charName} / {elfinName}"
+                        Gear = $"{charName} / {elfinName}",
+                        RawRank = p.Rank ?? int.MaxValue,
+                        RawAccuracy = acc,
+                        RawDifficulty = rawDiff
                     });
                 }
             }

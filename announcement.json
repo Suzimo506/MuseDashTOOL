@@ -8,22 +8,22 @@
         "cancel_button_text": "不再显示该弹窗"
     },
     {
-        "id": "recovery_20260513",
+        "id": "new_update_01",
         "is_enabled": true,
-        "title": "喜报",
-        "content": "我的账号界面与mdmc谱面下载恢复正常（但是定级暂时还看不了，请耐心等待恢复）",
+        "title": "v1.3.3 额外更新内容",
+        "content": "1、谱面管理界面优化，现在大量谱面也能很方便的查看\n2、QQ群谱面增加“谱面盲盒功能”，该功能处于测试阶段，仅供娱乐，感兴趣可以去玩一下\n3、我的账号界面增加排序功能与搜索功能",
         "action_button_text": "知道了",
         "cancel_button_text": "不再提醒"
     },
     {
         "id": "Emergency_20260512",
-        "is_enabled": true,
+        "is_enabled": false,
         "title": "紧急修复",
         "content": "在有gif（动态曲绘）的页面加载会大幅减慢，现已修复",
         "action_button_text": "OK",
         "cancel_button_text": "不再提醒"
     },
-        {
+    {
         "id": "New_Collection_01",
         "is_enabled": true,
         "title": "新大型曲包更新",

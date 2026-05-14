@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -38,7 +39,7 @@ public class PlayerProfileData
     public List<PlayerSongRecord> RecentPlays { get; set; } = new();
 }
 
-public class PlayerSongRecord
+public class PlayerSongRecord : INotifyPropertyChanged
 {
     public int DisplayIndex { get; set; }
     public string Title { get; set; } = "";
@@ -50,6 +51,26 @@ public class PlayerSongRecord
     public string Score { get; set; } = "";
     public string Gear { get; set; } = "";
     public string Rank { get; set; } = "";
+
+    // 用于排序的原始数值
+    public int RawRank { get; set; } = int.MaxValue;
+    public decimal RawAccuracy { get; set; }
+    public int RawDifficulty { get; set; }
+
+    // 搜索匹配高亮
+    private bool _isSearchMatch;
+    public bool IsSearchMatch
+    {
+        get => _isSearchMatch;
+        set
+        {
+            if (_isSearchMatch == value) return;
+            _isSearchMatch = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSearchMatch)));
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }
 
 internal class MdMoePlayerResponse
