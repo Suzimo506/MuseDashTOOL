@@ -145,7 +145,7 @@
                                                Text="{Binding DisplayIndex}"
                                                FontSize="16"
                                                FontWeight="Bold"
-                                               Foreground="#FFD700"
+                                               Foreground="{DynamicResource SvgIconBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
 
