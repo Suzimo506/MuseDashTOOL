@@ -232,7 +232,8 @@
                                      BorderThickness="0"
                                      Padding="0,6"
                                      Foreground="{DynamicResource ThemeTextMainBrush}"
-                                     KeyDown="OnSearchBoxKeyDown"/>
+                                     KeyDown="OnSearchBoxKeyDown"
+                                     LostFocus="OnSearchBoxLostFocus"/>
                             <Button Grid.Column="1"
                                     Theme="{StaticResource ToolbarSmallBtn}"
                                     Command="{Binding SearchConfirmCommand}"

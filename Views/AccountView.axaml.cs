@@ -44,6 +44,15 @@ public partial class AccountView : UserControl
         }
     }
 
+    // 搜索框失去焦点时自动触发搜索
+    private void OnSearchBoxLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is AccountViewModel vm && !string.IsNullOrWhiteSpace(vm.SearchText))
+        {
+            vm.SearchConfirmCommand.Execute(null);
+        }
+    }
+
     // 搜索按钮右键清空搜索
     private void OnSearchButtonPointerPressed(object? sender, PointerPressedEventArgs e)
     {
