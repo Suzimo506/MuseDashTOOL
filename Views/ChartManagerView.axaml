@@ -311,9 +311,9 @@
 
                                                 <!-- New 标签叠加 -->
                                                 <Border IsVisible="{Binding IsNewDownload}" 
-                                                        Background="#FF4444" CornerRadius="4" Padding="6,2" Margin="6,0,0,6" 
+                                                        Background="#e6aa1a1a" CornerRadius="4" Padding="6,2" Margin="6,0,0,6" 
                                                         HorizontalAlignment="Left" VerticalAlignment="Bottom">
-                                                    <TextBlock Text="New" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                                    <TextBlock Text="New" FontSize="10" FontWeight="Bold" Foreground="#ff4444"/>
                                                 </Border>
                                             </Panel>
                                         </Border>

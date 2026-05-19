@@ -559,9 +559,8 @@ public partial class ModManagerViewModel : ObservableObject
             return;
         }
 
-        // 临时：跳转到 Euterpe 网站
-        try { Process.Start(new ProcessStartInfo("https://euterpe-org.com") { UseShellExecute = true }); }
-        catch (Exception ex) { Console.WriteLine($"[ModManagerViewModel] UpdateModAsync 跳转异常: {ex}"); }
+        if (mod.RemoteInfo == null) return;
+        await PerformDownloadAsync(mod.RemoteInfo, isUpdate: true, localMod: mod);
     }
 
     /// <summary>打开 Mod 详情页 — .NET 6 特殊处理，其余跳转 Euterpe</summary>
@@ -576,7 +575,7 @@ public partial class ModManagerViewModel : ObservableObject
             return;
         }
 
-        try { Process.Start(new ProcessStartInfo("https://euterpe-org.com") { UseShellExecute = true }); }
+        try { Process.Start(new ProcessStartInfo("https://github.com") { UseShellExecute = true }); }
         catch (Exception ex)
         {
             Console.WriteLine($"[ModManagerViewModel] OpenHomePage({mod.Name}) 操作异常: {ex}");
@@ -694,30 +693,13 @@ public partial class ModManagerViewModel : ObservableObject
         string downloadUrl;
         if (remoteInfo.Source == "Euterpe")
         {
-            // Euterpe 源：尝试解析 GitHub Release
-            if (string.IsNullOrEmpty(remoteInfo.HomePage) || !remoteInfo.HomePage.Contains("github.com"))
+            var domain = MdModManager.Helpers.MirrorDomainRegistry.DownloadDomain;
+            if (string.IsNullOrWhiteSpace(domain))
             {
-                _notificationService.ShowInfo("该 Mod 仅提供仓库链接，请手动下载", 5000);
-                Process.Start(new ProcessStartInfo(remoteInfo.HomePage) { UseShellExecute = true });
-                return;
+                domain = "download.suzimo.site";
             }
-
-            _notificationService.ShowInfo($"正在解析 {remoteInfo.Name} 的下载地址...", 3000);
-            var gitUrl = await ResolveGitHubReleaseUrlAsync(remoteInfo.HomePage, remoteInfo.FileName);
-            if (string.IsNullOrEmpty(gitUrl))
-            {
-                _notificationService.ShowInfo("未能解析到自动下载链接，正在打开仓库页面", 5000);
-                Process.Start(new ProcessStartInfo(remoteInfo.HomePage) { UseShellExecute = true });
-                return;
-            }
-
-            downloadUrl = gitUrl;
-            // 应用镜像加速
-            var mirror = _configService.Config.DownloadSource;
-            if (!string.IsNullOrEmpty(mirror) && mirror != "官方源")
-            {
-                // 注意：旧版的硬编码镜像判断逻辑已移除，由核心镜像逻辑统一处理或直接使用原始链接
-            }
+            var protocol = domain.StartsWith("http") ? "" : "https://";
+            downloadUrl = $"{protocol}{domain}/Mods/{fileName}";
         }
         else
         {
@@ -733,7 +715,7 @@ public partial class ModManagerViewModel : ObservableObject
 
         try
         {
-            var client = new System.Net.Http.HttpClient();
+            using var client = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(30));
             var bytes = await client.GetByteArrayAsync(downloadUrl);
             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetPath)!);
 
@@ -771,36 +753,5 @@ public partial class ModManagerViewModel : ObservableObject
         await InitializeAsync();
     }
 
-    private async Task<string?> ResolveGitHubReleaseUrlAsync(string repoUrl, string targetFileName)
-    {
-        try
-        {
-            // 提取 owner/repo
-            var parts = repoUrl.TrimEnd('/').Split('/');
-            if (parts.Length < 2) return null;
-            var repo = $"{parts[^2]}/{parts[^1]}";
 
-            var apiUrl = $"https://api.github.com/repos/{repo}/releases/latest";
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("MdModManager/1.0");
-            
-            var response = await client.GetStringAsync(apiUrl);
-            using var doc = JsonDocument.Parse(response);
-            var assets = doc.RootElement.GetProperty("assets");
-
-            foreach (var asset in assets.EnumerateArray())
-            {
-                var name = asset.GetProperty("name").GetString();
-                if (name != null && (name.Equals(targetFileName, StringComparison.OrdinalIgnoreCase) || name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)))
-                {
-                    return asset.GetProperty("browser_download_url").GetString();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[ModManagerViewModel] ResolveGitHubReleaseUrlAsync error: {ex.Message}");
-        }
-        return null;
-    }
 }

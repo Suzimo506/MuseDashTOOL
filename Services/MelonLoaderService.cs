@@ -96,6 +96,11 @@ public class MelonLoaderService : IMelonLoaderService
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath)) throw new Exception("游戏目录未设置");
 
+        if (Process.GetProcessesByName("MuseDash").Length > 0)
+        {
+            throw new Exception("检测到游戏正在运行，请先关闭游戏后再安装或更新 MelonLoader！");
+        }
+
         var tempZip = Path.Combine(Path.GetTempPath(), $"MelonLoader_{Guid.NewGuid():N}.zip");
 
         try
@@ -137,6 +142,9 @@ public class MelonLoaderService : IMelonLoaderService
                 // 确保最后一次进度汇报到位
                 progress?.Report(100);
             }
+
+            // 在解压新版本之前，先清理可能存在的旧版本核心文件，避免新老版本的代理 dll 或依赖冲突
+            await UninstallAsync();
 
             // Extract
             await Task.Run(() =>
@@ -197,6 +205,11 @@ public class MelonLoaderService : IMelonLoaderService
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath)) return;
 
+        if (Process.GetProcessesByName("MuseDash").Length > 0)
+        {
+            throw new Exception("检测到游戏正在运行，请先关闭游戏后再卸载 MelonLoader！");
+        }
+
         await Task.Run(() =>
         {
             var mlDir = Path.Combine(gamePath, "MelonLoader");
@@ -207,6 +220,12 @@ public class MelonLoaderService : IMelonLoaderService
 
             var version = Path.Combine(gamePath, "version.dll");
             if (File.Exists(version)) File.Delete(version);
+
+            var winhttp = Path.Combine(gamePath, "winhttp.dll");
+            if (File.Exists(winhttp)) File.Delete(winhttp);
+
+            var winmm = Path.Combine(gamePath, "winmm.dll");
+            if (File.Exists(winmm)) File.Delete(winmm);
 
             var notice = Path.Combine(gamePath, "NOTICE.txt");
             if (File.Exists(notice)) File.Delete(notice);

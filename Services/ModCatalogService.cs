@@ -38,8 +38,23 @@ public class ModCatalogService : IModCatalogService
 
         try
         {
+            string jsonData = StaticJsonData;
+            try
+            {
+                using var client = MdModManager.Helpers.HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(10));
+                var response = await client.GetStringAsync("https://workdl.suzimo.site/mods.json", cancellationToken);
+                if (!string.IsNullOrWhiteSpace(response))
+                {
+                    jsonData = response;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ModCatalogService] 远程获取 JSON 失败: {ex.Message}，使用本地缓存");
+            }
+
             var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var list = JsonSerializer.Deserialize<List<EuterpeModEntry>>(StaticJsonData, opts);
+            var list = JsonSerializer.Deserialize<List<EuterpeModEntry>>(jsonData, opts);
             if (list == null) return new List<ModInfo>();
 
             _cachedMods = list.Select(e => new ModInfo

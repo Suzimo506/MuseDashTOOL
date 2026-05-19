@@ -141,32 +141,18 @@
                                     CommandParameter="https://v.douyin.com/EsV7a27lsdI/">
                                 <TextBlock FontSize="15" FontWeight="Bold" Foreground="#FF6699" Text="猫猫头" TextDecorations="Underline"/>
                             </Button>
-                            <TextBlock FontSize="15" Foreground="#FF6699" Text="（好像有点好看？）"/>
+                            <TextBlock FontSize="15" Foreground="#a404a7ff" Text="（好像有点好看？）"/>
                         </WrapPanel>
                     </StackPanel>
                 </Border>
 
                 <!-- 正文小节 -->
                 <StackPanel Spacing="25">
-                    <!-- 友情链接 -->
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="■ 友情链接" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
-                        <WrapPanel Orientation="Horizontal">
-                            <TextBlock Text="在此推荐一个网站 " Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <Button Theme="{StaticResource LinkTextBtn}" 
-                                    Command="{Binding OpenUrlCommand}" 
-                                    CommandParameter="https://euterpe-org.com">
-                                <TextBlock Text="Euterpe-org.com" Foreground="#FF6699" TextDecorations="Underline"/>
-                            </Button>
-                            <TextBlock Text="这上面收录了各类mod，支持谱面下载、上传等功能，是一个非常优秀的网站" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        </WrapPanel>
-                        <TextBlock TextWrapping="Wrap" LineHeight="22" Foreground="{DynamicResource ThemeTextMainBrush}"
-                                   Text="（确切来说Euterpe不止网站，将来会非常宏大与全面），作者本人也参与了Euterpe的部分开发，欢迎各位前往体验。（在mod下载界面点击下载按键也会直接跳转）"/>
-                    </StackPanel>
 
                     <!-- 游玩前准备 (添加粉色跳转链接) -->
                     <StackPanel Spacing="10">
                         <TextBlock Text="■ 游玩前的准备" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
+                        <TextBlock Text="• 一键安装自制谱请进入设置界面点击“一键安装自制谱”按键全自动安装；或者按照下方的教程手动进行安装" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
                         <WrapPanel Orientation="Horizontal">
                             <TextBlock Text="如果你要游玩自制谱以及其他的mod，首先先确保你的电脑安装了.net6（少数人会缺少C++，缺少C++" Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             <Button Theme="{StaticResource LinkTextBtn}" 
@@ -177,7 +163,7 @@
                             <TextBlock Text=" 密码g20v）" Foreground="{DynamicResource ThemeTextMainBrush}"/>
                         </WrapPanel>
                         <TextBlock TextWrapping="Wrap" LineHeight="22" Foreground="{DynamicResource ThemeTextMainBrush}"
-                                   Text="如果你没有魔法，请在下载melonloader之后把两个依赖的zip文件提前放入：游戏安装位置/MelonLoader/Dependencies/Il2CppAssemblyGenerator"/>
+                                   Text="如果你没有魔法，请在下载melonloader（目前自制谱仅支持0.6.1版本的melonloader）之后把两个依赖的zip文件提前放入：游戏安装位置/MelonLoader/Dependencies/Il2CppAssemblyGenerator"/>
                         <WrapPanel Orientation="Horizontal">
                             <TextBlock Text="依赖下载地址：" Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             <Button Theme="{StaticResource LinkTextBtn}" 
@@ -243,6 +229,22 @@
                         <TextBlock Text="• 下载速度太慢？可以去设置调节下载源" Foreground="{DynamicResource ThemeTextMainBrush}"/>
                         <TextBlock Text="• 点击“调整界面样式”可以进入高度个性化自定义" Foreground="{DynamicResource ThemeTextMainBrush}"/>
                         <TextBlock Text="• 右键导入图片按键可以删除导入的图片" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                    </StackPanel>
+
+                    <!-- 友情链接 -->
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="■ 友情链接" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
+                        <WrapPanel Orientation="Horizontal">
+                            <TextBlock Text="在此推荐一个网站 " Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                            <Button Theme="{StaticResource LinkTextBtn}" 
+                                    Command="{Binding OpenUrlCommand}" 
+                                    CommandParameter="https://euterpe-org.com">
+                                <TextBlock Text="Euterpe-org.com" Foreground="#FF6699" TextDecorations="Underline"/>
+                            </Button>
+                            <TextBlock Text="这上面收录了各类mod，支持谱面下载、上传等功能，是一个非常优秀的网站" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                        </WrapPanel>
+                        <TextBlock TextWrapping="Wrap" LineHeight="22" Foreground="{DynamicResource ThemeTextMainBrush}"
+                                   Text="（确切来说Euterpe不止网站，将来会非常宏大与全面），作者本人也参与了Euterpe的部分开发，欢迎各位前往体验。"/>
                     </StackPanel>
                 </StackPanel>
 
