@@ -735,7 +735,14 @@ public partial class SettingsViewModel : ObservableObject
             if (File.Exists(tempZipPath))
                 File.Delete(tempZipPath);
 
-            notification = _notificationService?.ShowPersistentProgress("正在下载自制谱安装包...");
+            notification = _notificationService?.ShowPersistentProgress("正在清理旧版环境...");
+            var mlService = CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default.GetService<IMelonLoaderService>();
+            if (mlService != null)
+            {
+                await mlService.UninstallAsync();
+            }
+
+            if (notification != null) notification.Message = "正在下载自制谱安装包...";
             RuntimeLog.Write("SettingsViewModel", $"开始下载自制谱安装包：{downloadUrl}");
 
             await DownloadFileWithProgressAsync(downloadUrl, tempZipPath, notification);
@@ -781,7 +788,7 @@ public partial class SettingsViewModel : ObservableObject
 
     private static async System.Threading.Tasks.Task<bool> ConfirmCustomChartInstallerAsync()
     {
-        const string message = "建议安装时游戏处于纯净环境（纯原版游戏没有安装过任何东西）。如果不是，请在打开游戏目录的情况下，点击卸载游戏后删除游戏目录下的所有文件，再重新安装游戏，以免不必要的问题出现。";
+        const string message = "是否开始一键安装自制谱（melonloader0.6.1）？";
 
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
             && desktop.MainWindow is MdModManager.Views.MainWindow mainWindow)
