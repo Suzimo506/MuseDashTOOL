@@ -190,6 +190,7 @@
                     <!-- 上一项 -->
                     <Button Theme="{StaticResource ToolbarSmallBtn}"
                             Command="{Binding SearchPrevCommand}"
+                            IsVisible="{Binding HasSearchResults}"
                             Padding="6,6"
                             ToolTip.Tip="上一项">
                         <PathIcon Data="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
@@ -209,6 +210,7 @@
                     <!-- 下一项 -->
                     <Button Theme="{StaticResource ToolbarSmallBtn}"
                             Command="{Binding SearchNextCommand}"
+                            IsVisible="{Binding HasSearchResults}"
                             Padding="6,6"
                             ToolTip.Tip="下一项">
                         <PathIcon Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"

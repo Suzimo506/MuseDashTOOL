@@ -53,6 +53,9 @@ public partial class AccountViewModel : ObservableObject
     [ObservableProperty]
     private string _searchStatus = "";
 
+    [ObservableProperty]
+    private bool _hasSearchResults = false;
+
     // 搜索结果匹配索引列表
     private List<int> _searchMatchIndices = new();
     private int _currentSearchIndex = -1;
@@ -182,10 +185,12 @@ public partial class AccountViewModel : ObservableObject
         if (_searchMatchIndices.Count == 0)
         {
             SearchStatus = "无结果";
+            HasSearchResults = false;
             _currentSearchIndex = -1;
             return;
         }
 
+        HasSearchResults = true;
         _currentSearchIndex = 0;
         JumpToCurrentMatch();
     }
@@ -225,6 +230,7 @@ public partial class AccountViewModel : ObservableObject
         _searchMatchIndices.Clear();
         _currentSearchIndex = -1;
         SearchStatus = "";
+        HasSearchResults = false;
     }
 
     public async Task InitializeAsync()
