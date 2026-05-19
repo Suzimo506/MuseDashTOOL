@@ -44,6 +44,20 @@ public partial class AccountView : UserControl
         }
     }
 
+    // 搜索按钮右键清空搜索
+    private void OnSearchButtonPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(sender as Control);
+        if (point.Properties.IsRightButtonPressed)
+        {
+            if (DataContext is AccountViewModel vm)
+            {
+                vm.SearchText = "";
+                e.Handled = true;
+            }
+        }
+    }
+
     // 滚动到指定项
     private void OnScrollToItem(int itemIndex)
     {
