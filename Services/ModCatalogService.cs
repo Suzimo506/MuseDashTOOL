@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using MdModManager.Helpers;
 using MdModManager.Models;
 
 namespace MdModManager.Services;
@@ -42,7 +43,7 @@ public class ModCatalogService : IModCatalogService
             try
             {
                 using var client = MdModManager.Helpers.HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(10));
-                var response = await client.GetStringAsync("https://workdl.suzimo.site/mods.json", cancellationToken);
+                var response = await client.GetStringAsync(BuildRemoteCatalogUrl(), cancellationToken);
                 if (!string.IsNullOrWhiteSpace(response))
                 {
                     jsonData = response;
@@ -87,6 +88,11 @@ public class ModCatalogService : IModCatalogService
         [JsonPropertyName("current_version")] public string? CurrentVersion { get; set; }
         [JsonPropertyName("description")] public string? Description { get; set; }
         [JsonPropertyName("download_url")] public string? DownloadUrl { get; set; }
+    }
+
+    private static string BuildRemoteCatalogUrl()
+    {
+        return $"https://{MirrorDomainRegistry.GetDownloadDomainOrDefault()}/Mods/index.json";
     }
 
     private const string StaticJsonData = @"[

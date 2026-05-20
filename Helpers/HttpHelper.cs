@@ -246,11 +246,11 @@ public static class HttpHelper
     public static bool IsOptimizedAccelerationHost(string? host)
     {
         return MirrorDomainRegistry.IsSuzimoHost(host) ||
+               MirrorDomainRegistry.IsSuzimoRelatedHost(host) ||
                MirrorDomainRegistry.IsConfiguredDownloadHost(host) ||
                (!string.IsNullOrWhiteSpace(host) &&
                 (host.Contains("mdmc.moe", StringComparison.OrdinalIgnoreCase) ||
-                 host.Contains("musedash.moe", StringComparison.OrdinalIgnoreCase) ||
-                 host.Contains("suzimo.site", StringComparison.OrdinalIgnoreCase)));
+                 host.Contains("musedash.moe", StringComparison.OrdinalIgnoreCase)));
     }
 
     public static HttpClient CreateOptimizedClient(TimeSpan timeout, TimeSpan? watchdogTimeout = null)

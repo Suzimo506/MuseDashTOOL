@@ -76,11 +76,12 @@ public class AlbumCollectionService : IAlbumCollectionService
     private readonly Dictionary<string, List<DesignerChart>> _chartsCache = new(StringComparer.OrdinalIgnoreCase);
 
     // 社区仓库配置
-    public static readonly (string Name, string RepoUrl)[] CommunityConfigs = 
-    { 
-        ("通过审议", "https://download.suzimo.site/通过审议"), 
-        ("令人生草", "https://download.suzimo.site/令人生草"), 
-        ("待定或有些小问题", "https://download.suzimo.site/待定或有些小问题")
+    public static IReadOnlyList<(string Name, string RepoUrl)> CommunityConfigs =>
+    new[]
+    {
+        ("通过审议", BuildCommunityRepoUrl("通过审议")),
+        ("令人生草", BuildCommunityRepoUrl("令人生草")),
+        ("待定或有些小问题", BuildCommunityRepoUrl("待定或有些小问题"))
     };
 
     // 新增谱师个人仓库时，只需要把远端文件夹名加入这里，就会从“曲包”移动到“谱师个人仓库”分类。
@@ -230,8 +231,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         // 1. 尝试从远端获取（去掉 ?t= 以命中 CDN 缓存）
         try
         {
-            var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
-            var infoDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumInfoDomain) ? MirrorDomainRegistry.AlbumInfoDomain : $"workerdl.{baseHost}";
+            var infoDomain = MirrorDomainRegistry.GetAlbumInfoDomainOrDefault();
             var workerUrl = $"https://{infoDomain}/api/list";
             var json = await _http.GetStringAsync(workerUrl);
             
@@ -339,7 +339,6 @@ public class AlbumCollectionService : IAlbumCollectionService
     private async Task<List<DesignerChart>> FetchSpecialR2CategoryAsync(string name)
     {
         var encodedName = Uri.EscapeDataString(name);
-        var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
         
         string? json = null;
         var cacheDir = Path.Combine(AppContext.BaseDirectory, "Cache", "CollectionIndexes");
@@ -348,7 +347,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         // 1. 尝试从远端获取（去掉 ?t=）
         try
         {
-            var downloadDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumDownloadDomain) ? MirrorDomainRegistry.AlbumDownloadDomain : $"download.{baseHost}";
+            var downloadDomain = MirrorDomainRegistry.GetAlbumDownloadDomainOrDefault();
             var url = $"https://{downloadDomain}/{encodedName}/index.json";
             json = await _http.GetStringAsync(url);
             Log($"Fetched remote index for '{name}' from {url}");
@@ -421,11 +420,11 @@ public class AlbumCollectionService : IAlbumCollectionService
 
         var charts = new List<DesignerChart>();
         foreach(var item in items.AsEnumerable().Reverse()) {
-           var cover = BuildR2ResourceUrl(baseHost, name, "covers", item.CoverUrl);
-           var demo = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoUrl);
-           var mp3 = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoMp3Url);
+           var cover = BuildR2ResourceUrl(name, "covers", item.CoverUrl);
+           var demo = BuildR2ResourceUrl(name, "demos", item.DemoUrl);
+           var mp3 = BuildR2ResourceUrl(name, "demos", item.DemoMp3Url);
            
-           var dlUrl = BuildR2ResourceUrl(baseHost, name, "mdm", item.DownloadUrl);
+           var dlUrl = BuildR2ResourceUrl(name, "mdm", item.DownloadUrl);
 
            string cleanTitle = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : (item.Title ?? "");
            cleanTitle = Regex.Replace(cleanTitle, @"^\[(?:Lv|LV|lv)[.\s]?\s*[^\]]+\]\s*", "", RegexOptions.IgnoreCase);
@@ -473,7 +472,6 @@ public class AlbumCollectionService : IAlbumCollectionService
 
     private List<DesignerChart> ParseDesignerCharts(string json, string name)
     {
-        var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
         List<CommunityIndexItem>? items = null;
         try {
@@ -500,10 +498,10 @@ public class AlbumCollectionService : IAlbumCollectionService
 
         var charts = new List<DesignerChart>();
         foreach(var item in items.AsEnumerable().Reverse()) {
-           var cover = BuildR2ResourceUrl(baseHost, name, "covers", item.CoverUrl);
-           var demo = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoUrl);
-           var mp3 = BuildR2ResourceUrl(baseHost, name, "demos", item.DemoMp3Url);
-           var dlUrl = BuildR2ResourceUrl(baseHost, name, "mdm", item.DownloadUrl);
+           var cover = BuildR2ResourceUrl(name, "covers", item.CoverUrl);
+           var demo = BuildR2ResourceUrl(name, "demos", item.DemoUrl);
+           var mp3 = BuildR2ResourceUrl(name, "demos", item.DemoMp3Url);
+           var dlUrl = BuildR2ResourceUrl(name, "mdm", item.DownloadUrl);
            string cleanTitle = !string.IsNullOrEmpty(item.OriginalId) ? item.OriginalId : (item.Title ?? "");
            cleanTitle = Regex.Replace(cleanTitle, @"^\[(?:Lv|LV|lv)[.\s]?\s*[^\]]+\]\s*", "", RegexOptions.IgnoreCase);
            charts.Add(new DesignerChart {
@@ -714,25 +712,24 @@ public class AlbumCollectionService : IAlbumCollectionService
         IReadOnlyList<string> defaultReleaseTags)
     {
         var isGithub = githubRepoUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase);
-        var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
         var repoName = Path.GetFileName(githubRepoUrl.TrimEnd('/'));
 
         var coverUrl = item.CoverUrl;
         if (!string.IsNullOrEmpty(coverUrl) && !coverUrl.StartsWith("http"))
-            coverUrl = isGithub ? rawBaseUrl + "/covers/" + coverUrl : BuildR2ResourceUrl(baseHost, repoName, "covers", coverUrl);
+            coverUrl = isGithub ? rawBaseUrl + "/covers/" + coverUrl : BuildR2ResourceUrl(repoName, "covers", coverUrl);
 
         var demoUrl = item.DemoUrl;
         if (!string.IsNullOrEmpty(demoUrl) && !demoUrl.StartsWith("http"))
-            demoUrl = isGithub ? rawBaseUrl + "/demos/" + demoUrl : BuildR2ResourceUrl(baseHost, repoName, "demos", demoUrl);
+            demoUrl = isGithub ? rawBaseUrl + "/demos/" + demoUrl : BuildR2ResourceUrl(repoName, "demos", demoUrl);
 
         var demoMp3Url = item.DemoMp3Url;
         if (!string.IsNullOrEmpty(demoMp3Url) && !demoMp3Url.StartsWith("http"))
-            demoMp3Url = isGithub ? rawBaseUrl + "/demos/" + demoMp3Url : BuildR2ResourceUrl(baseHost, repoName, "demos", demoMp3Url);
+            demoMp3Url = isGithub ? rawBaseUrl + "/demos/" + demoMp3Url : BuildR2ResourceUrl(repoName, "demos", demoMp3Url);
 
         var downloadUrl = item.DownloadUrl;
         if (!isGithub)
         {
-            downloadUrl = BuildR2ResourceUrl(baseHost, repoName, "mdm", downloadUrl);
+            downloadUrl = BuildR2ResourceUrl(repoName, "mdm", downloadUrl);
         }
         else
         {
@@ -743,7 +740,7 @@ public class AlbumCollectionService : IAlbumCollectionService
             // 新版 R2 下载逻辑
             if (!string.IsNullOrEmpty(downloadUrl) && !downloadUrl.StartsWith("http"))
             {
-                downloadUrl = BuildR2ResourceUrl(baseHost, repoName, "mdm", downloadUrl);
+                downloadUrl = BuildR2ResourceUrl(repoName, "mdm", downloadUrl);
             }
         }
 
@@ -1125,7 +1122,7 @@ public class AlbumCollectionService : IAlbumCollectionService
     /// <summary>
     /// 标准化构造 R2 资源的绝对 URL，自动处理编码与子目录
     /// </summary>
-    private static string BuildR2ResourceUrl(string baseHost, string categoryName, string subFolder, string? fileName)
+    private static string BuildR2ResourceUrl(string categoryName, string subFolder, string? fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName)) return string.Empty;
         if (fileName.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return fileName;
@@ -1138,10 +1135,13 @@ public class AlbumCollectionService : IAlbumCollectionService
         var parts = fileName.Trim().Replace("\\", "/").Trim('/').Split('/');
         var encodedFileName = string.Join("/", parts.Select(Uri.EscapeDataString));
 
-        var downloadDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumDownloadDomain) 
-            ? MirrorDomainRegistry.AlbumDownloadDomain 
-            : $"download.{baseHost}";
+        var downloadDomain = MirrorDomainRegistry.GetAlbumDownloadDomainOrDefault();
         return $"https://{downloadDomain}/{encodedCategory}/{encodedSubFolder}/{encodedFileName}";
+    }
+
+    private static string BuildCommunityRepoUrl(string categoryName)
+    {
+        return $"https://{MirrorDomainRegistry.GetAlbumDownloadDomainOrDefault()}/{categoryName}";
     }
 
     private async Task TrySaveCacheIfChangedAsync(string cachePath, string newContent)

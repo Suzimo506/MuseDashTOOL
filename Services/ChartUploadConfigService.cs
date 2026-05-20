@@ -13,7 +13,6 @@ public interface IChartUploadConfigService
 
 public sealed class ChartUploadConfigService : IChartUploadConfigService
 {
-    private const string RemoteConfigUrl = "https://download.suzimo.site/%E6%9C%AA%E7%BB%8F%E5%AE%A1%E6%9F%A5/chart-upload-config.json";
     private const string ConfigFileName = "chart-upload-config.json";
 
     private readonly HttpClient _httpClient;
@@ -129,7 +128,8 @@ public sealed class ChartUploadConfigService : IChartUploadConfigService
     {
         try
         {
-            var url = $"{RemoteConfigUrl}?ts={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+            var remoteConfigUrl = BuildRemoteConfigUrl();
+            var url = $"{remoteConfigUrl}?ts={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
             var json = await _httpClient.GetStringAsync(url, cancellationToken).ConfigureAwait(false);
             var parsed = Deserialize(json);
             if (parsed == null)
@@ -137,7 +137,7 @@ public sealed class ChartUploadConfigService : IChartUploadConfigService
 
             Directory.CreateDirectory(_cacheFolderPath);
             await File.WriteAllTextAsync(_cacheFilePath, json, cancellationToken).ConfigureAwait(false);
-            RuntimeLog.Write("ChartUploadConfig", $"已刷新远程上传配置：{RemoteConfigUrl}");
+            RuntimeLog.Write("ChartUploadConfig", $"已刷新远程上传配置：{remoteConfigUrl}");
             return parsed;
         }
         catch (Exception ex)
@@ -145,6 +145,11 @@ public sealed class ChartUploadConfigService : IChartUploadConfigService
             RuntimeLog.Write("ChartUploadConfig", $"拉取远程上传配置失败：{ex.Message}");
             return null;
         }
+    }
+
+    private static string BuildRemoteConfigUrl()
+    {
+        return $"https://{MirrorDomainRegistry.GetDownloadDomainOrDefault()}/%E6%9C%AA%E7%BB%8F%E5%AE%A1%E6%9F%A5/{ConfigFileName}";
     }
 
     private static ChartUploadConfig? Deserialize(string json)

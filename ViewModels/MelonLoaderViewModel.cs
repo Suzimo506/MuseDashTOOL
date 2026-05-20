@@ -96,10 +96,8 @@ public partial class MelonLoaderViewModel : ObservableObject
         {
             var progress = new Progress<double>(p => DownloadProgress = p);
 
-            // MelonLoader 强制通过 suzimo.site 代理加速下载，使用优选IP
-            var suzimoHost = MirrorDomainRegistry.SuzimoHost;
-            if (string.IsNullOrWhiteSpace(suzimoHost))
-                suzimoHost = "suzimo.site";
+            // MelonLoader 强制通过当前镜像主域名代理加速下载，使用优选IP
+            var suzimoHost = MirrorDomainRegistry.GetSuzimoHostOrDefault();
             var downloadUrl = GitHubMirrorHelper.ApplyCustomMirror(asset.DownloadUrl, suzimoHost);
 
             HttpHelper.UseOptimizedIps = true;

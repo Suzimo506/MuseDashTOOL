@@ -7,6 +7,7 @@ public static class MirrorDomainRegistry
 {
     // 代码中固定使用的 Suzimo 下载源代号。
     public const string SuzimoAlias = "suzimo";
+    public const string DefaultSuzimoHost = "suzimo.site";
 
     private static readonly object Sync = new();
     private static string _suzimoHost = string.Empty;
@@ -59,6 +60,41 @@ public static class MirrorDomainRegistry
     }
 
     public static bool HasSuzimoHost => !string.IsNullOrWhiteSpace(SuzimoHost);
+
+    public static string GetSuzimoHostOrDefault()
+    {
+        var currentHost = SuzimoHost;
+        return string.IsNullOrWhiteSpace(currentHost) ? DefaultSuzimoHost : currentHost;
+    }
+
+    public static string GetAlbumDownloadDomainOrDefault()
+    {
+        var configured = AlbumDownloadDomain;
+        return string.IsNullOrWhiteSpace(configured)
+            ? $"download.{GetSuzimoHostOrDefault()}"
+            : configured;
+    }
+
+    public static string GetAlbumInfoDomainOrDefault()
+    {
+        var configured = AlbumInfoDomain;
+        return string.IsNullOrWhiteSpace(configured)
+            ? $"workerdl.{GetSuzimoHostOrDefault()}"
+            : configured;
+    }
+
+    public static string GetDownloadDomainOrDefault()
+    {
+        var configured = DownloadDomain;
+        return string.IsNullOrWhiteSpace(configured)
+            ? $"download.{GetSuzimoHostOrDefault()}"
+            : configured;
+    }
+
+    public static string GetUploadDomainOrDefault()
+    {
+        return $"upload.{GetSuzimoHostOrDefault()}";
+    }
 
     public static void Update(MirrorDomainsConfig? config)
     {
@@ -125,6 +161,17 @@ public static class MirrorDomainRegistry
         return (!string.IsNullOrWhiteSpace(albumDownloadDomain) && normalized.Equals(albumDownloadDomain, StringComparison.OrdinalIgnoreCase)) ||
                (!string.IsNullOrWhiteSpace(albumInfoDomain) && normalized.Equals(albumInfoDomain, StringComparison.OrdinalIgnoreCase)) ||
                (!string.IsNullOrWhiteSpace(downloadDomain) && normalized.Equals(downloadDomain, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public static bool IsSuzimoRelatedHost(string? host)
+    {
+        var normalized = NormalizeHost(host);
+        if (string.IsNullOrWhiteSpace(normalized))
+            return false;
+
+        var baseHost = GetSuzimoHostOrDefault();
+        return normalized.Equals(baseHost, StringComparison.OrdinalIgnoreCase) ||
+               normalized.EndsWith("." + baseHost, StringComparison.OrdinalIgnoreCase);
     }
 
     public static string? ResolveMirrorHost(string? downloadSource)

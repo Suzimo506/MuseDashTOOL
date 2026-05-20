@@ -693,11 +693,7 @@ public partial class ModManagerViewModel : ObservableObject
         string downloadUrl;
         if (remoteInfo.Source == "Euterpe")
         {
-            var domain = MdModManager.Helpers.MirrorDomainRegistry.DownloadDomain;
-            if (string.IsNullOrWhiteSpace(domain))
-            {
-                domain = "download.suzimo.site";
-            }
+            var domain = MdModManager.Helpers.MirrorDomainRegistry.GetDownloadDomainOrDefault();
             var protocol = domain.StartsWith("http") ? "" : "https://";
             downloadUrl = $"{protocol}{domain}/Mods/{fileName}";
         }

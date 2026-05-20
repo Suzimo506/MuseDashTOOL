@@ -840,13 +840,9 @@ public partial class AlbumCollectionViewModel : ObservableObject
             var targetDir = Path.Combine(AppContext.BaseDirectory, "Pictures");
             if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
 
-            var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
-            var infoDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumInfoDomain) 
-                ? MirrorDomainRegistry.AlbumInfoDomain 
-                : $"workerdl.{baseHost}";
-            var downloadDomain = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.AlbumDownloadDomain) 
-                ? MirrorDomainRegistry.AlbumDownloadDomain 
-                : $"download.{baseHost}";
+            var baseHost = MirrorDomainRegistry.GetSuzimoHostOrDefault();
+            var infoDomain = MirrorDomainRegistry.GetAlbumInfoDomainOrDefault();
+            var downloadDomain = MirrorDomainRegistry.GetAlbumDownloadDomainOrDefault();
 
             using var client = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(30));
             // 清除默认的 mdmc 引用来源，设置为自己的域名，防止 CDN 防盗链拦截
@@ -1206,17 +1202,9 @@ public partial class AlbumCollectionViewModel : ObservableObject
         PersonalRepositoryCategories.Clear();
         CommunityCategories.Clear();
 
-        var baseHost = !string.IsNullOrWhiteSpace(MirrorDomainRegistry.SuzimoHost) ? MirrorDomainRegistry.SuzimoHost : "suzimo.site";
-        var communityConfigs = new[] 
-        { 
-            ("通过审议", $"https://download.{baseHost}/通过审议"), 
-            ("令人生草", $"https://download.{baseHost}/令人生草"), 
-            ("待定或有些小问题", $"https://download.{baseHost}/待定或有些小问题")
-        };
-
-        foreach (var config in communityConfigs)
+        foreach (var config in AlbumCollectionService.CommunityConfigs)
         {
-            CommunityCategories.Add(new CommunityCategoryItemViewModel(config.Item1, config.Item2));
+            CommunityCategories.Add(new CommunityCategoryItemViewModel(config.Name, config.RepoUrl));
         }
 
         foreach (var category in BuildDisplayCollections(collections))
