@@ -385,14 +385,13 @@
                                             <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
                                                 <controls:MarqueeText Text="{Binding Title}" HighlightText="{Binding Title}" SearchText="{Binding SearchText}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" ToolTip.Tip="{Binding Title}"/>
                                                 
-                                                <!-- 曲师 & 谱师信息 (强制单行) -->
+                                                <!-- 曲师和谱师信息 -->
                                                 <TextBlock helpers:TextBlockHelper.HighlightText="{Binding SubInfo}" 
                                                            helpers:TextBlockHelper.SearchText="{Binding SearchText}" 
                                                            FontSize="11" 
                                                            Foreground="{DynamicResource ThemeTextSubBrush}" 
-                                                           TextWrapping="NoWrap" 
+                                                           TextWrapping="Wrap" 
                                                            TextTrimming="CharacterEllipsis"
-                                                           Height="16"
                                                            ToolTip.Tip="{Binding SubInfo}"/>
 
                                                 <!-- BPM & 难度标签 -->

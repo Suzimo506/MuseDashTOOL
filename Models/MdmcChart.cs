@@ -152,7 +152,7 @@ public partial class MdmcChart : ObservableObject
             var parts = new List<string>();
             if (!string.IsNullOrEmpty(Artist))  parts.Add($"曲：{Artist}");
             if (!string.IsNullOrEmpty(Charter)) parts.Add($"谱：{Charter}");
-            return string.Join("  ", parts);
+            return string.Join("\n", parts);
         }
     }
 

@@ -241,13 +241,12 @@
                                     <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
                                         <controls:MarqueeText Text="{Binding Title}" HighlightText="{Binding Title}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" IsScrollingEnabled="{Binding $parent[UserControl].((vm:CommunityCategoryDetailViewModel)DataContext).EnableMarquee}" ToolTip.Tip="{Binding Title}"/>
                                         
-                                        <!-- 曲师 & 谱师信息 (强制单行) -->
+                                        <!-- 曲师和谱师信息 -->
                                         <TextBlock Text="{Binding SubInfo}" 
                                                    FontSize="11" 
                                                    Foreground="{DynamicResource ThemeTextSubBrush}" 
                                                    TextWrapping="NoWrap" 
                                                    TextTrimming="CharacterEllipsis"
-                                                   Height="16"
                                                    ToolTip.Tip="{Binding SubInfo}"/>
 
                                         <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">

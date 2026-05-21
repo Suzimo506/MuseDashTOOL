@@ -68,6 +68,29 @@ public partial class App : Application
                 deepLinkService.HandleStartupArgs(desktop.Args);
             }
 
+            var telemetryService = Ioc.Default.GetRequiredService<ITelemetryService>();
+            // 启动时后台上报遥测会话
+            _ = telemetryService.TrackSessionAsync();
+
+            // 监听登录状态变化以自动绑定账号
+            var authState = Ioc.Default.GetRequiredService<AuthState>();
+            authState.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(AuthState.CurrentUser))
+                {
+                    if (authState.CurrentUser != null)
+                    {
+                        _ = telemetryService.BindVanillaAccountAsync();
+                    }
+                }
+            };
+
+            // 如果已经登录则直接尝试绑定一次
+            if (authState.CurrentUser != null)
+            {
+                _ = telemetryService.BindVanillaAccountAsync();
+            }
+
 
             var updateService = Ioc.Default.GetService<IUpdateService>();
 
@@ -143,6 +166,7 @@ public partial class App : Application
         services.AddSingleton<AuthState>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<DeepLinkService>();
+        services.AddSingleton<ITelemetryService, TelemetryService>();
 
         Ioc.Default.ConfigureServices(services.BuildServiceProvider());
     }

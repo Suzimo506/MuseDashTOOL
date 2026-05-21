@@ -189,7 +189,7 @@
                                                Foreground="{DynamicResource ThemeTextSubBrush}" 
                                                TextWrapping="NoWrap" 
                                                TextTrimming="CharacterEllipsis"
-                                               Height="16"
+
                                                HorizontalAlignment="Center"
                                                ToolTip.Tip="{Binding SubInfo}"/>
 
