@@ -271,15 +271,6 @@
                               Foreground="{DynamicResource SvgIconBrush}" 
                               Width="22" Height="22"/>
                 </Button>
-
-                <!-- 下载列表入口按钮 -->
-                <Button Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).NavigateToDownloadManagerCommand}"
-                        Theme="{StaticResource RobustPlainIconBtn}"
-                        ToolTip.Tip="下载列表">
-                    <PathIcon Data="M392 160h-304C75.2 160 64 148.8 64 136S75.2 112 88 112h304c12.8 0 24 11.2 24 24s-11.2 24-24 24zM360 411.2h-272c-12.8 0-24-11.2-24-24s11.2-24 24-24h272c12.8 0 24 11.2 24 24s-11.2 24-24 24zM488 660.8h-400c-12.8 0-24-11.2-24-24s11.2-24 24-24h400c12.8 0 24 11.2 24 24 0 14.4-11.2 24-24 24zM936 912h-848c-12.8 0-24-11.2-24-24S75.2 864 88 864h848c12.8 0 24 11.2 24 24s-11.2 24-24 24zM945.6 446.4c-9.6-9.6-24-9.6-33.6 0l-128 128V136c0-12.8-11.2-24-24-24S736 123.2 736 136v438.4L609.6 448c-9.6-9.6-24-9.6-33.6 0-9.6 9.6-9.6 24 0 33.6l168 168c1.6 1.6 4.8 3.2 8 4.8 3.2 1.6 6.4 1.6 8 1.6s6.4 0 8-1.6c3.2-1.6 6.4-3.2 8-4.8L944 481.6c9.6-9.6 9.6-25.6 1.6-35.2z" 
-                              Foreground="{DynamicResource SvgIconBrush}" 
-                              Width="22" Height="22"/>
-                </Button>
             </StackPanel>
             
             <!-- 搜索框 (样式同步自谱面下载界面) -->
@@ -376,7 +367,7 @@
                         <ItemsControl ItemsSource="{Binding SearchResults}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <UniformGrid Columns="4" HorizontalAlignment="Stretch"/>
+                                    <UniformGrid Columns="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ChartGridColumns}" HorizontalAlignment="Stretch"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>

@@ -50,6 +50,23 @@ public partial class MainWindowViewModel : ObservableObject
     private Avalonia.Media.IBrush _sidebarBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1E1E1E"));
 
     [ObservableProperty]
+    private Avalonia.Media.IBrush _floatingPanelBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1A1A1A"));
+
+    [ObservableProperty]
+    private Avalonia.Media.IBrush _floatingPanelBorder = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#333333"));
+
+    // 动态列数折叠时5展开时4
+    public int ChartGridColumns => IsSidebarExpanded ? 4 : 5;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SidebarWidth))]
+    [NotifyPropertyChangedFor(nameof(ChartGridColumns))]
+    private bool _isSidebarExpanded = true;
+
+    // 侧栏宽度展开时220折叠时60
+    public Avalonia.Controls.GridLength SidebarWidth => IsSidebarExpanded ? new Avalonia.Controls.GridLength(220) : new Avalonia.Controls.GridLength(60);
+
+    [ObservableProperty]
     private Avalonia.Media.IBrush _contentBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1E1E1E"));
 
     [ObservableProperty]
@@ -145,6 +162,7 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task NavigateToConfigWithFileAsync(string filePath)
     {
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         var vm = Ioc.Default.GetRequiredService<ConfigManagerViewModel>();
         vm.PreSelectedFilePath = filePath;
@@ -314,79 +332,82 @@ public partial class MainWindowViewModel : ObservableObject
         {
             if (isLightTheme)
             {
-                // ── 浅色主题 ──
-                WindowBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFFFFF"));
-                SidebarBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#EFEFEF"));
+                WindowBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFF6F9"));
+                SidebarBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFEBF3"));
                 ContentBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFFFFF"));
-                ThemeTextMainBrush = rightMainBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#202020"));
-                ThemeTextSubBrush = rightSubBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#505050"));
-                ThemeTextTertiaryBrush = rightTertiaryBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#808080"));
+                ThemeTextMainBrush = rightMainBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#4C1D36"));
+                ThemeTextSubBrush = rightSubBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8C5874"));
+                ThemeTextTertiaryBrush = rightTertiaryBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#BD91A9"));
+                FloatingPanelBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFFFFF"));
+                FloatingPanelBorder = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFEBF3"));
             }
             else
             {
-                // ── 深色主题 ──
-                WindowBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1E1E1E"));
-                SidebarBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1E1E1E"));
-                ContentBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1E1E1E"));
-                ThemeTextMainBrush = rightMainBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#E0E0E0"));
-                ThemeTextSubBrush = rightSubBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#A0A0A0"));
-                ThemeTextTertiaryBrush = rightTertiaryBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#606060"));
+                WindowBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#181115"));
+                SidebarBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#20151C"));
+                ContentBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#261A22"));
+                ThemeTextMainBrush = rightMainBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFE6F1"));
+                ThemeTextSubBrush = rightSubBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#CDA0B7"));
+                ThemeTextTertiaryBrush = rightTertiaryBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8F697C"));
+                FloatingPanelBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#241820"));
+                FloatingPanelBorder = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3D2131"));
             }
         }
         else
         {
-            // 有背景图，或者启用了全透明/云母/亚克力效果时：
             WindowBackground = Avalonia.Media.Brushes.Transparent;
             SidebarBackground = Avalonia.Media.Brushes.Transparent;
             ContentBackground = Avalonia.Media.Brushes.Transparent;
 
             if (isLightTheme && CustomBackgroundBitmap == null)
             {
-                ThemeTextMainBrush = rightMainBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#202020"));
-                ThemeTextSubBrush = rightSubBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#505050"));
-                ThemeTextTertiaryBrush = rightTertiaryBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#808080"));
+                ThemeTextMainBrush = rightMainBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#4C1D36"));
+                ThemeTextSubBrush = rightSubBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8C5874"));
+                ThemeTextTertiaryBrush = rightTertiaryBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#BD91A9"));
+                FloatingPanelBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFFFFF"));
+                FloatingPanelBorder = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFEBF3"));
             }
             else
             {
-                ThemeTextMainBrush = rightMainBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#E0E0E0"));
-                ThemeTextSubBrush = rightSubBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#A0A0A0"));
-                ThemeTextTertiaryBrush = rightTertiaryBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#606060"));
+                ThemeTextMainBrush = rightMainBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFE6F1"));
+                ThemeTextSubBrush = rightSubBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#CDA0B7"));
+                ThemeTextTertiaryBrush = rightTertiaryBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8F697C"));
+                FloatingPanelBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#241820"));
+                FloatingPanelBorder = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3D2131"));
             }
         }
 
-        NavButtonMainBrush = customBrush ?? (isLightTheme && CustomBackgroundBitmap == null ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#202020")) : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#E0E0E0")));
-        NavButtonSubBrush = customSubBrush ?? (isLightTheme && CustomBackgroundBitmap == null ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#505050")) : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#A0A0A0")));
+        NavButtonMainBrush = customBrush ?? (isLightTheme && CustomBackgroundBitmap == null ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#4C1D36")) : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFE6F1")));
+        NavButtonSubBrush = customSubBrush ?? (isLightTheme && CustomBackgroundBitmap == null ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8C5874")) : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#CDA0B7")));
 
         Avalonia.Media.IBrush cardBg, cardHoverBg, modCardBg, controlBg, controlHoverBg, controlPressedBg;
         if (IsNormalTheme)
         {
             if (isLightTheme)
             {
-                cardBg       = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#DFDFDF"));
-                cardHoverBg  = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#D5D5D5"));
-                modCardBg    = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#E2E2E2"));
-                controlBg    = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#E5E5E5"));
-                controlHoverBg   = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#DADADA"));
-                controlPressedBg = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#CFCFCF"));
+                cardBg       = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFFFFF"));
+                cardHoverBg  = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFF0F6"));
+                modCardBg    = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFF8FA"));
+                controlBg    = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFF2F7"));
+                controlHoverBg   = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FCDAE8"));
+                controlPressedBg = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#F9B3D3"));
             }
             else
             {
-                cardBg       = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#242424"));
-                cardHoverBg  = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2A2A2A"));
-                modCardBg    = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2D2D30"));
-                controlBg    = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2a2a2a"));
-                controlHoverBg   = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3a3a3a"));
-                controlPressedBg = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#4a4a4a"));
+                cardBg       = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2D1E28"));
+                cardHoverBg  = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#382633"));
+                modCardBg    = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#231820"));
+                controlBg    = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#20161D"));
+                controlHoverBg   = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2C1E28"));
+                controlPressedBg = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3B2835"));
             }
         }
         else
         {
-            // 完全透明背景 — 不分主题
             cardBg           = Avalonia.Media.Brushes.Transparent;
             cardHoverBg      = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1AFFFFFF"));
             modCardBg        = Avalonia.Media.Brushes.Transparent;
             
-            // 独立于主题的透明设置面板背景画刷
             Avalonia.Application.Current?.Resources.Remove("SettingsCardBgBrush");
             Avalonia.Application.Current?.Resources.Add("SettingsCardBgBrush", Avalonia.Media.Brushes.Transparent);
 
@@ -401,8 +422,8 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 Avalonia.Application.Current.Resources.Remove("SettingsCardBgBrush");
                 Avalonia.Application.Current.Resources.Add("SettingsCardBgBrush", 
-                    isLightTheme ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#EAEAEA")) 
-                                 : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#18FFFFFF")));
+                    isLightTheme ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFFDFE")) 
+                                 : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2D232C")));
             }
             Avalonia.Application.Current.Resources["ThemeTextMainBrush"] = ThemeTextMainBrush;
             Avalonia.Application.Current.Resources["ThemeTextSubBrush"]  = ThemeTextSubBrush;
@@ -718,6 +739,7 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task NavigateToSettingsAsync()
     {
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         var vm = Ioc.Default.GetRequiredService<SettingsViewModel>();
         CurrentPage = vm;
@@ -729,6 +751,7 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task NavigateToAccountAsync()
     {
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         var vm = Ioc.Default.GetRequiredService<AccountViewModel>();
         CurrentPage = vm;
@@ -739,6 +762,7 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task NavigateToMelonLoaderAsync()
     {
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         var vm = Ioc.Default.GetRequiredService<MelonLoaderViewModel>();
         CurrentPage = vm;
@@ -793,6 +817,7 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task NavigateToModManagerAsync()
     {
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         var vm = Ioc.Default.GetRequiredService<ModManagerViewModel>();
         CurrentPage = vm;
@@ -803,6 +828,7 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task NavigateToConfigManagerAsync()
     {
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         System.Console.WriteLine("[调试] 正在导航至配置管理器...");
         var vm = Ioc.Default.GetRequiredService<ConfigManagerViewModel>();
@@ -817,6 +843,7 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task NavigateToChartManagerAsync()
     {
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         var vm = Ioc.Default.GetRequiredService<ChartManagerViewModel>();
         CurrentPage = vm;
@@ -826,8 +853,8 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task NavigateToChartDownloadAsync()
     {
-        IsChartDownloadMenuExpanded = true;
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = true;
 
         var vm = Ioc.Default.GetRequiredService<ChartDownloadViewModel>();
         CurrentPage = vm;
@@ -838,6 +865,7 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task NavigateToChartUploadAsync()
     {
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         var vm = Ioc.Default.GetRequiredService<ChartUploadViewModel>();
         CurrentPage = vm;
@@ -848,6 +876,7 @@ public partial class MainWindowViewModel : ObservableObject
     public async Task NavigateToTutorialAsync()
     {
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         var vm = Ioc.Default.GetRequiredService<TutorialViewModel>();
         CurrentPage = vm;
@@ -865,6 +894,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         var prevPageTypeName = CurrentPage?.GetType().Name;
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = true; // 保持谱面下载菜单展开
 
         var vm = Ioc.Default.GetRequiredService<DownloadManagerViewModel>();
         vm.PreviousPageType = prevPageTypeName;
@@ -892,8 +922,8 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task NavigateToAlbumCollectionAsync()
     {
-        IsChartDownloadMenuExpanded = true;
         CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = true;
 
 
         var vm = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
@@ -982,6 +1012,13 @@ public partial class MainWindowViewModel : ObservableObject
     private void CloseAnnouncement()
     {
         ShowNextAnnouncement();
+    }
+
+    [RelayCommand]
+    private void ToggleSidebar()
+    {
+        // 切换侧边栏展开与折叠状态
+        IsSidebarExpanded = !IsSidebarExpanded;
     }
 
     [RelayCommand]

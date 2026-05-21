@@ -22,7 +22,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            CornerRadius="6"
+                            CornerRadius="10"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter Content="{TemplateBinding Content}"
                                           HorizontalAlignment="Center"
@@ -77,19 +77,8 @@
 
     <Grid RowDefinitions="Auto,*">
         <!-- 头部 -->
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,20">
-            <!-- 返回按钮 -->
-            <Button Grid.Column="0"
-                    Command="{Binding GoBackCommand}"
-                    Theme="{StaticResource SmallRoundBtn}"
-                    ToolTip.Tip="返回上一级">
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
-                          Fill="{DynamicResource SvgIconBrush}" Stretch="Uniform" Width="22" Height="22" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
-
-            <StackPanel Grid.Column="1" Spacing="4" Margin="10,0,0,0" VerticalAlignment="Center">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0" VerticalAlignment="Center">
                 <TextBlock Text="下载列表" FontSize="22" FontWeight="Bold">
                     <TextBlock.Foreground>
                         <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
@@ -101,7 +90,7 @@
                 <TextBlock Text="管理正在下载的谱面" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}"/>
             </StackPanel>
 
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                 <Button Theme="{StaticResource RobustIconBtn}"
                         Width="36"
                         Height="36"
@@ -143,10 +132,10 @@
             <ItemsControl ItemsSource="{Binding Tasks}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="models:DownloadTaskItem">
-                        <Border Background="{DynamicResource CardBgBrush}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+                        <Border Background="{DynamicResource CardBgBrush}" CornerRadius="16" Padding="15" Margin="0,0,0,10">
                             <Grid ColumnDefinitions="Auto, *, Auto, Auto" RowDefinitions="Auto, Auto">
                                 <!-- 封面图 -->
-                                <Border Grid.RowSpan="2" Grid.Column="0" Width="40" Height="40" Background="#333333" CornerRadius="4" Margin="0,0,15,0" ClipToBounds="True">
+                                <Border Grid.RowSpan="2" Grid.Column="0" Width="40" Height="40" Background="#333333" CornerRadius="10" Margin="0,0,15,0" ClipToBounds="True">
                                     <Panel>
                                         <TextBlock Text="🎵" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" Foreground="#555555" IsVisible="{Binding !Chart.HasDisplayCoverSource}"/>
                                         <Image IsVisible="{Binding Chart.HasAnimatedDisplayCoverSource}" Stretch="UniformToFill" animated:ImageBehavior.AnimatedSource="{Binding Chart.AnimatedDisplayCoverSource}"/>
@@ -159,7 +148,7 @@
                                 
                                 <!-- 进度条 -->
                                 <ProgressBar Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding Progress}" 
-                                             Foreground="{DynamicResource SvgIconBrush}" Background="#333333" Height="6" Margin="0,8,15,0" VerticalAlignment="Top"/>
+                                             Foreground="{DynamicResource SvgIconBrush}" Background="#333333" Height="6" CornerRadius="3" Margin="0,8,15,0" VerticalAlignment="Top"/>
                                 
                                 <!-- 状态和大小 -->
                                 <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" VerticalAlignment="Center" Margin="0,0,20,0" Width="120">

@@ -25,11 +25,12 @@ public partial class AlbumDetailView : UserControl
 
     private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(AlbumDetailViewModel.RequestedScrollY))
+        if (e.PropertyName == nameof(AlbumDetailViewModel.RequestedScrollY) ||
+            e.PropertyName == nameof(AlbumDetailViewModel.CurrentPage))
         {
             var sv = this.FindControl<ScrollViewer>("ChartScrollViewer");
             if (sv != null)
-                sv.Offset = new Avalonia.Vector(0, 0);
+                sv.Offset = new Avalonia.Vector(sv.Offset.X, 0); // 翻页后重置滚动位置
         }
     }
 

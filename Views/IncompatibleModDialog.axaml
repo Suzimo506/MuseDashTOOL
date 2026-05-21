@@ -5,8 +5,8 @@
         Width="480" Height="220"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
-        Background="#1E1E1E"
-        Foreground="White">
+        Background="{DynamicResource CardBgBrush}"
+        Foreground="{DynamicResource ThemeTextMainBrush}">
 
     <Grid RowDefinitions="*, Auto" Margin="24">
 
@@ -15,7 +15,7 @@
                    Text="该 mod 根据版本号判断不兼容，但并不一定完全不可用，如果下载使用可能会造成游戏无法打开、影响其他 mod 功能等问题，确定下载使用吗？"
                    TextWrapping="Wrap"
                    FontSize="14"
-                   Foreground="#E0E0E0"
+                   Foreground="{DynamicResource ThemeTextMainBrush}"
                    VerticalAlignment="Center"/>
 
         <!-- 底部按钮区 -->
@@ -25,7 +25,8 @@
             <CheckBox Grid.Column="0"
                       x:Name="DontShowAgainCheckBox"
                       Content="不再显示此提示"
-                      Foreground="Gray"
+                      Foreground="{DynamicResource ThemeTextSubBrush}"
+                      CornerRadius="6"
                       FontSize="13"/>
 
             <!-- 右下角：取消 / 确认 -->
@@ -33,14 +34,16 @@
                     Content="取消"
                     Width="80"
                     HorizontalContentAlignment="Center"
-                    Background="#333333" Foreground="White"
+                    Background="{DynamicResource ControlBgBrush}" Foreground="{DynamicResource ThemeTextMainBrush}"
+                    CornerRadius="10"
                     Click="OnCancelClick"/>
 
             <Button Grid.Column="4"
                     Content="确认"
                     Width="90"
                     HorizontalContentAlignment="Center"
-                    Background="#FF00FF" Foreground="White"
+                    Background="{DynamicResource ThemeAccentBrush}" Foreground="White"
+                    CornerRadius="10"
                     Click="OnConfirmClick"/>
         </Grid>
     </Grid>

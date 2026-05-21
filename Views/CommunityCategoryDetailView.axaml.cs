@@ -27,11 +27,12 @@ public partial class CommunityCategoryDetailView : UserControl
 
     private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(CommunityCategoryDetailViewModel.RequestedScrollY))
+        if (e.PropertyName == nameof(CommunityCategoryDetailViewModel.RequestedScrollY) ||
+            e.PropertyName == nameof(CommunityCategoryDetailViewModel.CurrentPage))
         {
             var sv = this.FindControl<ScrollViewer>("ChartScrollViewer");
             if (sv != null)
-                sv.Offset = new Avalonia.Vector(0, 0);
+                sv.Offset = new Avalonia.Vector(sv.Offset.X, 0); // 翻页后重置滚动位置
         }
     }
 

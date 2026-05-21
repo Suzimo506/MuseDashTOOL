@@ -28,14 +28,34 @@ public partial class AlbumCollectionView : UserControl
                             var sv = this.FindControl<ScrollViewer>("AlbumScrollViewer");
                             if (sv != null)
                             {
-                                var searchAnchor = this.FindControl<Control>("SearchResultsAnchor");
-                                var y = searchAnchor != null && vm.HasSearchResults
-                                    ? Math.Max(0, searchAnchor.Bounds.Y)
-                                    : requestedScrollY;
-                                sv.Offset = new Avalonia.Vector(sv.Offset.X, y);
+                                sv.Offset = new Avalonia.Vector(sv.Offset.X, requestedScrollY); // 重置滚动位置到最上方
                             }
                         }, Avalonia.Threading.DispatcherPriority.Background);
                         vm.RequestedSearchScrollY = null;
+                    }
+
+                    if (args.PropertyName == nameof(AlbumCollectionViewModel.SearchText))
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            var sv = this.FindControl<ScrollViewer>("AlbumScrollViewer");
+                            if (sv != null)
+                            {
+                                sv.Offset = new Avalonia.Vector(sv.Offset.X, 0); // 搜索词变化时重置滚动位置
+                            }
+                        }, Avalonia.Threading.DispatcherPriority.Background);
+                    }
+
+                    if (args.PropertyName == nameof(AlbumCollectionViewModel.CurrentPage))
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            var sv = this.FindControl<ScrollViewer>("AlbumScrollViewer");
+                            if (sv != null)
+                            {
+                                sv.Offset = new Avalonia.Vector(sv.Offset.X, 0); // 翻页后重置滚动位置
+                            }
+                        }, Avalonia.Threading.DispatcherPriority.Background);
                     }
 
                     if (args.PropertyName == nameof(AlbumCollectionViewModel.IsEditingPageNumber) 

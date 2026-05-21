@@ -5,8 +5,8 @@
         Width="400" Height="180"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
-        Background="#1E1E1E"
-        Foreground="White"
+        Background="{DynamicResource CardBgBrush}"
+        Foreground="{DynamicResource ThemeTextMainBrush}"
         SystemDecorations="Full">
 
     <Grid RowDefinitions="Auto, Auto, Auto" Margin="24" VerticalAlignment="Center">
@@ -16,7 +16,7 @@
                    Text="提示信息"
                    TextWrapping="Wrap"
                    FontSize="15"
-                   Foreground="#E0E0E0"
+                   Foreground="{DynamicResource ThemeTextMainBrush}"
                    VerticalAlignment="Center"
                    HorizontalAlignment="Center"
                    TextAlignment="Center"/>
@@ -25,10 +25,10 @@
                 Grid.Row="1"
                 IsVisible="False"
                 Margin="0,16,0,0"
-                CornerRadius="6"
+                CornerRadius="12"
                 ClipToBounds="True"
                 HorizontalAlignment="Center"
-                Background="#111111">
+                Background="{DynamicResource ControlBgBrush}">
             <Image x:Name="MessageImage"
                    Width="480"
                    MaxHeight="260"
@@ -47,8 +47,9 @@
                     Height="32"
                     HorizontalContentAlignment="Center"
                     VerticalContentAlignment="Center"
-                    Background="#333333"
-                    Foreground="White"
+                    Background="{DynamicResource ControlBgBrush}"
+                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                    CornerRadius="10"
                     IsVisible="False"
                     Click="OnCancelClick"/>
             <Button x:Name="ConfirmButton"
@@ -59,6 +60,7 @@
                     VerticalContentAlignment="Center"
                     Background="{DynamicResource ThemeAccentBrush}"
                     Foreground="White"
+                    CornerRadius="10"
                     Click="OnConfirmClick"/>
         </StackPanel>
     </Grid>

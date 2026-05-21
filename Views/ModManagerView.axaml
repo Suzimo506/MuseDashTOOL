@@ -44,13 +44,13 @@
     <UserControl.Styles>
         <Style Selector="Button.TabBtn">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextMainBrush}"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextSubBrush}"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <!-- Add RenderTransform to allow scaling -->
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="RenderTransform" Value="scale(1.0)"/>
             <Setter Property="Transitions">
                 <Transitions>
@@ -59,10 +59,10 @@
             </Setter>
         </Style>
         <Style Selector="Button.TabBtn:pointerover">
-            <Setter Property="RenderTransform" Value="scale(1.3)"/>
+            <Setter Property="RenderTransform" Value="scale(1.04)"/>
         </Style>
         <Style Selector="Button.TabBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="{DynamicResource NavHoverBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextMainBrush}"/>
         </Style>
         <Style Selector="Button.TabBtn:focus /template/ ContentPresenter#PART_ContentPresenter">
@@ -74,14 +74,15 @@
         </Style>
         
         <Style Selector="Button.ActiveTabBtn">
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextMainBrush}"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="RenderTransform" Value="scale(1.3)"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
             <Setter Property="Transitions">
                 <Transitions>
                     <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
@@ -89,7 +90,7 @@
             </Setter>
         </Style>
         <Style Selector="Button.ActiveTabBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextMainBrush}"/>
         </Style>
         <Style Selector="Button.ActiveTabBtn:focus /template/ ContentPresenter#PART_ContentPresenter">
@@ -99,12 +100,19 @@
         <Style Selector="Button.ActiveTabBtn:pressed /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="Transparent"/>
         </Style>
-
-
+        <Style Selector="Border.ModToolbarPanel">
+            <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ShellOutlineBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="22"/>
+            <Setter Property="BoxShadow" Value="0 10 28 0 #18000000"/>
+            <Setter Property="Padding" Value="18,16"/>
+        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,20">
+        <Border Grid.Row="0" Classes="ModToolbarPanel" Margin="0,0,0,20">
+        <Grid ColumnDefinitions="Auto,*,Auto">
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
                 <Button Content="本地" Command="{Binding SelectLocalTabCommand}"
                         Classes.ActiveTabBtn="{Binding IsLocalTabSelected}"
@@ -116,7 +124,7 @@
                     <Panel>
                         <TextBlock Text="更新" VerticalAlignment="Center"
                                    IsVisible="{Binding ShowUpdateBadge}"
-                                   FontWeight="Bold" Foreground="#FF00FF"/>
+                                   FontWeight="Bold" Foreground="{DynamicResource ThemeAccentBrush}"/>
                         <TextBlock Text="更新" VerticalAlignment="Center"
                                    IsVisible="{Binding !ShowUpdateBadge}"/>
                     </Panel>
@@ -137,20 +145,26 @@
                               Data="M805.651749 170.130286a37.668571 37.668571 0 0 1 32.694857 17.92 430.811429 430.811429 0 0 1 61.732571 212.626285l0.146286 11.483429v282.989714l111.323428 93.915429c25.380571 21.430857 11.190857 61.44-21.138285 64.146286l-3.364572 0.146285H717.36832C693.084891 951.149714 611.311177 1024 512.56832 1024c-98.742857 0-180.443429-72.850286-204.8-170.642286H188.033463a37.083429 37.083429 0 0 1-37.376-34.816 36.864 36.864 0 0 1 33.792-38.180571l3.584-0.146286h698.368l-48.128-40.667428a37.083429 37.083429 0 0 1-12.8-24.137143l-0.219429-3.510857V412.16c0-67.437714-18.066286-131.876571-51.419428-186.806857a35.84 35.84 0 0 1-0.438857-36.571429 37.595429 37.595429 0 0 1 32.256-18.651428z m-166.253715 683.154285l-253.513143 0.073143C406.730606 910.994286 456.24832 950.857143 512.56832 950.857143c56.32 0 105.910857-39.862857 126.756571-97.499429zM837.322606 33.938286c14.774857 13.019429 16.530286 35.108571 4.022857 50.176l-2.633143 2.779428L64.714606 842.605714a38.107429 38.107429 0 0 1-51.785143 1.462857 35.986286 35.986286 0 0 1-3.803429-50.395428l2.56-2.779429L785.756891 35.108571a38.180571 38.180571 0 0 1 51.565715-1.243428zM514.762606 0c58.221714 0 114.688 13.897143 166.034285 40.155429a36.132571 36.132571 0 0 1 15.067429 48.932571 37.888 37.888 0 0 1-49.737143 15.798857A287.451429 287.451429 0 0 0 514.689463 73.142857c-168.228571 0-306.541714 146.724571-310.491429 330.971429l-0.073143 8.045714v140.361143a36.937143 36.937143 0 0 1-35.693714 36.571428 37.156571 37.156571 0 0 1-39.058286-33.060571l-0.146285-3.510857V412.16C129.226606 185.270857 300.892891 0 514.689463 0z"/>
                 </Button>
             </StackPanel>
-            
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="15" HorizontalAlignment="Right" VerticalAlignment="Center">
+
+            <Border Grid.Column="2"
+                    Background="{DynamicResource ControlBgBrush}"
+                    BorderBrush="{DynamicResource ShellOutlineBrush}"
+                    BorderThickness="1"
+                    CornerRadius="18"
+                    Padding="8,6">
+            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <!-- 搜索框 -->
                 <TextBox Text="{Binding SearchText}" 
                          Classes="ExpandableSearch"
                          Classes.HasText="{Binding SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                         Margin="0,0,10,0"
+                         Margin="0,0,6,0"
                          MinWidth="0"
                          ContextFlyout="{x:Null}">
                     <!-- 根据展开状态动态设置 Watermark -->
                     <TextBox.Styles>
                         <!-- 默认无水印 / 展开时的宽度与平滑过渡 -->
                         <Style Selector="TextBox.ExpandableSearch">
-                            <Setter Property="Width" Value="280" />
+                            <Setter Property="Width" Value="300" />
                             <Setter Property="Transitions">
                                 <Transitions>
                                     <DoubleTransition Property="Width" Duration="0:0:0.3" Easing="CubicEaseOut" />
@@ -163,7 +177,7 @@
                         </Style>
                         <!-- 收起状态（未获取焦点且搜索框无文本时） -->
                         <Style Selector="TextBox.ExpandableSearch:not(:focus):not(.HasText)">
-                            <Setter Property="Width" Value="32" />
+                            <Setter Property="Width" Value="36" />
                             <Setter Property="Padding" Value="0" />
                             <Setter Property="Background" Value="Transparent" />
                             <Setter Property="BorderThickness" Value="0" />
@@ -210,7 +224,9 @@
                               Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
                 </Button>
             </StackPanel>
+            </Border>
         </Grid>
+        </Border>
 
         <!-- 用外层 DockPanel 包裹：Button 固定在最下方，剩余空间用 Grid 包裹 -->
         <DockPanel Grid.Row="1">
@@ -249,7 +265,13 @@
                     <ItemsControl ItemsSource="{Binding Mods}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="models:LocalMod">
-                            <Border Background="{DynamicResource ModCardBgBrush}" CornerRadius="5" Padding="15" Margin="0,0,0,10">
+                            <Border Background="{DynamicResource ModCardBgBrush}"
+                                    BorderBrush="{DynamicResource ShellOutlineBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="18"
+                                    Padding="18"
+                                    Margin="0,0,0,14"
+                                    BoxShadow="0 8 24 0 #14000000">
                                 <StackPanel>
                                     <Button Command="{Binding ToggleExpandCommand}"
                                             Background="Transparent"
@@ -294,11 +316,11 @@
                                                 </StackPanel>
                                                 <TextBlock Text="已禁用" IsVisible="{Binding IsDisabled}" Foreground="Red" Margin="0,5,0,0"/>
                                                 <!-- 本地/更新列表：有更新时显示远端版本号 -->
-                                                <TextBlock Text="{Binding UpdateAvailableText}" IsVisible="{Binding HasUpdate}" Foreground="#FF00FF" Margin="0,5,0,0"/>
+                                                <TextBlock Text="{Binding UpdateAvailableText}" IsVisible="{Binding HasUpdate}" Foreground="{DynamicResource ThemeAccentBrush}" Margin="0,5,0,0"/>
                                                 <!-- 下载列表：已安装且无更新 → 最新版本 -->
-                                                <TextBlock Text="最新版本" IsVisible="{Binding DownloadListIsUpToDate}" Foreground="#4EC94E" Margin="0,5,0,0"/>
+                                                <TextBlock Text="最新版本" IsVisible="{Binding DownloadListIsUpToDate}" Foreground="{DynamicResource SoftSuccessBrush}" Margin="0,5,0,0"/>
                                                 <!-- 下载列表：已安装但有更新 → 有更新可用（下载列表不显示版本号，只提示） -->
-                                                <TextBlock Text="有更新可用" IsVisible="{Binding DownloadListHasUpdate}" Foreground="#FF00FF" Margin="0,5,0,0"/>
+                                                <TextBlock Text="有更新可用" IsVisible="{Binding DownloadListHasUpdate}" Foreground="{DynamicResource ThemeAccentBrush}" Margin="0,5,0,0"/>
                                                 <!-- 下载列表：未安装（仅在下载Tab且未安装时显示，本地/更新列表不会出现） -->
                                                 <TextBlock Text="未安装" IsVisible="{Binding ShowNotInstalledBadge}" Foreground="{DynamicResource ThemeTextTertiaryBrush}" Margin="0,5,0,0"/>
                                                 <!-- 占位：不兼容（逻辑待实现） -->

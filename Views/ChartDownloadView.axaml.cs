@@ -17,7 +17,7 @@ public partial class ChartDownloadView : UserControl
             scrollViewer.ScrollChanged += OnScrollChanged;
         }
 
-        // 监听 ViewModel 的属性变化，处理平滑滚动请求
+        // 监听属性变化处理滚动
         this.DataContextChanged += (s, e) =>
         {
             if (DataContext is ChartDownloadViewModel vm)
@@ -34,9 +34,19 @@ public partial class ChartDownloadView : UserControl
                             {
                                 scrollViewer.Offset = new Avalonia.Vector(scrollViewer.Offset.X, y);
                             }
-                        }, Avalonia.Threading.DispatcherPriority.Background); // 使用 Background 优先级确保在布局完成后执行
-                        // 重置请求，防止重复触发
+                        }, Avalonia.Threading.DispatcherPriority.Background); // 在布局完成后执行
+                        // 重置请求防止重复
                         vm.RequestedScrollY = null;
+                    }
+                    if (args.PropertyName == nameof(ChartDownloadViewModel.CurrentPage))
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            if (scrollViewer != null)
+                            {
+                                scrollViewer.Offset = new Avalonia.Vector(scrollViewer.Offset.X, 0); // 翻页后重置滚动位置
+                            }
+                        }, Avalonia.Threading.DispatcherPriority.Background);
                     }
                     if (args.PropertyName == nameof(ChartDownloadViewModel.IsEditingPageNumber) 
                         && vm.IsEditingPageNumber)
@@ -56,19 +66,19 @@ public partial class ChartDownloadView : UserControl
         };
     }
 
-    /// <summary>处理滚动事件 – 到底部时自动加载更多</summary>
+    // 处理滚动事件
     private void OnScrollChanged(object? sender, ScrollChangedEventArgs e)
     {
         if (sender is ScrollViewer scrollViewer && DataContext is ChartDownloadViewModel vm)
         {
-            // 传给 VM 进行内存管理
+            // 内存管理
             vm.UpdateScrollPosition(scrollViewer.Offset.Y);
 
-            // 翻页模式下不再自动触发加载更多
+            // 翻页不加载更多
         }
     }
 
-    /// <summary>处理排序按钮点击 – 根据 Tag 更新 ViewModel 的 SelectedSortIndex</summary>
+    // 处理排序按钮点击
     private void OnSortClick(object? sender, RoutedEventArgs e)
     {
         if (sender is Button btn
@@ -135,7 +145,7 @@ public partial class ChartDownloadView : UserControl
     {
         if (DataContext is ChartDownloadViewModel vm)
         {
-            // 用户要求失去焦点时直接“达到按回车的效果”
+            // 失去焦点直接跳转
             vm.JumpPageCommand.Execute(null);
         }
     }

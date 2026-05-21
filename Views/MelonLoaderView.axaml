@@ -70,7 +70,7 @@
                                   Foreground="{DynamicResource SvgIconBrush}"
                                   Background="#333333"
                                   ShowProgressText="True"
-                                  Height="32" Width="120" CornerRadius="4" 
+                                  Height="32" Width="120" CornerRadius="10" 
                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Panel>
 

@@ -8,51 +8,101 @@
         <local:ViewLocator/>
     </Application.DataTemplates>
   
+    <Application.Resources>
+        <ColorPaletteResources x:Key="Dark" Accent="#d4237a" RegionColor="#1E1E1E" ErrorText="Red" />
+
+        <SolidColorBrush x:Key="ThemeTextMainBrush" Color="#F6EEF3"/>
+        <SolidColorBrush x:Key="ThemeTextSubBrush" Color="#C8B7C1"/>
+        <SolidColorBrush x:Key="ThemeTextTertiaryBrush" Color="#8D7886"/>
+        <SolidColorBrush x:Key="ThemeAccentBrush" Color="#F25D9C"/>
+        <SolidColorBrush x:Key="ThemeAccentBrushPointerOver" Color="#FF7DB2"/>
+        <SolidColorBrush x:Key="ThemeAccentBrushPressed" Color="#D94B87"/>
+        <SolidColorBrush x:Key="SvgIconBrush" Color="#F25D9C"/>
+        <SolidColorBrush x:Key="SvgIconHoverBrush" Color="#FF7DB2"/>
+        <SolidColorBrush x:Key="SvgIconPressedBrush" Color="#D94B87"/>
+        <SolidColorBrush x:Key="ScrollBarThumbFill" Color="#F25D9C"/>
+        <SolidColorBrush x:Key="NavButtonMainBrush" Color="#F2E1E8"/>
+        <SolidColorBrush x:Key="NavButtonSubBrush" Color="#C9B4BF"/>
+        <SolidColorBrush x:Key="CardBgBrush" Color="#241B23"/>
+        <SolidColorBrush x:Key="CardHoverBgBrush" Color="#2C212A"/>
+        <SolidColorBrush x:Key="ModCardBgBrush" Color="#2A2029"/>
+        <SolidColorBrush x:Key="ControlBgBrush" Color="#1E171E"/>
+        <SolidColorBrush x:Key="ControlHoverBgBrush" Color="#2A1F28"/>
+        <SolidColorBrush x:Key="ControlPressedBgBrush" Color="#372734"/>
+        <SolidColorBrush x:Key="SettingsCardBgBrush" Color="#221A21"/>
+        <SolidColorBrush x:Key="ShellSidebarBrush" Color="#1B151C"/>
+        <SolidColorBrush x:Key="ShellContentBrush" Color="#161118"/>
+        <SolidColorBrush x:Key="ShellOutlineBrush" Color="#3B2A36"/>
+        <SolidColorBrush x:Key="ShellDividerBrush" Color="#2A1F28"/>
+        <SolidColorBrush x:Key="NavHoverBrush" Color="#1FF25D9C"/>
+        <SolidColorBrush x:Key="NavPressedBrush" Color="#30F25D9C"/>
+        <SolidColorBrush x:Key="AccentSoftBrush" Color="#22F25D9C"/>
+        <SolidColorBrush x:Key="ControlBorderBrush" Color="#4A3442"/>
+        <SolidColorBrush x:Key="SoftSuccessBrush" Color="#7ED9AE"/>
+        <SolidColorBrush x:Key="SoftDangerBrush" Color="#FF8BA7"/>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
-        <!-- 全局移除 TextBox 聚焦时的蓝色边框与阴影 -->
-        <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeTextTertiaryBrush}" />
+
+        <!-- 全局按钮默认圆角 -->
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+
+        <!-- 全局下拉框默认圆角 -->
+        <Style Selector="ComboBox">
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+
+        <!-- 全局复选框默认圆角 -->
+        <Style Selector="CheckBox">
+            <Setter Property="CornerRadius" Value="4" />
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{DynamicResource ControlBgBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="FocusAdorner" Value="{x:Null}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource SvgIconBrush}" />
+        </Style>
+        <Style Selector="TextBox /template/ Border#PART_BorderElement">
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Background" Value="{TemplateBinding Background}" />
         </Style>
         <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeTextSubBrush}" />
         </Style>
-        <Style Selector="TextBox">
-            <Setter Property="FocusAdorner" Value="{x:Null}" />
-            <Setter Property="SelectionBrush" Value="{DynamicResource SvgIconBrush}" />
+        <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}" />
+            <Setter Property="BorderThickness" Value="1.2" />
         </Style>
 
-        <!-- 修复滚动条残留线问题：激进清理方案 -->
         <Style Selector="ScrollBar">
             <Setter Property="UseLayoutRounding" Value="True" />
             <Setter Property="Background" Value="#01000000" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Transitions" Value="{x:Null}" />
         </Style>
-        <!-- 隐藏滚动条两端的箭头按钮 -->
         <Style Selector="ScrollBar /template/ RepeatButton">
             <Setter Property="IsVisible" Value="False" />
         </Style>
-        <!-- 简化滑块模板，避免复杂动画和边框产生的残留虚影 -->
         <Style Selector="ScrollBar /template/ Thumb">
-            <Setter Property="Background" Value="{DynamicResource SvgIconBrush}" />
+            <Setter Property="Background" Value="{DynamicResource ScrollBarThumbFill}" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <Border Background="{TemplateBinding Background}" 
-                            CornerRadius="4" 
-                            Margin="2" 
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="999"
+                            Margin="3"
                             BorderThickness="0" />
                 </ControlTemplate>
             </Setter>
         </Style>
-        <!-- 全局强制裁剪 -->
         <Style Selector="ScrollViewer">
             <Setter Property="ClipToBounds" Value="True" />
         </Style>
     </Application.Styles>
-
-    <Application.Resources>
-        <ColorPaletteResources x:Key="Dark" Accent="#d4237a" RegionColor="#1E1E1E" ErrorText="Red" />
-    </Application.Resources>
 </Application>

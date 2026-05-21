@@ -24,7 +24,7 @@
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="Template">
                 <ControlTemplate>
-                    <Border Name="RootBorder" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                    <Border Name="RootBorder" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" CornerRadius="10" Padding="{TemplateBinding Padding}">
                         <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                 </ControlTemplate>
@@ -75,7 +75,7 @@
             <Setter Property="Foreground" Value="#cccccc"/>
             <Setter Property="BorderBrush" Value="#3a3a3a"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="10,6"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontSize" Value="13"/>
@@ -94,7 +94,7 @@
             <Setter Property="Foreground" Value="#cccccc"/>
             <Setter Property="BorderBrush" Value="#3a3a3a"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="10,6"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontSize" Value="13"/>
@@ -113,9 +113,9 @@
     <Grid RowDefinitions="Auto,Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
 
         <!-- 顶部标题行 (Row 0) -->
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,14">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="0,0,0,14">
             <StackPanel Grid.Column="0" Spacing="4">
-                <TextBlock Text="谱面下载" FontSize="22" FontWeight="Bold">
+                <TextBlock Text="mdmc谱面" FontSize="22" FontWeight="Bold">
                     <TextBlock.Foreground>
                         <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                             <GradientStop Color="#FF00FF" Offset="0"/>
@@ -132,7 +132,7 @@
                     Theme="{StaticResource RobustPlainIconBtn}"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
-                    Margin="0,0,16,0">
+                    Margin="0">
                 <StackPanel Orientation="Horizontal" Spacing="4">
                     <TextBlock Text="该页面所有谱面来自 mdmc.moe" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"/>
                     <TextBlock Text="(点击前往网页可点赞、上传等)" FontSize="11" Foreground="{DynamicResource SvgIconBrush}" Opacity="0.8"/>
@@ -140,17 +140,6 @@
                 <ToolTip.Tip>
                     <TextBlock Text="点击访问 MDMC 官方网站"/>
                 </ToolTip.Tip>
-            </Button>
-
-            <!-- 下载列表入口按钮 -->
-            <Button Grid.Column="2" 
-                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).NavigateToDownloadManagerCommand}"
-                    Theme="{StaticResource RobustPlainIconBtn}"
-                    VerticalAlignment="Center"
-                    ToolTip.Tip="下载列表">
-                <PathIcon Data="M392 160h-304C75.2 160 64 148.8 64 136S75.2 112 88 112h304c12.8 0 24 11.2 24 24s-11.2 24-24 24zM360 411.2h-272c-12.8 0-24-11.2-24-24s11.2-24 24-24h272c12.8 0 24 11.2 24 24s-11.2 24-24 24zM488 660.8h-400c-12.8 0-24-11.2-24-24s11.2-24 24-24h400c12.8 0 24 11.2 24 24 0 14.4-11.2 24-24 24zM936 912h-848c-12.8 0-24-11.2-24-24S75.2 864 88 864h848c12.8 0 24 11.2 24 24s-11.2 24-24 24zM945.6 446.4c-9.6-9.6-24-9.6-33.6 0l-128 128V136c0-12.8-11.2-24-24-24S736 123.2 736 136v438.4L609.6 448c-9.6-9.6-24-9.6-33.6 0-9.6 9.6-9.6 24 0 33.6l168 168c1.6 1.6 4.8 3.2 8 4.8 3.2 1.6 6.4 1.6 8 1.6s6.4 0 8-1.6c3.2-1.6 6.4-3.2 8-4.8L944 481.6c9.6-9.6 9.6-25.6 1.6-35.2z" 
-                          Foreground="{DynamicResource SvgIconBrush}" 
-                          Width="22" Height="22"/>
             </Button>
         </Grid>
 
@@ -163,7 +152,7 @@
             </TextBox>
 
             <!-- 顶部分页栏 (紧凑型，Row1 Col1) -->
-            <Border Grid.Column="1" Background="{DynamicResource CardBgBrush}" Margin="10,0,0,0" Padding="8,4" CornerRadius="8" VerticalAlignment="Center">
+            <Border Grid.Column="1" Background="{DynamicResource CardBgBrush}" Margin="10,0,0,0" Padding="8,4" CornerRadius="12" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="第一页">
                         <PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z" Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
@@ -175,7 +164,7 @@
                         <TextBlock Text="第" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
                         <Panel VerticalAlignment="Center">
                             <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="ExtraBold" FontSize="12" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
-                            <TextBox Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="12" Width="42" Height="22" Padding="2,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" CornerRadius="4" LostFocus="OnPageJumpLostFocus" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}">
+                            <TextBox Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="12" Width="42" Height="22" Padding="2,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" LostFocus="OnPageJumpLostFocus" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}">
                                 <TextBox.KeyBindings><KeyBinding Command="{Binding JumpPageCommand}" Gesture="Enter"/><KeyBinding Command="{Binding CancelEditPageCommand}" Gesture="Escape"/></TextBox.KeyBindings>
                             </TextBox>
                         </Panel>
@@ -198,12 +187,12 @@
                               ToolTip.Tip="只显示已评级谱面">
                     <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
                         <Panel Width="14" Height="14">
-                            <Border CornerRadius="3"
+                            <Border CornerRadius="6"
                                     BorderThickness="1.5"
                                     BorderBrush="{DynamicResource ThemeTextSubBrush}"
                                     Background="Transparent"
                                     IsVisible="{Binding !RankedOnly}"/>
-                            <Border CornerRadius="3"
+                            <Border CornerRadius="6"
                                     BorderThickness="1.5"
                                     BorderBrush="{DynamicResource SvgIconBrush}"
                                     Background="Transparent"
@@ -251,7 +240,7 @@
                         Foreground="{DynamicResource SvgIconBrush}"
                         BorderBrush="{DynamicResource SvgIconBrush}"
                         BorderThickness="1"
-                        CornerRadius="20"
+                        CornerRadius="16"
                         Padding="30,8"
                         HorizontalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -265,10 +254,10 @@
             <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding !IsEmpty}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <Grid RowDefinitions="*,Auto">
                     <ItemsControl ItemsSource="{Binding Charts}" Grid.Row="0">
-                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" HorizontalAlignment="Stretch"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ChartGridColumns}" HorizontalAlignment="Stretch"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="models:MdmcChart">
-                                <Border Classes="Card" Background="{DynamicResource CardBgBrush}" CornerRadius="10" Margin="2,0,2,16" VerticalAlignment="Top" ClipToBounds="True">
+                                <Border Classes="Card" Background="{DynamicResource CardBgBrush}" CornerRadius="10" Margin="8,0,8,16" VerticalAlignment="Top" ClipToBounds="True">
                                     <Grid RowDefinitions="Auto,*">
                                         <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
                                             <Panel>
@@ -276,18 +265,18 @@
                                                 <Image IsVisible="{Binding HasAnimatedDisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" animated:ImageBehavior.AnimatedSource="{Binding AnimatedDisplayCoverSource}" />
                                                 <asyncImageLoader:AdvancedImage Source="{Binding StaticDisplayCoverSource}" IsVisible="{Binding HasStaticDisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0"><TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                                                <Border Background="#cc000000" CornerRadius="4" Padding="6,2" Margin="0,0,6,6" HorizontalAlignment="Right" VerticalAlignment="Bottom"><StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="♥" FontSize="11" Foreground="{DynamicResource SvgIconBrush}" VerticalAlignment="Center"/><TextBlock Text="{Binding LikesCount}" FontSize="11" Foreground="White" VerticalAlignment="Center"/></StackPanel></Border>
-                                                <Border IsVisible="{Binding Ranked}" Background="#cc1a4a1a" CornerRadius="4" Padding="6,2" Margin="6,0,0,6" HorizontalAlignment="Left" VerticalAlignment="Bottom"><TextBlock Text="✓ 评级" FontSize="10" Foreground="#44ff44"/></Border>
+                                                <Border Background="#cc000000" CornerRadius="8" Padding="6,2" Margin="0,0,6,6" HorizontalAlignment="Right" VerticalAlignment="Bottom"><StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="♥" FontSize="11" Foreground="{DynamicResource SvgIconBrush}" VerticalAlignment="Center"/><TextBlock Text="{Binding LikesCount}" FontSize="11" Foreground="White" VerticalAlignment="Center"/></StackPanel></Border>
+                                                <Border IsVisible="{Binding Ranked}" Background="#cc1a4a1a" CornerRadius="8" Padding="6,2" Margin="6,0,0,6" HorizontalAlignment="Left" VerticalAlignment="Bottom"><TextBlock Text="✓ 评级" FontSize="10" Foreground="#44ff44"/></Border>
                                             </Panel>
                                         </Border>
-                                        <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="5">
+                                        <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
                                             <controls:MarqueeText Text="{Binding Title}" HighlightText="{Binding Title}" SearchText="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).SearchText}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" IsScrollingEnabled="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).EnableMarquee}" ToolTip.Tip="{Binding Title}"/>
                                             <TextBlock IsVisible="{Binding SubInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding SubInfo}" helpers:TextBlockHelper.HighlightText="{Binding SubInfo}" helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).SearchText}"/>
                                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
                                                 <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}" IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" VerticalAlignment="Center"/>
                                                 <ItemsControl ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center"><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border Background="#331a3a1a" CornerRadius="3" Padding="4,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
                                             </StackPanel>
-                                            <Grid ColumnDefinitions="*,*" Margin="0,6,0,0">
+                                            <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
                                                 <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="试听 / 停止"><Panel><PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/><PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Panel></Button>
                                                 <Button Grid.Column="1" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="下载到 Custom_Albums"><PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Button>
                                             </Grid>
@@ -299,7 +288,7 @@
                     </ItemsControl>
 
                     <!-- 底部分页控制栏 -->
-                    <Border Grid.Row="1" Background="Transparent" Margin="10,20,10,30" Padding="15,8" CornerRadius="10">
+                    <Border Grid.Row="1" Background="Transparent" Margin="10,20,10,30" Padding="15,8" CornerRadius="16">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
                             <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="第一页"><PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/></Button>
                             <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="上一页"><PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="18" Height="18"/></Button>
@@ -309,7 +298,7 @@
                                 <TextBlock Text="第" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
                                 <Panel VerticalAlignment="Center">
                                     <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="14" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
-                                    <TextBox Name="PageJumpTextBox_Bottom" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="14" Width="50" Height="28" Padding="4,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" CornerRadius="4" LostFocus="OnPageJumpLostFocus" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}">
+                                    <TextBox Name="PageJumpTextBox_Bottom" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="14" Width="50" Height="28" Padding="4,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" LostFocus="OnPageJumpLostFocus" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}">
                                         <TextBox.KeyBindings>
                                             <KeyBinding Command="{Binding JumpPageCommand}" Gesture="Enter"/>
                                             <KeyBinding Command="{Binding CancelEditPageCommand}" Gesture="Escape"/>

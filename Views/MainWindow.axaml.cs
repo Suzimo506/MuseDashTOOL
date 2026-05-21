@@ -90,6 +90,24 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnSidebarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var control = e.Source as Avalonia.Controls.Control;
+        while (control != null)
+        {
+            if (control is Avalonia.Controls.Button)
+            {
+                return;
+            }
+            control = control.Parent as Avalonia.Controls.Control;
+        }
+
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.IsChartDownloadMenuExpanded = false;
+        }
+    }
+
     public async Task ShowMessageBoxAsync(string message)
     {
         await MessageBox.ShowDialogAsync(this, message);

@@ -384,7 +384,7 @@
                 <ItemsControl ItemsSource="{Binding Charts}" Margin="10,0,10,20">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <UniformGrid Columns="4" Rows="3" HorizontalAlignment="Stretch"/>
+                            <UniformGrid Columns="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ChartGridColumns}" HorizontalAlignment="Stretch"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
