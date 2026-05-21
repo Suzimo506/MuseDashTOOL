@@ -7,6 +7,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Microsoft.Win32;
+using CommunityToolkit.Mvvm.DependencyInjection;
+using MdModManager.Models;
 
 namespace MdModManager.Services;
 
@@ -89,11 +91,23 @@ public sealed class DeepLinkService
         try
         {
             await _authService.CompleteLoginAsync(code);
+
+            // 登录成功后弹窗提示用户
+            var authState = Ioc.Default.GetRequiredService<AuthState>();
+            if (authState.CurrentUser != null)
+            {
+                var notificationService = Ioc.Default.GetService<INotificationService>();
+                notificationService?.ShowSuccess($"Euterpe 登录成功\n欢迎回来，{authState.CurrentUser.Nickname}");
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
-            await _authService.LoginAsync();
+            RuntimeLog.Write("DeepLinkService", "登录授权失败 " + ex.Message);
+
+            // 登录失败后弹窗提示详细错误
+            var notificationService = Ioc.Default.GetService<INotificationService>();
+            notificationService?.ShowFailure("登录失败", $"无法完成 Euterpe 登录 {ex.Message}");
         }
     }
 

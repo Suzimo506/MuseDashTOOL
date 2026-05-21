@@ -20,7 +20,7 @@ public record TelemetrySessionPayload(
 
 // 账号绑定载荷
 public record VanillaBindPayload(
-    [property: JsonPropertyName("vanilla_uid")] string VanillaUid);
+    [property: JsonPropertyName("uid")] string VanillaUid);
 
 // 遥测接口 JSON 序列化上下文
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]

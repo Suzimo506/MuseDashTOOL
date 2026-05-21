@@ -62,10 +62,21 @@ public sealed class AuthService : IAuthService
 
     public AsyncManualResetEvent Ready { get; } = new(false);
 
+    private sealed class XRequestIdHandler : DelegatingHandler
+    {
+        public XRequestIdHandler(HttpMessageHandler innerHandler) : base(innerHandler) { }
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            request.Headers.Add("X-Request-Id", Guid.CreateVersion7().ToString());
+            return base.SendAsync(request, cancellationToken);
+        }
+    }
+
     public AuthService(AuthState authState)
     {
         _authState = authState;
-        _httpClient = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var handler = new XRequestIdHandler(new HttpClientHandler());
+        _httpClient = new HttpClient(handler) { BaseAddress = new Uri(BaseUrl) };
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.1");
     }
 
@@ -118,7 +129,11 @@ public sealed class AuthService : IAuthService
             var json = JsonSerializer.Serialize(request, EuterpeJsonContext.Default.AppTokenRequest);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync("auth/app/token", content);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"请求失败 状态码 {(int)response.StatusCode} 内容 {errorBody}");
+            }
             
             var respJson = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize(respJson, EuterpeJsonContext.Default.AppTokenResponse);

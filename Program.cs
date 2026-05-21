@@ -9,13 +9,24 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        using var mutex = new Mutex(true, "MuseDashTOOL-SingleInstance", out var createdNew);
+        bool createdNew;
+        System.Threading.Mutex? mutex = null;
+        try
+        {
+            // 使用全局互斥锁以支持跨权限级别检测
+            mutex = new System.Threading.Mutex(true, "Global\\MuseDashTOOL-SingleInstance", out createdNew);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // 如果遇到权限拒绝说明已存在更高权限的实例运行
+            createdNew = false;
+        }
+
         if (!createdNew)
         {
-            if (args != null && args.Length > 0)
-            {
-                Bootstrapper.SendArgsToPrimaryInstance(args);
-            }
+            // 如果有参数则发送参数否则发送激活指令以唤醒主窗口
+            var sendArgs = (args != null && args.Length > 0) ? args : new[] { "euterpe://activate" };
+            Bootstrapper.SendArgsToPrimaryInstance(sendArgs);
             return;
         }
 
@@ -28,6 +39,7 @@ sealed class Program
         finally
         {
             Bootstrapper.StopDeepLinkPipeServer();
+            mutex?.Dispose();
         }
     }
 

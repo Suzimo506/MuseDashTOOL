@@ -41,6 +41,30 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>当暂存目录有未安装 Mod 文件时为 true，用于侧栏显示 !!!</summary>
     public bool HasStagedMods => _stagingService?.HasPendingFiles ?? false;
 
+    // Euterpe 按钮动态显示的文本
+    public string EuterpeButtonText
+    {
+        get
+        {
+            var authState = Ioc.Default.GetRequiredService<AuthState>();
+            return authState.CurrentUser != null 
+                ? $"Euterpe ({authState.CurrentUser.Nickname})" 
+                : "Euterpe";
+        }
+    }
+
+    // Euterpe 按钮的提示信息
+    public string EuterpeButtonToolTip
+    {
+        get
+        {
+            var authState = Ioc.Default.GetRequiredService<AuthState>();
+            return authState.CurrentUser != null 
+                ? $"已成功登录 Euterpe 账号：{authState.CurrentUser.Nickname}，点击可以注销" 
+                : "点击登录并管理 Euterpe 账号";
+        }
+    }
+
     [ObservableProperty]
     private Avalonia.Media.Imaging.Bitmap? _customBackgroundBitmap;
 
@@ -151,6 +175,17 @@ public partial class MainWindowViewModel : ObservableObject
         {
             if (e.PropertyName == nameof(ModStagingService.HasPendingFiles))
                 OnPropertyChanged(nameof(HasStagedMods));
+        };
+
+        // 监听登录状态变化以更新按钮文本与提示
+        var authState = Ioc.Default.GetRequiredService<AuthState>();
+        authState.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AuthState.CurrentUser))
+            {
+                OnPropertyChanged(nameof(EuterpeButtonText));
+                OnPropertyChanged(nameof(EuterpeButtonToolTip));
+            }
         };
 
         if (_navigationService != null)
