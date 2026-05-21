@@ -218,7 +218,7 @@
                                             BorderBrush="{Binding FloatingPanelBorder}"
                                             BorderThickness="1"
                                             CornerRadius="16"
-                                            Margin="-6,-6,-6,-140"
+                                            Margin="-6,-6,-6,-180"
                                             BoxShadow="0 8 24 0 #60000000"
                                             IsVisible="{Binding IsChartDownloadMenuExpanded}"
                                             IsHitTestVisible="True"/>
@@ -254,6 +254,9 @@
                                             <Button Classes="NavBtn" Command="{Binding NavigateToChartDownloadCommand}">
                                                 <TextBlock Text="mdmc谱面" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
                                             </Button>
+                                            <Button Classes="NavBtn" Command="{Binding NavigateToEuterpeDownloadCommand}">
+                                                <TextBlock Text="Euterpe" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                            </Button>
                                             <Button Classes="NavBtn" Command="{Binding NavigateToAlbumCollectionCommand}">
                                                 <TextBlock Text="QQ群谱面" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
                                             </Button>
@@ -272,7 +275,7 @@
                                             BorderBrush="{Binding FloatingPanelBorder}"
                                             BorderThickness="1"
                                             CornerRadius="16"
-                                            Margin="-6,-6,-6,-140"
+                                            Margin="-6,-6,-6,-180"
                                             BoxShadow="0 8 24 0 #60000000"
                                             IsVisible="{Binding IsChartDownloadMenuExpanded}"
                                             IsHitTestVisible="True"/>
@@ -288,6 +291,9 @@
                                         <StackPanel Spacing="6" IsVisible="{Binding IsChartDownloadMenuExpanded}" ClipToBounds="False">
                                             <Button Classes="NavBtn" Classes.collapsed="True" Command="{Binding NavigateToChartDownloadCommand}" Height="36" MinHeight="36">
                                                 <TextBlock Text="M" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource NavButtonMainBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Button>
+                                            <Button Classes="NavBtn" Classes.collapsed="True" Command="{Binding NavigateToEuterpeDownloadCommand}" Height="36" MinHeight="36">
+                                                <TextBlock Text="E" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource NavButtonMainBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Button>
                                             <Button Classes="NavBtn" Classes.collapsed="True" Command="{Binding NavigateToAlbumCollectionCommand}" Height="36" MinHeight="36">
                                                 <TextBlock Text="Q" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource NavButtonMainBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>

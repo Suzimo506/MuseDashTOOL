@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.DependencyInjection;
 using MdModManager.Services;
 using MdModManager.ViewModels;
 using MdModManager.Views;
+using MdModManager.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MdModManager;
@@ -57,6 +58,15 @@ public partial class App : Application
 
             // 软件启动时后台静默预获取账号与成绩数据。
             MuseDashAccountService.StartPrefetch();
+
+            var deepLinkService = Ioc.Default.GetRequiredService<DeepLinkService>();
+            var authService = Ioc.Default.GetRequiredService<IAuthService>();
+            _ = deepLinkService.SetupAsync();
+            _ = authService.RestoreSessionAsync();
+            if (desktop.Args != null && desktop.Args.Length > 0)
+            {
+                deepLinkService.HandleStartupArgs(desktop.Args);
+            }
 
 
             var updateService = Ioc.Default.GetService<IUpdateService>();
@@ -129,6 +139,10 @@ public partial class App : Application
         services.AddSingleton<IAnnouncementService, AnnouncementService>();
         services.AddSingleton<IAlbumCollectionService, AlbumCollectionService>();
         services.AddSingleton<IMirrorDomainService, MirrorDomainService>();
+
+        services.AddSingleton<AuthState>();
+        services.AddSingleton<IAuthService, AuthService>();
+        services.AddSingleton<DeepLinkService>();
 
         Ioc.Default.ConfigureServices(services.BuildServiceProvider());
     }

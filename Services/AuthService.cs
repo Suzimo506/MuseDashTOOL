@@ -1,0 +1,315 @@
+using System;
+using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
+using MdModManager.Models;
+
+namespace MdModManager.Services;
+
+// 登录请求参数
+public record AppTokenRequest(string Code);
+
+// 登录响应数据
+public record AppTokenResponse(string AccessToken, string RefreshToken, EuterpeUserInfo Me);
+
+// 刷新请求参数
+public record RefreshRequest(string RefreshToken);
+
+// 刷新响应数据
+public record RefreshResponse(string AccessToken, string RefreshToken);
+
+// 登出请求参数
+public record LogoutRequest(string RefreshToken);
+
+// 用户状态响应
+public record CurrentUserResponse(EuterpeUserInfo User);
+
+// 序列化本地文件载荷
+public record TokenPayload(string AccessToken, string RefreshToken);
+
+// 序列化上下文
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
+[JsonSerializable(typeof(AppTokenRequest))]
+[JsonSerializable(typeof(AppTokenResponse))]
+[JsonSerializable(typeof(RefreshRequest))]
+[JsonSerializable(typeof(RefreshResponse))]
+[JsonSerializable(typeof(LogoutRequest))]
+[JsonSerializable(typeof(CurrentUserResponse))]
+[JsonSerializable(typeof(TokenPayload))]
+[JsonSerializable(typeof(EuterpeUserInfo))]
+internal partial class EuterpeJsonContext : JsonSerializerContext;
+
+public sealed class AuthService : IAuthService
+{
+    private const string BaseUrl = "https://euterpe-org.com/api/";
+    private const string AuthorizePageUrl = "https://euterpe-org.com/auth/app?redirect_uri=euterpe://auth/callback";
+    private static readonly TimeSpan AccessTokenLifetime = TimeSpan.FromMinutes(14);
+    
+    private static readonly string TokenFilePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "MdModManager",
+        "auth.dat");
+
+    private readonly HttpClient _httpClient;
+    private readonly AuthState _authState;
+    private readonly SemaphoreSlim _lock = new(1, 1);
+
+    public AsyncManualResetEvent Ready { get; } = new(false);
+
+    public AuthService(AuthState authState)
+    {
+        _authState = authState;
+        _httpClient = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.1");
+    }
+
+    public Task LoginAsync()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(AuthorizePageUrl) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        return Task.CompletedTask;
+    }
+
+    public async Task LogoutAsync()
+    {
+        await _lock.WaitAsync();
+        try
+        {
+            if (_authState.RefreshToken != null)
+            {
+                try
+                {
+                    var request = new LogoutRequest(_authState.RefreshToken);
+                    var json = JsonSerializer.Serialize(request, EuterpeJsonContext.Default.LogoutRequest);
+                    using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    await _httpClient.PostAsync("auth/logout", content);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+            await ClearSessionAsync();
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task CompleteLoginAsync(string code)
+    {
+        await _lock.WaitAsync();
+        try
+        {
+            var request = new AppTokenRequest(code);
+            var json = JsonSerializer.Serialize(request, EuterpeJsonContext.Default.AppTokenRequest);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync("auth/app/token", content);
+            response.EnsureSuccessStatusCode();
+            
+            var respJson = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize(respJson, EuterpeJsonContext.Default.AppTokenResponse);
+            if (result != null)
+            {
+                await UpdateSessionAsync(result.AccessToken, result.RefreshToken, result.Me);
+                Ready.Set();
+            }
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task<string> GetAccessTokenAsync()
+    {
+        await Ready.WaitAsync();
+        await _lock.WaitAsync();
+        try
+        {
+            if (DateTimeOffset.Now < _authState.AccessTokenExpiry)
+            {
+                return _authState.AccessToken ?? string.Empty;
+            }
+            return await RefreshInternalAsync();
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task<string> RenewAccessTokenAsync()
+    {
+        await _lock.WaitAsync();
+        try
+        {
+            return await RefreshInternalAsync();
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task<bool> RestoreSessionAsync()
+    {
+        var tokens = await LoadTokensAsync();
+        if (tokens == null)
+        {
+            return false;
+        }
+
+        _authState.AccessToken = tokens.AccessToken;
+        _authState.RefreshToken = tokens.RefreshToken;
+        Ready.Set();
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "me");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
+            var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var respJson = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize(respJson, EuterpeJsonContext.Default.CurrentUserResponse);
+            if (result != null)
+            {
+                _authState.CurrentUser = result.User;
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            await ClearSessionAsync();
+            return false;
+        }
+
+        await ClearSessionAsync();
+        return false;
+    }
+
+    private async Task<string> RefreshInternalAsync()
+    {
+        if (_authState.RefreshToken == null)
+        {
+            throw new InvalidOperationException("Refresh token is missing");
+        }
+
+        var request = new RefreshRequest(_authState.RefreshToken);
+        var json = JsonSerializer.Serialize(request, EuterpeJsonContext.Default.RefreshRequest);
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync("auth/refresh", content);
+        response.EnsureSuccessStatusCode();
+
+        var respJson = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize(respJson, EuterpeJsonContext.Default.RefreshResponse);
+        if (result == null)
+        {
+            throw new InvalidOperationException("Failed to refresh token");
+        }
+
+        await UpdateSessionAsync(result.AccessToken, result.RefreshToken, _authState.CurrentUser);
+        return result.AccessToken;
+    }
+
+    private async Task UpdateSessionAsync(string accessToken, string refreshToken, EuterpeUserInfo? currentUser)
+    {
+        _authState.AccessToken = accessToken;
+        _authState.RefreshToken = refreshToken;
+        _authState.AccessTokenExpiry = DateTimeOffset.Now.Add(AccessTokenLifetime);
+        _authState.CurrentUser = currentUser;
+
+        await SaveTokensAsync(accessToken, refreshToken);
+    }
+
+    private async Task ClearSessionAsync()
+    {
+        _authState.Clear();
+        await ClearTokensAsync();
+        Ready.Reset();
+    }
+
+    private async Task SaveTokensAsync(string accessToken, string refreshToken)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(TokenFilePath);
+            if (dir != null && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            var payload = new TokenPayload(accessToken, refreshToken);
+            var json = JsonSerializer.Serialize(payload, EuterpeJsonContext.Default.TokenPayload);
+            var plainBytes = Encoding.UTF8.GetBytes(json);
+            var encrypted = ProtectedData.Protect(plainBytes, null, DataProtectionScope.CurrentUser);
+
+            await File.WriteAllBytesAsync(TokenFilePath, encrypted);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    private async Task<TokenPayload?> LoadTokensAsync()
+    {
+        if (!File.Exists(TokenFilePath))
+        {
+            return null;
+        }
+
+        try
+        {
+            var encrypted = await File.ReadAllBytesAsync(TokenFilePath);
+            var plainBytes = ProtectedData.Unprotect(encrypted, null, DataProtectionScope.CurrentUser);
+            var json = Encoding.UTF8.GetString(plainBytes);
+            var payload = JsonSerializer.Deserialize(json, EuterpeJsonContext.Default.TokenPayload);
+
+            if (payload == null || string.IsNullOrEmpty(payload.AccessToken) || string.IsNullOrEmpty(payload.RefreshToken))
+            {
+                await ClearTokensAsync();
+                return null;
+            }
+
+            return payload;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            await ClearTokensAsync();
+            return null;
+        }
+    }
+
+    private Task ClearTokensAsync()
+    {
+        if (File.Exists(TokenFilePath))
+        {
+            try
+            {
+                File.Delete(TokenFilePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        return Task.CompletedTask;
+    }
+}

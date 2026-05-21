@@ -17,6 +17,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ModStagingService? _stagingService;
     private readonly INavigationService? _navigationService;
     private readonly IAnnouncementService? _announcementService;
+    private readonly IAuthService? _authService;
 
     [ObservableProperty]
     private object? _currentPage;
@@ -134,7 +135,8 @@ public partial class MainWindowViewModel : ObservableObject
         INotificationService notificationService,
         ModStagingService stagingService,
         INavigationService navigationService,
-        IAnnouncementService announcementService)
+        IAnnouncementService announcementService,
+        IAuthService authService)
     {
         _configService = configService;
         _gamePathService = gamePathService;
@@ -142,6 +144,7 @@ public partial class MainWindowViewModel : ObservableObject
         _stagingService = stagingService;
         _navigationService = navigationService;
         _announcementService = announcementService;
+        _authService = authService;
 
         // 当 HasPendingFiles 变化时，通知 UI 更新 HasStagedMods
         _stagingService.PropertyChanged += (_, e) =>
@@ -859,6 +862,32 @@ public partial class MainWindowViewModel : ObservableObject
         var vm = Ioc.Default.GetRequiredService<ChartDownloadViewModel>();
         CurrentPage = vm;
         await vm.InitializeAsync(_currentPageCts!.Token);
+    }
+
+    [RelayCommand]
+    private async Task NavigateToEuterpeDownloadAsync()
+    {
+        if (_authService == null) return;
+        
+        var state = Ioc.Default.GetRequiredService<AuthState>();
+        if (state.CurrentUser != null)
+        {
+            var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow as MdModManager.Views.MainWindow : null;
+            if (mainWindow != null)
+            {
+                var confirm = await mainWindow.ShowConfirmMessageBoxAsync($"已成功登录 Euterpe 账号：{state.CurrentUser.Nickname}\n是否注销登录？");
+                if (confirm)
+                {
+                    await _authService.LogoutAsync();
+                    _notificationService?.ShowSuccess("已注销 Euterpe 登录");
+                }
+            }
+        }
+        else
+        {
+            _notificationService?.ShowInfo("正在拉起浏览器登录 Euterpe...");
+            await _authService.LoginAsync();
+        }
     }
 
     [RelayCommand]
