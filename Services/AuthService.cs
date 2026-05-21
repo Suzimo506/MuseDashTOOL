@@ -30,6 +30,9 @@ public record LogoutRequest(string RefreshToken);
 // 用户状态响应
 public record CurrentUserResponse(EuterpeUserInfo User);
 
+// 绑定请求数据
+public record MuseDashUidRequest(string Uid);
+
 // 序列化本地文件载荷
 public record TokenPayload(string AccessToken, string RefreshToken);
 
@@ -43,12 +46,14 @@ public record TokenPayload(string AccessToken, string RefreshToken);
 [JsonSerializable(typeof(CurrentUserResponse))]
 [JsonSerializable(typeof(TokenPayload))]
 [JsonSerializable(typeof(EuterpeUserInfo))]
+[JsonSerializable(typeof(MuseDashUidRequest))]
 internal partial class EuterpeJsonContext : JsonSerializerContext;
+
 
 public sealed class AuthService : IAuthService
 {
     private const string BaseUrl = "https://euterpe-org.com/api/";
-    private const string AuthorizePageUrl = "https://euterpe-org.com/auth/app?redirect_uri=euterpe://auth/callback";
+    private const string AuthorizePageUrl = "https://euterpe-org.com/auth/app?redirect_uri=euterpe://auth/callback&app_name=MuseDashTool";
     private static readonly TimeSpan AccessTokenLifetime = TimeSpan.FromMinutes(14);
     
     private static readonly string TokenFilePath = Path.Combine(
@@ -141,6 +146,33 @@ public sealed class AuthService : IAuthService
             {
                 await UpdateSessionAsync(result.AccessToken, result.RefreshToken, result.Me);
                 Ready.Set();
+
+                // 自动绑定原版游戏UID
+                try
+                {
+                    var museInfo = MuseDashAccountService.ReadAccountInfo();
+                    if (museInfo != null && !string.IsNullOrEmpty(museInfo.Uid))
+                    {
+                        var bindRequest = new MuseDashUidRequest(museInfo.Uid);
+                        var bindJson = JsonSerializer.Serialize(bindRequest, EuterpeJsonContext.Default.MuseDashUidRequest);
+                        using var bindContent = new StringContent(bindJson, Encoding.UTF8, "application/json");
+                        using var req = new HttpRequestMessage(HttpMethod.Put, "me/vanilla-binding")
+                        {
+                            Content = bindContent
+                        };
+                        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", result.AccessToken);
+                        var bindResponse = await _httpClient.SendAsync(req);
+                        if (!bindResponse.IsSuccessStatusCode)
+                        {
+                            var bindErr = await bindResponse.Content.ReadAsStringAsync();
+                            Console.WriteLine($"[PlayerBind] 自动绑定失败: {bindErr}");
+                        }
+                    }
+                }
+                catch (Exception bindEx)
+                {
+                    Console.WriteLine($"[PlayerBind] 自动绑定异常: {bindEx.Message}");
+                }
             }
         }
         finally

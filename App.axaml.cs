@@ -141,6 +141,7 @@ public partial class App : Application
         services.AddSingleton<AlbumCollectionViewModel>();
         services.AddTransient<AlbumDetailViewModel>();
         services.AddTransient<CommunityCategoryDetailViewModel>();
+        services.AddTransient<EuterpeViewModel>();
 
         // Services
         services.AddSingleton<IConfigService, ConfigService>();

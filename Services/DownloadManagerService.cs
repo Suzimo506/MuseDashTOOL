@@ -23,6 +23,8 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     private readonly HttpClient _http = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(4));
     // 下载专用客户端，超时放宽到 15 秒以应对慢速网络
     private readonly HttpClient _downloadHttp = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(600), TimeSpan.FromSeconds(15));
+    // 直连下载专用客户端
+    private readonly HttpClient _directDownloadHttp = HttpHelper.CreateDirectClient(TimeSpan.FromSeconds(600), TimeSpan.FromSeconds(15));
     // 并发控制器：最多同时下载 10 个谱面
     private readonly SemaphoreSlim _concurrencySemaphore = new(10, 10);
 
@@ -333,7 +335,9 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                 request.Headers.IfRange = ifRange;
         }
 
-        using var response = await _downloadHttp.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        // Euterpe 下载使用直连客户端
+        var client = item.Chart.DownloadUrl.Contains("euterpe-org.com", StringComparison.OrdinalIgnoreCase) ? _directDownloadHttp : _downloadHttp;
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
         RuntimeLog.Write("DownloadManager", $"Download response: title='{item.Chart.Title}', status={(int)response.StatusCode} {response.StatusCode}, url='{item.Chart.DownloadUrl}'");
 
         if (item.DownloadedBytes > 0 && response.StatusCode == HttpStatusCode.OK)
@@ -534,6 +538,10 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         if (!HttpHelper.UseOptimizedIps || string.IsNullOrWhiteSpace(downloadUrl))
             return false;
 
+        // Euterpe 域名不使用优选 IP 策略
+        if (downloadUrl.Contains("euterpe-org.com", StringComparison.OrdinalIgnoreCase))
+            return false;
+
         if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri))
             return false;
 
@@ -684,5 +692,6 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
         _http.Dispose();
         _downloadHttp.Dispose();
+        _directDownloadHttp.Dispose();
     }
 }

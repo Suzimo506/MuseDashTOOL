@@ -41,29 +41,11 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>当暂存目录有未安装 Mod 文件时为 true，用于侧栏显示 !!!</summary>
     public bool HasStagedMods => _stagingService?.HasPendingFiles ?? false;
 
-    // Euterpe 按钮动态显示的文本
-    public string EuterpeButtonText
-    {
-        get
-        {
-            var authState = Ioc.Default.GetRequiredService<AuthState>();
-            return authState.CurrentUser != null 
-                ? $"Euterpe ({authState.CurrentUser.Nickname})" 
-                : "Euterpe";
-        }
-    }
+    // Euterpe 按钮显示的文本
+    public string EuterpeButtonText => "Euterpe";
 
     // Euterpe 按钮的提示信息
-    public string EuterpeButtonToolTip
-    {
-        get
-        {
-            var authState = Ioc.Default.GetRequiredService<AuthState>();
-            return authState.CurrentUser != null 
-                ? $"已成功登录 Euterpe 账号：{authState.CurrentUser.Nickname}，点击可以注销" 
-                : "点击登录并管理 Euterpe 账号";
-        }
-    }
+    public string EuterpeButtonToolTip => "点击管理 Euterpe 账号";
 
     [ObservableProperty]
     private Avalonia.Media.Imaging.Bitmap? _customBackgroundBitmap;
@@ -177,7 +159,7 @@ public partial class MainWindowViewModel : ObservableObject
                 OnPropertyChanged(nameof(HasStagedMods));
         };
 
-        // 监听登录状态变化以更新按钮文本与提示
+        // 监听登录状态变化以刷新界面
         var authState = Ioc.Default.GetRequiredService<AuthState>();
         authState.PropertyChanged += (_, e) =>
         {
@@ -214,14 +196,12 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (_configService.Config.IsFirstLaunch)
         {
-            CurrentPage = Ioc.Default.GetRequiredService<TutorialViewModel>();
             _configService.Config.IsFirstLaunch = false;
             await _configService.SaveAsync();
         }
-        else
-        {
-            CurrentPage = Ioc.Default.GetRequiredService<ModManagerViewModel>();
-        }
+
+        // 默认进入使用说明页面
+        CurrentPage = Ioc.Default.GetRequiredService<TutorialViewModel>();
 
         if (string.IsNullOrEmpty(_configService.Config.GamePath) ||
             !_gamePathService.IsValidGamePath(_configService.Config.GamePath))
@@ -268,6 +248,8 @@ public partial class MainWindowViewModel : ObservableObject
             await chvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is ChartUploadViewModel cuvm)
             await cuvm.InitializeAsync(_currentPageCts.Token);
+        else if (CurrentPage is EuterpeViewModel etvm)
+            await etvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is TutorialViewModel tvm)
         {
             // 逻辑已移动至 InitializeAsync 开始处
@@ -836,6 +818,8 @@ public partial class MainWindowViewModel : ObservableObject
         
         if (CurrentPage is ChartManagerViewModel chartVm)
             chartVm.Dispose();
+        else if (CurrentPage is EuterpeViewModel etVm)
+            etVm.Dispose();
         else if (CurrentPage is AccountViewModel accountVm)
             accountVm.Cleanup(); // 离开账号页时释放多余记录，节省内存
     }
@@ -900,26 +884,21 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task NavigateToEuterpeDownloadAsync()
+    public async Task NavigateToEuterpeDownloadAsync()
     {
-        if (_authService == null) return;
-        
         var state = Ioc.Default.GetRequiredService<AuthState>();
         if (state.CurrentUser != null)
         {
-            var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow as MdModManager.Views.MainWindow : null;
-            if (mainWindow != null)
-            {
-                var confirm = await mainWindow.ShowConfirmMessageBoxAsync($"已成功登录 Euterpe 账号：{state.CurrentUser.Nickname}\n是否注销登录？");
-                if (confirm)
-                {
-                    await _authService.LogoutAsync();
-                    _notificationService?.ShowSuccess("已注销 Euterpe 登录");
-                }
-            }
+            CleanupCurrentPage();
+            IsChartDownloadMenuExpanded = true;
+
+            var vm = Ioc.Default.GetRequiredService<EuterpeViewModel>();
+            CurrentPage = vm;
+            await vm.InitializeAsync(_currentPageCts!.Token);
         }
         else
         {
+            if (_authService == null) return;
             _notificationService?.ShowInfo("正在拉起浏览器登录 Euterpe...");
             await _authService.LoginAsync();
         }

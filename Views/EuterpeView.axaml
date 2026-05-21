@@ -1,0 +1,420 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:models="using:MdModManager.Models"
+             xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             xmlns:helpers="using:MdModManager.Helpers"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
+             x:Class="MdModManager.Views.EuterpeView"
+             x:DataType="vm:EuterpeViewModel">
+
+    <UserControl.Resources>
+        <!-- 图标按钮专属主题 -->
+        <ControlTheme x:Key="RobustIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBorder">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed">
+                <Setter Property="RenderTransform" Value="scale(0.92)"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBorder">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.6"/>
+            </Style>
+        </ControlTheme>
+
+        <!-- 纯图标按钮主题 -->
+        <ControlTheme x:Key="RobustPlainIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent">
+                        <ContentPresenter Content="{TemplateBinding Content}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBorder">
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBorder">
+                <Setter Property="Opacity" Value="0.6"/>
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- 谱面卡片Hover缩放发光和阴影过渡动画 -->
+        <Style Selector="Border.ChartCard">
+            <Setter Property="Background" Value="#1E1624"/>
+            <Setter Property="BorderBrush" Value="#2D2136"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2" Easing="LinearEasing"/>
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.2" Easing="LinearEasing"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.ChartCard:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.02)"/>
+            <Setter Property="BorderBrush" Value="#E57AE6"/>
+            <Setter Property="BoxShadow" Value="0 4 20 2 #33FF00FF"/>
+        </Style>
+
+        <!-- 心形点赞按钮过渡动画 -->
+        <Style Selector="Button.LikeBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent" CornerRadius="8">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover">
+                <Setter Property="RenderTransform" Value="scale(1.15)"/>
+            </Style>
+            <Style Selector="^:pressed">
+                <Setter Property="RenderTransform" Value="scale(0.9)"/>
+            </Style>
+        </Style>
+
+        <!-- 退出登录红圈按钮样式 -->
+        <Style Selector="Button.LogoutBtn">
+            <Setter Property="Background" Value="#22FF4D4D"/>
+            <Setter Property="BorderBrush" Value="#FF4D4D"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="18"/>
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+                        <Border.Transitions>
+                            <Transitions>
+                                <BrushTransition Property="Background" Duration="0:0:0.15" Easing="LinearEasing"/>
+                                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.15" Easing="LinearEasing"/>
+                            </Transitions>
+                        </Border.Transitions>
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.LogoutBtn:pointerover /template/ Border#RootBorder">
+            <Setter Property="Background" Value="#FFFF4D4D"/>
+            <Setter Property="BoxShadow" Value="0 0 12 2 #80FF4D4D"/>
+        </Style>
+        <Style Selector="Button.LogoutBtn:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.9)"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent" Margin="16">
+
+        <!-- 顶部个人信息玻璃卡片 (Row 0，占左半侧) -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,*" Margin="0,0,0,16">
+            <Border Grid.Column="0" Padding="16" CornerRadius="16" BorderThickness="1" BorderBrush="#33FFFFFF" ClipToBounds="True">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#251F2E" Offset="0"/>
+                        <GradientStop Color="#16131C" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    
+                    <!-- 发光紫粉渐变外圈头像 -->
+                    <Border Grid.Column="0" Width="78" Height="78" CornerRadius="39" Padding="3" BorderThickness="2" BoxShadow="0 0 15 3 #80FF00FF" VerticalAlignment="Center">
+                        <Border.BorderBrush>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                <GradientStop Color="#FFFF00FF" Offset="0"/>
+                                <GradientStop Color="#FF00FFFF" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.BorderBrush>
+                        <Border CornerRadius="35" ClipToBounds="True" Background="#33FFFFFF">
+                            <Panel>
+                                <TextBlock Text="👤" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#88FFFFFF"/>
+                                <asyncImageLoader:AdvancedImage Source="{Binding AvatarUrl}" Stretch="UniformToFill"/>
+                            </Panel>
+                        </Border>
+                    </Border>
+
+                    <!-- 用户基本信息 -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="6">
+                        <TextBlock Text="{Binding Nickname}" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="{Binding Email}" FontSize="12" Foreground="#8A8594"/>
+                    </StackPanel>
+
+                    <!-- 退出登录门型按钮 -->
+                    <Button Grid.Column="2" Classes="LogoutBtn" Command="{Binding LogoutCommand}" ToolTip.Tip="退出 Euterpe 登录" VerticalAlignment="Center">
+                        <Path Fill="White" Stretch="Uniform" Width="16" Height="16" Data="M10 2H5C3.34 2 2 3.34 2 5v14c0 1.66 1.34 3 3 3h5c.55 0 1-.45 1-1s-.45-1-1-1H5c-.55 0-1-.45-1-1V5c0-.55.45-1 1-1h5c.55 0 1-.45 1-1s-.45-1-1-1z M19.78 11.22l-4-4c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41L16.59 11H9c-.55 0-1 .45-1 1s.45 1 1 1h7.59l-2.22 2.22c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l4-4c.39-.39.39-1.03 0-1.42z"/>
+                    </Button>
+                </Grid>
+            </Border>
+            
+            <!-- 右半侧免责声明面板 -->
+            <Border Grid.Column="1" Margin="16,0,0,0" Padding="16" CornerRadius="16" BorderThickness="1" BorderBrush="#33FFFFFF" ClipToBounds="True">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#251F2E" Offset="0"/>
+                        <GradientStop Color="#16131C" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#8A8594" VerticalAlignment="Center">
+                    <Run Text="喵斯兔不会存储您Euterpe账号的任何数据与隐私，在喵斯兔内仅提供谱面的试听，点赞，下载功能，如果需要查看谱面的更多详细信息（标签，note组成等等）以及体验评论等功能，请前往"/>
+                    <InlineUIContainer>
+                        <Button Command="{Binding OpenEuterpeWebCommand}" Cursor="Hand" Padding="0" Margin="2,0,2,-2" Background="Transparent" BorderThickness="0" VerticalAlignment="Bottom">
+                            <TextBlock Text="Euterpe-org.com" Foreground="#00C0FF" FontSize="11" TextDecorations="Underline" FontWeight="Bold"/>
+                        </Button>
+                    </InlineUIContainer>
+                    <Run Text="或下载Euterpe官方APP使用。"/>
+                </TextBlock>
+            </Border>
+        </Grid>
+
+        <!-- 工具栏：搜索 + 排序 ComboBox + 顶部分页栏 (Row 1) -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,16">
+            <!-- 搜索框 -->
+            <TextBox Grid.Column="0" Name="SearchTextBox" Text="{Binding SearchDraftText}" Watermark="搜索 Euterpe 谱面名称、作者..." VerticalAlignment="Center" Padding="10,8" IsHitTestVisible="{Binding !IsLoading}" IsReadOnly="{Binding IsLoading}" LostFocus="OnSearchBoxLostFocus" KeyDown="OnSearchBoxKeyDown" CornerRadius="10">
+                <TextBox.InnerLeftContent>
+                    <PathIcon Data="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1C567.2 143.9 492.3 112 413 112s-154.2 31.9-211.1 88.9C145.5 257.5 114 332.7 114 412c0 79.3 31.3 154.5 88 211.4C259.3 680.3 334.4 712 413 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0 0 11.6 0l42.6-42.6a8.2 8.2 0 0 0 0-11.5zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z"
+                              Foreground="#888888" Width="16" Height="16" Margin="6,0,0,0"/>
+                </TextBox.InnerLeftContent>
+                <TextBox.InnerRightContent>
+                    <Button Command="{Binding ClearSearchCommand}" IsVisible="{Binding SearchDraftText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Theme="{StaticResource RobustPlainIconBtn}" Margin="0,0,10,0">
+                        <TextBlock Text="清空" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource SvgIconBrush}"/>
+                    </Button>
+                </TextBox.InnerRightContent>
+            </TextBox>
+
+            <!-- 排序 ComboBox -->
+            <ComboBox Grid.Column="1" ItemsSource="{Binding SortOptions}" SelectedIndex="{Binding SelectedSortIndex}" Width="150" Margin="10,0,0,0" VerticalAlignment="Center" CornerRadius="10">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:EuterpeSortOption">
+                        <TextBlock Text="{Binding Label}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <!-- 顶部分页栏 -->
+            <Border Grid.Column="2" Background="{DynamicResource CardBgBrush}" Margin="10,0,0,0" Padding="8,4" CornerRadius="10" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Command="{Binding LoadPrevPageCommand}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="上一页">
+                        <PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z"
+                                  Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
+                    </Button>
+                    <StackPanel Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="第 " Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="12" VerticalAlignment="Center"/>
+                        <Panel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="13" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
+                            <TextBox Name="PageJumpTextBox_Top" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="11" Width="42" Height="22" Padding="2,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" CornerRadius="4" LostFocus="OnPageJumpLostFocus" KeyDown="OnPageJumpKeyDown" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}"/>
+                        </Panel>
+                        <TextBlock Text=" / " Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TotalPages}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text=" 页" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="12" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <Button Command="{Binding LoadNextPageCommand}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="下一页">
+                        <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z"
+                                  Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- 主体区域 (Row 2) -->
+        <Grid Grid.Row="2" Background="Transparent">
+            <!-- 加载中 -->
+            <StackPanel IsVisible="{Binding IsLoading}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+                <TextBlock Text="正在拉取 Euterpe 谱面…" FontSize="16" Foreground="#888888" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- 空状态 -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
+                <StackPanel.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="IsEmpty"/>
+                        <Binding Path="!IsLoading"/>
+                    </MultiBinding>
+                </StackPanel.IsVisible>
+                <StackPanel Spacing="8">
+                    <TextBlock Text="未发现匹配当前筛选条件的 Euterpe 谱面" FontSize="16" Foreground="Gray" HorizontalAlignment="Center"/>
+                    <TextBlock Text="可以尝试换个搜索词或点击刷新" FontSize="12" Foreground="#666666" HorizontalAlignment="Center"/>
+                </StackPanel>
+                
+                <Button Command="{Binding RefreshCommand}" 
+                        Background="{DynamicResource ControlBgBrush}"
+                        Foreground="{DynamicResource SvgIconBrush}"
+                        BorderBrush="{DynamicResource SvgIconBrush}"
+                        BorderThickness="1"
+                        CornerRadius="16"
+                        Padding="24,8"
+                        HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <PathIcon Data="M512 0c141.385 0 269.41 57.308 362.039 149.937l83.945-83.945c15.114-15.114 40.941-4.417 40.941 16.971v271.074c0 14.137-11.46 25.597-25.597 25.597h-271.074c-21.388 0-32.085-25.827-16.971-40.941l95.539-95.539c-73.491-73.491-174.607-118.956-286.039-118.956-224.234 0-406.403 182.169-406.403 406.403s182.169 406.403 406.403 406.403c141.385 0 269.41-57.308 362.039-149.937 15.114-15.114 40.941-4.417 40.941 16.971s-10.826 31.11-25.94 46.224c-109.117 109.117-259.945 176.431-426.452 176.431-335.791 0-608-272.209-608-608s272.209-608 608-608z" Width="12" Height="12"/>
+                        <TextBlock Text="重试加载" FontWeight="Bold"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- 谱面列表滚动区域 -->
+            <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding !IsEmpty}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <Grid RowDefinitions="*,Auto">
+                    <ItemsControl ItemsSource="{Binding Charts}" Grid.Row="0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ChartGridColumns}" HorizontalAlignment="Stretch"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:EuterpeChart">
+                                <Border Classes="ChartCard" Margin="8" VerticalAlignment="Top" ClipToBounds="True">
+                                    <Grid RowDefinitions="Auto,*">
+                                        
+                                        <!-- 封面区域 -->
+                                        <Border Grid.Row="0" Height="160" ClipToBounds="True" CornerRadius="14,14,0,0">
+                                            <Panel>
+                                                <!-- 默认音乐提示图 -->
+                                                <Border Background="#251F2E" IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNull}}">
+                                                    <TextBlock Text="🎵" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#443952"/>
+                                                </Border>
+                                                <!-- 真实大图封面 -->
+                                                <Image Source="{Binding CoverImage}" IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNotNull}}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                
+                                                <!-- 试听覆盖遮罩 -->
+                                                <Border IsVisible="{Binding IsPlaying}" Background="#CC110D17">
+                                                    <TextBlock Text="▶ 试听中" FontSize="13" FontWeight="Bold" Foreground="#FFFF00FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+
+                                                <!-- 下载量与点赞数角标 -->
+                                                <Border Background="#AA000000" CornerRadius="8" Padding="6,2" Margin="0,0,6,6" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <StackPanel Orientation="Horizontal" Spacing="3">
+                                                            <TextBlock Text="↓" FontSize="11" Foreground="#00C0FF" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding DownloadCount}" FontSize="11" Foreground="White" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Spacing="3">
+                                                            <TextBlock Text="♥" FontSize="11" Foreground="#FF2D55" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding LikeCount}" FontSize="11" Foreground="White" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Panel>
+                                        </Border>
+
+                                        <!-- 内容与控制区域 -->
+                                        <StackPanel Grid.Row="1" Margin="12" Spacing="6">
+                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" helpers:TextBlockHelper.HighlightText="{Binding Name}" helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).SearchText}"/>
+                                            <TextBlock Text="{Binding DisplayAuthor}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayAuthor}" helpers:TextBlockHelper.HighlightText="{Binding DisplayAuthor}" helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).SearchText}"/>
+                                            <TextBlock Text="{Binding DisplayCharter}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayCharter}" IsVisible="{Binding CharterInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" helpers:TextBlockHelper.HighlightText="{Binding DisplayCharter}" helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).SearchText}"/>
+                                            
+                                            <!-- BPM 与 难度星级 -->
+                                            <StackPanel Orientation="Horizontal" Spacing="8" MinHeight="18" Margin="0,2,0,0">
+                                                <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" VerticalAlignment="Center"/>
+                                                <ItemsControl ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal" Spacing="3"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#33FF00FF" CornerRadius="4" Padding="4,1">
+                                                                <TextBlock Text="{Binding}" FontSize="10" Foreground="#FFFF00FF" FontWeight="Bold"/>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+
+                                            <!-- 底部一排三大功能按钮：试听、点赞、下载 -->
+                                            <Grid ColumnDefinitions="*,*,*" Margin="0,4,0,0">
+                                                
+                                                <!-- 试听 -->
+                                                <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="在线试听">
+                                                    <Panel>
+                                                        <PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                                                        <PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="#FFFF00FF" Width="16" Height="16"/>
+                                                    </Panel>
+                                                </Button>
+
+                                                <!-- 心形交互点赞 -->
+                                                <Button Grid.Column="1" Classes="LikeBtn" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).ToggleLikeCommand}" CommandParameter="{Binding}" ToolTip.Tip="喜欢 / 取消喜欢">
+                                                    <Panel>
+                                                        <!-- 未点赞：空心心形 -->
+                                                        <PathIcon IsVisible="{Binding !IsLiked}" Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35zM12 5.4C11.16 4.5 9.9 4 8.5 4 6 4 4 6 4 8.5c0 2.78 2.85 5.56 7.61 9.87l.39.35.39-.35C17.15 14.06 20 11.28 20 8.5 20 6 18 4 15.5 4c-1.4 0-2.66.5-3.5 1.4z"
+                                                                  Foreground="#CDA0B7" Width="16" Height="16"/>
+                                                        <!-- 已点赞：红心发光 -->
+                                                        <PathIcon IsVisible="{Binding IsLiked}" Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                                                  Foreground="#FF2D55" Width="16" Height="16"/>
+                                                    </Panel>
+                                                </Button>
+
+                                                <!-- 下载 -->
+                                                <Button Grid.Column="2" Theme="{StaticResource RobustIconBtn}" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="一键下载">
+                                                    <PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z"
+                                                              Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                                                </Button>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- 底部分页控制栏 -->
+                    <Border Grid.Row="1" Background="Transparent" Margin="10,20,10,30" Padding="15,8" CornerRadius="16">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
+                            <Button Command="{Binding LoadPrevPageCommand}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="上一页">
+                                <PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                            </Button>
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="当前页码：" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
+                                <Panel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="14" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
+                                    <TextBox Name="PageJumpTextBox_Bottom" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="13" Width="50" Height="28" Padding="4,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" CornerRadius="4" LostFocus="OnPageJumpLostFocus" KeyDown="OnPageJumpKeyDown" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}"/>
+                                </Panel>
+                                <TextBlock Text=" / " Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Text="{Binding TotalPages}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
+                            </StackPanel>
+                            <Button Command="{Binding LoadNextPageCommand}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="下一页">
+                                <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c-10.88 8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

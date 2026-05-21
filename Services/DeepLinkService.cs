@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using Microsoft.Win32;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using MdModManager.Models;
+using MdModManager.ViewModels;
 
 namespace MdModManager.Services;
 
@@ -98,6 +99,16 @@ public sealed class DeepLinkService
             {
                 var notificationService = Ioc.Default.GetService<INotificationService>();
                 notificationService?.ShowSuccess($"Euterpe 登录成功\n欢迎回来，{authState.CurrentUser.Nickname}");
+
+                // 登录成功后导航到 Euterpe 界面
+                Dispatcher.UIThread.Post(async () =>
+                {
+                    if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
+                        desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
+                    {
+                        await mainVm.NavigateToEuterpeDownloadAsync();
+                    }
+                });
             }
         }
         catch (Exception ex)

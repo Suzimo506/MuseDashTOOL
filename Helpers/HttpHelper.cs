@@ -355,6 +355,39 @@ public static class HttpHelper
         return client;
     }
 
+    // 创建直连网络请求客户端
+    public static HttpClient CreateDirectClient(TimeSpan timeout, TimeSpan? watchdogTimeout = null)
+    {
+        var handler = new SocketsHttpHandler
+        {
+            AutomaticDecompression = DecompressionMethods.All
+        };
+
+        handler.PooledConnectionLifetime = TimeSpan.FromMinutes(2);
+        handler.PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30);
+        handler.ConnectTimeout = TimeSpan.FromSeconds(5);
+
+        var resilientHandler = new ResilientHandler(handler, watchdogTimeout ?? TimeSpan.FromSeconds(10));
+        var client = new HttpClient(resilientHandler) 
+        { 
+            Timeout = timeout,
+            DefaultRequestVersion = new Version(2, 0)
+        };
+        
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+        client.DefaultRequestHeaders.Accept.ParseAdd("application/json, text/plain, */*");
+        client.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
+        
+        client.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\", \"Not-A.Brand\";v=\"99\"");
+        client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Mobile", "?0");
+        client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
+        client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
+        client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
+        client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "same-site");
+
+        return client;
+    }
+
     public static void InvalidateFastestIp()
     {
         lock (_blacklistLock)
