@@ -371,7 +371,8 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 {
                     isValidChart = zip.Entries.Any(e => 
                         e.Name.Equals("info.json", StringComparison.OrdinalIgnoreCase) || 
-                        e.Name.Equals("map.json", StringComparison.OrdinalIgnoreCase));
+                        e.Name.Equals("map.json", StringComparison.OrdinalIgnoreCase) ||
+                        e.Name.EndsWith(".epk", StringComparison.OrdinalIgnoreCase));
                 }
 
                 if (!isValidChart)
@@ -386,6 +387,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
             var destFile = System.IO.Path.Combine(albumsDir, destFileName);
             System.IO.File.Copy(sourceFile, destFile, true);
+            ChartService.ConvertEpkToInfoJsonInPlace(destFile);
             _downloadManagerService.SessionDownloadedFiles.Add(System.IO.Path.GetFullPath(destFile));
 
             StatusMessage = $"导入成功: {destFileName}";

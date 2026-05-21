@@ -22,6 +22,8 @@ public sealed class ChartPackageProcessor : IChartPackageProcessor
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             throw new FileNotFoundException("未找到要上传的谱面文件。", filePath);
 
+        ChartService.ConvertEpkToInfoJsonInPlace(filePath);
+
         try
         {
             using var stream = File.OpenRead(filePath);

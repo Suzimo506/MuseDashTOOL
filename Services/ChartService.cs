@@ -84,8 +84,106 @@ public class ChartService : IChartService
         }
     }
 
+    public static void ConvertEpkToInfoJsonInPlace(string filePath)
+    {
+        try
+        {
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Update))
+            {
+                var epkEntry = archive.Entries.FirstOrDefault(e => e.Name.EndsWith(".epk", StringComparison.OrdinalIgnoreCase));
+                if (epkEntry != null)
+                {
+                    var infoEntry = archive.Entries.FirstOrDefault(e => e.Name.Equals("info.json", StringComparison.OrdinalIgnoreCase));
+                    if (infoEntry == null)
+                    {
+                        byte[] epkBytes;
+                        using (var epkStream = epkEntry.Open())
+                        using (var ms = new MemoryStream())
+                        {
+                            epkStream.CopyTo(ms);
+                            epkBytes = ms.ToArray();
+                        }
+                        var jsonNode = MdModManager.Helpers.MsgPackDecoder.Decode(epkBytes);
+                        if (jsonNode != null)
+                        {
+                            if (jsonNode is JsonObject rootObj && rootObj["meta"] is JsonObject metaObj)
+                            {
+                                if (metaObj["name"] != null) rootObj["name"] = JsonValue.Create(metaObj["name"].ToString());
+                                if (metaObj["author"] != null) rootObj["author"] = JsonValue.Create(metaObj["author"].ToString());
+                                if (metaObj["bpm"] != null) rootObj["bpm"] = JsonValue.Create(metaObj["bpm"].ToString());
+                                if (metaObj["maps"] is JsonObject mapsObj)
+                                {
+                                    var charters = new List<string>();
+                                    for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (mapsObj[$"map{i}"] is JsonObject mapX)
+                                        {
+                                            if (mapX["rating"] != null)
+                                            {
+                                                rootObj[$"difficulty{i}"] = JsonValue.Create(mapX["rating"].ToString());
+                                            }
+                                            if (mapX["charters"] is JsonArray chartersArr)
+                                            {
+                                                foreach (var c in chartersArr)
+                                                {
+                                                    var cStr = c?.ToString();
+                                                    if (!string.IsNullOrWhiteSpace(cStr) && !charters.Contains(cStr))
+                                                    {
+                                                        charters.Add(cStr);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (charters.Count > 0)
+                                    {
+                                        rootObj["charter"] = JsonValue.Create(string.Join(", ", charters));
+                                    }
+                                }
+                            }
+                            var jsonString = jsonNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+                            var newInfoEntry = archive.CreateEntry("info.json");
+                            using (var newInfoStream = newInfoEntry.Open())
+                            using (var writer = new StreamWriter(newInfoStream, System.Text.Encoding.UTF8))
+                            {
+                                writer.Write(jsonString);
+                            }
+                            epkEntry.Delete();
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+    }
+
     private static ChartInfo ParseMdm(string filePath)
     {
+        bool needsConversion = false;
+        try
+        {
+            using (var zipCheck = ZipFile.OpenRead(filePath))
+            {
+                var hasJson = zipCheck.Entries.Any(e => e.Name.Equals("info.json", StringComparison.OrdinalIgnoreCase));
+                var hasEpk = zipCheck.Entries.Any(e => e.Name.EndsWith(".epk", StringComparison.OrdinalIgnoreCase));
+                if (!hasJson && hasEpk)
+                {
+                    needsConversion = true;
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        if (needsConversion)
+        {
+            ConvertEpkToInfoJsonInPlace(filePath);
+        }
+
         var chart = new ChartInfo
         {
             FilePath = filePath,
