@@ -45,8 +45,8 @@
             </Grid.ColumnDefinitions>
 
             <!-- 左侧侧边栏，背景颜色由 ViewModel 动态控制 -->
-            <Border Grid.Column="0" Background="{Binding SidebarBackground}" Padding="0,0,0,0" PointerPressed="OnSidebarPointerPressed">
-                <Grid RowDefinitions="Auto,*,Auto">
+            <Border Grid.Column="0" Background="{Binding SidebarBackground}" Padding="0,0,0,0" PointerPressed="OnSidebarPointerPressed" ClipToBounds="False">
+                <Grid RowDefinitions="Auto,*,Auto" ClipToBounds="False">
                     
                     <!-- 顶部 Logo 与 折叠按钮区 -->
                     <Panel Grid.Row="0" Margin="10,25,10,25" Height="40">
@@ -64,7 +64,7 @@
                                         <Setter Property="Background" Value="Transparent" />
                                     </Style>
                                 </Button.Styles>
-                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                                     <Image Source="/Assets/MuseDashTOOL.ico" Width="24" Height="24" VerticalAlignment="Center"/>
                                     <TextBlock Text="喵斯兔" FontSize="22" FontWeight="Bold" LetterSpacing="3" VerticalAlignment="Center">
                                         <TextBlock.Foreground>
@@ -92,7 +92,7 @@
                                         <Setter Property="Background" Value="#66FF75A9"/>
                                     </Style>
                                 </Button.Styles>
-                                <PathIcon Data="M640 192L320 512l320 320" 
+                                <PathIcon Data="M512 774.4c12.8 12.8 12.8 32 0 44.8-6.4 6.4-19.2 12.8-25.6 12.8-6.4 0-19.2 0-19.2-6.4L147.2 512l320-313.6c12.8-6.4 32-6.4 44.8 6.4 12.8 12.8 12.8 32 0 44.8L236.8 512 512 774.4zM582.4 512l268.8-262.4c12.8-12.8 12.8-32 0-44.8s-32-12.8-44.8 0L492.8 512l320 313.6c0 6.4 12.8 6.4 19.2 6.4 6.4 0 19.2-6.4 25.6-12.8 12.8-12.8 12.8-32 0-44.8L582.4 512z" 
                                           Width="14" Height="14" 
                                           Foreground="{DynamicResource SvgIconBrush}"/>
                             </Button>
@@ -114,14 +114,16 @@
                                     <Setter Property="Background" Value="#66FF75A9"/>
                                 </Style>
                             </Button.Styles>
-                            <PathIcon Data="M384 192l320 320-320 320" 
+                            <PathIcon Data="M512 774.4c12.8 12.8 12.8 32 0 44.8-6.4 6.4-19.2 12.8-25.6 12.8-6.4 0-19.2 0-19.2-6.4L147.2 512l320-313.6c12.8-6.4 32-6.4 44.8 6.4 12.8 12.8 12.8 32 0 44.8L236.8 512 512 774.4zM582.4 512l268.8-262.4c12.8-12.8 12.8-32 0-44.8s-32-12.8-44.8 0L492.8 512l320 313.6c0 6.4 12.8 6.4 19.2 6.4 6.4 0 19.2-6.4 25.6-12.8 12.8-12.8 12.8-32 0-44.8L582.4 512z" 
                                       Width="14" Height="14" 
+                                      RenderTransform="scale(-1, 1)"
+                                      RenderTransformOrigin="50%,50%"
                                       Foreground="{DynamicResource SvgIconBrush}"/>
                         </Button>
                     </Panel>
                     
                     <!-- Main Navigation (Top) -->
-                    <StackPanel Grid.Row="1" Spacing="8" Margin="10,0">
+                    <StackPanel Grid.Row="1" Spacing="8" Margin="10,0" ClipToBounds="False">
                         <StackPanel.Styles>
                             <Style Selector="Button.NavBtn">
                                 <Setter Property="Background" Value="Transparent"/>
@@ -188,11 +190,11 @@
                             </Style>
                         </StackPanel.Styles>
                         
-                        <LayoutTransformControl>
+                        <LayoutTransformControl ClipToBounds="False">
                             <LayoutTransformControl.LayoutTransform>
                                 <ScaleTransform ScaleX="{Binding FontScale}" ScaleY="{Binding FontScale}"/>
                             </LayoutTransformControl.LayoutTransform>
-                            <StackPanel Spacing="10">
+                            <StackPanel Spacing="10" ClipToBounds="False">
                                 <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToModManagerCommand}">
                                     <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                                         <PathIcon Data="M821.333333 85.333333H202.666667C136.533333 85.333333 85.333333 136.533333 85.333333 202.666667v618.666666C85.333333 887.466667 136.533333 938.666667 202.666667 938.666667h618.666666c66.133333 0 117.333333-51.2 117.333334-117.333334V202.666667C938.666667 136.533333 887.466667 85.333333 821.333333 85.333333zM298.666667 768H192v-85.333333h106.666667v85.333333z m0-170.666667H192v-85.333333h106.666667v85.333333z m0-170.666666H192V341.333333h106.666667v85.333334z m533.333333 341.333333H362.666667v-85.333333h469.333333v85.333333z m0-170.666667H362.666667v-85.333333h469.333333v85.333333z m0-170.666666H362.666667V341.333333h469.333333v85.333334z"
@@ -211,7 +213,7 @@
                                 </Button>
                                 
                                 <!-- 展开状态下的“谱面下载”二级悬浮卡片 -->
-                                <Grid Height="40" ClipToBounds="False" ZIndex="10" IsVisible="{Binding IsSidebarExpanded}">
+                                <Grid Name="ChartDownloadContainerExpanded" Height="40" ClipToBounds="False" ZIndex="10" IsVisible="{Binding IsSidebarExpanded}">
                                     <Border Background="{Binding FloatingPanelBackground}"
                                             BorderBrush="{Binding FloatingPanelBorder}"
                                             BorderThickness="1"
@@ -264,40 +266,39 @@
                                 </Grid>
 
                                 <!-- 折叠状态下的“谱面下载”二级悬浮卡片 -->
-                                <Grid Height="40" ClipToBounds="False" ZIndex="10" IsVisible="{Binding !IsSidebarExpanded}">
-                                    <Button Classes="NavBtn" Classes.collapsed="True" Command="{Binding ToggleChartDownloadMenuCommand}">
-                                        <PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z"
-                                                  Width="18" Height="18"
-                                                  Foreground="{DynamicResource NavButtonMainBrush}"/>
-                                    </Button>
-
-                                    <!-- 右侧滑出的精致玫瑰卡片 -->
+                                <Grid Name="ChartDownloadContainerCollapsed" Height="40" ClipToBounds="False" ZIndex="10" IsVisible="{Binding !IsSidebarExpanded}">
+                                    <!-- 悬浮卡片背景，仅在展开时显示 -->
                                     <Border Background="{Binding FloatingPanelBackground}"
                                             BorderBrush="{Binding FloatingPanelBorder}"
                                             BorderThickness="1"
                                             CornerRadius="16"
-                                            Margin="60,-10,-230,-138"
-                                            Width="170"
-                                            Height="138"
-                                            Padding="8"
+                                            Margin="-6,-6,-6,-140"
                                             BoxShadow="0 8 24 0 #60000000"
                                             IsVisible="{Binding IsChartDownloadMenuExpanded}"
-                                            IsHitTestVisible="True"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Top">
-                                        <StackPanel Spacing="6" VerticalAlignment="Center">
-                                            <Button Classes="NavBtn" Command="{Binding NavigateToChartDownloadCommand}" Height="36" MinHeight="36">
-                                                <TextBlock Text="mdmc谱面" FontSize="14" HorizontalAlignment="Center"/>
+                                            IsHitTestVisible="True"/>
+                                    
+                                    <StackPanel Spacing="4" VerticalAlignment="Top" ClipToBounds="False">
+                                        <Button Classes="NavBtn" Classes.collapsed="True" Command="{Binding ToggleChartDownloadMenuCommand}">
+                                            <PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z"
+                                                      Width="18" Height="18"
+                                                      Foreground="{DynamicResource NavButtonMainBrush}"/>
+                                        </Button>
+                                        
+                                        <!-- 向下展示的三个小图标按钮 -->
+                                        <StackPanel Spacing="6" IsVisible="{Binding IsChartDownloadMenuExpanded}" ClipToBounds="False">
+                                            <Button Classes="NavBtn" Classes.collapsed="True" Command="{Binding NavigateToChartDownloadCommand}" Height="36" MinHeight="36">
+                                                <TextBlock Text="M" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource NavButtonMainBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Button>
-                                            <Button Classes="NavBtn" Command="{Binding NavigateToAlbumCollectionCommand}" Height="36" MinHeight="36">
-                                                <TextBlock Text="QQ群谱面" FontSize="14" HorizontalAlignment="Center"/>
+                                            <Button Classes="NavBtn" Classes.collapsed="True" Command="{Binding NavigateToAlbumCollectionCommand}" Height="36" MinHeight="36">
+                                                <TextBlock Text="Q" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource NavButtonMainBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Button>
-                                            <!-- 下载列表子按钮 -->
-                                            <Button Classes="NavBtn" Command="{Binding NavigateToDownloadManagerCommand}" Height="36" MinHeight="36">
-                                                <TextBlock Text="下载列表" FontSize="14" HorizontalAlignment="Center"/>
+                                            <Button Classes="NavBtn" Classes.collapsed="True" Command="{Binding NavigateToDownloadManagerCommand}" Height="36" MinHeight="36">
+                                                <PathIcon Data="M87.04 138.971429h850.651429v62.902857H87.04zM87.04 479.085714h399.36v62.902857H87.04zM87.04 822.125714H358.4v62.902857H87.04zM703.634286 376.685714h62.902857v463.725715h-62.902857z M736.548571 885.028571L533.211429 681.691429l43.885714-44.617143 159.451428 158.72 156.525715-156.525715 43.885714 44.617143z"
+                                                          Width="15" Height="15"
+                                                          Foreground="{DynamicResource NavButtonMainBrush}"/>
                                             </Button>
                                         </StackPanel>
-                                    </Border>
+                                    </StackPanel>
                                 </Grid>
 
                                 <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToConfigManagerCommand}">
@@ -487,7 +488,7 @@
                                     </StackPanel>
                                 </Button>
                                 <!-- 版本号精准对齐并在折叠时隐去 -->
-                                <TextBlock Text="v1.3.4" 
+                                <TextBlock Text="v1.4.1" 
                                            FontSize="11" 
                                            Foreground="{DynamicResource ThemeTextSubBrush}" 
                                            Opacity="0.6" 

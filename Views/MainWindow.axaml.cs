@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.DependencyInjection;
 using Avalonia.Input;
 using MdModManager.Services;
 using MdModManager.ViewModels;
+using Avalonia.VisualTree;
 using System;
 using System.Threading.Tasks;
 
@@ -25,6 +26,26 @@ public partial class MainWindow : Window
 
         this.PointerPressed += (s, e) =>
         {
+            // 侧边栏收起且悬浮菜单展开时点击其余区域自动收回
+            if (DataContext is MainWindowViewModel vm && !vm.IsSidebarExpanded && vm.IsChartDownloadMenuExpanded)
+            {
+                var cur = e.Source as Avalonia.Visual;
+                bool clickedInsideMenu = false;
+                while (cur != null)
+                {
+                    if (cur is Avalonia.Controls.Control ctrl && ctrl.Name == "ChartDownloadContainerCollapsed")
+                    {
+                        clickedInsideMenu = true;
+                        break;
+                    }
+                    cur = cur.GetVisualParent();
+                }
+                if (!clickedInsideMenu)
+                {
+                    vm.IsChartDownloadMenuExpanded = false;
+                }
+            }
+
             var control = e.Source as Avalonia.Controls.Control;
             while (control != null)
             {
@@ -43,8 +64,7 @@ public partial class MainWindow : Window
 
             if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             {
-                // 如果没有中途 return，说明点击的是非交互区域
-                // 清除当前焦点，解决输入框一直处于输入状态的问题
+                // 清除焦点并允许拖动窗口
                 this.FocusManager?.ClearFocus();
                 this.BeginMoveDrag(e);
             }
