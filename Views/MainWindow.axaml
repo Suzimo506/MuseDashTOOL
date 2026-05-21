@@ -205,7 +205,7 @@
                                 </Button>
                                 <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToChartManagerCommand}">
                                     <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                                        <PathIcon Data="M768 128H256c-70.4 0-128 57.6-128 128v512c0 70.4 57.6 128 128 128h512c70.4 0 128-57.6 128-128V256c0-70.4-57.6-128-128-128z m42.666667 640c0 23.466667-19.2 42.666667-42.666667 42.666667H256c-23.466667 0-42.666667-19.2-42.666667-42.666667V256c0-23.466667 19.2-42.666667 42.666667-42.666667h512c23.466667 0 42.666667 19.2 42.666667 42.666667v512zM341.333333 362.666667h341.333334v85.333333H341.333333V362.666667z m0 213.333333h341.333334v85.333333H341.333333v-85.333333z"
+                                        <PathIcon Data="M512 1024C229.248 1024 0 794.752 0 512S229.248 0 512 0s512 229.248 512 512-229.248 512-512 512z m0-85.333333c235.648 0 426.666667-191.018667 426.666667-426.666667S747.648 85.333333 512 85.333333 85.333333 276.352 85.333333 512s191.018667 426.666667 426.666667 426.666667z m0-256a170.666667 170.666667 0 1 1 0-341.333334 170.666667 170.666667 0 0 1 0 341.333334z m0-85.333334a85.333333 85.333333 0 1 0 0-170.666666 85.333333 85.333333 0 0 0 0 170.666666z"
                                                   Width="18" Height="18"
                                                   Foreground="{DynamicResource NavButtonMainBrush}"/>
                                         <TextBlock Text="谱面管理" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
@@ -428,6 +428,12 @@
                                 <ScaleTransform ScaleX="{Binding FontScale}" ScaleY="{Binding FontScale}"/>
                             </LayoutTransformControl.LayoutTransform>
                             <StackPanel Spacing="8">
+                                <!-- 折叠状态下的喵斯兔小图标 -->
+                                <Image Source="/Assets/MuseDashTOOL.ico"
+                                       Width="28" Height="28"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,5,0,2"
+                                       IsVisible="{Binding !IsSidebarExpanded}"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <Button Grid.Column="0" Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding LaunchGameCommand}">
                                         <Grid>
@@ -639,5 +645,7 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
+
+
     </Panel>
 </Window>

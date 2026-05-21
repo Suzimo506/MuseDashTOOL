@@ -131,6 +131,7 @@ public partial class App : Application
         services.AddTransient<MelonLoaderViewModel>();
         services.AddSingleton<ModManagerViewModel>();
         services.AddTransient<TutorialViewModel>();
+        services.AddTransient<WelcomeViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<ConfigManagerViewModel>();
         services.AddTransient<ChartManagerViewModel>();

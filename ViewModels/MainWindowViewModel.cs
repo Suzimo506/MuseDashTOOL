@@ -126,6 +126,8 @@ public partial class MainWindowViewModel : ObservableObject
 
     private readonly System.Collections.Generic.Queue<NoticeInfo> _pendingAnnouncements = new();
 
+
+
     /// <summary>使用说明按钮是否显示红点提示</summary>
     [ObservableProperty]
     private bool _showTutorialBadge;
@@ -194,14 +196,19 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (_configService == null || _gamePathService == null) return;
 
+        // 从配置中恢复侧栏状态
+        IsSidebarExpanded = _configService.Config.IsSidebarExpanded;
+
+
+
         if (_configService.Config.IsFirstLaunch)
         {
             _configService.Config.IsFirstLaunch = false;
             await _configService.SaveAsync();
         }
 
-        // 默认进入使用说明页面
-        CurrentPage = Ioc.Default.GetRequiredService<TutorialViewModel>();
+        // 默认进入欢迎页
+        CurrentPage = Ioc.Default.GetRequiredService<WelcomeViewModel>();
 
         if (string.IsNullOrEmpty(_configService.Config.GamePath) ||
             !_gamePathService.IsValidGamePath(_configService.Config.GamePath))
@@ -250,9 +257,11 @@ public partial class MainWindowViewModel : ObservableObject
             await cuvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is EuterpeViewModel etvm)
             await etvm.InitializeAsync(_currentPageCts.Token);
+        else if (CurrentPage is WelcomeViewModel wvm)
+            await wvm.InitializeAsync();
         else if (CurrentPage is TutorialViewModel tvm)
         {
-            // 逻辑已移动至 InitializeAsync 开始处
+            // 使用说明无需异步初始化
         }
 
         // 后台预加载谱面列表 (三种分类的第一页)
@@ -1058,11 +1067,18 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ToggleSidebar()
+    private async Task ToggleSidebarAsync()
     {
-        // 切换侧边栏展开与折叠状态
+        // 切换侧边栏展开与折叠状态并保存偏好
         IsSidebarExpanded = !IsSidebarExpanded;
+        if (_configService != null)
+        {
+            _configService.Config.IsSidebarExpanded = IsSidebarExpanded;
+            await _configService.SaveAsync();
+        }
     }
+
+
 
     [RelayCommand]
     private async Task SuppressAndCloseAnnouncementAsync()

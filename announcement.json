@@ -3,17 +3,9 @@
         "id": "1.4.1",
         "is_enabled": true,
         "title": "v1.4.1 更新内容",
-        "content": "1、UI界面风格更新，完全重构",
+        "content": "1、UI界面风格更新，完全重构\n2、加入了Euterpe的谱面下载\n3、增加了欢迎页面",
         "action_button_text": "进入新版喵斯兔",
         "cancel_button_text": "不再显示该弹窗"
-    },
-    {
-        "id": "new_update_01",
-        "is_enabled": true,
-        "title": "v1.3.3 额外更新内容",
-        "content": "1、谱面管理界面优化，现在大量谱面也能很方便的查看\n2、QQ群谱面增加“谱面盲盒功能”，该功能处于测试阶段，仅供娱乐，感兴趣可以去玩一下\n3、我的账号界面增加排序功能与搜索功能",
-        "action_button_text": "知道了",
-        "cancel_button_text": "不再提醒"
     },
     {
         "id": "Emergency_20260512",

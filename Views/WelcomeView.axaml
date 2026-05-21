@@ -1,0 +1,408 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MdModManager.ViewModels"
+             x:Class="MdModManager.Views.WelcomeView"
+             x:DataType="vm:WelcomeViewModel">
+
+    <UserControl.Resources>
+        <!-- 快捷卡片按钮主题 -->
+        <ControlTheme x:Key="QuickCardBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="CardBorder"
+                            Background="{DynamicResource CardBgBrush}"
+                            CornerRadius="16"
+                            Padding="18,16"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource FloatingPanelBorder}"
+                            BoxShadow="0 2 8 0 #18000000">
+                        <Border.Transitions>
+                            <Transitions>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18" Easing="CubicEaseOut"/>
+                                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18"/>
+                            </Transitions>
+                        </Border.Transitions>
+                        <ContentPresenter Content="{TemplateBinding Content}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#CardBorder">
+                <Setter Property="RenderTransform" Value="translateY(-3px)"/>
+                <Setter Property="BoxShadow" Value="0 8 20 0 #30000000"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#CardBorder">
+                <Setter Property="RenderTransform" Value="translateY(0px) scale(0.97)"/>
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid RowDefinitions="*,Auto" ColumnDefinitions="1.1*,*" Margin="15,10,15,20" MinHeight="560">
+            <Grid.ColumnSpacing>25</Grid.ColumnSpacing>
+
+            <!-- ====== 左侧：问候与状态 ====== -->
+            <StackPanel Grid.Column="0" Spacing="22" VerticalAlignment="Top">
+
+                <!-- 问候语区域 -->
+                <StackPanel Spacing="6" Margin="0,5,0,0">
+                    <TextBlock Text="{Binding GreetingText}"
+                               FontSize="30" FontWeight="Bold" LetterSpacing="1">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                <GradientStop Color="#FF00FF" Offset="0"/>
+                                <GradientStop Color="#FF69B4" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+                    <TextBlock Text="{Binding SubtitleText}"
+                               FontSize="14"
+                               Foreground="{DynamicResource ThemeTextSubBrush}"
+                               LetterSpacing="1"/>
+                </StackPanel>
+
+                <!-- 运行状态卡片 -->
+                <Border CornerRadius="18"
+                        Padding="22,20"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource FloatingPanelBorder}"
+                        BoxShadow="0 4 16 0 #20000000">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                            <GradientStop Color="#1A1018" Offset="0"/>
+                            <GradientStop Color="#20161E" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="运行状态" FontSize="16" FontWeight="Bold"
+                                   Foreground="{DynamicResource ThemeTextMainBrush}" Opacity="0.9"/>
+
+                        <!-- 游戏路径 -->
+                        <Grid ColumnDefinitions="Auto,*">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <PathIcon Data="M928 352v-48c0-35.3-28.7-64-64-64H485.2c-21 0-40.7-10.3-52.6-27.6l-61.5-88.9c-12-17.3-31.6-27.6-52.6-27.6H64c-35.3 0-64 28.7-64 64v656c0 70.7 57.3 128 128 128h638c57.8 0 108.5-38.8 123.6-94.6L928 707.2l74.2-274.5c11-40.7-19.6-80.7-61.8-80.7H928z"
+                                          Width="14" Height="14" Foreground="{DynamicResource SvgIconBrush}"/>
+                                <TextBlock Text="游戏路径" FontSize="13" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding GamePath}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                       TextTrimming="CharacterEllipsis"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       MaxWidth="320"
+                                       ToolTip.Tip="{Binding GamePath}"/>
+                        </Grid>
+                        <Border Height="1" Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"/>
+
+                        <!-- 统计行 -->
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                            <!-- MelonLoader -->
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="4">
+                                <PathIcon Data="M128 256h768v85.333333H128V256z m85.333333 213.333333h597.333334v85.333334H213.333333v-85.333334z m128 213.333334h341.333334v85.333333H341.333333v-85.333333z"
+                                          Width="20" Height="20"
+                                          Foreground="{DynamicResource SvgIconBrush}"/>
+                                <TextBlock Text="{Binding MelonLoaderVersion, FallbackValue=未安装}"
+                                           FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ThemeTextMainBrush}"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="MelonLoader"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <!-- Mod -->
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center" Spacing="4">
+                                <PathIcon Data="M821.333333 85.333333H202.666667C136.533333 85.333333 85.333333 136.533333 85.333333 202.666667v618.666666C85.333333 887.466667 136.533333 938.666667 202.666667 938.666667h618.666666c66.133333 0 117.333333-51.2 117.333334-117.333334V202.666667C938.666667 136.533333 887.466667 85.333333 821.333333 85.333333zM298.666667 768H192v-85.333333h106.666667v85.333333z m0-170.666667H192v-85.333333h106.666667v85.333333z m0-170.666666H192V341.333333h106.666667v85.333334z m533.333333 341.333333H362.666667v-85.333333h469.333333v85.333333z m0-170.666667H362.666667v-85.333333h469.333333v85.333333z m0-170.666666H362.666667V341.333333h469.333333v85.333334z"
+                                          Width="20" Height="20"
+                                          Foreground="{DynamicResource SvgIconBrush}"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="{Binding TotalMods}"
+                                               FontSize="18" FontWeight="Bold"
+                                               Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                    <TextBlock Text="个"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                               VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                                </StackPanel>
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                           HorizontalAlignment="Center">
+                                    <Run Text="{Binding EnabledMods}"/>
+                                    <Run Text="启用 / "/>
+                                    <Run Text="{Binding DisabledMods}"/>
+                                    <Run Text="禁用"/>
+                                </TextBlock>
+                            </StackPanel>
+                            <!-- 谱面 -->
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center" Spacing="4">
+                                <PathIcon Data="M768 128H256c-70.4 0-128 57.6-128 128v512c0 70.4 57.6 128 128 128h512c70.4 0 128-57.6 128-128V256c0-70.4-57.6-128-128-128z m42.666667 640c0 23.466667-19.2 42.666667-42.666667 42.666667H256c-23.466667 0-42.666667-19.2-42.666667-42.666667V256c0-23.466667 19.2-42.666667 42.666667-42.666667h512c23.466667 0 42.666667 19.2 42.666667 42.666667v512zM341.333333 362.666667h341.333334v85.333333H341.333333V362.666667z m0 213.333333h341.333334v85.333333H341.333333v-85.333333z"
+                                          Width="20" Height="20"
+                                          Foreground="{DynamicResource SvgIconBrush}"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="{Binding TotalCharts}"
+                                               FontSize="18" FontWeight="Bold"
+                                               Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                    <TextBlock Text="首"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                               VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                                </StackPanel>
+                                <TextBlock Text="自制谱面"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- 启动游戏大按钮 -->
+                <Button Command="{Binding LaunchGameCommand}"
+                        HorizontalAlignment="Stretch"
+                        Height="52"
+                        CornerRadius="16"
+                        Cursor="Hand"
+                        BorderThickness="0">
+                    <Button.Background>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Color="#d4237a" Offset="0"/>
+                            <GradientStop Color="#FF69B4" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Button.Background>
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                        <GradientStop Color="#e0297f" Offset="0"/>
+                                        <GradientStop Color="#FF85C8" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Style>
+                        <Style Selector="Button:pressed /template/ ContentPresenter">
+                            <Setter Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                        <GradientStop Color="#b81e68" Offset="0"/>
+                                        <GradientStop Color="#e05ca0" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Style>
+                    </Button.Styles>
+                    <Button.RenderTransform>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                    </Button.RenderTransform>
+                    <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <PathIcon Data="M896 512L128 1024V0z"
+                                  Width="18" Height="18" Foreground="White"/>
+                        <TextBlock Text="启动 / 重启游戏" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- 小贴士卡片 -->
+                <Border CornerRadius="14"
+                        Padding="18,14"
+                        Background="{DynamicResource CardBgBrush}"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource FloatingPanelBorder}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Data="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64z m0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z m28-564h-56v312h56V320z m0 384h-56v56h56v-56z"
+                                  Width="16" Height="16" Foreground="{DynamicResource SvgIconBrush}" VerticalAlignment="Top" Margin="0,2,0,0"/>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="小贴士" FontSize="12" FontWeight="Bold"
+                                       Foreground="{DynamicResource SvgIconBrush}"/>
+                            <TextBlock Text="{Binding TipText}"
+                                       FontSize="13" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ====== 右侧：Logo 与快捷入口 ====== -->
+            <StackPanel Grid.Column="1" Spacing="18" VerticalAlignment="Top">
+
+                <!-- 发光 Logo -->
+                <StackPanel HorizontalAlignment="Center" Spacing="10" Margin="0,20,0,8">
+                    <Border Width="90" Height="90"
+                            CornerRadius="26"
+                            Background="#1E1018"
+                            BorderThickness="1.5"
+                            BoxShadow="0 8 28 0 #40FF69B4"
+                            HorizontalAlignment="Center">
+                        <Border.BorderBrush>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                <GradientStop Color="#FF69B4" Offset="0"/>
+                                <GradientStop Color="#d4237a" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.BorderBrush>
+                        <Image Source="/Assets/MuseDashTOOL.ico" Width="56" Height="56"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="喵斯兔" FontSize="20" FontWeight="Bold"
+                               LetterSpacing="4" HorizontalAlignment="Center">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                <GradientStop Color="#FF00FF" Offset="0"/>
+                                <GradientStop Color="#FF69B4" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- 快捷入口标题 -->
+                <TextBlock Text="快捷入口" FontSize="15" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeTextSubBrush}"
+                           Margin="4,0,0,0"/>
+
+                <!-- 快捷入口卡片网格 -->
+                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*"
+                      RowSpacing="12" ColumnSpacing="12">
+                    <!-- Mod 管理 -->
+                    <Button Grid.Row="0" Grid.Column="0"
+                            Theme="{StaticResource QuickCardBtn}"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="ModManager">
+                        <StackPanel Spacing="8">
+                            <PathIcon Data="M821.333333 85.333333H202.666667C136.533333 85.333333 85.333333 136.533333 85.333333 202.666667v618.666666C85.333333 887.466667 136.533333 938.666667 202.666667 938.666667h618.666666c66.133333 0 117.333333-51.2 117.333334-117.333334V202.666667C938.666667 136.533333 887.466667 85.333333 821.333333 85.333333zM298.666667 768H192v-85.333333h106.666667v85.333333z m0-170.666667H192v-85.333333h106.666667v85.333333z m0-170.666666H192V341.333333h106.666667v85.333334z m533.333333 341.333333H362.666667v-85.333333h469.333333v85.333333z m0-170.666667H362.666667v-85.333333h469.333333v85.333333z m0-170.666666H362.666667V341.333333h469.333333v85.333334z"
+                                      Width="22" Height="22"
+                                      Foreground="{DynamicResource SvgIconBrush}"/>
+                            <TextBlock Text="Mod 管理" FontSize="14" FontWeight="Bold"
+                                       Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                            <TextBlock Text="安装、启用或禁用模组"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 谱面管理 -->
+                    <Button Grid.Row="0" Grid.Column="1"
+                            Theme="{StaticResource QuickCardBtn}"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="ChartManager">
+                        <StackPanel Spacing="8">
+                            <PathIcon Data="M768 128H256c-70.4 0-128 57.6-128 128v512c0 70.4 57.6 128 128 128h512c70.4 0 128-57.6 128-128V256c0-70.4-57.6-128-128-128z m42.666667 640c0 23.466667-19.2 42.666667-42.666667 42.666667H256c-23.466667 0-42.666667-19.2-42.666667-42.666667V256c0-23.466667 19.2-42.666667 42.666667-42.666667h512c23.466667 0 42.666667 19.2 42.666667 42.666667v512zM341.333333 362.666667h341.333334v85.333333H341.333333V362.666667z m0 213.333333h341.333334v85.333333H341.333333v-85.333333z"
+                                      Width="22" Height="22"
+                                      Foreground="{DynamicResource SvgIconBrush}"/>
+                            <TextBlock Text="谱面管理" FontSize="14" FontWeight="Bold"
+                                       Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                            <TextBlock Text="管理本地自制谱面"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 谱面下载 -->
+                    <Button Grid.Row="1" Grid.Column="0"
+                            Theme="{StaticResource QuickCardBtn}"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="ChartDownload">
+                        <StackPanel Spacing="8">
+                            <PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z"
+                                      Width="22" Height="22"
+                                      Foreground="{DynamicResource SvgIconBrush}"/>
+                            <TextBlock Text="谱面下载" FontSize="14" FontWeight="Bold"
+                                       Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                            <TextBlock Text="从线上平台下载谱面"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 使用说明 -->
+                    <Button Grid.Row="1" Grid.Column="1"
+                            Theme="{StaticResource QuickCardBtn}"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="Tutorial">
+                        <StackPanel Spacing="8">
+                            <PathIcon Data="M512 85.333333C276.266667 85.333333 85.333333 276.266667 85.333333 512s190.933333 426.666667 426.666667 426.666667 426.666667-190.933333 426.666667-426.666667S747.733333 85.333333 512 85.333333z m42.666667 640h-85.333334v-256h85.333334v256z m0-341.333333h-85.333334v-85.333333h85.333334v85.333333z"
+                                      Width="22" Height="22"
+                                      Foreground="{DynamicResource SvgIconBrush}"/>
+                            <TextBlock Text="使用说明" FontSize="14" FontWeight="Bold"
+                                       Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                            <TextBlock Text="新手教程与常见问题"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </StackPanel>
+
+            <!-- ====== 底部：相关链接横向排列 ====== -->
+            <Border Grid.Row="1" Grid.ColumnSpan="2"
+                    CornerRadius="14"
+                    Padding="20,12"
+                    Margin="0,16,0,0"
+                    Background="{DynamicResource CardBgBrush}"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource FloatingPanelBorder}">
+                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+                    <!-- GitHub -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                        <Border Width="28" Height="28" CornerRadius="8"
+                                Background="#18FF69B4" VerticalAlignment="Center">
+                            <PathIcon Data="M511.6 76.3C264.3 76.2 64 276.4 64 523.5 64 718.9 189.3 885 370.2 948c22.5 4.1 29.7-9.8 29.7-21.5 0-11.2-.6-48.2-.6-87.6-98.2 17.8-122.7-24-130.4-46-4.4-11.2-23.4-46-40-55.2-13.7-7.3-33.2-25.5-.5-26 30.7-.5 52.6 28.3 59.9 40 35.1 59 91.1 42.4 113.4 32.2 3.5-25 13.7-42.4 24.9-52.2-87-9.8-178.2-43.5-178.2-193 0-42.6 15.2-77.8 40-105.2-4-9.8-17.5-49.8 3.8-103.7 0 0 32.7-10.3 107.2 40.2 31.2-8.7 64.4-13 97.5-13.2 33.1.2 66.3 4.5 97.5 13.2 74.5-50.8 107.2-40.2 107.2-40.2 21.3 53.9 7.8 93.9 3.8 103.7 24.9 27.4 40 62.3 40 105.2 0 150-91.4 183.2-178.6 193 14 12.2 26.2 35.4 26.2 71.6 0 51.7-.5 93.4-.5 106.4 0 11.7 7.3 25.9 29.9 21.5C834.7 885 960 718.7 960 523.5 960 276.4 759.1 76.3 511.6 76.3z"
+                                      Width="14" Height="14" Foreground="#FF69B4"/>
+                        </Border>
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="GitHub 仓库" FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                            <TextBlock Text="开源代码与反馈" FontSize="10"
+                                       Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- 分隔线 -->
+                    <Border Grid.Column="1" Width="1" Height="28"
+                            Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
+                            Margin="24,0"/>
+
+                    <!-- Euterpe -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
+                        <Border Width="28" Height="28" CornerRadius="8"
+                                Background="#18FF69B4" VerticalAlignment="Center">
+                            <PathIcon Data="M512 1024C229.248 1024 0 794.752 0 512S229.248 0 512 0s512 229.248 512 512-229.248 512-512 512z m0-85.333333c235.648 0 426.666667-191.018667 426.666667-426.666667S747.648 85.333333 512 85.333333 85.333333 276.352 85.333333 512s191.018667 426.666667 426.666667 426.666667z m0-256a170.666667 170.666667 0 1 1 0-341.333334 170.666667 170.666667 0 0 1 0 341.333334z m0-85.333334a85.333333 85.333333 0 1 0 0-170.666666 85.333333 85.333333 0 0 0 0 170.666666z"
+                                      Width="14" Height="14" Foreground="#FF69B4"/>
+                        </Border>
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="Euterpe" FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                            <TextBlock Text="自制谱面社区平台" FontSize="10"
+                                       Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- 分隔线 -->
+                    <Border Grid.Column="3" Width="1" Height="28"
+                            Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
+                            Margin="24,0"/>
+
+                    <!-- 广告位 -->
+                    <TextBlock Grid.Column="4" Text="广告位招租~" FontSize="12"
+                               Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                               VerticalAlignment="Center" Opacity="0.5"
+                               FontStyle="Italic"/>
+
+                    <!-- 右侧版本号 -->
+                    <TextBlock Grid.Column="5" Text="v1.4.1" FontSize="11"
+                               Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                               VerticalAlignment="Center" Opacity="0.5"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

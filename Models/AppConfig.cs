@@ -92,6 +92,9 @@ public class AppConfig
 
     /// <summary>整合包页是否使用列表模式</summary>
     public bool AlbumCollectionListMode { get; set; } = false;
+
+    /// <summary>侧边栏是否展开</summary>
+    public bool IsSidebarExpanded { get; set; } = true;
 }
 
 public class NoticeInfo
