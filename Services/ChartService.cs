@@ -132,20 +132,35 @@ public class ChartService : IChartService
                                             }
                                             if (mapX["charters"] is JsonArray chartersArr)
                                             {
+                                                var mapCharters = new List<string>();
                                                 foreach (var c in chartersArr)
                                                 {
                                                     var cStr = c?.ToString();
-                                                    if (!string.IsNullOrWhiteSpace(cStr) && !charters.Contains(cStr))
+                                                    if (!string.IsNullOrWhiteSpace(cStr))
                                                     {
-                                                        charters.Add(cStr);
+                                                        if (!charters.Contains(cStr))
+                                                        {
+                                                            charters.Add(cStr);
+                                                        }
+                                                        if (!mapCharters.Contains(cStr))
+                                                        {
+                                                            mapCharters.Add(cStr);
+                                                        }
                                                     }
+                                                }
+                                                if (mapCharters.Count > 0)
+                                                {
+                                                    rootObj[$"levelDesigner{i}"] = JsonValue.Create(string.Join(", ", mapCharters));
                                                 }
                                             }
                                         }
                                     }
                                     if (charters.Count > 0)
                                     {
-                                        rootObj["charter"] = JsonValue.Create(string.Join(", ", charters));
+                                        var combinedCharters = string.Join(", ", charters);
+                                        rootObj["charter"] = JsonValue.Create(combinedCharters);
+                                        // 写入谱师信息以供游戏识别
+                                        rootObj["levelDesigner"] = JsonValue.Create(combinedCharters);
                                     }
                                 }
                             }
