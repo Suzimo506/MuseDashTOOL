@@ -93,8 +93,11 @@ public class AppConfig
     /// <summary>整合包页是否使用列表模式</summary>
     public bool AlbumCollectionListMode { get; set; } = false;
 
-    /// <summary>侧边栏是否展开</summary>
+    // 侧边栏是否展开
     public bool IsSidebarExpanded { get; set; } = true;
+
+    // Euterpe 已点赞的谱面 cid 列表
+    public System.Collections.Generic.List<long> EuterpeLikedCids { get; set; } = new();
 }
 
 public class NoticeInfo

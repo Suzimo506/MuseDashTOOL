@@ -109,9 +109,15 @@ public class ChartService : IChartService
                         {
                             if (jsonNode is JsonObject rootObj && rootObj["meta"] is JsonObject metaObj)
                             {
-                                if (metaObj["name"] != null) rootObj["name"] = JsonValue.Create(metaObj["name"].ToString());
-                                if (metaObj["author"] != null) rootObj["author"] = JsonValue.Create(metaObj["author"].ToString());
-                                if (metaObj["bpm"] != null) rootObj["bpm"] = JsonValue.Create(metaObj["bpm"].ToString());
+                                var nameStr = metaObj["name"]?.ToString();
+                                if (nameStr != null) rootObj["name"] = JsonValue.Create(nameStr);
+
+                                var authorStr = metaObj["author"]?.ToString();
+                                if (authorStr != null) rootObj["author"] = JsonValue.Create(authorStr);
+
+                                var bpmStr = metaObj["bpm"]?.ToString();
+                                if (bpmStr != null) rootObj["bpm"] = JsonValue.Create(bpmStr);
+
                                 if (metaObj["maps"] is JsonObject mapsObj)
                                 {
                                     var charters = new List<string>();
@@ -119,9 +125,10 @@ public class ChartService : IChartService
                                     {
                                         if (mapsObj[$"map{i}"] is JsonObject mapX)
                                         {
-                                            if (mapX["rating"] != null)
+                                            var ratingStr = mapX["rating"]?.ToString();
+                                            if (ratingStr != null)
                                             {
-                                                rootObj[$"difficulty{i}"] = JsonValue.Create(mapX["rating"].ToString());
+                                                rootObj[$"difficulty{i}"] = JsonValue.Create(ratingStr);
                                             }
                                             if (mapX["charters"] is JsonArray chartersArr)
                                             {

@@ -103,6 +103,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
     [NotifyCanExecuteChangedFor(nameof(LoadNextPageCommand))]
     [NotifyCanExecuteChangedFor(nameof(LoadPrevPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadFirstPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadLastPageCommand))]
     private bool _isLoading;
     [ObservableProperty] private bool _isEmpty = true;
     [ObservableProperty] private string _statusMessage = "正在初始化…";
@@ -150,6 +152,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
     [NotifyCanExecuteChangedFor(nameof(LoadNextPageCommand))]
     [NotifyCanExecuteChangedFor(nameof(LoadPrevPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadFirstPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadLastPageCommand))]
     private int _currentPage = 1;
 
     [ObservableProperty]
@@ -157,6 +161,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(CanLoadPrev))]
     [NotifyCanExecuteChangedFor(nameof(LoadNextPageCommand))]
     [NotifyCanExecuteChangedFor(nameof(LoadPrevPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadFirstPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadLastPageCommand))]
     private int _totalPages = 1;
 
     private readonly List<string?> _cursors = new() { null };
@@ -366,6 +372,77 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         await ReloadAsync();
     }
 
+    // 第一页命令
+    [RelayCommand(CanExecute = nameof(CanLoadPrev))]
+    private async Task LoadFirstPageAsync()
+    {
+        CurrentPage = 1;
+        await ReloadAsync();
+    }
+
+    // 最末页命令
+    [RelayCommand(CanExecute = nameof(CanLoadNext))]
+    private async Task LoadLastPageAsync()
+    {
+        int targetPage = TotalPages;
+        if (targetPage > _cursors.Count)
+        {
+            IsLoading = true;
+            StatusMessage = "正在获取分页游标…";
+            try
+            {
+                while (_cursors.Count < targetPage)
+                {
+                    string? currentFetchCursor = _cursors.Last();
+                    string sort = SortOptions[SelectedSortIndex].Value;
+                    string query = SearchText.Trim();
+                    string path = $"charts/search?size=15&sort={Uri.EscapeDataString(sort)}";
+                    if (!string.IsNullOrEmpty(query))
+                    {
+                        path += $"&q={Uri.EscapeDataString(query)}";
+                    }
+                    if (!string.IsNullOrEmpty(currentFetchCursor))
+                    {
+                        path += $"&cursor={Uri.EscapeDataString(currentFetchCursor)}";
+                    }
+
+                    using HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, path);
+                    req.Headers.Add("X-Request-Id", Guid.CreateVersion7().ToString());
+                    string? token = _authState.AccessToken;
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    }
+
+                    using HttpResponseMessage response = await _httpClient.SendAsync(req);
+                    response.EnsureSuccessStatusCode();
+
+                    string json = await response.Content.ReadAsStringAsync();
+                    EuterpeSearchResponse? result = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.EuterpeSearchResponse);
+
+                    if (result != null && !string.IsNullOrEmpty(result.NextCursor))
+                    {
+                        _cursors.Add(result.NextCursor);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _notificationService.ShowFailure("获取分页游标失败", ex.Message);
+                IsLoading = false;
+                UpdateStatusMessage();
+                return;
+            }
+        }
+
+        CurrentPage = Math.Min(targetPage, _cursors.Count);
+        await ReloadAsync();
+    }
+
     // 谱面加载核心逻辑
     private async Task ReloadAsync(CancellationToken externalCt = default, bool force = false)
     {
@@ -418,6 +495,14 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                 foreach (var item in result.Items)
                 {
                     Charts.Add(item);
+                }
+
+                // 从本地缓存恢复点赞状态
+                var likedSet = new HashSet<long>(_configService.Config.EuterpeLikedCids);
+                foreach (var c in Charts)
+                {
+                    if (likedSet.Contains(c.Cid))
+                        c.IsLiked = true;
                 }
 
                 IsEmpty = Charts.Count == 0;
@@ -623,6 +708,19 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             chart.IsLiked = !isLiked;
             chart.LikeCount += isLiked ? -1 : 1;
+
+            // 同步本地缓存
+            var likedCids = _configService.Config.EuterpeLikedCids;
+            if (chart.IsLiked)
+            {
+                if (!likedCids.Contains(chart.Cid))
+                    likedCids.Add(chart.Cid);
+            }
+            else
+            {
+                likedCids.Remove(chart.Cid);
+            }
+            await _configService.SaveAsync();
         }
         catch (Exception ex)
         {

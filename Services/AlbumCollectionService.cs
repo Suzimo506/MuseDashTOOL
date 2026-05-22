@@ -121,7 +121,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         ["独家特供抽象谱面（宋Jerry）"] = "",
         ["MC谱面（虚无）"] = "",
         ["MC谱面（鱼，好大的鱼）"] = "",
-        ["超高难度奉上!!!（HuRew_奇迹）"] = "",
+        ["超高难度奉上!!!（HuRew_奇迹）"] = "https://b23.tv/hRYV6Ga",
         ["MC谱面（云星雨）"] = "",
         ["MC谱面（谱师：龙星）"] = "",
         ["MC谱面（是陌灬鸭 老哥）"] = "",

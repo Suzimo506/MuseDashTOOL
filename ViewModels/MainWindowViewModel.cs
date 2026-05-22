@@ -895,6 +895,17 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public async Task NavigateToEuterpeDownloadAsync()
     {
+        // 检查游戏内是否登录以防没有UID
+        if (!MuseDashAccountService.HasLoginUid())
+        {
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
+                desktop.MainWindow is MdModManager.Views.MainWindow mainWindow)
+            {
+                await mainWindow.ShowMessageBoxAsync("请先在喵斯快跑内登陆账号，再来下载Euterpe谱面吧~");
+            }
+            return;
+        }
+
         var state = Ioc.Default.GetRequiredService<AuthState>();
         if (state.CurrentUser != null)
         {

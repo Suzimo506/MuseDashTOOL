@@ -172,6 +172,25 @@ public static class MuseDashAccountService
         return null;
     }
 
+    // 检查用户是否在游戏内登录
+    public static bool HasLoginUid()
+    {
+        try
+        {
+            var info = ReadAccountInfo();
+            if (info != null && !string.IsNullOrWhiteSpace(info.Uid))
+            {
+                return true;
+            }
+        }
+        catch
+        {
+            // 忽略异常
+        }
+
+        return false;
+    }
+
     // ────────────────────────────────────────────────────────────
     //  Startup prefetch — call StartPrefetch() once from App.cs
     // ────────────────────────────────────────────────────────────
