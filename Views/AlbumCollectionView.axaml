@@ -82,7 +82,8 @@
                                FontFamily="Segoe UI, Microsoft YaHei, sans-serif"
                                FontSize="13"/>
                 </ToolTip.Tip>
-                <Border Background="{DynamicResource CardBgBrush}"
+                <Border Classes="ListRowBorder"
+                        Background="{DynamicResource CardBgBrush}"
                         CornerRadius="10"
                         Padding="14,12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
@@ -157,6 +158,21 @@
         <Style Selector="Border.FolderCard:pointerover">
             <Setter Property="BorderBrush" Value="#CCFF8EBE"/>
         </Style>
+
+        <!-- 列表行卡片样式 -->
+        <Style Selector="Border.ListRowBorder">
+            <Setter Property="BorderBrush" Value="#15FF8EBE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.ListRow:pointerover Border.ListRowBorder">
+            <Setter Property="BorderBrush" Value="#CCFF8EBE"/>
+        </Style>
+
         <Style Selector="Button.ListRow:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="Transparent"/>
         </Style>
@@ -406,7 +422,7 @@
                            VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,0,20">
                     <!-- 搜索出来的谱面列表 (仅在搜索且有结果时显示) -->
-                    <StackPanel x:Name="SearchResultsAnchor" IsVisible="{Binding HasSearchResults}" Margin="10,0,10,20">
+                    <StackPanel x:Name="SearchResultsAnchor" IsVisible="{Binding HasSearchResults}" Margin="10,16,10,20">
                         <ItemsControl ItemsSource="{Binding SearchResults}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -415,7 +431,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:MdmcChart">
-                                    <Border Classes="Card" CornerRadius="10" Margin="8,0,8,16" VerticalAlignment="Top" ClipToBounds="True">
+                                    <Border Classes="Card" CornerRadius="10" Margin="8,4,8,12" VerticalAlignment="Top" ClipToBounds="True">
                                         <Grid RowDefinitions="Auto,*">
                                             <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
                                                 <Panel>
@@ -730,7 +746,8 @@
                                             HorizontalAlignment="Stretch"
                                             Margin="8,0,8,10"
                                             Cursor="Hand">
-                                        <Border Background="{DynamicResource CardBgBrush}"
+                                        <Border Classes="ListRowBorder"
+                                                Background="{DynamicResource CardBgBrush}"
                                                 CornerRadius="10"
                                                 Padding="14,12">
                                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">

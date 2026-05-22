@@ -182,8 +182,7 @@
         <!-- 谱面卡片区域 -->
         <ScrollViewer Grid.Row="1" IsVisible="{Binding !IsLoading}"
                       HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding Charts}" Margin="10,0,10,20">
-
+            <ItemsControl ItemsSource="{Binding Charts}" Margin="10,16,10,20">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <UniformGrid Columns="5" HorizontalAlignment="Stretch"/>
@@ -191,7 +190,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="models:MdmcChart">
-                        <Border Classes="Card" CornerRadius="10" Margin="8,0,8,16" VerticalAlignment="Top" ClipToBounds="True">
+                        <Border Classes="Card" CornerRadius="10" Margin="8,4,8,12" VerticalAlignment="Top" ClipToBounds="True">
                             <Grid RowDefinitions="Auto,*">
                                 <!-- 封面 -->
                                 <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">

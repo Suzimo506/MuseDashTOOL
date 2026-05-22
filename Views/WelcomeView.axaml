@@ -480,7 +480,7 @@
                                FontStyle="Italic"/>
 
                     <!-- 右侧版本号 -->
-                    <TextBlock Grid.Column="9" Text="v1.4.2" FontSize="11"
+                    <TextBlock Grid.Column="9" Text="v1.4.3" FontSize="11"
                                Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                VerticalAlignment="Center" Opacity="0.5"/>
                 </Grid>

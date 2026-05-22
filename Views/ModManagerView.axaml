@@ -108,6 +108,202 @@
             <Setter Property="BoxShadow" Value="0 10 28 0 #18000000"/>
             <Setter Property="Padding" Value="18,16"/>
         </Style>
+
+        <!-- Mod卡片样式 -->
+        <Style Selector="Border.ModCard">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#2C1E2B" Offset="0"/>
+                        <GradientStop Color="#191018" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#15FF8EBE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.25"/>
+                </Transitions>
+            </Setter>
+            <Setter Property="BoxShadow" Value="0 6 20 0 #18000000"/>
+        </Style>
+        <Style Selector="Border.ModCard:pointerover">
+            <Setter Property="BorderBrush" Value="#CCFF8EBE"/>
+            <Setter Property="BoxShadow" Value="0 12 32 0 #35000000"/>
+        </Style>
+
+        <!-- 工具栏操作按钮样式 -->
+        <Style Selector="Button.ToolbarActionBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.ToolbarActionBtn /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.ToolbarActionBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#1AF25D9C"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.ToolbarActionBtn:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.08)"/>
+        </Style>
+        <Style Selector="Button.ToolbarActionBtn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#30F25D9C"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.ToolbarActionBtn:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.92)"/>
+        </Style>
+        <Style Selector="Button.ToolbarActionBtn PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextMainBrush}"/>
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.ToolbarActionBtn:pointerover PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}"/>
+        </Style>
+
+        <!-- 卡片操作按钮样式 -->
+        <Style Selector="Button.CardActionBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.CardActionBtn /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.CardActionBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#1AF25D9C"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.CardActionBtn:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.08)"/>
+        </Style>
+        <Style Selector="Button.CardActionBtn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#30F25D9C"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.CardActionBtn:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.92)"/>
+        </Style>
+        <Style Selector="Button.CardActionBtn PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource SvgIconBrush}"/>
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.CardActionBtn:pointerover PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}"/>
+        </Style>
+
+        <!-- 微型状态徽章样式 -->
+        <Style Selector="Border.Badge">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,2"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+        </Style>
+        <Style Selector="TextBlock.BadgeText">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- 已禁用徽章 -->
+        <Style Selector="Border.BadgeDisabled">
+            <Setter Property="Background" Value="#1AFF8BA7"/>
+            <Setter Property="BorderBrush" Value="#40FF8BA7"/>
+        </Style>
+        <Style Selector="Border.BadgeDisabled TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource SoftDangerBrush}"/>
+        </Style>
+
+        <!-- 有更新徽章 -->
+        <Style Selector="Border.BadgeUpdate">
+            <Setter Property="Background" Value="#1AF25D9C"/>
+            <Setter Property="BorderBrush" Value="#40F25D9C"/>
+        </Style>
+        <Style Selector="Border.BadgeUpdate TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}"/>
+        </Style>
+
+        <!-- 最新版本徽章 -->
+        <Style Selector="Border.BadgeUpToDate">
+            <Setter Property="Background" Value="#1A7ED9AE"/>
+            <Setter Property="BorderBrush" Value="#407ED9AE"/>
+        </Style>
+        <Style Selector="Border.BadgeUpToDate TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource SoftSuccessBrush}"/>
+        </Style>
+
+        <!-- 未安装徽章 -->
+        <Style Selector="Border.BadgeNotInstalled">
+            <Setter Property="Background" Value="#1A8D7886"/>
+            <Setter Property="BorderBrush" Value="#408D7886"/>
+        </Style>
+        <Style Selector="Border.BadgeNotInstalled TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextTertiaryBrush}"/>
+        </Style>
+
+        <!-- 不兼容徽章 -->
+        <Style Selector="Border.BadgeIncompatible">
+            <Setter Property="Background" Value="#1AFF0000"/>
+            <Setter Property="BorderBrush" Value="#40FF0000"/>
+        </Style>
+        <Style Selector="Border.BadgeIncompatible TextBlock">
+            <Setter Property="Foreground" Value="Red"/>
+        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
@@ -186,9 +382,20 @@
                             <Setter Property="Cursor" Value="Hand" />
                             <Setter Property="Watermark" Value="" />
                         </Style>
-                        <!-- 隐藏原生 TextBox Hover 状态的边框与背景，保持极简 SVG 风格 -->
-                        <Style Selector="TextBox.ExpandableSearch:not(:focus):not(.HasText):pointerover /template/ Border#PART_BorderElement">
+                        <!-- 彻底隐藏原生 TextBox 在所有状态下的边框与背景 -->
+                        <Style Selector="TextBox.ExpandableSearch /template/ Border#PART_BorderElement">
                             <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderBrush" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                        </Style>
+                        <Style Selector="TextBox.ExpandableSearch:pointerover /template/ Border#PART_BorderElement">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderBrush" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                        </Style>
+                        <Style Selector="TextBox.ExpandableSearch:focus /template/ Border#PART_BorderElement">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderBrush" Value="Transparent" />
                             <Setter Property="BorderThickness" Value="0" />
                         </Style>
                     </TextBox.Styles>
@@ -205,28 +412,22 @@
                     </TextBox.InnerRightContent>
                 </TextBox>
                 
-                <Button Theme="{StaticResource RobustPlainIconBtn}"
+                <Button Classes="ToolbarActionBtn"
                         Click="OnImportClick"
-                        VerticalAlignment="Center"
                         ToolTip.Tip="导入 Mod (.dll / .zip)">
-                    <PathIcon Data="M563.2 42.666667v640c0 23.466667-19.2 42.666667-42.666667 42.666666s-42.666667-19.2-42.666666-42.666666V42.666667c0-23.466667 19.2-42.666667 42.666666-42.666667s42.666667 19.2 42.666667 42.666667 M806.1952 457.275733L550.5792 712.900267a42.7776 42.7776 0 0 1-60.330667 0c-16.597333-16.605867-16.597333-43.776 0-60.330667l255.616-255.624533a42.7776 42.7776 0 0 1 60.330667 0 42.7776 42.7776 0 0 1 0 60.330666 M490.350933 712.8832L234.734933 457.275733a42.7776 42.7776 0 0 1 0-60.330666c16.597333-16.605867 43.776-16.605867 60.330667 0l255.616 255.616a42.7776 42.7776 0 0 1 0 60.330666 42.7776 42.7776 0 0 1-60.330667 0 M904.533333 1024H136.533333c-70.570667 0-128-57.429333-128-128V640c0-23.594667 19.072-42.666667 42.666667-42.666667s42.666667 19.072 42.666667 42.666667v256c0 23.552 19.114667 42.666667 42.666666 42.666667h768c23.552 0 42.666667-19.114667 42.666667-42.666667V640c0-23.594667 19.072-42.666667 42.666667-42.666667s42.666667 19.072 42.666666 42.666667v256c0 70.570667-57.429333 128-128 128" 
-                              Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                    <PathIcon Data="M563.2 42.666667v640c0 23.466667-19.2 42.666667-42.666667 42.666666s-42.666667-19.2-42.666666-42.666666V42.666667c0-23.466667 19.2-42.666667 42.666666-42.666667s42.666667 19.2 42.666667 42.666667 M806.1952 457.275733L550.5792 712.900267a42.7776 42.7776 0 0 1-60.330667 0c-16.597333-16.605867-16.597333-43.776 0-60.330667l255.616-255.624533a42.7776 42.7776 0 0 1 60.330667 0 42.7776 42.7776 0 0 1 0 60.330666 M490.350933 712.8832L234.734933 457.275733a42.7776 42.7776 0 0 1 0-60.330666c16.597333-16.605867 43.776-16.605867 60.330667 0l255.616 255.616a42.7776 42.7776 0 0 1 0 60.330666 42.7776 42.7776 0 0 1-60.330667 0 M904.533333 1024H136.533333c-70.570667 0-128-57.429333-128-128V640c0-23.594667 19.072-42.666667 42.666667-42.666667s42.666667 19.072 42.666667 42.666667v256c0 23.552 19.114667 42.666667 42.666666 42.666667h768c23.552 0 42.666667-19.114667 42.666667-42.666667V640c0-23.594667 19.072-42.666667 42.666667-42.666667s42.666667 19.072 42.666666 42.666667v256c0 70.570667-57.429333 128-128 128"/>
                 </Button>
                 
-                <Button Theme="{StaticResource RobustPlainIconBtn}"
+                <Button Classes="ToolbarActionBtn"
                         Command="{Binding OpenFolderCommand}"
-                        VerticalAlignment="Center"
                         ToolTip.Tip="打开 Mod 文件夹">
-                    <PathIcon Data="M928 352v-48c0-35.3-28.7-64-64-64H485.2c-21 0-40.7-10.3-52.6-27.6l-61.5-88.9c-12-17.3-31.6-27.6-52.6-27.6H64c-35.3 0-64 28.7-64 64v656c0 70.7 57.3 128 128 128h638c57.8 0 108.5-38.8 123.6-94.6L928 707.2l74.2-274.5c11-40.7-19.6-80.7-61.8-80.7H928zM80 160h230.1c5.3 0 10.2 2.6 13.2 6.9l50.6 73.1H80c-8.8 0-16-7.2-16-16v-48c0-8.8 7.2-16 16-16z m0 144h768c8.8 0 16 7.2 16 16v32H209c-28.9 0-54.2 19.4-61.8 47.3L79.7 649c-2.4 9-15.7 7.3-15.7-2.1V320c0-8.8 7.2-16 16-16z m784 394.7l-36.2 134c-7.5 27.9-32.9 47.3-61.8 47.3H125.4c-21.1 0-36.4-20-30.9-40.3l111.3-411.8c1.9-7 8.2-11.8 15.4-11.8h698.3c10.5 0 18.2 10 15.4 20.2l-7 25.7L864 698.7z" 
-                              Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                    <PathIcon Data="M928 352v-48c0-35.3-28.7-64-64-64H485.2c-21 0-40.7-10.3-52.6-27.6l-61.5-88.9c-12-17.3-31.6-27.6-52.6-27.6H64c-35.3 0-64 28.7-64 64v656c0 70.7 57.3 128 128 128h638c57.8 0 108.5-38.8 123.6-94.6L928 707.2l74.2-274.5c11-40.7-19.6-80.7-61.8-80.7H928zM80 160h230.1c5.3 0 10.2 2.6 13.2 6.9l50.6 73.1H80c-8.8 0-16-7.2-16-16v-48c0-8.8 7.2-16 16-16z m0 144h768c8.8 0 16 7.2 16 16v32H209c-28.9 0-54.2 19.4-61.8 47.3L79.7 649c-2.4 9-15.7 7.3-15.7-2.1V320c0-8.8 7.2-16 16-16z m784 394.7l-36.2 134c-7.5 27.9-32.9 47.3-61.8 47.3H125.4c-21.1 0-36.4-20-30.9-40.3l111.3-411.8c1.9-7 8.2-11.8 15.4-11.8h698.3c10.5 0 18.2 10 15.4 20.2l-7 25.7L864 698.7z"/>
                 </Button>
                 
-                <Button Theme="{StaticResource RobustPlainIconBtn}"
+                <Button Classes="ToolbarActionBtn"
                         Command="{Binding RefreshModListCommand}"
-                        VerticalAlignment="Center"
                         ToolTip.Tip="刷新 Mod 列表">
-                    <PathIcon Data="M369.777778 160.568889a42.666667 42.666667 0 0 1-42.666667 42.666667H128a42.666667 42.666667 0 1 1 0-85.333334h199.111111a42.666667 42.666667 0 0 1 42.666667 42.666667 M327.111111 402.346667a42.666667 42.666667 0 0 1-42.666667-42.666667v-199.111111a42.666667 42.666667 0 1 1 85.333334 0v199.111111a42.666667 42.666667 0 0 1-42.666667 42.666667 M512.014222 938.652444h-0.753778a424.533333 424.533333 0 0 1-294.272-124.913777c-80.583111-80.583111-124.956444-187.733333-124.956444-301.696 0-113.976889 44.373333-221.112889 124.970667-301.696l73.088-73.116445a42.680889 42.680889 0 0 1 60.359111 60.344889l-73.102222 73.102222a339.057778 339.057778 0 0 0-99.982223 241.351111A339.128889 339.128889 0 0 0 277.333333 753.422222a339.640889 339.640889 0 0 0 235.406223 99.911111 42.680889 42.680889 0 0 1-0.725334 85.333334 M654.222222 863.473778v-0.014222a42.666667 42.666667 0 0 1 42.666667-42.666667h199.111111a42.666667 42.666667 0 0 1 0 85.333333H696.888889a42.666667 42.666667 0 0 1-42.666667-42.666666 M696.888889 621.681778a42.666667 42.666667 0 0 1 42.666667 42.666666v199.111112a42.666667 42.666667 0 0 1-85.333334 0v-199.111112a42.666667 42.666667 0 0 1 42.666667-42.666666 M703.715556 899.285333a42.638222 42.638222 0 0 1-30.165334-72.832l73.130667-73.102222c133.077333-133.091556 133.077333-349.653333 0-482.730667A339.100444 339.100444 0 0 0 505.315556 170.666667a42.666667 42.666667 0 1 1 0-85.333334c113.976889 0 221.112889 44.387556 301.681777 124.970667 166.357333 166.343111 166.357333 437.048889 0 603.377778l-73.102222 73.116444a42.524444 42.524444 0 0 1-30.165333 12.515556" 
-                              Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                    <PathIcon Data="M369.777778 160.568889a42.666667 42.666667 0 0 1-42.666667 42.666667H128a42.666667 42.666667 0 1 1 0-85.333334h199.111111a42.666667 42.666667 0 0 1 42.666667 42.666667 M327.111111 402.346667a42.666667 42.666667 0 0 1-42.666667-42.666667v-199.111111a42.666667 42.666667 0 1 1 85.333334 0v199.111111a42.666667 42.666667 0 0 1-42.666667 42.666667 M512.014222 938.652444h-0.753778a424.533333 424.533333 0 0 1-294.272-124.913777c-80.583111-80.583111-124.956444-187.733333-124.956444-301.696 0-113.976889 44.373333-221.112889 124.970667-301.696l73.088-73.116445a42.680889 42.680889 0 0 1 60.359111 60.344889l-73.102222 73.102222a339.057778 339.057778 0 0 0-99.982223 241.351111A339.128889 339.128889 0 0 0 277.333333 753.422222a339.640889 339.640889 0 0 0 235.406223 99.911111 42.680889 42.680889 0 0 1-0.725334 85.333334 M654.222222 863.473778v-0.014222a42.666667 42.666667 0 0 1 42.666667-42.666667h199.111111a42.666667 42.666667 0 0 1 0 85.333333H696.888889a42.666667 42.666667 0 0 1-42.666667-42.666666 M696.888889 621.681778a42.666667 42.666667 0 0 1 42.666667 42.666666v199.111112a42.666667 42.666667 0 0 1-85.333334 0v-199.111112a42.666667 42.666667 0 0 1 42.666667-42.666666 M703.715556 899.285333a42.638222 42.638222 0 0 1-30.165334-72.832l73.130667-73.102222c133.077333-133.091556 133.077333-349.653333 0-482.730667A339.100444 339.100444 0 0 0 505.315556 170.666667a42.666667 42.666667 0 1 1 0-85.333334c113.976889 0 221.112889 44.387556 301.681777 124.970667 166.357333 166.343111 166.357333 437.048889 0 603.377778l-73.102222 73.116444a42.524444 42.524444 0 0 1-30.165333 12.515556"/>
                 </Button>
             </StackPanel>
             </Border>
@@ -270,13 +471,10 @@
                     <ItemsControl ItemsSource="{Binding Mods}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="models:LocalMod">
-                            <Border Background="{DynamicResource ModCardBgBrush}"
-                                    BorderBrush="{DynamicResource ShellOutlineBrush}"
-                                    BorderThickness="1"
+                            <Border Classes="ModCard"
                                     CornerRadius="18"
                                     Padding="18"
-                                    Margin="0,0,0,14"
-                                    BoxShadow="0 8 24 0 #14000000">
+                                    Margin="0,0,16,14">
                                 <StackPanel>
                                     <Button Command="{Binding ToggleExpandCommand}"
                                             Background="Transparent"
@@ -313,114 +511,115 @@
                                                 <!-- 待删除提示文字 -->
                                                 <TextBlock Text="将在游戏关闭后自动删除" IsVisible="{Binding IsPendingDelete}"
                                                            Foreground="Red" FontSize="12" Margin="0,3,0,0"/>
-                                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
-                                                    <TextBlock Text="{Binding Version, StringFormat='版本: {0}'}" Foreground="{DynamicResource ThemeTextSubBrush}"/>
-                                                    <TextBlock Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,5,0,0">
+                                                    <TextBlock Text="{Binding Version, StringFormat='版本: {0}'}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="13"/>
+                                                    <TextBlock Text="·" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="13"/>
+                                                    <TextBlock Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="13"
                                                                helpers:TextBlockHelper.HighlightText="{Binding Author, StringFormat='作者: {0}'}"
                                                                helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ModManagerViewModel)DataContext).SearchText}"/>
                                                 </StackPanel>
-                                                <TextBlock Text="已禁用" IsVisible="{Binding IsDisabled}" Foreground="Red" Margin="0,5,0,0"/>
-                                                <!-- 本地/更新列表：有更新时显示远端版本号 -->
-                                                <TextBlock Text="{Binding UpdateAvailableText}" IsVisible="{Binding HasUpdate}" Foreground="{DynamicResource ThemeAccentBrush}" Margin="0,5,0,0"/>
-                                                <!-- 下载列表：已安装且无更新 → 最新版本 -->
-                                                <TextBlock Text="最新版本" IsVisible="{Binding DownloadListIsUpToDate}" Foreground="{DynamicResource SoftSuccessBrush}" Margin="0,5,0,0"/>
-                                                <!-- 下载列表：已安装但有更新 → 有更新可用（下载列表不显示版本号，只提示） -->
-                                                <TextBlock Text="有更新可用" IsVisible="{Binding DownloadListHasUpdate}" Foreground="{DynamicResource ThemeAccentBrush}" Margin="0,5,0,0"/>
-                                                <!-- 下载列表：未安装（仅在下载Tab且未安装时显示，本地/更新列表不会出现） -->
-                                                <TextBlock Text="未安装" IsVisible="{Binding ShowNotInstalledBadge}" Foreground="{DynamicResource ThemeTextTertiaryBrush}" Margin="0,5,0,0"/>
-                                                <!-- 占位：不兼容（逻辑待实现） -->
-                                                <TextBlock Text="不兼容" IsVisible="{Binding IsIncompatible}" Foreground="Red" Margin="0,5,0,0"/>
+                                                
+                                                <!-- 微型状态徽章系统 -->
+                                                <WrapPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                    <!-- 已禁用徽章 -->
+                                                    <Border Classes="Badge BadgeDisabled" IsVisible="{Binding IsDisabled}">
+                                                        <TextBlock Classes="BadgeText" Text="已禁用"/>
+                                                    </Border>
+                                                    
+                                                    <!-- 本地/更新列表：有更新徽章 -->
+                                                    <Border Classes="Badge BadgeUpdate" IsVisible="{Binding HasUpdate}">
+                                                        <TextBlock Classes="BadgeText" Text="{Binding UpdateAvailableText}"/>
+                                                    </Border>
+                                                    
+                                                    <!-- 下载列表：最新版本徽章 -->
+                                                    <Border Classes="Badge BadgeUpToDate" IsVisible="{Binding DownloadListIsUpToDate}">
+                                                        <TextBlock Classes="BadgeText" Text="最新版本"/>
+                                                    </Border>
+                                                    
+                                                    <!-- 下载列表：有更新可用徽章 -->
+                                                    <Border Classes="Badge BadgeUpdate" IsVisible="{Binding DownloadListHasUpdate}">
+                                                        <TextBlock Classes="BadgeText" Text="有更新可用"/>
+                                                    </Border>
+                                                    
+                                                    <!-- 下载列表：未安装徽章 -->
+                                                    <Border Classes="Badge BadgeNotInstalled" IsVisible="{Binding ShowNotInstalledBadge}">
+                                                        <TextBlock Classes="BadgeText" Text="未安装"/>
+                                                    </Border>
+                                                    
+                                                    <!-- 不兼容徽章 -->
+                                                    <Border Classes="Badge BadgeIncompatible" IsVisible="{Binding IsIncompatible}">
+                                                        <TextBlock Classes="BadgeText" Text="不兼容"/>
+                                                    </Border>
+                                                </WrapPanel>
                                             </StackPanel>
                                             
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="25" VerticalAlignment="Center" Margin="0,0,15,0">
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Margin="0,0,15,0">
                                                 <!-- ===== 下载列表专属按钮区 ===== -->
-                                                <!-- 前往详情页 按钮 -->
-                                                <Button Theme="{StaticResource RobustPlainIconBtn}"
+                                                <!-- 前往详情页按钮 -->
+                                                <Button Classes="CardActionBtn"
                                                         IsVisible="{Binding FilePath, Converter={x:Static StringConverters.IsNullOrEmpty}}"
                                                         Command="{Binding $parent[UserControl].((vm:ModManagerViewModel)DataContext).OpenHomePageCommand}"
                                                         CommandParameter="{Binding}"
-                                                        ToolTip.Tip="前往详情页"
-                                                        Padding="10,0"
-                                                        HorizontalContentAlignment="Center">
-                                                    <PathIcon Width="24" Height="24" Foreground="{DynamicResource SvgIconBrush}"
-                                                              Data="M52.48512 777.33376c0 71.7312 14.22848 141.58848 42.3424 207.68768l9.39008 22.07744 4.352-23.65952c38.74816-208.76288 229.86752-366.76608 446.33088-370.21696 0.13312 36.36736 0.55296 184.48384 0.61952 193.46432-1.31072 12.12416 2.28352 23.6544 9.80992 32.08704l0.896 4.0704 3.0464 0c7.52128 6.84032 16.98304 10.5728 27.07456 10.5728 12.0832 0 23.20896-5.60128 30.80704-15.37536l332.57472-371.9424c7.94624-8.12032 12.22144-19.4816 11.74528-31.2576 0.47616-11.91424-3.66592-22.99904-11.53536-30.94528L625.08032 29.02528c-7.80288-7.83872-18.0992-12.12416-29.07648-12.12416-10.98752 0-21.34528 4.28544-29.21984 12.19072-8.56576 8.87296-12.63616 20.93056-11.25888 33.98656l0 193.92C277.4528 260.93056 52.48512 492.86656 52.48512 777.33376zM629.91872 530.67776c-0.83456 0-79.57504-0.65024-101.26336-0.65024-131.43552 0-310.74304 99.05152-393.00608 191.04256 8.56576-65.8176 50.42176-152.57088 109.3376-223.9232 46.96576-56.91904 146.36032-153.06752 283.95008-157.40928 3.93216-0.17408 11.60192-0.24576 22.92736-0.24576 30.45888 0 77.42976 0.54784 77.91104 0.5888l7.32672 0.06656L637.10208 166.85568l239.40096 267.99104-239.40096 267.7248 0-171.81696L629.91872 530.67776z"/>
+                                                        ToolTip.Tip="前往详情页">
+                                                    <PathIcon Data="M52.48512 777.33376c0 71.7312 14.22848 141.58848 42.3424 207.68768l9.39008 22.07744 4.352-23.65952c38.74816-208.76288 229.86752-366.76608 446.33088-370.21696 0.13312 36.36736 0.55296 184.48384 0.61952 193.46432-1.31072 12.12416 2.28352 23.6544 9.80992 32.08704l0.896 4.0704 3.0464 0c7.52128 6.84032 16.98304 10.5728 27.07456 10.5728 12.0832 0 23.20896-5.60128 30.80704-15.37536l332.57472-371.9424c7.94624-8.12032 12.22144-19.4816 11.74528-31.2576 0.47616-11.91424-3.66592-22.99904-11.53536-30.94528L625.08032 29.02528c-7.80288-7.83872-18.0992-12.12416-29.07648-12.12416-10.98752 0-21.34528 4.28544-29.21984 12.19072-8.56576 8.87296-12.63616 20.93056-11.25888 33.98656l0 193.92C277.4528 260.93056 52.48512 492.86656 52.48512 777.33376zM629.91872 530.67776c-0.83456 0-79.57504-0.65024-101.26336-0.65024-131.43552 0-310.74304 99.05152-393.00608 191.04256 8.56576-65.8176 50.42176-152.57088 109.3376-223.9232 46.96576-56.91904 146.36032-153.06752 283.95008-157.40928 3.93216-0.17408 11.60192-0.24576 22.92736-0.24576 30.45888 0 77.42976 0.54784 77.91104 0.5888l7.32672 0.06656L637.10208 166.85568l239.40096 267.99104-239.40096 267.7248 0-171.81696L629.91872 530.67776z"/>
                                                 </Button>
 
-                                                <!-- 下载/再次下载 按钮 -->
-                                                <Button Theme="{StaticResource RobustPlainIconBtn}"
+                                                <!-- 下载或再次下载按钮 -->
+                                                <Button Classes="CardActionBtn"
                                                         IsVisible="{Binding FilePath, Converter={x:Static StringConverters.IsNullOrEmpty}}"
                                                         Click="OnDownloadClick"
                                                         Tag="{Binding}"
-                                                        ToolTip.Tip="下载 / 再次下载"
-                                                        Padding="10,0"
-                                                        HorizontalContentAlignment="Center">
+                                                        ToolTip.Tip="下载 / 再次下载">
                                                     <Panel>
-                                                        <!-- 下载 (未安装) SVG 从 ChartDownloadView 借用 -->
+                                                        <!-- 下载 SVG -->
                                                         <PathIcon IsVisible="{Binding !IsLocallyInstalled}"
-                                                                  Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z"
-                                                                  Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"/>
-                                                        <!-- 重新下载 (已安装) SVG -->
+                                                                  Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z"/>
+                                                        <!-- 重新下载 SVG -->
                                                         <PathIcon IsVisible="{Binding IsLocallyInstalled}"
-                                                                  Data="M833.629464 771.952417H190.325709a44.694224 44.694224 0 1 0 0 89.022102h643.303755a44.694224 44.694224 0 1 0 0-89.022102zM687.091023 934.610086H336.86415a44.694224 44.694224 0 0 0 0 89.388449h350.226873A44.327878 44.327878 0 0 0 731.785248 979.30431a45.060571 45.060571 0 0 0-44.694225-44.694224zM482.303552 696.118773a36.63461 36.63461 0 0 0 30.040381 11.35673 42.129802 42.129802 0 0 0 30.406726-11.35673l269.630731-271.096115a40.298071 40.298071 0 0 0-56.783646-58.615376l-204.787471 204.787471V40.725597A40.664417 40.664417 0 0 0 511.977587 0.06118a39.931725 39.931725 0 0 0-42.129802 40.664417v527.538387L269.456467 366.407282a40.298071 40.298071 0 0 0-56.783646 58.615376z"
-                                                                  Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"/>
+                                                                  Data="M833.629464 771.952417H190.325709a44.694224 44.694224 0 1 0 0 89.022102h643.303755a44.694224 44.694224 0 1 0 0-89.022102zM687.091023 934.610086H336.86415a44.694224 44.694224 0 0 0 0 89.388449h350.226873A44.327878 44.327878 0 0 0 731.785248 979.30431a45.060571 45.060571 0 0 0-44.694225-44.694224zM482.303552 696.118773a36.63461 36.63461 0 0 0 30.040381 11.35673 42.129802 42.129802 0 0 0 30.406726-11.35673l269.630731-271.096115a40.298071 40.298071 0 0 0-56.783646-58.615376l-204.787471 204.787471V40.725597A40.664417 40.664417 0 0 0 511.977587 0.06118a39.931725 39.931725 0 0 0-42.129802 40.664417v527.538387L269.456467 366.407282a40.298071 40.298071 0 0 0-56.783646 58.615376z"/>
                                                     </Panel>
                                                 </Button>
 
                                                 <!-- ===== 更新列表专属按钮区：仅在更新Tab中显示 ===== -->
-                                                <Button Theme="{StaticResource RobustPlainIconBtn}"
+                                                <Button Classes="CardActionBtn"
                                                         IsVisible="{Binding $parent[UserControl].((vm:ModManagerViewModel)DataContext).IsUpdateTabSelected}"
                                                         Command="{Binding $parent[UserControl].((vm:ModManagerViewModel)DataContext).UpdateModCommand}"
                                                         CommandParameter="{Binding}"
-                                                        ToolTip.Tip="更新"
-                                                        Padding="10,0"
-                                                        HorizontalContentAlignment="Center">
-                                                    <PathIcon Width="22" Height="22" Foreground="{DynamicResource SvgIconBrush}"
-                                                              Data="M0.10041 904.300096h1023.79918V1024H0.10041V904.300096z m805.599355-631.599494l-235.299812-247.999802C554.999966 8.900813 533.999982 0.00082 512 0.00082c-21.999982-0.1-42.999966 8.899993-58.199953 24.79998L218.000235 272.800602c-12.79999 13.399989-19.999984 31.199975-20.199983 49.79996 1.399999 42.099966 36.399971 75.29994 78.499937 74.39994h1.799998v0.4h105.799916v408.899672h255.999795V397.400502h102.599917v-0.6h4.699997c42.099966 0.899999 77.099938-32.299974 78.499937-74.39994 0.1-18.499985-7.199994-36.399971-19.999984-49.69996z"/>
+                                                        ToolTip.Tip="更新">
+                                                    <PathIcon Data="M0.10041 904.300096h1023.79918V1024H0.10041V904.300096z m805.599355-631.599494l-235.299812-247.999802C554.999966 8.900813 533.999982 0.00082 512 0.00082c-21.999982-0.1-42.999966 8.899993-58.199953 24.79998L218.000235 272.800602c-12.79999 13.399989-19.999984 31.199975-20.199983 49.79996 1.399999 42.099966 36.399971 75.29994 78.499937 74.39994h1.799998v0.4h105.799916v408.899672h255.999795V397.400502h102.599917v-0.6h4.699997c42.099966 0.899999 77.099938-32.299974 78.499937-74.39994 0.1-18.499985-7.199994-36.399971-19.999984-49.69996z"/>
                                                 </Button>
 
-                                                <!-- 启用/禁用/删除按钮：仅在本地列表（Tab 0）中显示 -->
-                                                <StackPanel Orientation="Horizontal" Spacing="25"
+                                                <!-- 启用或禁用或删除按钮 -->
+                                                <StackPanel Orientation="Horizontal" Spacing="12"
                                                             IsVisible="{Binding $parent[UserControl].((vm:ModManagerViewModel)DataContext).IsLocalTabSelected}">
                                                     <!-- 待删除的 Mod 隐藏这些操作按钮 -->
-                                                    <StackPanel Orientation="Horizontal" Spacing="25" IsVisible="{Binding !IsPendingDelete}">
-                                                        <!-- 跳转到该 mod 对应的配置文件编辑 -->
+                                                    <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding !IsPendingDelete}">
+                                                        <!-- 打开配置文件按钮 -->
                                                         <Button Command="{Binding $parent[UserControl].((vm:ModManagerViewModel)DataContext).OpenModConfigCommand}"
                                                                 CommandParameter="{Binding}"
                                                                 IsVisible="{Binding HasConfigFile}"
-                                                                Theme="{StaticResource RobustPlainIconBtn}"
-                                                                ToolTip.Tip="打开配置文件"
-                                                                Padding="10,0"
-                                                                HorizontalContentAlignment="Center">
-                                                            <PathIcon Width="20" Height="20" Foreground="{DynamicResource SvgIconBrush}"
-                                                                      Data="M554.666667 1024h-85.333334c-36.266667 0-64-27.733333-64-64v-78.933333c-27.733333-8.533333-53.333333-19.2-78.933333-32l-55.466667 55.466666c-25.6 25.6-66.133333 25.6-89.6 0l-59.733333-59.733333c-25.6-25.6-25.6-66.133333 0-89.6l55.466667-55.466667c-12.8-25.6-25.6-51.2-32-78.933333H64c-36.266667 0-64-27.733333-64-64v-85.333333c0-36.266667 27.733333-64 64-64h78.933333c8.533333-27.733333 19.2-53.333333 32-78.933334l-55.466666-55.466666c-25.6-25.6-25.6-66.133333 0-89.6l59.733333-59.733334c25.6-25.6 66.133333-25.6 89.6 0l55.466667 55.466667c25.6-12.8 51.2-25.6 78.933333-32V64c0-36.266667 27.733333-64 64-64h85.333333c36.266667 0 64 27.733333 64 64v78.933333c27.733333 8.533333 53.333333 19.2 78.933334 32l55.466666-55.466666c25.6-25.6 66.133333-25.6 89.6 0l59.733334 59.733333c25.6 25.6 25.6 66.133333 0 89.6l-55.466667 55.466667c12.8 25.6 25.6 51.2 32 78.933333H960c36.266667 0 64 27.733333 64 64v85.333333c0 36.266667-27.733333 64-64 64h-78.933333c-8.533333 27.733333-19.2 53.333333-32 78.933334l55.466666 55.466666c25.6 25.6 25.6 66.133333 0 89.6l-59.733333 59.733334c-25.6 25.6-66.133333 25.6-89.6 0l-55.466667-55.466667c-25.6 12.8-51.2 25.6-78.933333 32V960c-2.133333 36.266667-29.866667 64-66.133333 64zM320 793.6l14.933333 8.533333c29.866667 19.2 61.866667 32 98.133334 40.533334l17.066666 4.266666V960c0 12.8 8.533333 21.333333 21.333334 21.333333h85.333333c12.8 0 21.333333-8.533333 21.333333-21.333333v-113.066667l17.066667-4.266666c34.133333-8.533333 66.133333-21.333333 98.133333-40.533334l14.933334-8.533333 78.933333 78.933333c8.533333 8.533333 21.333333 8.533333 29.866667 0l59.733333-59.733333c8.533333-8.533333 8.533333-21.333333 0-29.866667L793.6 704l8.533333-14.933333c19.2-29.866667 32-61.866667 40.533334-98.133334l4.266666-17.066666H960c12.8 0 21.333333-8.533333 21.333333-21.333334v-85.333333c0-12.8-8.533333-21.333333-21.333333-21.333333h-113.066667l-4.266666-17.066667c-8.533333-34.133333-21.333333-66.133333-40.533334-98.133333l-8.533333-10.666667 78.933333-78.933333c8.533333-8.533333 8.533333-21.333333 0-29.866667L812.8 149.333333c-8.533333-8.533333-21.333333-8.533333-29.866667 0L704 230.4l-14.933333-8.533333c-29.866667-19.2-61.866667-32-98.133334-40.533334l-14.933333-4.266666V64c0-12.8-8.533333-21.333333-21.333333-21.333333h-85.333334c-12.8 0-21.333333 8.533333-21.333333 21.333333v113.066667l-17.066667 4.266666c-34.133333 8.533333-66.133333 21.333333-98.133333 40.533334l-12.8 8.533333L241.066667 149.333333c-8.533333-8.533333-21.333333-8.533333-29.866667 0L149.333333 211.2c-8.533333 8.533333-8.533333 21.333333 0 29.866667l78.933334 78.933333-8.533334 14.933333c-19.2 29.866667-32 61.866667-40.533333 98.133334l-2.133333 14.933333H64c-12.8 0-21.333333 8.533333-21.333333 21.333333v85.333334c0 12.8 8.533333 21.333333 21.333333 21.333333h113.066667l4.266666 17.066667c8.533333 34.133333 21.333333 66.133333 40.533334 98.133333l8.533333 14.933333L149.333333 782.933333c-8.533333 8.533333-8.533333 21.333333 0 29.866667L211.2 874.666667c8.533333 8.533333 21.333333 8.533333 29.866667 0l78.933333-81.066667z M520.533333 710.4c-106.666667 0-192-85.333333-192-192s85.333333-192 192-192 192 85.333333 192 192c0 104.533333-87.466667 192-192 192z m0-341.333333c-83.2 0-149.333333 66.133333-149.333333 149.333333s66.133333 149.333333 149.333333 149.333333 149.333333-66.133333 149.333334-149.333333-68.266667-149.333333-149.333334-149.333333z"/>
+                                                                Classes="CardActionBtn"
+                                                                ToolTip.Tip="打开配置文件">
+                                                            <PathIcon Data="M554.666667 1024h-85.333334c-36.266667 0-64-27.733333-64-64v-78.933333c-27.733333-8.533333-53.333333-19.2-78.933333-32l-55.466667 55.466666c-25.6 25.6-66.133333 25.6-89.6 0l-59.733333-59.733333c-25.6-25.6-25.6-66.133333 0-89.6l55.466667-55.466667c-12.8-25.6-25.6-51.2-32-78.933333H64c-36.266667 0-64-27.733333-64-64v-85.333333c0-36.266667 27.733333-64 64-64h78.933333c8.533333-27.733333 19.2-53.333333 32-78.933334l-55.466666-55.466666c-25.6-25.6-25.6-66.133333 0-89.6l59.733333-59.733334c25.6-25.6 66.133333-25.6 89.6 0l55.466667 55.466667c25.6-12.8 51.2-25.6 78.933333-32V64c0-36.266667 27.733333-64 64-64h85.333333c36.266667 0 64 27.733333 64 64v78.933333c27.733333 8.533333 53.333333 19.2 78.933334 32l55.466666-55.466666c25.6-25.6 66.133333-25.6 89.6 0l59.733334 59.733333c25.6 25.6 25.6 66.133333 0 89.6l-55.466667 55.466667c12.8 25.6 25.6 51.2 32 78.933333H960c36.266667 0 64 27.733333 64 64v85.333333c0 36.266667-27.733333 64-64 64h-78.933333c-8.533333 27.733333-19.2 53.333333-32 78.933334l55.466666 55.466666c25.6 25.6 25.6 66.133333 0 89.6l-59.733333 59.733334c-25.6 25.6-66.133333 25.6-89.6 0l-55.466667-55.466667c-25.6 12.8-51.2 25.6-78.933333 32V960c-2.133333 36.266667-29.866667 64-66.133333 64zM320 793.6l14.933333 8.533333c29.866667 19.2 61.866667 32 98.133334 40.533334l17.066666 4.266666V960c0 12.8 8.533333 21.333333 21.333334 21.333333h85.333333c12.8 0 21.333333-8.533333 21.333333-21.333333v-113.066667l17.066667-4.266666c34.133333-8.533333 66.133333-21.333333 98.133333-40.533334l14.933334-8.533333 78.933333 78.933333c8.533333 8.533333 21.333333 8.533333 29.866667 0l59.733333-59.733333c8.533333-8.533333 8.533333-21.333333 0-29.866667L793.6 704l8.533333-14.933333c19.2-29.866667 32-61.866667 40.533334-98.133334l4.266666-17.066666H960c12.8 0 21.333333-8.533333 21.333333-21.333334v-85.333333c0-12.8-8.533333-21.333333-21.333333-21.333333h-113.066667l-4.266666-17.066667c-8.533333-34.133333-21.333333-66.133333-40.533334-98.133333l-8.533333-10.666667 78.933333-78.933333c8.533333-8.533333 8.533333-21.333333 0-29.866667L812.8 149.333333c-8.533333-8.533333-21.333333-8.533333-29.866667 0L704 230.4l-14.933333-8.533333c-29.866667-19.2-61.866667-32-98.133334-40.533334l-14.933333-4.266666V64c0-12.8-8.533333-21.333333-21.333333-21.333333h-85.333334c-12.8 0-21.333333 8.533333-21.333333 21.333333v113.066667l-17.066667 4.266666c-34.133333 8.533333-66.133333 21.333333-98.133333 40.533334l-12.8 8.533333L241.066667 149.333333c-8.533333-8.533333-21.333333-8.533333-29.866667 0L149.333333 211.2c-8.533333 8.533333-8.533333 21.333333 0 29.866667l78.933334 78.933333-8.533334 14.933333c-19.2 29.866667-32 61.866667-40.533333 98.133334l-2.133333 14.933333H64c-12.8 0-21.333333 8.533333-21.333333 21.333333v85.333334c0 12.8 8.533333 21.333333 21.333333 21.333333h113.066667l4.266666 17.066667c8.533333 34.133333 21.333333 66.133333 40.533334 98.133333l8.533333 14.933333L149.333333 782.933333c-8.533333 8.533333-8.533333 21.333333 0 29.866667L211.2 874.666667c8.533333 8.533333 21.333333 8.533333 29.866667 0l78.933333-81.066667z M520.533333 710.4c-106.666667 0-192-85.333333-192-192s85.333333-192 192-192 192 85.333333 192 192c0 104.533333-87.466667 192-192 192z m0-341.333333c-83.2 0-149.333333 66.133333-149.333333 149.333333s66.133333 149.333333 149.333333 149.333333 149.333333-66.133333 149.333334-149.333333-68.266667-149.333333-149.333334-149.333333z"/>
                                                         </Button>
-
-                                                        <!-- 启用/禁用：暂存 mod 不显示（IsStaged=true 时隐藏） -->
+                                                        
+                                                        <!-- 启用或禁用按钮 -->
                                                         <Button Command="{Binding $parent[UserControl].((vm:ModManagerViewModel)DataContext).ToggleModCommand}"
                                                                 CommandParameter="{Binding}"
                                                                 IsVisible="{Binding !IsStaged}"
-                                                                Theme="{StaticResource RobustPlainIconBtn}"
-                                                                Background="Transparent"
-                                                                BorderThickness="0"
-                                                                Padding="10,0"
-                                                                Cursor="Hand"
-                                                                HorizontalContentAlignment="Center">
+                                                                Classes="CardActionBtn"
+                                                                ToolTip.Tip="启用 / 禁用">
                                                             <Panel>
-                                                                <PathIcon IsVisible="{Binding IsDisabled}" Width="20" Height="20" Foreground="{DynamicResource SvgIconBrush}"
-                                                                          Data="M512 64c247.424 0 448 200.576 448 448S759.424 960 512 960 64 759.424 64 512 264.576 64 512 64z m0 68c-209.868 0-380 170.132-380 380s170.132 380 380 380 380-170.132 380-380-170.132-380-380-380z m175.745 244.22c13.13 13.115 13.145 34.392 0.03 47.522L464.114 647.744c-13.099 13.12-34.35 13.15-47.486 0.067L304.29 535.935a33.595 33.595 0 0 1-8.972-32.541 33.588 33.588 0 0 1 23.814-23.911 33.597 33.597 0 0 1 32.576 8.838l88.558 88.188 199.957-200.253c13.109-13.135 34.386-13.15 47.521-0.035z"/>
-                                                                <PathIcon IsVisible="{Binding !IsDisabled}" Width="20" Height="20" Foreground="{DynamicResource SvgIconBrush}"
-                                                                          Data="M513.111 959.995c-60.315 0-118.842-11.82-173.957-35.132-53.218-22.509-101.007-54.727-142.038-95.757-41.031-41.031-73.248-88.819-95.758-142.038-23.312-55.114-35.131-113.642-35.131-173.957s11.82-118.842 35.131-173.957c22.51-53.218 54.727-101.007 95.758-142.038s88.819-73.248 142.038-95.758c55.115-23.312 113.642-35.131 173.957-35.131s118.843 11.82 173.957 35.131c53.219 22.51 101.007 54.727 142.038 95.758 41.03 41.031 73.248 88.819 95.757 142.038 23.312 55.115 35.132 113.642 35.132 173.957s-11.82 118.843-35.132 173.957c-22.509 53.219-54.727 101.007-95.757 142.038-41.031 41.03-88.819 73.248-142.038 95.757-55.114 23.312-113.641 35.132-173.957 35.132z m0-829.767c-211.123 0-382.884 171.761-382.884 382.884s171.761 382.884 382.884 382.884 382.884-171.761 382.884-382.884-171.761-382.884-382.884-382.884z F1 M703.884 735.884c-8.189 0-16.379-3.124-22.627-9.373L297.435 342.689c-12.497-12.497-12.497-32.758 0-45.255s32.758-12.497 45.255 0l383.821 383.822c12.497 12.496 12.497 32.758 0 45.254-6.248 6.25-14.438 9.374-22.627 9.374z F1 M320.117 735.884c-8.189 0-16.379-3.124-22.627-9.373-12.497-12.496-12.497-32.758 0-45.254l384.02-384.021c12.496-12.497 32.758-12.497 45.254 0 12.497 12.497 12.497 32.758 0.001 45.255l-384.021 384.02c-6.248 6.249-14.438 9.373-22.627 9.373z"/>
+                                                                <PathIcon IsVisible="{Binding IsDisabled}" Data="M512 64c247.424 0 448 200.576 448 448S759.424 960 512 960 64 759.424 64 512 264.576 64 512 64z m0 68c-209.868 0-380 170.132-380 380s170.132 380 380 380 380-170.132 380-380-170.132-380-380-380z m175.745 244.22c13.13 13.115 13.145 34.392 0.03 47.522L464.114 647.744c-13.099 13.12-34.35 13.15-47.486 0.067L304.29 535.935a33.595 33.595 0 0 1-8.972-32.541 33.588 33.588 0 0 1 23.814-23.911 33.597 33.597 0 0 1 32.576 8.838l88.558 88.188 199.957-200.253c13.109-13.135 34.386-13.15 47.521-0.035z"/>
+                                                                <PathIcon IsVisible="{Binding !IsDisabled}" Data="M513.111 959.995c-60.315 0-118.842-11.82-173.957-35.132-53.218-22.509-101.007-54.727-142.038-95.757-41.031-41.031-73.248-88.819-95.758-142.038-23.312-55.114-35.131-113.642-35.131-173.957s11.82-118.842 35.131-173.957c22.51-53.218 54.727-101.007 95.758-142.038s88.819-73.248 142.038-95.758c55.115-23.312 113.642-35.131 173.957-35.131s118.843 11.82 173.957 35.131c53.219 22.51 101.007 54.727 142.038 95.758 41.03 41.031 73.248 88.819 95.757 142.038 23.312 55.115 35.132 113.642 35.132 173.957s-11.82 118.843-35.132 173.957c-22.509 53.219-54.727 101.007-95.757 142.038-41.031 41.03-88.819 73.248-142.038 95.757-55.114 23.312-113.641 35.132-173.957 35.132z m0-829.767c-211.123 0-382.884 171.761-382.884 382.884s171.761 382.884 382.884 382.884 382.884-171.761 382.884-382.884-171.761-382.884-382.884-382.884z F1 M703.884 735.884c-8.189 0-16.379-3.124-22.627-9.373L297.435 342.689c-12.497-12.497-12.497-32.758 0-45.255s32.758-12.497 45.255 0l383.821 383.822c12.497 12.496 12.497 32.758 0 45.254-6.248 6.25-14.438 9.374-22.627 9.374z F1 M320.117 735.884c-8.189 0-16.379-3.124-22.627-9.373-12.497-12.496-12.497-32.758 0-45.254l384.02-384.021c12.496-12.497 32.758-12.497 45.254 0 12.497 12.497 12.497 32.758 0.001 45.255l-384.021 384.02c-6.248 6.249-14.438 9.373-22.627 9.373z"/>
                                                             </Panel>
                                                         </Button>
-                                                        <!-- 删除按钮：SVG从谱面管理借用 -->
-                                                        <Button Theme="{StaticResource RobustPlainIconBtn}"
+                                                        <!-- 删除按钮 -->
+                                                        <Button Classes="CardActionBtn"
                                                                 Click="OnDeleteModClick"
                                                                 Tag="{Binding}"
-                                                                ToolTip.Tip="删除"
-                                                                Padding="10,0"
-                                                                HorizontalContentAlignment="Center">
-                                                            <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341z m0 0"
-                                                                      Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"/>
+                                                                ToolTip.Tip="删除">
+                                                            <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341z m0 0"/>
                                                         </Button>
                                                     </StackPanel>
                                                 </StackPanel>
@@ -431,15 +630,19 @@
                                     <!-- 展开后的详情区域 -->
                                     <StackPanel IsVisible="{Binding IsExpanded}" Margin="0,15,0,0">
                                         <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.2" Margin="0,0,0,12"/>
-                                        <!-- 加载中提示 -->
-                                        <TextBlock Text="正在加载..."
-                                                   IsVisible="{Binding IsLoadingDescription}"
-                                                   Foreground="{DynamicResource ThemeTextTertiaryBrush}" FontSize="13" FontStyle="Italic"/>
-                                        <!-- 描述文本 -->
-                                        <TextBlock Text="{Binding Description}"
-                                                   IsVisible="{Binding !IsLoadingDescription}"
-                                                   Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="13"
-                                                   TextWrapping="Wrap"/>
+                                        <Border CornerRadius="10" Background="{DynamicResource ControlBgBrush}" Padding="12,10">
+                                            <Panel>
+                                                <!-- 加载中提示 -->
+                                                <TextBlock Text="正在加载..."
+                                                           IsVisible="{Binding IsLoadingDescription}"
+                                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}" FontSize="13" FontStyle="Italic"/>
+                                                <!-- 描述文本 -->
+                                                <TextBlock Text="{Binding Description}"
+                                                           IsVisible="{Binding !IsLoadingDescription}"
+                                                           Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="13"
+                                                           TextWrapping="Wrap"/>
+                                            </Panel>
+                                        </Border>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>

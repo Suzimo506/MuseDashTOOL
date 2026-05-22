@@ -274,11 +274,11 @@
             <!-- 谱面列表滚动区域 -->
             <ScrollViewer x:Name="ChartScrollViewer" IsVisible="{Binding !IsEmpty}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <Grid RowDefinitions="*,Auto">
-                    <ItemsControl ItemsSource="{Binding Charts}" Grid.Row="0">
+                    <ItemsControl ItemsSource="{Binding Charts}" Grid.Row="0" Margin="0,16,0,0">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ChartGridColumns}" HorizontalAlignment="Stretch"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="models:MdmcChart">
-                                <Border Classes="Card" CornerRadius="10" Margin="8,0,8,16" VerticalAlignment="Top" ClipToBounds="True">
+                                <Border Classes="Card" CornerRadius="10" Margin="8,4,8,12" VerticalAlignment="Top" ClipToBounds="True">
                                     <Grid RowDefinitions="Auto,*">
                                         <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
                                             <Panel>
