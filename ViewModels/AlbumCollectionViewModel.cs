@@ -357,6 +357,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
     private bool _isInitialized;
     private bool _isSyncing;
     private bool _isDownloadViewModelSubscribed;
+    private CancellationTokenSource? _gifPlaybackCts;
 
     [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _categories = new();
     [ObservableProperty] private ObservableCollection<DesignerCategoryItemViewModel> _personalRepositoryCategories = new();
@@ -536,6 +537,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
             // 异步加载该页面的封面
             _ = LoadSearchResultsCoversAsync(pageItems);
+            _ = EnableAnimatedCoversDeferredAsync(pageItems);
         });
     }
 
@@ -655,6 +657,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
     private async Task SearchAndFilterAsync(string query)
     {
         _searchCts?.Cancel();
+        _gifPlaybackCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var ct = _searchCts.Token;
 
@@ -786,7 +789,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             await _coverSemaphore.WaitAsync();
             try
             {
-                chart.ResolvedCoverSource = chart.CoverUrl;
+                await ChartCoverSourceResolver.EnsureResolvedAsync(chart);
             }
             catch { }
             finally { _coverSemaphore.Release(); }
@@ -794,8 +797,51 @@ public partial class AlbumCollectionViewModel : ObservableObject
         await Task.WhenAll(tasks);
     }
 
+    private async Task EnableAnimatedCoversDeferredAsync(IEnumerable<MdmcChart> pageCharts)
+    {
+        _gifPlaybackCts?.Cancel();
+        _gifPlaybackCts?.Dispose();
+        _gifPlaybackCts = new CancellationTokenSource();
+        var ct = _gifPlaybackCts.Token;
+
+        try
+        {
+            await Task.Delay(350, ct);
+            foreach (var chart in pageCharts)
+            {
+                if (ct.IsCancellationRequested) break;
+
+                if (!chart.HasAnimatedDisplayCoverSource)
+                {
+                    chart.IsAnimatedCoverPlaybackEnabled = true;
+                    continue;
+                }
+
+                // GIF 封面：后台下载至本地临时文件后启用动画
+                try
+                {
+                    var localSource = await ChartCoverSourceResolver.PrepareAnimatedSourceAsync(
+                        chart.DisplayCoverSource, ct);
+
+                    if (!string.IsNullOrWhiteSpace(localSource) && !ct.IsCancellationRequested)
+                    {
+                        // 先让 Image 可见，再设置源以正常播放动画
+                        chart.IsAnimatedCoverPlaybackEnabled = true;
+                        chart.ResolvedCoverSource = localSource;
+                    }
+                }
+                catch (OperationCanceledException) { throw; }
+                catch { }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
     private void RestoreOriginalCollections()
     {
+        _gifPlaybackCts?.Cancel();
         _chartDownloadViewModel.StopPlayback();
         foreach (var item in _allSearchItemsBackup)
         {

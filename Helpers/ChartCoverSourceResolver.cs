@@ -14,7 +14,7 @@ namespace MdModManager.Helpers;
 public static class ChartCoverSourceResolver
 {
     private static readonly string[] MdmcCoverExtensions = [".gif", ".png", ".jpg", ".jpeg", ".webp", ".bmp"];
-    private static readonly HttpClient ProbeHttp = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(8));
+    private static readonly HttpClient ProbeHttp = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(8), forceOptimized: true);
     private static readonly ConcurrentDictionary<string, string> ResolvedCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> ResolveLocks = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, string> AnimatedTempCache = new(StringComparer.OrdinalIgnoreCase);
@@ -134,13 +134,22 @@ public static class ChartCoverSourceResolver
     private static async Task<string?> ResolveMdmcCoverUrlAsync(string chartId, CancellationToken ct)
     {
         var baseUrl = $"https://cdn.mdmc.moe/charts/{Uri.EscapeDataString(chartId)}/cover";
-        foreach (var ext in MdmcCoverExtensions)
+        var tasks = new Task<bool>[MdmcCoverExtensions.Length];
+        // 并行探测所有可能的封面扩展名
+        for (int i = 0; i < MdmcCoverExtensions.Length; i++)
         {
-            var candidate = baseUrl + ext;
-            if (await ProbeUrlAsync(candidate, ct))
-                return await PrepareDisplaySourceAsync(candidate, ct);
+            var url = baseUrl + MdmcCoverExtensions[i];
+            tasks[i] = ProbeUrlAsync(url, ct);
         }
-
+        await Task.WhenAll(tasks);
+        for (int i = 0; i < MdmcCoverExtensions.Length; i++)
+        {
+            if (tasks[i].Result)
+            {
+                var candidate = baseUrl + MdmcCoverExtensions[i];
+                return await PrepareDisplaySourceAsync(candidate, ct);
+            }
+        }
         return null;
     }
 

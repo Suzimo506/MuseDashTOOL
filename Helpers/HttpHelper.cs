@@ -253,7 +253,7 @@ public static class HttpHelper
                  host.Contains("musedash.moe", StringComparison.OrdinalIgnoreCase)));
     }
 
-    public static HttpClient CreateOptimizedClient(TimeSpan timeout, TimeSpan? watchdogTimeout = null)
+    public static HttpClient CreateOptimizedClient(TimeSpan timeout, TimeSpan? watchdogTimeout = null, bool forceOptimized = false)
     {
         var handler = new SocketsHttpHandler
         {
@@ -264,7 +264,7 @@ public static class HttpHelper
                 var port = context.DnsEndPoint.Port;
 
                 // 只有在启用优选 DNS 且域名属于 suzimo 或 mdmc 时才强制使用优选 IP 
-                if (UseOptimizedIps && IsOptimizedAccelerationHost(host))
+                if ((forceOptimized || UseOptimizedIps) && IsOptimizedAccelerationHost(host))
                 {
                     // ── 用户自定义静态 IP：直连，不重试、不竞速、不拉黑 ──
                     if (!string.IsNullOrEmpty(StaticIp))
@@ -308,7 +308,16 @@ public static class HttpHelper
                 
                 // 普通域名的正常连接
                 var addresses = await Dns.GetHostAddressesAsync(host, cancellationToken);
-                var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                Socket socket;
+                try
+                {
+                    socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                    socket.DualMode = true;
+                }
+                catch
+                {
+                    socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                }
                 socket.NoDelay = true;
                 
                 try
@@ -328,7 +337,7 @@ public static class HttpHelper
         handler.PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30);
         handler.ConnectTimeout = TimeSpan.FromSeconds(5);
 
-        var resilientHandler = new ResilientHandler(handler, watchdogTimeout ?? TimeSpan.FromSeconds(10));
+        var resilientHandler = new ResilientHandler(handler, watchdogTimeout ?? TimeSpan.FromSeconds(10), forceOptimized);
         var client = new HttpClient(resilientHandler) 
         { 
             Timeout = timeout,
@@ -407,10 +416,12 @@ public static class HttpHelper
     private class ResilientHandler : DelegatingHandler
     {
         private readonly TimeSpan _watchdogTimeout;
+        private readonly bool _forceOptimized;
 
-        public ResilientHandler(HttpMessageHandler innerHandler, TimeSpan watchdogTimeout) : base(innerHandler)
+        public ResilientHandler(HttpMessageHandler innerHandler, TimeSpan watchdogTimeout, bool forceOptimized = false) : base(innerHandler)
         {
             _watchdogTimeout = watchdogTimeout;
+            _forceOptimized = forceOptimized;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -426,7 +437,7 @@ public static class HttpHelper
                 if ((int)response.StatusCode >= 500)
                 {
                     var host = request.RequestUri?.Host;
-                    if (UseOptimizedIps && string.IsNullOrEmpty(StaticIp) && IsOptimizedAccelerationHost(host))
+                    if ((_forceOptimized || UseOptimizedIps) && string.IsNullOrEmpty(StaticIp) && IsOptimizedAccelerationHost(host))
                     {
                         HttpHelper.InvalidateFastestIp();
                     }
@@ -436,7 +447,7 @@ public static class HttpHelper
             catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException || ex is TimeoutException)
             {
                 var host = request.RequestUri?.Host;
-                if (UseOptimizedIps && IsOptimizedAccelerationHost(host))
+                if ((_forceOptimized || UseOptimizedIps) && IsOptimizedAccelerationHost(host))
                 {
                     HttpHelper.InvalidateFastestIp();
                 }
