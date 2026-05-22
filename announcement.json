@@ -1,9 +1,9 @@
 [
     {
-        "id": "1.4.1",
+        "id": "1.4.2",
         "is_enabled": true,
-        "title": "v1.4.1 更新内容",
-        "content": "1、UI界面风格更新，完全重构\n2、加入了Euterpe的谱面下载\n3、增加了欢迎页面",
+        "title": "v1.4.2 更新内容",
+        "content": "1. 优化Euterpe登录机制与Token自动刷新逻辑\n2. 改进游戏UID获取机制，提升系统兼容性\n3. 修复登录状态失效后导致API返回401的问题",
         "action_button_text": "进入新版喵斯兔",
         "cancel_button_text": "不再显示该弹窗"
     },

@@ -167,6 +167,7 @@ public partial class App : Application
 
         services.AddSingleton<AuthState>();
         services.AddSingleton<IAuthService, AuthService>();
+        services.AddTransient<AuthHeaderHandler>();
         services.AddSingleton<DeepLinkService>();
         services.AddSingleton<ITelemetryService, TelemetryService>();
 

@@ -39,6 +39,29 @@
                 <Setter Property="RenderTransform" Value="translateY(0px) scale(0.97)"/>
             </Style>
         </ControlTheme>
+
+        <!-- 底部链接按钮主题 -->
+        <ControlTheme x:Key="BottomLinkBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover">
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed">
+                <Setter Property="Opacity" Value="0.6"/>
+            </Style>
+        </ControlTheme>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -350,21 +373,25 @@
                     Background="{DynamicResource CardBgBrush}"
                     BorderThickness="1"
                     BorderBrush="{DynamicResource FloatingPanelBorder}">
-                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto">
                     <!-- GitHub -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
-                        <Border Width="28" Height="28" CornerRadius="8"
-                                Background="#18FF69B4" VerticalAlignment="Center">
-                            <PathIcon Data="M511.6 76.3C264.3 76.2 64 276.4 64 523.5 64 718.9 189.3 885 370.2 948c22.5 4.1 29.7-9.8 29.7-21.5 0-11.2-.6-48.2-.6-87.6-98.2 17.8-122.7-24-130.4-46-4.4-11.2-23.4-46-40-55.2-13.7-7.3-33.2-25.5-.5-26 30.7-.5 52.6 28.3 59.9 40 35.1 59 91.1 42.4 113.4 32.2 3.5-25 13.7-42.4 24.9-52.2-87-9.8-178.2-43.5-178.2-193 0-42.6 15.2-77.8 40-105.2-4-9.8-17.5-49.8 3.8-103.7 0 0 32.7-10.3 107.2 40.2 31.2-8.7 64.4-13 97.5-13.2 33.1.2 66.3 4.5 97.5 13.2 74.5-50.8 107.2-40.2 107.2-40.2 21.3 53.9 7.8 93.9 3.8 103.7 24.9 27.4 40 62.3 40 105.2 0 150-91.4 183.2-178.6 193 14 12.2 26.2 35.4 26.2 71.6 0 51.7-.5 93.4-.5 106.4 0 11.7 7.3 25.9 29.9 21.5C834.7 885 960 718.7 960 523.5 960 276.4 759.1 76.3 511.6 76.3z"
-                                      Width="14" Height="14" Foreground="#FF69B4"/>
-                        </Border>
-                        <StackPanel Spacing="1" VerticalAlignment="Center">
-                            <TextBlock Text="GitHub 仓库" FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <TextBlock Text="开源代码与反馈" FontSize="10"
-                                       Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                    <Button Grid.Column="0" Theme="{StaticResource BottomLinkBtn}"
+                            Command="{Binding OpenUrlCommand}"
+                            CommandParameter="https://github.com/Suzimo506/MuseDashTOOL">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="28" Height="28" CornerRadius="8"
+                                    Background="#18FF69B4" VerticalAlignment="Center">
+                                <PathIcon Data="M511.6 76.3C264.3 76.2 64 276.4 64 523.5 64 718.9 189.3 885 370.2 948c22.5 4.1 29.7-9.8 29.7-21.5 0-11.2-.6-48.2-.6-87.6-98.2 17.8-122.7-24-130.4-46-4.4-11.2-23.4-46-40-55.2-13.7-7.3-33.2-25.5-.5-26 30.7-.5 52.6 28.3 59.9 40 35.1 59 91.1 42.4 113.4 32.2 3.5-25 13.7-42.4 24.9-52.2-87-9.8-178.2-43.5-178.2-193 0-42.6 15.2-77.8 40-105.2-4-9.8-17.5-49.8 3.8-103.7 0 0 32.7-10.3 107.2 40.2 31.2-8.7 64.4-13 97.5-13.2 33.1.2 66.3 4.5 97.5 13.2 74.5-50.8 107.2-40.2 107.2-40.2 21.3 53.9 7.8 93.9 3.8 103.7 24.9 27.4 40 62.3 40 105.2 0 150-91.4 183.2-178.6 193 14 12.2 26.2 35.4 26.2 71.6 0 51.7-.5 93.4-.5 106.4 0 11.7 7.3 25.9 29.9 21.5C834.7 885 960 718.7 960 523.5 960 276.4 759.1 76.3 511.6 76.3z"
+                                          Width="14" Height="14" Foreground="#FF69B4"/>
+                            </Border>
+                            <StackPanel Spacing="1" VerticalAlignment="Center">
+                                <TextBlock Text="GitHub 仓库" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                <TextBlock Text="开源代码与反馈" FontSize="10"
+                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
+                    </Button>
 
                     <!-- 分隔线 -->
                     <Border Grid.Column="1" Width="1" Height="28"
@@ -372,33 +399,88 @@
                             Margin="24,0"/>
 
                     <!-- Euterpe -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
-                        <Border Width="28" Height="28" CornerRadius="8"
-                                Background="#18FF69B4" VerticalAlignment="Center">
-                            <PathIcon Data="M512 1024C229.248 1024 0 794.752 0 512S229.248 0 512 0s512 229.248 512 512-229.248 512-512 512z m0-85.333333c235.648 0 426.666667-191.018667 426.666667-426.666667S747.648 85.333333 512 85.333333 85.333333 276.352 85.333333 512s191.018667 426.666667 426.666667 426.666667z m0-256a170.666667 170.666667 0 1 1 0-341.333334 170.666667 170.666667 0 0 1 0 341.333334z m0-85.333334a85.333333 85.333333 0 1 0 0-170.666666 85.333333 85.333333 0 0 0 0 170.666666z"
-                                      Width="14" Height="14" Foreground="#FF69B4"/>
-                        </Border>
-                        <StackPanel Spacing="1" VerticalAlignment="Center">
-                            <TextBlock Text="Euterpe" FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <TextBlock Text="自制谱面社区平台" FontSize="10"
-                                       Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                    <Button Grid.Column="2" Theme="{StaticResource BottomLinkBtn}"
+                            Command="{Binding OpenUrlCommand}"
+                            CommandParameter="https://euterpe-org.com">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="28" Height="28" CornerRadius="8"
+                                    Background="#18FF69B4" VerticalAlignment="Center">
+                                <Image Source="/Assets/EuterpeLogo.webp"
+                                       Width="16" Height="16"
+                                       RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                            </Border>
+                            <StackPanel Spacing="1" VerticalAlignment="Center">
+                                <TextBlock Text="Euterpe" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                <TextBlock Text="自制谱面社区平台" FontSize="10"
+                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
+                    </Button>
 
                     <!-- 分隔线 -->
                     <Border Grid.Column="3" Width="1" Height="28"
                             Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
                             Margin="24,0"/>
 
+                    <!-- MDMC -->
+                    <Button Grid.Column="4" Theme="{StaticResource BottomLinkBtn}"
+                            Command="{Binding OpenUrlCommand}"
+                            CommandParameter="https://mdmc.moe">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="28" Height="28" CornerRadius="8"
+                                    Background="#18FF69B4" VerticalAlignment="Center">
+                                <Image Source="/Assets/mdmc.png"
+                                       Width="16" Height="16"
+                                       RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                            </Border>
+                            <StackPanel Spacing="1" VerticalAlignment="Center">
+                                <TextBlock Text="MDMC" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                <TextBlock Text="自制谱面社区平台" FontSize="10"
+                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 分隔线 -->
+                    <Border Grid.Column="5" Width="1" Height="28"
+                            Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
+                            Margin="24,0"/>
+
+                    <!-- MuseDashTOOL -->
+                    <Button Grid.Column="6" Theme="{StaticResource BottomLinkBtn}"
+                            Command="{Binding OpenUrlCommand}"
+                            CommandParameter="https://space.bilibili.com/289883561?spm_id_from=333.1007.0.0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="28" Height="28" CornerRadius="8"
+                                    Background="#18FF69B4" VerticalAlignment="Center">
+                                <Image Source="/Assets/MuseDashTOOL.ico"
+                                       Width="16" Height="16"
+                                       RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                            </Border>
+                            <StackPanel Spacing="1" VerticalAlignment="Center">
+                                <TextBlock Text="MuseDashTOOL" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                <TextBlock Text="上千首自制谱仓库" FontSize="10"
+                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 分隔线 -->
+                    <Border Grid.Column="7" Width="1" Height="28"
+                            Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
+                            Margin="24,0"/>
+
                     <!-- 广告位 -->
-                    <TextBlock Grid.Column="4" Text="广告位招租~" FontSize="12"
+                    <TextBlock Grid.Column="8" Text="广告位招租~" FontSize="12"
                                Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                VerticalAlignment="Center" Opacity="0.5"
                                FontStyle="Italic"/>
 
                     <!-- 右侧版本号 -->
-                    <TextBlock Grid.Column="5" Text="v1.4.1" FontSize="11"
+                    <TextBlock Grid.Column="9" Text="v1.4.2" FontSize="11"
                                Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                VerticalAlignment="Center" Opacity="0.5"/>
                 </Grid>

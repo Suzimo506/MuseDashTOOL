@@ -218,6 +218,21 @@ public partial class WelcomeViewModel : ViewModelBase
         }
     }
 
+    // 打开外部链接
+    [RelayCommand]
+    private void OpenUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url)) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch
+        {
+            // 忽略打开失败的异常
+        }
+    }
+
     // 启动游戏
     [RelayCommand]
     private async Task LaunchGameAsync()

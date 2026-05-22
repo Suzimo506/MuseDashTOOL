@@ -242,13 +242,6 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                         }
 
                         using var req = new HttpRequestMessage(HttpMethod.Get, path);
-                        req.Headers.Add("X-Request-Id", Guid.CreateVersion7().ToString());
-                        var token = _authState.AccessToken;
-                        if (!string.IsNullOrEmpty(token))
-                        {
-                            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                        }
-
                         using var response = await _httpClient.SendAsync(req);
                         response.EnsureSuccessStatusCode();
 
@@ -294,7 +287,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         AuthState authState,
         IConfigService configService,
         INotificationService notificationService,
-        IDownloadManagerService downloadManagerService)
+        IDownloadManagerService downloadManagerService,
+        AuthHeaderHandler authHeaderHandler)
     {
         _authService = authService;
         _authState = authState;
@@ -302,8 +296,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         _notificationService = notificationService;
         _downloadManagerService = downloadManagerService;
 
-        _httpClient = new HttpClient { BaseAddress = new Uri("https://euterpe-org.com/api/") };
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.1");
+        _httpClient = new HttpClient(authHeaderHandler) { BaseAddress = new Uri("https://euterpe-org.com/api/") };
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.2");
     }
 
     // 初始化加载
@@ -407,13 +401,6 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                     }
 
                     using HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, path);
-                    req.Headers.Add("X-Request-Id", Guid.CreateVersion7().ToString());
-                    string? token = _authState.AccessToken;
-                    if (!string.IsNullOrEmpty(token))
-                    {
-                        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                    }
-
                     using HttpResponseMessage response = await _httpClient.SendAsync(req);
                     response.EnsureSuccessStatusCode();
 
@@ -474,15 +461,6 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             }
 
             using var req = new HttpRequestMessage(HttpMethod.Get, path);
-            req.Headers.Add("X-Request-Id", Guid.CreateVersion7().ToString());
-
-            // 附加令牌用于拉取用户的点赞状态
-            var token = _authState.AccessToken;
-            if (!string.IsNullOrEmpty(token))
-            {
-                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
-
             using var response = await _httpClient.SendAsync(req, ct);
             response.EnsureSuccessStatusCode();
 
@@ -544,7 +522,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     {
         var snapshot = Charts.ToList();
         var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.1");
+        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.2");
 
         foreach (var chart in snapshot)
         {
@@ -602,7 +580,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             // 请求音频文件字节数据
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.1");
+            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.2");
             using var req = new HttpRequestMessage(HttpMethod.Get, previewUrl);
             using var response = await client.SendAsync(req, ct);
             response.EnsureSuccessStatusCode();
@@ -694,15 +672,11 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var token = await _authService.GetAccessTokenAsync();
             var isLiked = chart.IsLiked;
 
             // 构造请求
             var method = isLiked ? HttpMethod.Delete : HttpMethod.Post;
             using var req = new HttpRequestMessage(method, $"charts/{chart.Cid}/like");
-            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            req.Headers.Add("X-Request-Id", Guid.CreateVersion7().ToString());
-
             using var response = await _httpClient.SendAsync(req);
             response.EnsureSuccessStatusCode();
 
@@ -751,12 +725,6 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             // 请求打包服务接口
             var buildZipPath = $"workspace/charts/{chart.Cid}/build-zip";
             using var buildReq = new HttpRequestMessage(HttpMethod.Post, buildZipPath);
-            if (!string.IsNullOrEmpty(token))
-            {
-                buildReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
-            buildReq.Headers.Add("X-Request-Id", Guid.CreateVersion7().ToString());
-
             using var buildResponse = await _httpClient.SendAsync(buildReq);
             buildResponse.EnsureSuccessStatusCode();
 

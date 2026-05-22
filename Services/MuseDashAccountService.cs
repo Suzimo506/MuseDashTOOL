@@ -14,7 +14,6 @@ namespace MdModManager.Services;
 public static class MuseDashAccountService
 {
     private const string RegPath = @"Software\PeroPeroGames\MuseDash";
-    private const string KeyPrefix = "peropero_account_user_info_h";
     private const string ApiBase = "https://api.musedash.moe";
 
     // Fast client for player API (Increased to 60s to handle extremely slow server/network)
@@ -135,32 +134,15 @@ public static class MuseDashAccountService
             using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(RegPath, writable: false);
             if (key == null) return null;
 
-            foreach (var valueName in key.GetValueNames())
+            var raw = key.GetValue("374bfde32ff3436890ff977bc94f8015_#account_id_h274776658", null,
+                Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames);
+
+            if (raw is byte[] bytes && bytes.Length > 0)
             {
-                if (!valueName.StartsWith(KeyPrefix, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                var raw = key.GetValue(valueName, null,
-                    Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames);
-
-                if (raw is not byte[] bytes) continue;
-
-                // Strip null bytes
-                int len = bytes.Length;
-                while (len > 0 && bytes[len - 1] == 0) len--;
-
-                var json = Encoding.UTF8.GetString(bytes, 0, len).Trim();
-                if (string.IsNullOrEmpty(json) || !json.StartsWith('{')) continue;
-
-                try
+                var uid = Encoding.UTF8.GetString(bytes).TrimEnd('\0').Trim();
+                if (!string.IsNullOrEmpty(uid))
                 {
-                    var info = JsonSerializer.Deserialize(json, AppJsonContext.Default.MuseDashAccountInfo);
-                    if (info != null && !string.IsNullOrWhiteSpace(info.Uid)) return info;
-                }
-                catch (JsonException)
-                {
-                    // 忽略格式错误的 JSON 条目，继续查找下一个
-                    continue;
+                    return new MuseDashAccountInfo { Uid = uid };
                 }
             }
         }

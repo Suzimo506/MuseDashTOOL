@@ -40,7 +40,7 @@ public sealed class TelemetryService : ITelemetryService
         _authService = authService;
         _authState = authState;
         _httpClient = new HttpClient { BaseAddress = new Uri(BaseUrl) };
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.1");
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.2");
     }
 
     // 发送应用会话遥测请求
@@ -56,7 +56,7 @@ public sealed class TelemetryService : ITelemetryService
                 Architecture.Arm64 => "arm64",
                 _ => "unknown"
             };
-            var version = typeof(TelemetryService).Assembly.GetName().Version?.ToString(3) ?? "1.4.1";
+            var version = typeof(TelemetryService).Assembly.GetName().Version?.ToString(3) ?? "1.4.2";
 
             var payload = new TelemetrySessionPayload(
                 country,
@@ -143,36 +143,6 @@ public sealed class TelemetryService : ITelemetryService
     // 获取游戏 UID
     private string? GetMuseDashUid()
     {
-        try
-        {
-            var info = MuseDashAccountService.ReadAccountInfo();
-            if (info != null && !string.IsNullOrWhiteSpace(info.Uid))
-            {
-                return info.Uid;
-            }
-        }
-        catch (Exception ex)
-        {
-            RuntimeLog.Write("TelemetryService", "读取账号信息文件失败 " + ex.Message);
-        }
-
-        if (OperatingSystem.IsWindows())
-        {
-            try
-            {
-                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\PeroPeroGames\MuseDash", false);
-                var value = key?.GetValue("374bfde32ff3436890ff977bc94f8015_#account_id_h274776658", null, Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames);
-                if (value is byte[] bytes && bytes.Length > 0)
-                {
-                    return Encoding.UTF8.GetString(bytes).TrimEnd('\0').Trim();
-                }
-            }
-            catch (Exception ex)
-            {
-                RuntimeLog.Write("TelemetryService", "从注册表读取游戏 UID 失败 " + ex.Message);
-            }
-        }
-
-        return null;
+        return MuseDashAccountService.ReadAccountInfo()?.Uid;
     }
 }

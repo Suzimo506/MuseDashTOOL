@@ -63,7 +63,7 @@ public sealed class AuthService : IAuthService
 
     private readonly HttpClient _httpClient;
     private readonly AuthState _authState;
-    private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly Helpers.AsyncExclusiveLock _lock = new();
 
     public AsyncManualResetEvent Ready { get; } = new(false);
 
@@ -82,7 +82,7 @@ public sealed class AuthService : IAuthService
         _authState = authState;
         var handler = new XRequestIdHandler(new HttpClientHandler());
         _httpClient = new HttpClient(handler) { BaseAddress = new Uri(BaseUrl) };
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.1");
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.2");
     }
 
     public Task LoginAsync()
@@ -100,7 +100,7 @@ public sealed class AuthService : IAuthService
 
     public async Task LogoutAsync()
     {
-        await _lock.WaitAsync();
+        await _lock.StealAsync("logout");
         try
         {
             if (_authState.RefreshToken != null)
@@ -127,7 +127,7 @@ public sealed class AuthService : IAuthService
 
     public async Task CompleteLoginAsync(string code)
     {
-        await _lock.WaitAsync();
+        await _lock.AcquireAsync();
         try
         {
             var request = new AppTokenRequest(code);
@@ -184,7 +184,7 @@ public sealed class AuthService : IAuthService
     public async Task<string> GetAccessTokenAsync()
     {
         await Ready.WaitAsync();
-        await _lock.WaitAsync();
+        await _lock.AcquireAsync();
         try
         {
             if (DateTimeOffset.Now < _authState.AccessTokenExpiry)
@@ -201,7 +201,7 @@ public sealed class AuthService : IAuthService
 
     public async Task<string> RenewAccessTokenAsync()
     {
-        await _lock.WaitAsync();
+        await _lock.AcquireAsync();
         try
         {
             return await RefreshInternalAsync();
@@ -226,9 +226,19 @@ public sealed class AuthService : IAuthService
 
         try
         {
+            var token = await GetAccessTokenAsync();
             using var request = new HttpRequestMessage(HttpMethod.Get, "me");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var response = await _httpClient.SendAsync(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                token = await RenewAccessTokenAsync();
+                using var retryRequest = new HttpRequestMessage(HttpMethod.Get, "me");
+                retryRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                response = await _httpClient.SendAsync(retryRequest);
+            }
+
             response.EnsureSuccessStatusCode();
 
             var respJson = await response.Content.ReadAsStringAsync();
