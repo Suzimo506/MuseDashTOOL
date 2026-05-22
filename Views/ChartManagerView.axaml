@@ -84,9 +84,29 @@
     </UserControl.Resources>
 
     <UserControl.Styles>
-        <!-- 卡片悬浮效果 -->
+        <!-- 谱面卡片样式升级 -->
+        <Style Selector="Border.ChartCard">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#2C1E2B" Offset="0"/>
+                        <GradientStop Color="#191018" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#15FF8EBE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                </Transitions>
+            </Setter>
+        </Style>
         <Style Selector="Border.ChartCard:pointerover">
-            <Setter Property="Background" Value="{DynamicResource CardHoverBgBrush}"/>
+            <Setter Property="RenderTransform" Value="scale(1.015)"/>
+            <Setter Property="BorderBrush" Value="#CCFF8EBE"/>
         </Style>
 
         <!-- 无背景图标按钮 -->
@@ -302,7 +322,6 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="models:ChartInfo">
                                 <Border Classes="ChartCard"
-                                        Background="{DynamicResource CardBgBrush}"
                                         CornerRadius="10"
                                         Margin="8,0,8,16"
                                         VerticalAlignment="Top"
@@ -387,8 +406,8 @@
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <Border Background="#331a3a1a" CornerRadius="3" Padding="4,1">
-                                                                <TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/>
+                                                            <Border Background="#26F25D9C" BorderBrush="#80F25D9C" BorderThickness="1" CornerRadius="4" Padding="5,1">
+                                                                <TextBlock Text="{Binding}" FontSize="10" Foreground="#FF8EBE" FontWeight="SemiBold"/>
                                                             </Border>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>

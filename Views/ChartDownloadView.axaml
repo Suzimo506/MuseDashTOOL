@@ -67,8 +67,29 @@
     </UserControl.Resources>
 
     <UserControl.Styles>
+        <!-- 谱面卡片样式升级 -->
+        <Style Selector="Border.Card">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#2C1E2B" Offset="0"/>
+                        <GradientStop Color="#191018" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#15FF8EBE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                </Transitions>
+            </Setter>
+        </Style>
         <Style Selector="Border.Card:pointerover">
-            <Setter Property="Background" Value="{DynamicResource CardHoverBgBrush}"/>
+            <Setter Property="RenderTransform" Value="scale(1.015)"/>
+            <Setter Property="BorderBrush" Value="#CCFF8EBE"/>
         </Style>
         <Style Selector="Button.SortBtn">
             <Setter Property="Background" Value="{DynamicResource ControlBgBrush}"/>
@@ -257,7 +278,7 @@
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ChartGridColumns}" HorizontalAlignment="Stretch"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="models:MdmcChart">
-                                <Border Classes="Card" Background="{DynamicResource CardBgBrush}" CornerRadius="10" Margin="8,0,8,16" VerticalAlignment="Top" ClipToBounds="True">
+                                <Border Classes="Card" CornerRadius="10" Margin="8,0,8,16" VerticalAlignment="Top" ClipToBounds="True">
                                     <Grid RowDefinitions="Auto,*">
                                         <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
                                             <Panel>
@@ -274,7 +295,7 @@
                                             <TextBlock IsVisible="{Binding SubInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding SubInfo}" helpers:TextBlockHelper.HighlightText="{Binding SubInfo}" helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).SearchText}"/>
                                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
                                                 <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}" IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" VerticalAlignment="Center"/>
-                                                <ItemsControl ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center"><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border Background="#331a3a1a" CornerRadius="3" Padding="4,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                                                <ItemsControl ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center"><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border Background="#26F25D9C" BorderBrush="#80F25D9C" BorderThickness="1" CornerRadius="4" Padding="5,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="#FF8EBE" FontWeight="SemiBold"/></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
                                             </StackPanel>
                                             <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
                                                 <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="试听 / 停止"><Panel><PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/><PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Panel></Button>

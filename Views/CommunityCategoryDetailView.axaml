@@ -93,8 +93,29 @@
     </UserControl.Resources>
 
     <UserControl.Styles>
+        <!-- 谱面卡片样式升级 -->
+        <Style Selector="Border.Card">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#2C1E2B" Offset="0"/>
+                        <GradientStop Color="#191018" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#15FF8EBE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                </Transitions>
+            </Setter>
+        </Style>
         <Style Selector="Border.Card:pointerover">
-            <Setter Property="Background" Value="{DynamicResource CardHoverBgBrush}"/>
+            <Setter Property="RenderTransform" Value="scale(1.015)"/>
+            <Setter Property="BorderBrush" Value="#CCFF8EBE"/>
         </Style>
     </UserControl.Styles>
 
@@ -228,7 +249,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="models:MdmcChart">
-                            <Border Classes="Card" Background="{DynamicResource CardBgBrush}" CornerRadius="10" Margin="8,0,8,16" VerticalAlignment="Top" ClipToBounds="True">
+                            <Border Classes="Card" CornerRadius="10" Margin="8,0,8,16" VerticalAlignment="Top" ClipToBounds="True">
                                 <Grid RowDefinitions="Auto,*">
                                     <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
                                         <Panel>
@@ -253,7 +274,7 @@
                                             <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}" IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" VerticalAlignment="Center"/>
                                             <ItemsControl ItemsControl.ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center">
                                                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate><DataTemplate><Border Background="#331a3a1a" CornerRadius="3" Padding="4,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource SvgIconBrush}"/></Border></DataTemplate></ItemsControl.ItemTemplate>
+                                                 <ItemsControl.ItemTemplate><DataTemplate><Border Background="#26F25D9C" BorderBrush="#80F25D9C" BorderThickness="1" CornerRadius="4" Padding="5,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="#FF8EBE" FontWeight="SemiBold"/></Border></DataTemplate></ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </StackPanel>
                                         
