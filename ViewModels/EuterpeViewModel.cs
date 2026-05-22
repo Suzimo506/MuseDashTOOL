@@ -115,6 +115,9 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     public string Email => _authState.CurrentUser?.Email ?? string.Empty;
     public string AvatarUrl => _authState.AvatarUrl;
 
+    // 歌名滚动显示配置映射
+    public bool EnableMarquee => _configService.Config.EnableChartNameMarquee;
+
     // 搜索词
     [ObservableProperty] private string _searchDraftText = string.Empty;
     [ObservableProperty] private string _searchText = string.Empty;

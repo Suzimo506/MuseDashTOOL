@@ -151,12 +151,19 @@ public class MarqueeText : UserControl
         _textBlock1.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         _textWidth = _textBlock1.DesiredSize.Width;
 
-        // If scrolling is disabled, just center/truncate
+        // 滚动关闭时根据宽度自适应居中或截断
         if (!IsScrollingEnabled)
         {
             StopScrolling();
             _textBlock1.TextTrimming = TextTrimming.CharacterEllipsis;
-            Canvas.SetLeft(_textBlock1, 0);
+            if (_textWidth > Bounds.Width && Bounds.Width > 0)
+            {
+                Canvas.SetLeft(_textBlock1, 0);
+            }
+            else
+            {
+                Canvas.SetLeft(_textBlock1, (Bounds.Width - _textWidth) / 2);
+            }
             return;
         }
 
