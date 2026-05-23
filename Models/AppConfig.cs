@@ -119,6 +119,37 @@ public class NoticeInfo
 
     [JsonPropertyName("cancel_button_text")]
     public string CancelButtonText { get; set; } = "不再显示该弹窗";
+
+    [JsonPropertyName("badge")]
+    public string Badge { get; set; } = "";
+
+    // 动态解析公告角标
+    [JsonIgnore]
+    public string DisplayBadge
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(Badge))
+                return Badge;
+            if (Title.Contains("紧急") || Title.Contains("故障") || Title.Contains("修复") || Id.Contains("Emergency", System.StringComparison.OrdinalIgnoreCase))
+                return "紧急通知";
+            if (Title.Contains("更新") || Title.Contains("版本") || System.Text.RegularExpressions.Regex.IsMatch(Title, @"v\d+\.\d+"))
+                return "更新公告";
+            return "系统公告";
+        }
+    }
+
+    // 动态角标颜色
+    [JsonIgnore]
+    public string DisplayBadgeColor => DisplayBadge == "紧急通知" ? "#FF4D4D" : "#FF75A9";
+
+    // 动态角标边框颜色
+    [JsonIgnore]
+    public string DisplayBadgeBorderColor => DisplayBadge == "紧急通知" ? "#33FF4D4D" : "#33FF75A9";
+
+    // 动态角标背景颜色
+    [JsonIgnore]
+    public string DisplayBadgeBackgroundColor => DisplayBadge == "紧急通知" ? "#10FF4D4D" : "#10FF75A9";
 }
 
 [JsonSerializable(typeof(AppConfig))]

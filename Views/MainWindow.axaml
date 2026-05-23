@@ -527,64 +527,148 @@
         </Grid>
 
         <!-- 全局公告弹窗遮罩 -->
-        <Grid IsVisible="{Binding IsAnnouncementVisible}" Background="#AA000000">
-            <Border Width="450" VerticalAlignment="Center" HorizontalAlignment="Center"
-                    Background="#2A2A2A" CornerRadius="16" Padding="25"
-                    BoxShadow="0 10 30 0 #50000000">
-                <StackPanel Spacing="20">
-                    <!-- 标题：粉色渐变 -->
+        <Grid IsVisible="{Binding IsAnnouncementVisible}" Background="#D909070F">
+            <Border Width="440" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Background="#EC131118" BorderBrush="#1EFFFFFF" BorderThickness="1"
+                    CornerRadius="24" Padding="28,26,28,26"
+                    BoxShadow="0 20 60 0 #B0000000">
+                <StackPanel Spacing="18">
+                    <!-- 顶部简约角标 -->
+                    <Border Background="{Binding CurrentAnnouncement.DisplayBadgeBackgroundColor}" 
+                            BorderBrush="{Binding CurrentAnnouncement.DisplayBadgeBorderColor}" 
+                            BorderThickness="1" CornerRadius="10" Padding="12,4" HorizontalAlignment="Center" Margin="0,4,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="5" Height="5" Fill="{Binding CurrentAnnouncement.DisplayBadgeColor}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding CurrentAnnouncement.DisplayBadge}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding CurrentAnnouncement.DisplayBadgeColor}" LetterSpacing="2" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 标题渐变字 -->
                     <TextBlock Text="{Binding CurrentAnnouncement.Title}"
-                               FontSize="28" FontWeight="Bold" HorizontalAlignment="Center">
+                               FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"
+                               TextAlignment="Center" TextWrapping="Wrap" MaxWidth="380">
                         <TextBlock.Foreground>
                             <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
-                                <GradientStop Color="#FF69B4" Offset="0"/>
-                                <GradientStop Color="#d4237a" Offset="1"/>
+                                <GradientStop Color="#FFFF75A9" Offset="0"/>
+                                <GradientStop Color="#FFFF4081" Offset="1"/>
                             </LinearGradientBrush>
                         </TextBlock.Foreground>
                     </TextBlock>
 
-                    <!-- 内容：从 NoticeInfo 获取 -->
-                    <ScrollViewer MaxHeight="300">
-                        <TextBlock helpers:TextBlockHelper.MarkupText="{Binding CurrentAnnouncement.Content}"
-                                   TextWrapping="Wrap" LineHeight="24" FontSize="14"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"
-                                   Opacity="0.9"/>
-                    </ScrollViewer>
+                    <!-- 内容卡片 -->
+                    <Border Background="#07FFFFFF" BorderBrush="#0DFFFFFF" BorderThickness="1" CornerRadius="16" Padding="20,16">
+                        <ScrollViewer MaxHeight="250" VerticalScrollBarVisibility="Auto">
+                            <TextBlock helpers:TextBlockHelper.MarkupText="{Binding CurrentAnnouncement.Content}"
+                                       TextWrapping="Wrap" LineHeight="22" FontSize="13.5"
+                                       Foreground="#E2E2E8"
+                                       Opacity="0.9"/>
+                        </ScrollViewer>
+                    </Border>
 
-                    <Separator Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.1"/>
-
-                    <!-- 底部操作栏 -->
-                    <Grid ColumnDefinitions="*,Auto">
-                        <CheckBox Grid.Column="0" 
-                                  IsChecked="False"
-                                  Command="{Binding SuppressAndCloseAnnouncementCommand}"
-                                  Content="{Binding CurrentAnnouncement.CancelButtonText}"
-                                  FontSize="13" Foreground="#A0A0A0">
-                            <CheckBox.Styles>
-                                <Style Selector="CheckBox /template/ Border#NormalRectangle">
-                                    <Setter Property="BorderBrush" Value="#d4237a"/>
+                    <!-- 底部双按钮布局 -->
+                    <Grid ColumnDefinitions="*,*">
+                        <!-- 左侧不再提示按钮 -->
+                        <Button Grid.Column="0" 
+                                Command="{Binding SuppressAndCloseAnnouncementCommand}"
+                                Height="38" Margin="0,0,8,0"
+                                CornerRadius="19"
+                                Background="Transparent"
+                                BorderBrush="#25FFFFFF"
+                                BorderThickness="1"
+                                Foreground="#A0A0A5"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center">
+                            <Button.Styles>
+                                <Style Selector="Button">
+                                    <Setter Property="Transitions">
+                                        <Transitions>
+                                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="SineEaseOut"/>
+                                            <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+                                            <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
+                                            <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                                        </Transitions>
+                                    </Setter>
+                                    <Setter Property="RenderTransform" Value="scale(1.0)"/>
                                 </Style>
-                                <Style Selector="CheckBox:checked /template/ Border#NormalRectangle">
-                                    <Setter Property="Background" Value="#d4237a"/>
-                                    <Setter Property="BorderBrush" Value="#d4237a"/>
+                                <Style Selector="Button:pointerover">
+                                    <Setter Property="BorderBrush" Value="#40FFFFFF"/>
+                                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                                    <Setter Property="RenderTransform" Value="scale(1.02)"/>
                                 </Style>
-                            </CheckBox.Styles>
-                        </CheckBox>
+                                <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderBrush" Value="#40FFFFFF"/>
+                                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                                </Style>
+                                <Style Selector="Button:pressed">
+                                    <Setter Property="RenderTransform" Value="scale(0.98)"/>
+                                    <Setter Property="Opacity" Value="0.8"/>
+                                </Style>
+                                <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                                    <Setter Property="Background" Value="#0AFFFFFF"/>
+                                    <Setter Property="BorderBrush" Value="#30FFFFFF"/>
+                                    <Setter Property="Foreground" Value="#EEEEEE"/>
+                                </Style>
+                            </Button.Styles>
+                            <TextBlock Text="{Binding CurrentAnnouncement.CancelButtonText}"
+                                       FontSize="13"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
                         
+                        <!-- 右侧确认按钮 -->
                         <Button Grid.Column="1" 
                                 Command="{Binding CloseAnnouncementCommand}"
-                                Width="140" Height="42"
-                                CornerRadius="21"
-                                Background="#d4237a"
-                                Foreground="White">
+                                Height="38" Margin="8,0,0,0"
+                                CornerRadius="19"
+                                Foreground="White"
+                                BorderThickness="0"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center">
+                            <Button.Background>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                    <GradientStop Color="#FF75A9" Offset="0"/>
+                                    <GradientStop Color="#FF1A7D" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Button.Background>
                             <Button.Styles>
-                                <Style Selector="Button:pointerover /template/ ContentPresenter">
-                                    <Setter Property="Background" Value="#FF69B4"/>
+                                <Style Selector="Button">
+                                    <Setter Property="Transitions">
+                                        <Transitions>
+                                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="SineEaseOut"/>
+                                            <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                                        </Transitions>
+                                    </Setter>
+                                    <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                </Style>
+                                <Style Selector="Button:pointerover">
+                                    <Setter Property="RenderTransform" Value="scale(1.04)"/>
+                                    <Setter Property="Opacity" Value="0.95"/>
+                                </Style>
+                                <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                    <Setter Property="Background">
+                                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                            <GradientStop Color="#FF75A9" Offset="0"/>
+                                            <GradientStop Color="#FF1A7D" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Style>
+                                <Style Selector="Button:pressed">
+                                    <Setter Property="RenderTransform" Value="scale(0.96)"/>
+                                    <Setter Property="Opacity" Value="0.8"/>
+                                </Style>
+                                <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                                    <Setter Property="Background">
+                                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                            <GradientStop Color="#FF75A9" Offset="0"/>
+                                            <GradientStop Color="#FF1A7D" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter>
                                     <Setter Property="Foreground" Value="White"/>
                                 </Style>
                             </Button.Styles>
                             <TextBlock Text="{Binding CurrentAnnouncement.ActionButtonText}" 
-                                       FontWeight="Bold" FontSize="15"
+                                       FontWeight="Bold" FontSize="13"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
                     </Grid>
