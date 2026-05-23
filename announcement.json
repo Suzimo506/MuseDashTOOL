@@ -3,7 +3,7 @@
         "id": "1.4.3",
         "is_enabled": true,
         "title": "v1.4.3 更新内容",
-        "content": "1、Mod管理与谱面卡片UI重构\n2、替换ipv6协议，大幅提升QQ群谱面的封面加载速度\n3、更新弹窗UI重构",
+        "content": "1、Mod管理与谱面卡片UI重构\n2、替换ipv6协议，大幅提升QQ群谱面的封面加载速度(部分不支持ipv6的旧机器可能没有变化)\n3、更新弹窗UI重构",
         "action_button_text": "进入新版喵斯兔",
         "cancel_button_text": "不再显示该弹窗"
     },

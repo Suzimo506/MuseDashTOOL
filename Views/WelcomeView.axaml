@@ -431,7 +431,7 @@
                             <Border Width="28" Height="28" CornerRadius="8"
                                     Background="#18FF69B4" VerticalAlignment="Center">
                                 <Image Source="/Assets/mdmc.png"
-                                       Width="16" Height="16"
+                                       Width="20" Height="20"
                                        RenderOptions.BitmapInterpolationMode="HighQuality"/>
                             </Border>
                             <StackPanel Spacing="1" VerticalAlignment="Center">

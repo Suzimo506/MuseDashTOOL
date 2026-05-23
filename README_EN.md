@@ -24,7 +24,7 @@
 
 - 🚀 **Blazing Fast**: Deeply optimized file scanning and list loading logic.
 - 📦 **Mod Management**: One-click import, enable/disable, and batch deletion of mods.
-- 🎵 **Chart Management**: Support fast download and preview of charts from MDMC community; specially added song pack collections from local charter.
+- 🎵 **Chart Management**: Support fast download and preview of charts from MDMC community;Support to play,like,download charts from Euterpe community; specially added song pack collections from local charter.
 - 🔧 **Config Editor**: Built-in intuitive mod configuration editor, no need to manually edit JSON/cfg files.
 - 🌍 **Smart Translation**: Automatically use online translation services to easily read foreign mod descriptions.
 - 🎨 **Personalization**: Support custom background images, blur, fonts, and theme colors.
