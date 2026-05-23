@@ -42,6 +42,10 @@ public partial class LocalMod : ObservableObject
     [ObservableProperty]
     private bool _isLoadingDescription;
 
+    // 是否正在下载
+    [ObservableProperty]
+    private bool _isDownloading;
+
     /// <summary>原始英文描述缓存</summary>
     private string _originalDescription = "";
     

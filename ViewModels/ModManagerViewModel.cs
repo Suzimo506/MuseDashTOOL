@@ -545,7 +545,7 @@ public partial class ModManagerViewModel : ObservableObject
     public async Task DownloadModAsync(LocalMod mod)
     {
         if (mod.RemoteInfo == null) return;
-        await PerformDownloadAsync(mod.RemoteInfo);
+        await PerformDownloadAsync(mod.RemoteInfo, isUpdate: false, localMod: mod);
     }
 
     [RelayCommand]
@@ -709,6 +709,11 @@ public partial class ModManagerViewModel : ObservableObject
             ? System.IO.Path.Combine(_stagingService.GetStagingPath(gamePath), fileName)
             : System.IO.Path.Combine(gamePath, "Mods", fileName);
 
+        if (localMod != null)
+        {
+            localMod.IsDownloading = true; // 标记下载状态
+        }
+
         try
         {
             using var client = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(30));
@@ -744,6 +749,13 @@ public partial class ModManagerViewModel : ObservableObject
         {
             Console.WriteLine($"[ModManagerViewModel] PerformDownloadAsync({remoteInfo.Name}) 操作异常: {ex}");
             _notificationService.ShowFailure(remoteInfo.Name, ex.Message);
+        }
+        finally
+        {
+            if (localMod != null)
+            {
+                localMod.IsDownloading = false; // 恢复下载状态
+            }
         }
 
         await InitializeAsync();

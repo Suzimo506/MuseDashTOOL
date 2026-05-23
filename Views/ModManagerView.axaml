@@ -42,6 +42,23 @@
     </UserControl.Resources>
 
     <UserControl.Styles>
+        <!-- 旋转圆圈动画样式 -->
+        <Style Selector="PathIcon.Spinner">
+            <Setter Property="RenderTransform">
+                <RotateTransform/>
+            </Setter>
+            <Style.Animations>
+                <Animation Duration="0:0:1" IterationCount="Infinite">
+                    <KeyFrame KeyTime="0:0:0">
+                        <Setter Property="RotateTransform.Angle" Value="0"/>
+                    </KeyFrame>
+                    <KeyFrame KeyTime="0:0:1">
+                        <Setter Property="RotateTransform.Angle" Value="360"/>
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
         <Style Selector="Button.TabBtn">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextSubBrush}"/>
@@ -567,26 +584,52 @@
                                                 <!-- 下载或再次下载按钮 -->
                                                 <Button Classes="CardActionBtn"
                                                         IsVisible="{Binding FilePath, Converter={x:Static StringConverters.IsNullOrEmpty}}"
+                                                        IsEnabled="{Binding !IsDownloading}"
                                                         Click="OnDownloadClick"
                                                         Tag="{Binding}"
                                                         ToolTip.Tip="下载 / 再次下载">
                                                     <Panel>
+                                                        <!-- 正在下载时的旋转圆圈 -->
+                                                        <PathIcon IsVisible="{Binding IsDownloading}"
+                                                                  Classes="Spinner"
+                                                                  Data="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12H20A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4V2Z"/>
                                                         <!-- 下载 SVG -->
-                                                        <PathIcon IsVisible="{Binding !IsLocallyInstalled}"
-                                                                  Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z"/>
+                                                        <PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z">
+                                                            <PathIcon.IsVisible>
+                                                                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                                    <Binding Path="!IsDownloading"/>
+                                                                    <Binding Path="!IsLocallyInstalled"/>
+                                                                </MultiBinding>
+                                                            </PathIcon.IsVisible>
+                                                        </PathIcon>
                                                         <!-- 重新下载 SVG -->
-                                                        <PathIcon IsVisible="{Binding IsLocallyInstalled}"
-                                                                  Data="M833.629464 771.952417H190.325709a44.694224 44.694224 0 1 0 0 89.022102h643.303755a44.694224 44.694224 0 1 0 0-89.022102zM687.091023 934.610086H336.86415a44.694224 44.694224 0 0 0 0 89.388449h350.226873A44.327878 44.327878 0 0 0 731.785248 979.30431a45.060571 45.060571 0 0 0-44.694225-44.694224zM482.303552 696.118773a36.63461 36.63461 0 0 0 30.040381 11.35673 42.129802 42.129802 0 0 0 30.406726-11.35673l269.630731-271.096115a40.298071 40.298071 0 0 0-56.783646-58.615376l-204.787471 204.787471V40.725597A40.664417 40.664417 0 0 0 511.977587 0.06118a39.931725 39.931725 0 0 0-42.129802 40.664417v527.538387L269.456467 366.407282a40.298071 40.298071 0 0 0-56.783646 58.615376z"/>
+                                                        <PathIcon Data="M833.629464 771.952417H190.325709a44.694224 44.694224 0 1 0 0 89.022102h643.303755a44.694224 44.694224 0 1 0 0-89.022102zM687.091023 934.610086H336.86415a44.694224 44.694224 0 0 0 0 89.388449h350.226873A44.327878 44.327878 0 0 0 731.785248 979.30431a45.060571 45.060571 0 0 0-44.694225-44.694224zM482.303552 696.118773a36.63461 36.63461 0 0 0 30.040381 11.35673 42.129802 42.129802 0 0 0 30.406726-11.35673l269.630731-271.096115a40.298071 40.298071 0 0 0-56.783646-58.615376l-204.787471 204.787471V40.725597A40.664417 40.664417 0 0 0 511.977587 0.06118a39.931725 39.931725 0 0 0-42.129802 40.664417v527.538387L269.456467 366.407282a40.298071 40.298071 0 0 0-56.783646 58.615376z">
+                                                            <PathIcon.IsVisible>
+                                                                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                                    <Binding Path="!IsDownloading"/>
+                                                                    <Binding Path="IsLocallyInstalled"/>
+                                                                </MultiBinding>
+                                                            </PathIcon.IsVisible>
+                                                        </PathIcon>
                                                     </Panel>
                                                 </Button>
 
                                                 <!-- ===== 更新列表专属按钮区：仅在更新Tab中显示 ===== -->
                                                 <Button Classes="CardActionBtn"
                                                         IsVisible="{Binding $parent[UserControl].((vm:ModManagerViewModel)DataContext).IsUpdateTabSelected}"
+                                                        IsEnabled="{Binding !IsDownloading}"
                                                         Command="{Binding $parent[UserControl].((vm:ModManagerViewModel)DataContext).UpdateModCommand}"
                                                         CommandParameter="{Binding}"
                                                         ToolTip.Tip="更新">
-                                                    <PathIcon Data="M0.10041 904.300096h1023.79918V1024H0.10041V904.300096z m805.599355-631.599494l-235.299812-247.999802C554.999966 8.900813 533.999982 0.00082 512 0.00082c-21.999982-0.1-42.999966 8.899993-58.199953 24.79998L218.000235 272.800602c-12.79999 13.399989-19.999984 31.199975-20.199983 49.79996 1.399999 42.099966 36.399971 75.29994 78.499937 74.39994h1.799998v0.4h105.799916v408.899672h255.999795V397.400502h102.599917v-0.6h4.699997c42.099966 0.899999 77.099938-32.299974 78.499937-74.39994 0.1-18.499985-7.199994-36.399971-19.999984-49.69996z"/>
+                                                    <Panel>
+                                                        <!-- 正在更新时的旋转圆圈 -->
+                                                        <PathIcon IsVisible="{Binding IsDownloading}"
+                                                                  Classes="Spinner"
+                                                                  Data="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12H20A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4V2Z"/>
+                                                        <!-- 更新 SVG -->
+                                                        <PathIcon IsVisible="{Binding !IsDownloading}"
+                                                                  Data="M0.10041 904.300096h1023.79918V1024H0.10041V904.300096z m805.599355-631.599494l-235.299812-247.999802C554.999966 8.900813 533.999982 0.00082 512 0.00082c-21.999982-0.1-42.999966 8.899993-58.199953 24.79998L218.000235 272.800602c-12.79999 13.399989-19.999984 31.199975-20.199983 49.79996 1.399999 42.099966 36.399971 75.29994 78.499937 74.39994h1.799998v0.4h105.799916v408.899672h255.999795V397.400502h102.599917v-0.6h4.699997c42.099966 0.899999 77.099938-32.299974 78.499937-74.39994 0.1-18.499985-7.199994-36.399971-19.999984-49.69996z"/>
+                                                    </Panel>
                                                 </Button>
 
                                                 <!-- 启用或禁用或删除按钮 -->
