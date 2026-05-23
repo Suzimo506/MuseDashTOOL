@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using MdModManager.Models;
+using CommunityToolkit.Mvvm.DependencyInjection;
 
 namespace MdModManager.Helpers;
 
@@ -89,6 +90,11 @@ public static class ChartCoverSourceResolver
     public static void ReleaseChartCache(MdmcChart? chart)
     {
         if (chart == null)
+            return;
+
+        // 如果谱面正在下载列表中，不要释放其缓存和本地临时文件
+        var downloadService = Ioc.Default.GetService<Services.IDownloadManagerService>();
+        if (downloadService?.Tasks.Any(t => t.Chart.Id == chart.Id) == true)
             return;
 
         if (!string.IsNullOrWhiteSpace(chart.Id))

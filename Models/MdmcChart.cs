@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using AsyncImageLoader;
+using CommunityToolkit.Mvvm.DependencyInjection;
 
 namespace MdModManager.Models;
 
@@ -102,6 +104,9 @@ public partial class MdmcChart : ObservableObject
 
     // 派生 URL
     [JsonIgnore]
+    public IAsyncImageLoader? CoverLoader => IsCommunitySource ? Helpers.OptimizedImageLoader.QQGroupCoverLoader : null;
+
+    [JsonIgnore]
     public string? DisplayCoverSource => !string.IsNullOrWhiteSpace(ResolvedCoverSource)
         ? ResolvedCoverSource
         : (!string.IsNullOrWhiteSpace(CustomCoverUrl) ? CustomCoverUrl : null);
@@ -170,6 +175,11 @@ public partial class MdmcChart : ObservableObject
 
     public void ReleaseResources()
     {
+        // 如果谱面正在下载列表中，不要释放其资源
+        var downloadService = Ioc.Default.GetService<Services.IDownloadManagerService>();
+        if (downloadService?.Tasks.Any(t => t.Chart.Id == Id) == true)
+            return;
+
         CoverImage?.Dispose();
         CoverImage = null;
         ResolvedCoverSource = null;

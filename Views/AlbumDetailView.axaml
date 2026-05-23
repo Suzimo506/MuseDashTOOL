@@ -456,7 +456,7 @@
                                                 <TextBlock Text="🎵" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555"/>
                                             </Border>
                                             <Image IsVisible="{Binding ShouldShowAnimatedCover}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" animated:ImageBehavior.AnimatedSource="{Binding AnimatedDisplayCoverSource}"/>
-                                            <asyncImageLoader:AdvancedImage Loader="{x:Static helpers:OptimizedImageLoader.QQGroupCoverLoader}" Source="{Binding DisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShouldShowStaticCover}"/>
+                                            <asyncImageLoader:AdvancedImage Loader="{Binding CoverLoader}" Source="{Binding DisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShouldShowStaticCover}"/>
                                             <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0">
                                                 <TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>

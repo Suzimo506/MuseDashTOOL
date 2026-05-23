@@ -139,7 +139,7 @@
                                     <Panel>
                                         <TextBlock Text="🎵" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" Foreground="#555555" IsVisible="{Binding !Chart.HasDisplayCoverSource}"/>
                                         <Image IsVisible="{Binding Chart.HasAnimatedDisplayCoverSource}" Stretch="UniformToFill" animated:ImageBehavior.AnimatedSource="{Binding Chart.AnimatedDisplayCoverSource}"/>
-                                        <asyncImageLoader:AdvancedImage Source="{Binding Chart.StaticDisplayCoverSource}" Stretch="UniformToFill" IsVisible="{Binding Chart.HasStaticDisplayCoverSource}"/>
+                                        <asyncImageLoader:AdvancedImage Loader="{Binding Chart.CoverLoader}" Source="{Binding Chart.StaticDisplayCoverSource}" Stretch="UniformToFill" IsVisible="{Binding Chart.HasStaticDisplayCoverSource}"/>
                                     </Panel>
                                 </Border>
 

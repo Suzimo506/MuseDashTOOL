@@ -87,7 +87,19 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     {
         try
         {
-            await ChartCoverSourceResolver.EnsureResolvedAsync(item.Chart);
+            var resolved = await ChartCoverSourceResolver.EnsureResolvedAsync(item.Chart);
+            if (item.Chart.HasAnimatedDisplayCoverSource)
+            {
+                var localSource = await ChartCoverSourceResolver.PrepareAnimatedSourceAsync(resolved);
+                if (!string.IsNullOrWhiteSpace(localSource))
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        item.Chart.IsAnimatedCoverPlaybackEnabled = true;
+                        item.Chart.ResolvedCoverSource = localSource;
+                    });
+                }
+            }
         }
         catch
         {

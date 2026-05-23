@@ -781,7 +781,8 @@ public class AlbumCollectionService : IAlbumCollectionService
             CustomDemoUrl = demoUrl,
             CustomDemoMp3Url = demoMp3Url,
             CustomDownloadUrl = downloadUrl,
-            Sheets = sheets
+            Sheets = sheets,
+            IsCommunitySource = true
         };
     }
 
