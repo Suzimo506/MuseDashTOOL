@@ -439,6 +439,10 @@
                                                     <Image IsVisible="{Binding HasAnimatedDisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" animated:ImageBehavior.AnimatedSource="{Binding AnimatedDisplayCoverSource}" />
                                                     <asyncImageLoader:AdvancedImage Loader="{Binding CoverLoader}" Source="{Binding StaticDisplayCoverSource}" IsVisible="{Binding HasStaticDisplayCoverSource}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                     <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0"><TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                    <!-- 来源标签 -->
+                                                    <Border Background="#CC1F151E" BorderBrush="#80FF8EBE" BorderThickness="1" CornerRadius="4" Padding="5,1.5" Margin="6,6,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsVisible="{Binding SourceCategoryName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                                        <TextBlock Text="{Binding SourceCategoryName}" FontSize="9.5" Foreground="#FF8EBE" FontWeight="SemiBold" MaxWidth="120" TextTrimming="CharacterEllipsis"/>
+                                                    </Border>
                                                 </Panel>
                                             </Border>
                                             <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
