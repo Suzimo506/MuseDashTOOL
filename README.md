@@ -42,6 +42,16 @@
 2. 解压到任意目录（**请勿解压到游戏根目录**）。
 3. 运行 `MuseDashTOOL.exe`，首次启动请按提示选择游戏所在目录。
 
+## ☕ 打赏支持
+
+如果你觉得喵斯兔对你有帮助，并且希望支持它的后续维护（如QQ群谱面云存储、加速域名租赁、CDN和后续开发等），可以通过以下方式打赏作者。即使不打赏，作者也承诺**喵斯兔将永久免费并长期维护**！(๑>◡<๑)
+
+> 💡 **提示**：由于微信/支付宝不支持自动获取打赏者姓名，如果您转账时备注了姓名，作者会手动将您的名字加入到软件的赞助者名单中。感谢您的支持！
+
+| 支付宝 (Alipay) | 微信支付 (WeChat Pay) |
+| :---: | :---: |
+| <img src="Assets/zfb.jpg" width="220" alt="支付宝" /> | <img src="Assets/wx.jpg" width="220" alt="微信支付" /> |
+
 ## 🤝 参与贡献
 
 如果你有好的想法或发现了 Bug，欢迎提交 [Issue](https://github.com/Suzimo506/MuseDashTOOL/issues) 或发起 [Pull Request](https://github.com/Suzimo506/MuseDashTOOL/pulls)。

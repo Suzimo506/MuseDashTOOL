@@ -41,6 +41,16 @@
 2. Extract to any directory (**Do NOT extract to the game root directory**).
 3. Run `MuseDashTOOL.exe`, and follow the prompts to select your game directory on first launch.
 
+## ☕ Support & Donation
+
+If you find MuseDashTOOL helpful and would like to support its ongoing maintenance (such as QQ group cloud storage, mirror domain rentals, CDN, and subsequent development), you can support the author through the following payment methods. Even without donation, the author promises that **MuseDashTOOL will remain permanently free and continuously maintained**! (๑>◡<๑)
+
+> 💡 **Tip**: Since WeChat and Alipay do not support automatically retrieving the donor's name, if you add your name as a remark during transfer, the author will manually add your name to the sponsor list inside the app. Thank you for your generosity!
+
+| Alipay (支付宝) | WeChat Pay (微信支付) |
+| :---: | :---: |
+| <img src="Assets/zfb.jpg" width="220" alt="Alipay" /> | <img src="Assets/wx.jpg" width="220" alt="WeChat Pay" /> |
+
 ## 🤝 Contributing
 
 If you have great ideas or find a bug, feel free to submit an [Issue](https://github.com/Suzimo506/MuseDashTOOL/issues) or a [Pull Request](https://github.com/Suzimo506/MuseDashTOOL/pulls).
