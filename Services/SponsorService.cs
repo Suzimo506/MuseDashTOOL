@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using MdModManager.Helpers;
@@ -16,6 +17,16 @@ public interface ISponsorService
 // 加载赞助者名单
 public class SponsorService : ISponsorService
 {
+    private const string SponsorUrl = "https://raw.githubusercontent.com/Suzimo506/MuseDashTOOL/main/sponsored.json";
+    private readonly IConfigService _configService;
+    private readonly HttpClient _httpClient;
+
+    public SponsorService(IConfigService configService)
+    {
+        _configService = configService;
+        _httpClient = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(4));
+    }
+
     public async Task<List<SponsorInfo>?> GetSponsorsAsync()
     {
         try
@@ -54,37 +65,45 @@ public class SponsorService : ISponsorService
                 }
             }
 
+            string? jsonContent = null;
             if (localPath != null)
             {
                 var fullPath = Path.GetFullPath(localPath);
                 RuntimeLog.Write("SponsorService", $"检测到本地赞助者文件路径: {fullPath}");
                 // 显式指定 UTF-8 编码读取，防止中文乱码和 BOM 错误
-                var jsonContent = await File.ReadAllTextAsync(localPath, System.Text.Encoding.UTF8);
-                if (!string.IsNullOrWhiteSpace(jsonContent))
-                {
-                    jsonContent = jsonContent.Trim();
-                    // 安全过滤可能残留的 BOM 字符
-                    if (jsonContent.StartsWith("\uFEFF", StringComparison.Ordinal))
-                    {
-                        jsonContent = jsonContent.Substring(1).Trim();
-                        RuntimeLog.Write("SponsorService", "已安全过滤残留的 UTF-8 BOM 前缀");
-                    }
+                jsonContent = await File.ReadAllTextAsync(localPath, System.Text.Encoding.UTF8);
+            }
+            else
+            {
+                RuntimeLog.Write("SponsorService", "没有找到本地赞助者文件，开始从远端拉取...");
+                var fetchUrl = GitHubMirrorHelper.ApplyMirror(SponsorUrl, _configService.Config.DownloadSource);
+                jsonContent = await _httpClient.GetStringAsync(fetchUrl);
+            }
 
-                    try
-                    {
-                        var list = JsonSerializer.Deserialize<List<SponsorInfo>>(jsonContent, AppJsonContext.Default.ListSponsorInfo);
-                        RuntimeLog.Write("SponsorService", "使用 AOT 上下文解析赞助者成功");
-                        return list;
-                    }
-                    catch (Exception ex)
-                    {
-                        RuntimeLog.Write("SponsorService", $"使用 AOT 上下文解析发生异常 ({ex.Message})，准备切换回反射解析器");
-                        #pragma warning disable IL2026, IL3050
-                        var list = JsonSerializer.Deserialize<List<SponsorInfo>>(jsonContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        RuntimeLog.Write("SponsorService", "使用反射解析器解析赞助者成功");
-                        return list;
-                        #pragma warning restore IL2026, IL3050
-                    }
+            if (!string.IsNullOrWhiteSpace(jsonContent))
+            {
+                jsonContent = jsonContent.Trim();
+                // 安全过滤可能残留的 BOM 字符
+                if (jsonContent.StartsWith("\uFEFF", StringComparison.Ordinal))
+                {
+                    jsonContent = jsonContent.Substring(1).Trim();
+                    RuntimeLog.Write("SponsorService", "已安全过滤残留的 UTF-8 BOM 前缀");
+                }
+
+                try
+                {
+                    var list = JsonSerializer.Deserialize<List<SponsorInfo>>(jsonContent, AppJsonContext.Default.ListSponsorInfo);
+                    RuntimeLog.Write("SponsorService", "使用 AOT 上下文解析赞助者成功");
+                    return list;
+                }
+                catch (Exception ex)
+                {
+                    RuntimeLog.Write("SponsorService", $"使用 AOT 上下文解析发生异常 ({ex.Message})，准备切换回反射解析器");
+                    #pragma warning disable IL2026, IL3050
+                    var list = JsonSerializer.Deserialize<List<SponsorInfo>>(jsonContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    RuntimeLog.Write("SponsorService", "使用反射解析器解析赞助者成功");
+                    return list;
+                    #pragma warning restore IL2026, IL3050
                 }
             }
         }

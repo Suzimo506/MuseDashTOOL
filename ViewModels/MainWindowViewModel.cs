@@ -844,6 +844,8 @@ public partial class MainWindowViewModel : ObservableObject
             etVm.Dispose();
         else if (CurrentPage is AccountViewModel accountVm)
             accountVm.Cleanup(); // 离开账号页时释放多余记录，节省内存
+        else if (CurrentPage is SponsorViewModel sponsorVm)
+            sponsorVm.Cleanup(); // 离开打赏页时释放二维码图片资源，防止内存泄漏
     }
 
     /// <summary>检查是否有未确认的高级设置阻止导航</summary>

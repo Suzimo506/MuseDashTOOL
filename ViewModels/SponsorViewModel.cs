@@ -74,7 +74,7 @@ public partial class SponsorViewModel : ViewModelBase
                      "当然，如今的喵斯兔绝不是一蹴而就的，最开始的喵斯兔，UI简陋，功能又少，我一遍遍的调试，一遍遍的修改，甚至有时一个小小的bug或者想加一个小小的功能我需要花大量的时间去改（可能也是因为我有强迫症）。每当我想要放弃的时候，我就会打开b站，或者打开qq群，看看你们的意见与讨论，不管褒扬还是批评，我都会觉得，我是有人在注视的，我做的软件对一些人是有帮助的，我并不是在沉浸在自己的世界里埋头苦干。可以说，没有你们，就绝对没有现在的喵斯兔。再一次感谢你们！对于一个开发者，最大的欢欣莫过于你们的焦点。\n" +
                      "虽然说，喵斯兔的软件本体开发是我一个人完成的，不过还有一些其他的工作，是离不开各位谱师的帮助。我想说，喵斯快跑这个圈子给我最大的感受就是大家都是有爱的。这里有这么多无偿奉献的谱师，愿意无偿花时间写这么多谱子；愿意花时间配合喵斯兔，将来源于各处零散的谱面收集起来；更有很多非谱师，在自发的管理各个qq群，为群友解决各种问题；这种氛围也让我有了继续下去的动力，我愿意为这群可爱友善的人们也贡献一点我微不足道的力量。\n" +
                      "最后我想说，喵斯兔开发虽然已经消耗了我成百上千个小时，但是这绝不会是它的终点，未来还会继续更新，不过它确实不是完美的，可能会有这样那样的问题，毕竟这也是我第一款自己独立开发的软件，如果你不幸遇到了问题，请多多海涵，我也随时在倾听你的反馈。\n" +
-                     "关于我开发喵斯兔的心路历程以及一些想说的话到这里就结束了。至于为什么这封信放在这里，首先是我也不知道除了这里还能放在哪里了；其次，你既然点开了这个页面，说明喵斯兔应该或多或少地帮助到了你，那么你也许会有兴趣看完我的长篇大论，也算是一个精准投放吧（毕竟对着一个刚打开喵斯兔的陌生用户说这么一堆煽情的话也怪尴尬的）";
+                     "关于我开发喵斯兔的心路历程以及一些想说的话到这里就结束了。至于为什么这封信放在这里，首先是我也不知道除了这里还能放在哪里了；其次，你既然点开了这个页面，说明喵斯兔应该或多或少地帮助到了你，那么你也许会有兴趣看完我的长篇大论，也算是一个精准投放吧（毕竟对着一个刚打开喵斯兔的陌生用户说这么一堆煽情的话也怪尴尬的） (๑>◡<๑)";
         LetterText = LetterText.Replace("\n", "\n\n");
     }
 
@@ -102,6 +102,7 @@ public partial class SponsorViewModel : ViewModelBase
             // 再次点击已选中的方式，进行收起
             SelectedPaymentMethod = "";
             IsQRCodeVisible = false;
+            QrCodeImage?.Dispose();
             QrCodeImage = null;
             OnPropertyChanged(nameof(IsAlipaySelected));
             OnPropertyChanged(nameof(IsWeChatSelected));
@@ -118,11 +119,15 @@ public partial class SponsorViewModel : ViewModelBase
         {
             var assetPath = method == "Alipay" ? "avares://MuseDashTOOL/Assets/zfb.jpg" : "avares://MuseDashTOOL/Assets/wx.jpg";
             using var stream = AssetLoader.Open(new Uri(assetPath));
-            QrCodeImage = new Bitmap(stream);
+            var newImage = new Bitmap(stream);
+            
+            QrCodeImage?.Dispose();
+            QrCodeImage = newImage;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Failed to load QR code image: {ex.Message}");
+            QrCodeImage?.Dispose();
             QrCodeImage = null;
         }
     }
@@ -140,5 +145,12 @@ public partial class SponsorViewModel : ViewModelBase
             mainVm.CurrentPage = welcomeVm;
             await welcomeVm.InitializeAsync();
         }
+    }
+
+    // 释放资源，防止 Bitmap 内存泄漏
+    public void Cleanup()
+    {
+        QrCodeImage?.Dispose();
+        QrCodeImage = null;
     }
 }

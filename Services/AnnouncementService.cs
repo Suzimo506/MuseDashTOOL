@@ -15,10 +15,12 @@ public interface IAnnouncementService
 public class AnnouncementService : IAnnouncementService
 {
     private const string AnnouncementUrl = "https://raw.githubusercontent.com/Suzimo506/MuseDashTOOL/main/announcement.json";
+    private readonly IConfigService _configService;
     private readonly HttpClient _httpClient;
 
-    public AnnouncementService()
+    public AnnouncementService(IConfigService configService)
     {
+        _configService = configService;
         _httpClient = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(4));
         // 设置较短的超时时间，避免网络环境差时卡顿
     }
@@ -54,7 +56,8 @@ public class AnnouncementService : IAnnouncementService
             {
                 // 本地没有则请求远程
                 System.Diagnostics.Debug.WriteLine("Fetching remote announcement...");
-                jsonContent = await _httpClient.GetStringAsync(AnnouncementUrl);
+                var fetchUrl = GitHubMirrorHelper.ApplyMirror(AnnouncementUrl, _configService.Config.DownloadSource);
+                jsonContent = await _httpClient.GetStringAsync(fetchUrl);
             }
 
             if (!string.IsNullOrWhiteSpace(jsonContent))

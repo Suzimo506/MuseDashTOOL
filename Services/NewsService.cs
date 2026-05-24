@@ -16,10 +16,12 @@ public interface INewsService
 public class NewsService : INewsService
 {
     private const string NewsUrl = "https://raw.githubusercontent.com/Suzimo506/MuseDashTOOL/main/news.json";
+    private readonly IConfigService _configService;
     private readonly HttpClient _httpClient;
 
-    public NewsService()
+    public NewsService(IConfigService configService)
     {
+        _configService = configService;
         _httpClient = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(4));
     }
 
@@ -72,7 +74,8 @@ public class NewsService : INewsService
             else
             {
                 RuntimeLog.Write("NewsService", $"没有找到本地新闻文件，开始从远端拉取...");
-                jsonContent = await _httpClient.GetStringAsync(NewsUrl);
+                var fetchUrl = GitHubMirrorHelper.ApplyMirror(NewsUrl, _configService.Config.DownloadSource);
+                jsonContent = await _httpClient.GetStringAsync(fetchUrl);
             }
 
             if (!string.IsNullOrWhiteSpace(jsonContent))
