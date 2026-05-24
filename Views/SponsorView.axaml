@@ -1,0 +1,582 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:models="using:MdModManager.Models"
+             x:Class="MdModManager.Views.SponsorView"
+             x:DataType="vm:SponsorViewModel">
+
+    <UserControl.Resources>
+        <!-- 返回按钮样式 -->
+        <ControlTheme x:Key="BackBtnTheme" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover">
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed">
+                <Setter Property="Opacity" Value="0.6"/>
+            </Style>
+        </ControlTheme>
+
+        <!-- 支付选择按钮的基础样式 -->
+        <ControlTheme x:Key="PaymentBtnTheme" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource FloatingPanelBorder}"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover">
+                <Setter Property="RenderTransform" Value="scale(1.03)"/>
+            </Style>
+            <Style Selector="^:pressed">
+                <Setter Property="RenderTransform" Value="scale(0.97)"/>
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- 支付按钮文本和图标常态为白色 -->
+        <Style Selector="Button.PaymentBtn">
+            <Setter Property="Opacity" Value="0.55"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.PaymentBtn TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.PaymentBtn PathIcon">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- 支付宝常态背景（蓝色渐变） -->
+        <Style Selector="Button.PaymentBtn.Alipay /template/ Border#RootBorder">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                        <GradientStop Color="#007AFF" Offset="0"/>
+                        <GradientStop Color="#00A2FF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 微信常态背景（绿色渐变） -->
+        <Style Selector="Button.PaymentBtn.WeChat /template/ Border#RootBorder">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                        <GradientStop Color="#09BB07" Offset="0"/>
+                        <GradientStop Color="#22C820" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 激活状态：透明度恢复100%，加上白边框 -->
+        <Style Selector="Button.PaymentBtn.Active">
+            <Setter Property="Opacity" Value="1.0"/>
+            <Setter Property="BorderBrush" Value="White"/>
+        </Style>
+
+        <!-- 弹窗轻微滑入与淡入过渡特效 -->
+        <Style Selector="Border#PopupBorder">
+            <Setter Property="RenderTransform" Value="translateY(40px)"/>
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border#PopupBorder.Open">
+            <Setter Property="RenderTransform" Value="translateY(0px)"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <!-- 信封按钮内框样式及渐变过渡 -->
+        <Style Selector="Button.EnvelopeBtn Border#EnvelopeBorder">
+            <Setter Property="Background" Value="#221018"/>
+            <Setter Property="BorderBrush" Value="#40FF69B4"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.25"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.EnvelopeBtn:pointerover Border#EnvelopeBorder">
+            <Setter Property="Background" Value="#2D1621"/>
+            <Setter Property="BorderBrush" Value="#FF69B4"/>
+        </Style>
+        <Style Selector="Button.EnvelopeBtn:pressed Border#EnvelopeBorder">
+            <Setter Property="Background" Value="#1A0A12"/>
+            <Setter Property="BorderBrush" Value="#80FF69B4"/>
+        </Style>
+
+        <!-- 覆盖基础主题的按钮放大效果 -->
+        <Style Selector="Button.EnvelopeBtn:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+        </Style>
+        <Style Selector="Button.EnvelopeBtn:pressed">
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+        </Style>
+
+        <!-- 箭头微动效果 -->
+        <Style Selector="Button.EnvelopeBtn PathIcon#ArrowIcon">
+            <Setter Property="RenderTransform" Value="translateX(0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.EnvelopeBtn:pointerover PathIcon#ArrowIcon">
+            <Setter Property="RenderTransform" Value="translateX(5px)"/>
+        </Style>
+
+        <!-- 二维码面板展开与淡入动画 -->
+        <Style Selector="StackPanel#QRCodeContainer">
+            <Setter Property="MaxHeight" Value="0"/>
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="MaxHeight" Duration="0:0:0.35" Easing="CubicEaseInOut"/>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                    <ThicknessTransition Property="Margin" Duration="0:0:0.35" Easing="CubicEaseInOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="StackPanel#QRCodeContainer.Expanded">
+            <Setter Property="MaxHeight" Value="250"/>
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="Margin" Value="0,16,0,16"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*" Margin="20,15,20,20">
+        <!-- ====== 顶部：导航与标题 ====== -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,15">
+            <!-- 返回按钮 -->
+            <Button Grid.Column="0"
+                    Theme="{StaticResource BackBtnTheme}"
+                    Command="{Binding GoBackCommand}"
+                    VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <PathIcon Data="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
+                              Width="16" Height="16"
+                              Foreground="{DynamicResource SvgIconBrush}"/>
+                    <TextBlock Text="返回欢迎页"
+                               FontSize="13"
+                               Foreground="{DynamicResource ThemeTextSubBrush}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <!-- 标题居中 -->
+            <StackPanel Grid.Column="1" HorizontalAlignment="Center" Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="打赏支持"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           LetterSpacing="2">
+                    <TextBlock.Foreground>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Color="#FF00FF" Offset="0"/>
+                            <GradientStop Color="#FF69B4" Offset="1"/>
+                        </LinearGradientBrush>
+                    </TextBlock.Foreground>
+                </TextBlock>
+                <TextBlock Text="SUPPORT"
+                           FontSize="14"
+                           FontWeight="Black"
+                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                           VerticalAlignment="Bottom"
+                           Margin="0,0,0,3"
+                           Opacity="0.4"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ====== 主体内容 ====== -->
+        <Grid Grid.Row="1" ColumnDefinitions="1.2*,*" ColumnSpacing="25">
+            <!-- ====== 左边：信息说明与打赏 ====== -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="18" Margin="0,0,5,0">
+                    <!-- 云存储/开发费用说明卡片 -->
+                    <Border CornerRadius="16"
+                            Padding="20"
+                            BorderThickness="1.5"
+                            BorderBrush="#33FF69B4"
+                            BoxShadow="0 4 20 0 #20000000">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                <GradientStop Color="#221018" Offset="0"/>
+                                <GradientStop Color="#160810" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <StackPanel Spacing="12">
+                            <!-- 承诺文字 -->
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <PathIcon Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                          Width="16" Height="16"
+                                          Foreground="#FF69B4"/>
+                                <TextBlock Text="支持喵斯兔"
+                                           FontSize="15"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                            </StackPanel>
+                            
+                            <TextBlock Text="您打赏的米会用于喵斯兔后续的QQ群谱面的云存储，加速域名的租赁，CDN，以及后续的开发等。即使您不打赏，作者也承诺喵斯兔将永久免费并且长期维护。"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource ThemeTextSubBrush}"
+                                       TextWrapping="Wrap"
+                                       LineHeight="20"/>
+
+                            <!-- 警告声明 -->
+                            <Border Background="#1AFF4444"
+                                    BorderBrush="#80FF4444"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="12,10">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"
+                                              Width="14" Height="14"
+                                              Foreground="#FF4444"
+                                              VerticalAlignment="Center"/>
+                                    <TextBlock Text="喵斯兔是一个独立的工具软件，并不属于mdmc.moe或Euterpe，如果您需要赞助他们，请前往对应的网站。"
+                                               FontSize="12"
+                                               Foreground="#FF4444"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               MaxWidth="380"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 来自作者的信 信封按钮 -->
+                    <Button Command="{Binding OpenLetterPopupCommand}"
+                            Theme="{StaticResource PaymentBtnTheme}"
+                            Classes="EnvelopeBtn"
+                            Padding="0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            BorderThickness="0">
+                        <Border Name="EnvelopeBorder"
+                                CornerRadius="16"
+                                Padding="20,18"
+                                BoxShadow="0 4 15 0 #30000000">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <!-- 信封图标 -->
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="8" Background="#15FF69B4" VerticalAlignment="Center">
+                                    <PathIcon Data="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"
+                                              Width="20" Height="20" Foreground="#FF69B4" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <!-- 引导文本 -->
+                                <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="来自作者的一封信" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                    <TextBlock Text="点击拆开，倾听作者开发喵斯兔的心路历程" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                </StackPanel>
+                                <!-- 箭头 -->
+                                <PathIcon Name="ArrowIcon" Grid.Column="2" Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" Width="16" Height="16" Foreground="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.6"/>
+                            </Grid>
+                        </Border>
+                    </Button>
+
+                    <!-- 收款选择与二维码展示 -->
+                    <Border CornerRadius="16"
+                            Padding="20"
+                            Background="{DynamicResource CardBgBrush}"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource FloatingPanelBorder}">
+                        <StackPanel Spacing="0">
+                            <TextBlock Text="请选择打赏方式"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource ThemeTextMainBrush}"
+                                       Margin="0,0,0,16"/>
+
+                            <!-- 付款通道切换 -->
+                            <Grid ColumnDefinitions="*,*">
+                                <!-- 支付宝 -->
+                                <Button Grid.Column="0"
+                                        Theme="{StaticResource PaymentBtnTheme}"
+                                        Classes="PaymentBtn Alipay"
+                                        Classes.Active="{Binding IsAlipaySelected}"
+                                        Command="{Binding SelectPaymentMethodCommand}"
+                                        CommandParameter="Alipay"
+                                        Margin="0,0,10,0"
+                                        Height="42">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <PathIcon Data="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H9v-2h6v2zm0-4H9V10h6v2z"
+                                                  Width="14" Height="14"/>
+                                        <TextBlock Text="支付宝"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- 微信支付 -->
+                                <Button Grid.Column="1"
+                                        Theme="{StaticResource PaymentBtnTheme}"
+                                        Classes="PaymentBtn WeChat"
+                                        Classes.Active="{Binding IsWeChatSelected}"
+                                        Command="{Binding SelectPaymentMethodCommand}"
+                                        CommandParameter="WeChat"
+                                        Margin="10,0,0,0"
+                                        Height="42">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <PathIcon Data="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H9v-2h6v2zm0-4H9V10h6v2z"
+                                                  Width="14" Height="14"/>
+                                        <TextBlock Text="微信支付"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <!-- 展开容器：包含二维码卡片和说明文本 -->
+                            <StackPanel Name="QRCodeContainer"
+                                        Classes.Expanded="{Binding IsQRCodeVisible}"
+                                        HorizontalAlignment="Stretch"
+                                        ClipToBounds="True">
+                                <!-- 收款码展示 -->
+                                <Border CornerRadius="12"
+                                        Background="#E0FFFFFF"
+                                        BorderThickness="1"
+                                        BorderBrush="{DynamicResource FloatingPanelBorder}"
+                                        Width="180"
+                                        Height="180"
+                                        HorizontalAlignment="Center"
+                                        BoxShadow="0 4 12 0 #15000000">
+                                    <Image Source="{Binding QrCodeImage}"
+                                           Stretch="Uniform"
+                                           Margin="8"
+                                           RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                                </Border>
+
+                                <!-- 显眼颜色的说明提示 -->
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,12,0,0">
+                                    <PathIcon Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"
+                                              Width="12" Height="12"
+                                              Foreground="#FF69B4"
+                                              VerticalAlignment="Center"/>
+                                    <TextBlock Text="微信/支付宝 不支持自动获取打赏者的名字，请您转账时备注姓名，作者会尽快把名字加在打赏者列表里。感谢您的慷概解囊！（跪谢！）"
+                                               FontSize="10.5"
+                                               Foreground="#FF69B4"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               MaxWidth="380"
+                                               VerticalAlignment="Center"
+                                               TextAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ====== 右边：赞助者名单 (滚动列表) ====== -->
+            <Border Grid.Column="1"
+                    CornerRadius="16"
+                    Padding="22,20"
+                    Background="{DynamicResource CardBgBrush}"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource FloatingPanelBorder}">
+                <Grid RowDefinitions="Auto,*">
+                    <!-- 列表标题 -->
+                    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,16">
+                        <TextBlock Text="感谢各位出色的赞助者！"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource ThemeAccentBrush}"/>
+                        <TextBlock Text="您的支持是项目维护的最大动力"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                    </StackPanel>
+
+                    <!-- 滚动列表 -->
+                    <ScrollViewer Name="SponsorScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding Sponsors}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:SponsorInfo">
+                                    <Border CornerRadius="10"
+                                            Padding="12,10"
+                                            Margin="0,0,0,8"
+                                            Background="{DynamicResource ControlBgBrush}"
+                                            BorderThickness="1"
+                                            BorderBrush="{DynamicResource FloatingPanelBorder}">
+                                        <Border.Transitions>
+                                            <Transitions>
+                                                <BrushTransition Property="Background" Duration="0:0:0.15"/>
+                                            </Transitions>
+                                        </Border.Transitions>
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <!-- 左：金币头像 -->
+                                            <Border Grid.Column="0"
+                                                    Width="28"
+                                                    Height="28"
+                                                    CornerRadius="14"
+                                                    Background="#15D4237A"
+                                                    BorderBrush="#40D4237A"
+                                                    BorderThickness="1"
+                                                    Margin="0,0,12,0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="🪙"
+                                                           FontSize="12"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+
+                                            <!-- 中：打赏者与日期 -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="13.5"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                                <TextBlock Text="{Binding Date}"
+                                                           FontSize="10.5"
+                                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                                            </StackPanel>
+
+                                            <!-- 右：打赏金额 -->
+                                            <Border Grid.Column="2"
+                                                    CornerRadius="10"
+                                                    Padding="8,3"
+                                                    Background="#15D4237A"
+                                                    VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Spacing="1">
+                                                    <TextBlock Text="￥"
+                                                               FontSize="10.5"
+                                                               FontWeight="Bold"
+                                                               Foreground="{DynamicResource ThemeAccentBrush}"/>
+                                                    <TextBlock Text="{Binding Amount}"
+                                                               FontSize="12"
+                                                               FontWeight="Bold"
+                                                               Foreground="{DynamicResource ThemeAccentBrush}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ====== 信件弹窗遮罩 ====== -->
+        <Grid Grid.Row="0" Grid.RowSpan="2"
+              IsVisible="{Binding IsLetterPopupOpen}"
+              Background="#B0000000"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch">
+            
+            <!-- 信件卡片 -->
+            <Border Name="PopupBorder"
+                    Classes.Open="{Binding IsLetterPopupOpen}"
+                    Background="#FFFDF0"
+                    BorderBrush="#E6C2A0"
+                    BorderThickness="1.5"
+                    CornerRadius="20"
+                    Width="600"
+                    Height="500"
+                    Padding="32,28"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    BoxShadow="0 15 35 0 #80000000">
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <!-- 信件标题 -->
+                    <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,16">
+                        <TextBlock Text="致 喵斯兔用户的一封信"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="#5C3A21"
+                                   HorizontalAlignment="Center"/>
+                        <Border Height="1" Background="#E6C2A0" Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <!-- 信件正文内容 -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,16">
+                        <StackPanel HorizontalAlignment="Stretch">
+                            <TextBlock Text="{Binding LetterText}"
+                                       FontSize="13.5"
+                                       Foreground="#70523C"
+                                       TextWrapping="Wrap"
+                                       LineHeight="22"
+                                       FontFamily="Microsoft YaHei, SimSun, sans-serif"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- 信件落款与关闭按钮 -->
+                    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                        <!-- 信件落款 -->
+                        <StackPanel Grid.Column="0" VerticalAlignment="Bottom">
+                            <TextBlock Text="其实我叫苏子沫" FontSize="12.5" FontWeight="SemiBold" Foreground="#8C6E58"/>
+                            <TextBlock Text="写于打赏开启之际" FontSize="10.5" Foreground="#A88B74" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <!-- 关闭按钮 -->
+                        <Button Grid.Column="1"
+                                Command="{Binding CloseLetterPopupCommand}"
+                                Content="合上信件"
+                                Background="#A05C3A21"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Padding="20,10"
+                                CornerRadius="10"
+                                Cursor="Hand">
+                            <Button.Styles>
+                                <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                    <Setter Property="Background" Value="#CC5C3A21"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Style>
+                                <Style Selector="Button:pressed /template/ ContentPresenter">
+                                    <Setter Property="Background" Value="#E65C3A21"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Style>
+                            </Button.Styles>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

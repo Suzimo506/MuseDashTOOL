@@ -132,6 +132,7 @@ public partial class App : Application
         services.AddSingleton<ModManagerViewModel>();
         services.AddTransient<TutorialViewModel>();
         services.AddTransient<WelcomeViewModel>();
+        services.AddTransient<SponsorViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<ConfigManagerViewModel>();
         services.AddTransient<ChartManagerViewModel>();
@@ -162,6 +163,8 @@ public partial class App : Application
         services.AddSingleton<ModStagingService>();
         services.AddSingleton<IUpdateService, UpdateService>();
         services.AddSingleton<IAnnouncementService, AnnouncementService>();
+        services.AddSingleton<INewsService, NewsService>();
+        services.AddSingleton<ISponsorService, SponsorService>();
         services.AddSingleton<IAlbumCollectionService, AlbumCollectionService>();
         services.AddSingleton<IMirrorDomainService, MirrorDomainService>();
 

@@ -190,4 +190,40 @@ public partial class ChartManagerView : UserControl
             vm.JumpPageCommand.Execute(null);
         }
     }
+
+    // 批量模式下点击卡片切换选中状态
+    private void OnChartCardPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is not ChartManagerViewModel vm || !vm.IsBatchMode) return;
+        if (sender is not Avalonia.Controls.Border border) return;
+        if (border.Tag is not ChartInfo chart) return;
+
+        vm.ToggleSelectChartCommand.Execute(chart);
+        e.Handled = true;
+    }
+
+    // 批量删除确认
+    private async void OnBatchDeleteClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not ChartManagerViewModel vm) return;
+        if (vm.SelectedCount == 0) return;
+
+        var configService = Ioc.Default.GetRequiredService<IConfigService>();
+        if (!configService.Config.SuppressDeleteConfirmation)
+        {
+            var dialog = new DeleteConfirmDialog();
+            var owner = TopLevel.GetTopLevel(this) as Window;
+            await dialog.ShowIndependentDialogAsync(owner);
+
+            if (!dialog.Confirmed) return;
+
+            if (dialog.DontShowAgain)
+            {
+                configService.Config.SuppressDeleteConfirmation = true;
+                _ = configService.SaveAsync();
+            }
+        }
+
+        vm.DeleteSelectedChartsCommand.Execute(null);
+    }
 }

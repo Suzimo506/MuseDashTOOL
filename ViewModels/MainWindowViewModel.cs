@@ -259,6 +259,8 @@ public partial class MainWindowViewModel : ObservableObject
             await etvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is WelcomeViewModel wvm)
             await wvm.InitializeAsync();
+        else if (CurrentPage is SponsorViewModel spvm)
+            await spvm.InitializeAsync();
         else if (CurrentPage is TutorialViewModel tvm)
         {
             // 使用说明无需异步初始化
@@ -762,6 +764,17 @@ public partial class MainWindowViewModel : ObservableObject
 
         // 按钮冷却保护
         await Task.Delay(3000);
+    }
+
+    [RelayCommand]
+    private async Task NavigateToSponsorAsync()
+    {
+        CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
+
+        var vm = Ioc.Default.GetRequiredService<SponsorViewModel>();
+        CurrentPage = vm;
+        await vm.InitializeAsync();
     }
 
     [RelayCommand]

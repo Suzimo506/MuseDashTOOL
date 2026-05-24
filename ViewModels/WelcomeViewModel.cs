@@ -18,6 +18,7 @@ public partial class WelcomeViewModel : ViewModelBase
     private readonly IChartService? _chartService;
     private readonly INotificationService? _notificationService;
     private readonly IModCatalogService? _modCatalogService;
+    private readonly INewsService? _newsService;
 
     // 问候语
     [ObservableProperty]
@@ -59,23 +60,24 @@ public partial class WelcomeViewModel : ViewModelBase
     [ObservableProperty]
     private int _totalCharts;
 
-    // 小贴士文本
+    // 新闻标题
     [ObservableProperty]
-    private string _tipText = "";
+    private string _newsTitle = "";
 
-    private static readonly string[] Tips =
-    {
-        "左键标题栏的 \"喵斯兔\" 可以导出运行日志到桌面",
-        "你可以直接拖入 .dll 或 .mdm /.zip文件来导入 Mod 和谱面",
-        "在谱面管理界面，右键放大镜图标可以一键清除搜索框",
-        "在设置中可以自定义主题颜色、背景图片和字体",
-        "启动游戏时如果遇到问题，试试在设置中切换下载源",
-        "配置文件修改后记得点击右上角保存",
-        "高级设置中可以填入 Cloudflare 高速 IP 改善下载速度",
-        "搜索框输入内容后，点击 \"清除\" 可以快速清空",
-        "可以在设置界面点击一键安装自制谱，全自动安装",
-        "Mod 启动过一次后才会自动生成配置文件",
-    };
+    // 新闻正文
+    [ObservableProperty]
+    private string _newsContent = "";
+
+    // 新闻链接
+    [ObservableProperty]
+    private string _newsUrl = "";
+
+    // 是否有新闻
+    [ObservableProperty]
+    private bool _hasNews;
+
+    // 是否有新闻链接
+    public bool HasNewsUrl => !string.IsNullOrWhiteSpace(NewsUrl);
 
     public WelcomeViewModel()
     {
@@ -85,13 +87,14 @@ public partial class WelcomeViewModel : ViewModelBase
         _chartService = Ioc.Default.GetService<IChartService>();
         _notificationService = Ioc.Default.GetService<INotificationService>();
         _modCatalogService = Ioc.Default.GetService<IModCatalogService>();
+        _newsService = Ioc.Default.GetService<INewsService>();
     }
 
     // 初始化欢迎页数据
     public async Task InitializeAsync()
     {
         UpdateGreeting();
-        UpdateTip();
+        _ = LoadNewsAsync();
         await LoadStatsAsync();
     }
 
@@ -129,10 +132,27 @@ public partial class WelcomeViewModel : ViewModelBase
         GreetingText = $"{timeGreeting}，欢迎回来";
     }
 
-    // 随机选择一条小贴士
-    private void UpdateTip()
+    // 异步加载新闻
+    private async Task LoadNewsAsync()
     {
-        TipText = Tips[Random.Shared.Next(Tips.Length)];
+        if (_newsService == null) return;
+
+        try
+        {
+            var news = await _newsService.GetLatestNewsAsync();
+            if (news != null && !string.IsNullOrWhiteSpace(news.Title))
+            {
+                NewsTitle = news.Title;
+                NewsContent = news.Content;
+                NewsUrl = news.Url;
+                HasNews = true;
+                OnPropertyChanged(nameof(HasNewsUrl));
+            }
+        }
+        catch
+        {
+            // 新闻加载失败不影响主流程
+        }
     }
 
     // 异步加载统计数据
@@ -214,6 +234,9 @@ public partial class WelcomeViewModel : ViewModelBase
                 break;
             case "Euterpe":
                 await mainVm.NavigateToEuterpeDownloadCommand.ExecuteAsync(null);
+                break;
+            case "Sponsor":
+                await mainVm.NavigateToSponsorCommand.ExecuteAsync(null);
                 break;
         }
     }

@@ -162,4 +162,7 @@ public class NoticeInfo
 [JsonSerializable(typeof(MuseDashAccountInfo))]
 [JsonSerializable(typeof(MdMoePlayerResponse))]
 [JsonSerializable(typeof(Dictionary<string, MdMoeAlbum>))]
+[JsonSerializable(typeof(NewsInfo))]
+[JsonSerializable(typeof(SponsorInfo))]
+[JsonSerializable(typeof(System.Collections.Generic.List<SponsorInfo>))]
 internal partial class AppJsonContext : JsonSerializerContext { }

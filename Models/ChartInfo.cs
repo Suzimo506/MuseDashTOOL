@@ -57,6 +57,10 @@ public partial class ChartInfo : ObservableObject
     [ObservableProperty]
     private bool _isNewDownload;
 
+    // 批量选中状态
+    [ObservableProperty]
+    private bool _isSelected;
+
     /// <summary>副标题展示（作曲 + 谱师）</summary>
     public string SubInfo
     {

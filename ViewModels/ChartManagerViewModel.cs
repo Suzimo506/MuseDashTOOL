@@ -70,6 +70,21 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private double? _requestedScrollY;
 
+    // 批量操作模式
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NotIsBatchMode))]
+    private bool _isBatchMode;
+
+    public bool NotIsBatchMode => !IsBatchMode;
+
+    // 当前选中数量
+    [ObservableProperty]
+    private int _selectedCount;
+
+    // 当前页是否全选
+    [ObservableProperty]
+    private bool _isAllSelected;
+
     partial void OnSearchTextChanged(string value)
     {
         CurrentPage = 1;
@@ -79,9 +94,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     partial void OnCurrentPageChanged(int value)
     {
         JumpPageText = value.ToString();
+        UpdateIsAllSelected();
     }
 
-    /// <summary>是否启用谱面名称滚动</summary>
     public bool EnableMarquee => _configService.Config.EnableChartNameMarquee;
 
     public bool CanLoadNext => CurrentPage < TotalPages && !IsLoading;
@@ -110,6 +125,75 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void ClearSearch() => SearchText = string.Empty;
 
+    [RelayCommand]
+    private void ToggleBatchMode()
+    {
+        IsBatchMode = !IsBatchMode;
+        if (!IsBatchMode)
+            ClearAllSelections();
+    }
+
+    [RelayCommand]
+    private void ToggleSelectChart(ChartInfo chart)
+    {
+        chart.IsSelected = !chart.IsSelected;
+        UpdateSelectedCount();
+        UpdateIsAllSelected();
+    }
+
+    [RelayCommand]
+    private void ToggleSelectAll()
+    {
+        var targetState = !IsAllSelected;
+        foreach (var chart in Charts)
+            chart.IsSelected = targetState;
+        UpdateSelectedCount();
+        UpdateIsAllSelected();
+    }
+
+    [RelayCommand]
+    private void DeleteSelectedCharts()
+    {
+        var toDelete = _allCharts.Where(c => c.IsSelected).ToList();
+        if (toDelete.Count == 0) return;
+
+        StopCurrentPlayback();
+        foreach (var chart in toDelete)
+        {
+            try
+            {
+                _chartService.DeleteChart(chart);
+                chart.CleanupCoverResources();
+                _allCharts.Remove(chart);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ChartManager] Batch delete error: {ex.Message}");
+            }
+        }
+
+        IsBatchMode = false;
+        ApplyFilter();
+    }
+
+    private void ClearAllSelections()
+    {
+        foreach (var chart in _allCharts)
+            chart.IsSelected = false;
+        SelectedCount = 0;
+        IsAllSelected = false;
+    }
+
+    private void UpdateSelectedCount()
+    {
+        SelectedCount = _allCharts.Count(c => c.IsSelected);
+    }
+
+    private void UpdateIsAllSelected()
+    {
+        IsAllSelected = Charts.Count > 0 && Charts.All(c => c.IsSelected);
+    }
+
     private void Reload()
     {
         StopCurrentPlayback();
@@ -128,6 +212,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             CurrentPage = 1;
             TotalPages = 1;
             IsEditingPageNumber = false;
+            IsBatchMode = false;
+            SelectedCount = 0;
+            IsAllSelected = false;
             IsLoading = true;
             StatusMessage = "正在加载...";
         });

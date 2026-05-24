@@ -232,22 +232,35 @@
                     </StackPanel>
                 </Button>
 
-                <!-- 小贴士卡片 -->
+                <!-- 新闻卡片 -->
                 <Border CornerRadius="14"
                         Padding="18,14"
                         Background="{DynamicResource CardBgBrush}"
                         BorderThickness="1"
-                        BorderBrush="{DynamicResource FloatingPanelBorder}">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <PathIcon Data="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64z m0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z m28-564h-56v312h56V320z m0 384h-56v56h56v-56z"
-                                  Width="16" Height="16" Foreground="{DynamicResource SvgIconBrush}" VerticalAlignment="Top" Margin="0,2,0,0"/>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="小贴士" FontSize="12" FontWeight="Bold"
+                        BorderBrush="{DynamicResource FloatingPanelBorder}"
+                        IsVisible="{Binding HasNews}">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <PathIcon Data="M880 112H144c-17.7 0-32 14.3-32 32v736c0 17.7 14.3 32 32 32h736c17.7 0 32-14.3 32-32V144c0-17.7-14.3-32-32-32zM368 256h288c8.8 0 16 7.2 16 16s-7.2 16-16 16H368c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 128h288c8.8 0 16 7.2 16 16s-7.2 16-16 16H368c-8.8 0-16-7.2-16-16s7.2-16 16-16zm-56 372c-6.6 0-12-5.4-12-12V556c0-6.6 5.4-12 12-12h488c6.6 0 12 5.4 12 12v188c0 6.6-5.4 12-12 12H312z"
+                                      Width="16" Height="16" Foreground="{DynamicResource SvgIconBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding NewsTitle}" FontSize="13" FontWeight="Bold"
                                        Foreground="{DynamicResource SvgIconBrush}"/>
-                            <TextBlock Text="{Binding TipText}"
-                                       FontSize="13" TextWrapping="Wrap"
-                                       Foreground="{DynamicResource ThemeTextSubBrush}"/>
                         </StackPanel>
+                        <TextBlock Text="{Binding NewsContent}"
+                                   FontSize="13" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource ThemeTextSubBrush}"
+                                   Margin="26,0,0,0"/>
+                        <Button IsVisible="{Binding HasNewsUrl}"
+                                Command="{Binding OpenUrlCommand}"
+                                CommandParameter="{Binding NewsUrl}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                Cursor="Hand"
+                                Margin="26,0,0,0">
+                            <TextBlock Text="查看详情 ›" FontSize="12"
+                                       Foreground="{DynamicResource ThemeAccentBrush}"/>
+                        </Button>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -373,7 +386,7 @@
                     Background="{DynamicResource CardBgBrush}"
                     BorderThickness="1"
                     BorderBrush="{DynamicResource FloatingPanelBorder}">
-                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto">
+                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto">
                     <!-- GitHub -->
                     <Button Grid.Column="0" Theme="{StaticResource BottomLinkBtn}"
                             Command="{Binding OpenUrlCommand}"
@@ -473,14 +486,35 @@
                             Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
                             Margin="24,0"/>
 
-                    <!-- 广告位 -->
-                    <TextBlock Grid.Column="8" Text="广告位招租~" FontSize="12"
-                               Foreground="{DynamicResource ThemeTextTertiaryBrush}"
-                               VerticalAlignment="Center" Opacity="0.5"
-                               FontStyle="Italic"/>
+                    <!-- 打赏按钮 -->
+                    <Button Grid.Column="8" Theme="{StaticResource BottomLinkBtn}"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="Sponsor"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Left"
+                            Margin="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="28" Height="28" CornerRadius="8"
+                                    Background="#18FF69B4" VerticalAlignment="Center">
+                                <PathIcon Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                          Width="14" Height="14" Foreground="#FF69B4"/>
+                            </Border>
+                            <StackPanel Spacing="1" VerticalAlignment="Center">
+                                <TextBlock Text="打赏" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                <TextBlock Text="支持喵斯兔" FontSize="10"
+                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 分隔线 -->
+                    <Border Grid.Column="9" Width="1" Height="28"
+                            Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
+                            Margin="24,0"/>
 
                     <!-- 右侧版本号 -->
-                    <TextBlock Grid.Column="9" Text="v1.4.3" FontSize="11"
+                    <TextBlock Grid.Column="11" Text="v1.4.3" FontSize="11"
                                Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                VerticalAlignment="Center" Opacity="0.5"/>
                 </Grid>
