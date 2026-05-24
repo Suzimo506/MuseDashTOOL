@@ -514,7 +514,7 @@
                             Margin="24,0"/>
 
                     <!-- 右侧版本号 -->
-                    <TextBlock Grid.Column="11" Text="v1.4.3" FontSize="11"
+                    <TextBlock Grid.Column="11" Text="v1.4.5" FontSize="11"
                                Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                VerticalAlignment="Center" Opacity="0.5"/>
                 </Grid>

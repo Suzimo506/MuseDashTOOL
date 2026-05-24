@@ -607,7 +607,7 @@
         <ProgressBar IsIndeterminate="True"
                      Width="200"
                      Height="4"
-                     Foreground="#FFFF00FF"
+                     Foreground="{DynamicResource ThemeAccentBrush}"
                      Background="#251F2E"
                      CornerRadius="2"/>
         <TextBlock Text="正在载入本地谱面列表…"

@@ -500,7 +500,7 @@
                                     </StackPanel>
                                 </Button>
                                 <!-- 版本号精准对齐并在折叠时隐去 -->
-                                <TextBlock Text="v1.4.3" 
+                                <TextBlock Text="v1.4.5" 
                                            FontSize="11" 
                                            Foreground="{DynamicResource ThemeTextSubBrush}" 
                                            Opacity="0.6" 
