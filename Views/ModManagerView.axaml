@@ -456,8 +456,27 @@
 
 
             <Grid>
-                <!-- 没安装 Melon Loader (缺少 Mods 文件夹) 时的状态面板 -->
-                <StackPanel IsVisible="{Binding IsModsFolderMissing}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="15">
+                <!-- 加载态 -->
+                <StackPanel IsVisible="{Binding IsLoading}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="16">
+                    <ProgressBar IsIndeterminate="True"
+                                 Width="200"
+                                 Height="4"
+                                 Foreground="#FFFF00FF"
+                                 Background="#251F2E"
+                                 CornerRadius="2"/>
+                    <TextBlock Text="正在载入本地 Mod 列表…"
+                               FontSize="13"
+                               Foreground="#8A8594"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- 主体内容 -->
+                <Panel IsVisible="{Binding !IsLoading}">
+                    <!-- 没安装 Melon Loader (缺少 Mods 文件夹) 时的状态面板 -->
+                    <StackPanel IsVisible="{Binding IsModsFolderMissing}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="15">
                     <TextBlock Text="请先安装Melon Loader" FontSize="18" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Center"/>
                 </StackPanel>
 
@@ -693,8 +712,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ScrollViewer>
-
-
+                </Panel>
             </Grid>
         </DockPanel>
     </Grid>

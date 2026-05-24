@@ -32,6 +32,9 @@ public partial class ModManagerViewModel : ObservableObject
     private ObservableCollection<LocalMod> _mods = new();
 
     [ObservableProperty]
+    private bool _isLoading;
+
+    [ObservableProperty]
     private int _selectedTabIndex = 0; // 0=Local, 1=Update, 2=Download
 
     [ObservableProperty]
@@ -188,6 +191,7 @@ public partial class ModManagerViewModel : ObservableObject
     
     public async Task InitializeAsync(bool forceRefresh, CancellationToken cancellationToken = default)
     {
+        IsLoading = true;
         try
         {
             // 读取游戏版本（用于兼容性判断），失败时为空串（所有 mod 视为兼容）
@@ -345,6 +349,10 @@ public partial class ModManagerViewModel : ObservableObject
         catch (Exception ex)
         {
             Console.WriteLine($"[ModManagerViewModel] InitializeAsync 异常: {ex}");
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 

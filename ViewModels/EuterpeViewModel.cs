@@ -70,6 +70,9 @@ public class BuildZipResponse
 [JsonSerializable(typeof(ManifestVersionEntry))]
 [JsonSerializable(typeof(Dictionary<string, ManifestVersionEntry>))]
 [JsonSerializable(typeof(BuildZipResponse))]
+[JsonSerializable(typeof(EuterpeTag))]
+[JsonSerializable(typeof(List<EuterpeTag>))]
+[JsonSerializable(typeof(Dictionary<string, string>))]
 internal partial class EuterpeChartJsonContext : JsonSerializerContext;
 
 // 排序选项包装类
@@ -96,6 +99,38 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
     // 谱面集合
     public ObservableCollection<EuterpeChart> Charts { get; } = new();
+
+    // 标签集合与选中标签
+    public ObservableCollection<EuterpeTag> Tags { get; } = new();
+    [ObservableProperty]
+    private bool _isTagPanelOpen;
+    [ObservableProperty]
+    private EuterpeTag? _selectedTag;
+
+    [RelayCommand]
+    private void ToggleTagPanel()
+    {
+        IsTagPanelOpen = !IsTagPanelOpen;
+    }
+
+    [RelayCommand]
+    private void SelectTag(EuterpeTag tag)
+    {
+        if (tag == null) return;
+
+        foreach (var t in Tags)
+        {
+            t.IsSelected = (t == tag);
+        }
+
+        SelectedTag = tag;
+        IsTagPanelOpen = false;
+
+        _cursors.Clear();
+        _cursors.Add(null);
+        CurrentPage = 1;
+        _ = ReloadAsync();
+    }
 
     // 页面状态
     [ObservableProperty]
@@ -239,6 +274,10 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                         {
                             path += $"&q={Uri.EscapeDataString(query)}";
                         }
+                        if (SelectedTag != null && !string.IsNullOrEmpty(SelectedTag.TagId))
+                        {
+                            path += $"&tags={Uri.EscapeDataString(SelectedTag.TagId)}&tag_match=all";
+                        }
                         if (!string.IsNullOrEmpty(currentFetchCursor))
                         {
                             path += $"&cursor={Uri.EscapeDataString(currentFetchCursor)}";
@@ -310,6 +349,36 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         _cursors.Add(null);
         CurrentPage = 1;
         SearchDraftText = SearchText;
+
+        // 加载 Euterpe 标签
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, "tags");
+            using var response = await _httpClient.SendAsync(req, ct);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync(ct);
+            var fetchedTags = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.ListEuterpeTag);
+
+            Tags.Clear();
+            Tags.Add(new EuterpeTag(string.Empty, string.Empty, 0, true, 0, new Dictionary<string, string> { { "zh", "全部标签" } }));
+            if (fetchedTags != null)
+            {
+                foreach (var tag in fetchedTags.Where(t => t.IsActive && t.Popularity > 0).OrderBy(t => t.Category).ThenBy(t => t.SortOrder))
+                {
+                    Tags.Add(tag);
+                }
+            }
+            if (Tags.Count > 0)
+            {
+                SelectedTag = Tags[0];
+                Tags[0].IsSelected = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowFailure("加载标签失败", ex.Message);
+        }
+
         await ReloadAsync(ct);
     }
 
@@ -398,6 +467,10 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                     {
                         path += $"&q={Uri.EscapeDataString(query)}";
                     }
+                    if (SelectedTag != null && !string.IsNullOrEmpty(SelectedTag.TagId))
+                    {
+                        path += $"&tags={Uri.EscapeDataString(SelectedTag.TagId)}&tag_match=all";
+                    }
                     if (!string.IsNullOrEmpty(currentFetchCursor))
                     {
                         path += $"&cursor={Uri.EscapeDataString(currentFetchCursor)}";
@@ -457,6 +530,10 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             if (!string.IsNullOrEmpty(query))
             {
                 path += $"&q={Uri.EscapeDataString(query)}";
+            }
+            if (SelectedTag != null && !string.IsNullOrEmpty(SelectedTag.TagId))
+            {
+                path += $"&tags={Uri.EscapeDataString(SelectedTag.TagId)}&tag_match=all";
             }
             if (!string.IsNullOrEmpty(cursor))
             {

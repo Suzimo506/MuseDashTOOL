@@ -235,7 +235,7 @@
         <!-- ====== 主体内容 ====== -->
         <Grid Grid.Row="1" ColumnDefinitions="1.2*,*" ColumnSpacing="25">
             <!-- ====== 左边：信息说明与打赏 ====== -->
-            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer Name="LeftScrollViewer" Grid.Column="0" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Spacing="18" Margin="0,0,5,0">
                     <!-- 云存储/开发费用说明卡片 -->
                     <Border CornerRadius="16"
@@ -390,7 +390,7 @@
                                               Width="12" Height="12"
                                               Foreground="#FF69B4"
                                               VerticalAlignment="Center"/>
-                                    <TextBlock Text="微信/支付宝 不支持自动获取打赏者的名字，请您转账时备注姓名，作者会尽快把名字加在打赏者列表里。感谢您的慷概解囊！（跪谢！）"
+                                    <TextBlock Text="微信/支付宝 不支持自动获取打赏者的名字，请您转账时备注姓名，作者会尽快把名字加在打赏者列表里。感谢您的慷概解囊！您的支持是我最大的动力！"
                                                FontSize="10.5"
                                                Foreground="#FF69B4"
                                                FontWeight="SemiBold"

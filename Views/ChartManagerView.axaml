@@ -198,7 +198,9 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
+    <Panel>
+        <!-- 加载完成后显示主内容 -->
+        <Grid IsVisible="{Binding !IsLoading}" RowDefinitions="Auto,Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
 
         <!-- 顶部标题 -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="18,0,18,16">
@@ -379,17 +381,13 @@
             </Border>
         </Grid>
 
-        <!-- 主体 -->
+        <!-- 主体区域 -->
         <Grid Grid.Row="2">
-            <StackPanel IsVisible="{Binding IsLoading}"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Spacing="16">
-                <TextBlock Text="正在加载…" FontSize="18" Foreground="#888888" HorizontalAlignment="Center"/>
-            </StackPanel>
 
-            <!-- 缺少 Custom_Albums 文件夹提示 -->
-            <StackPanel IsVisible="{Binding IsCustomAlbumsMissing}"
+            <!-- 主体内容 -->
+            <Panel IsVisible="{Binding !IsLoading}">
+                <!-- 缺少 Custom_Albums 文件夹提示 -->
+                <StackPanel IsVisible="{Binding IsCustomAlbumsMissing}"
                         HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="15">
                 <TextBlock Text="请先创建Custom_Albums文件夹" FontSize="18" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Center"/>
             </StackPanel>
@@ -597,6 +595,25 @@
                     </Border>
                 </Grid>
             </ScrollViewer>
+            </Panel>
         </Grid>
     </Grid>
+
+    <!-- 加载中动画 -->
+    <StackPanel IsVisible="{Binding IsLoading}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="16">
+        <ProgressBar IsIndeterminate="True"
+                     Width="200"
+                     Height="4"
+                     Foreground="#FFFF00FF"
+                     Background="#251F2E"
+                     CornerRadius="2"/>
+        <TextBlock Text="正在载入本地谱面列表…"
+                   FontSize="13"
+                   Foreground="#8A8594"
+                   HorizontalAlignment="Center"/>
+    </StackPanel>
+</Panel>
 </UserControl>
