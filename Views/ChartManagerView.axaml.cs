@@ -1,8 +1,10 @@
 using System;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using MdModManager.Models;
 using MdModManager.Services;
@@ -225,5 +227,25 @@ public partial class ChartManagerView : UserControl
         }
 
         vm.DeleteSelectedChartsCommand.Execute(null);
+    }
+
+    // 点击悬浮面板背景时关闭面板
+    private void OnCloseMovePanelBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.Source is Grid && DataContext is ChartManagerViewModel vm)
+        {
+            vm.CloseMovePanelCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    // 点击分类管理面板背景时关闭面板
+    private void OnCloseCategoryManagerPanelBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.Source is Grid && DataContext is ChartManagerViewModel vm)
+        {
+            vm.CloseCategoryManagerPanelCommand.Execute(null);
+            e.Handled = true;
+        }
     }
 }

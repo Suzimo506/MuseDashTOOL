@@ -100,6 +100,18 @@ public partial class ChartInfo : ObservableObject
     }
 
     /// <summary>难度标签文字（逗号连接）</summary>
+    // 谱面所属分类名称
+    public string CategoryName
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(FilePath)) return "未分类";
+            var parent = Path.GetFileName(Path.GetDirectoryName(FilePath));
+            return parent == "Custom_Albums" ? "未分类" : (parent ?? "未分类");
+        }
+    }
+
+    /// <summary>难度标签文字（逗号连接）</summary>
     public string DifficultyText => Difficulties.Count > 0
         ? string.Join(" / ", Difficulties)
         : string.Empty;

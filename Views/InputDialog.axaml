@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MdModManager.Views.InputDialog"
+        Title="新建分类"
+        Width="400" Height="200"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource CardBgBrush}"
+        Foreground="{DynamicResource ThemeTextMainBrush}"
+        SystemDecorations="Full">
+
+    <Grid RowDefinitions="Auto, Auto, Auto" Margin="24" VerticalAlignment="Center">
+        <!-- 提示文本 -->
+        <TextBlock x:Name="PromptText"
+                   Grid.Row="0"
+                   Text="请输入新建的分类名称："
+                   FontSize="15"
+                   Foreground="{DynamicResource ThemeTextMainBrush}"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,16"/>
+
+        <!-- 输入框 -->
+        <TextBox x:Name="InputTextBox"
+                 Grid.Row="1"
+                 Width="320"
+                 Height="36"
+                 Watermark="分类名称..."
+                 VerticalContentAlignment="Center"
+                 HorizontalAlignment="Center"
+                 CornerRadius="10"
+                 Background="{DynamicResource ControlBgBrush}"/>
+
+        <!-- 底部按钮区 -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    Spacing="16"
+                    HorizontalAlignment="Center"
+                    Margin="0,20,0,0">
+            <Button x:Name="CancelButton"
+                    Content="取消"
+                    Width="100"
+                    Height="32"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ControlBgBrush}"
+                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                    CornerRadius="10"
+                    Click="OnCancelClick"/>
+            <Button x:Name="ConfirmButton"
+                    Content="确定"
+                    Width="100"
+                    Height="32"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ThemeAccentBrush}"
+                    Foreground="White"
+                    CornerRadius="10"
+                    Click="OnConfirmClick"/>
+        </StackPanel>
+    </Grid>
+</Window>

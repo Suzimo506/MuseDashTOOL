@@ -78,8 +78,8 @@ public class MarqueeText : UserControl
     private DispatcherTimer? _timer;
     private double _offset;
     private double _textWidth;
-    private const double Speed = 1.0; // pixels per tick
-    private const double Spacing = 30.0; // Space between repeated texts
+    private const double Speed = 0.5; // 每次时钟滴答移动的像素数
+    private const double Spacing = 30.0; // 重复文本之间的间距
 
     public MarqueeText()
     {
@@ -139,6 +139,13 @@ public class MarqueeText : UserControl
         CheckScrolling();
     }
 
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        _textBlock1.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        _canvas.Measure(availableSize);
+        return _textBlock1.DesiredSize;
+    }
+
     private void CheckScrolling()
     {
         if (string.IsNullOrEmpty(Text))
@@ -162,7 +169,8 @@ public class MarqueeText : UserControl
             }
             else
             {
-                Canvas.SetLeft(_textBlock1, (Bounds.Width - _textWidth) / 2);
+                double left = Bounds.Width > 0 ? (Bounds.Width - _textWidth) / 2 : 0;
+                Canvas.SetLeft(_textBlock1, left);
             }
             return;
         }
@@ -177,7 +185,8 @@ public class MarqueeText : UserControl
         else
         {
             StopScrolling();
-            Canvas.SetLeft(_textBlock1, (Bounds.Width - _textWidth) / 2);
+            double left = Bounds.Width > 0 ? (Bounds.Width - _textWidth) / 2 : 0;
+            Canvas.SetLeft(_textBlock1, left);
         }
     }
 

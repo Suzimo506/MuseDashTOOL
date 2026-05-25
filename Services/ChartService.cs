@@ -37,7 +37,18 @@ public class ChartService : IChartService
         if (!Directory.Exists(albumsDir))
             yield break;
 
-        var allFiles = Directory.GetFiles(albumsDir, "*.mdm");
+        var allFiles = new List<string>();
+        // 1. Root .mdm files (Unclassified)
+        allFiles.AddRange(Directory.GetFiles(albumsDir, "*.mdm"));
+
+        // 2. Subdirectories with pack.json (Classifications)
+        foreach (var subDir in Directory.GetDirectories(albumsDir))
+        {
+            if (File.Exists(Path.Combine(subDir, "pack.json")))
+            {
+                allFiles.AddRange(Directory.GetFiles(subDir, "*.mdm"));
+            }
+        }
 
         // Take the startup snapshot on the very first call, then keep it forever
         bool takeSnapshot = false;

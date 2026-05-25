@@ -81,6 +81,32 @@
                 <Setter Property="RenderTransform" Value="scale(0.92)"/>
             </Style>
         </ControlTheme>
+
+        <!-- 分类卡片按键主题 -->
+        <ControlTheme x:Key="CategoryCardBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}" 
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pressed">
+                <Setter Property="RenderTransform" Value="scale(0.98)"/>
+            </Style>
+        </ControlTheme>
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -108,13 +134,13 @@
             <Setter Property="RenderTransform" Value="scale(1.015)"/>
             <Setter Property="BorderBrush" Value="#CCFF8EBE"/>
         </Style>
-        <!-- 选中状态红色边框 -->
+        <!-- 选中状态橙色边框 -->
         <Style Selector="Border.ChartCardSelected">
-            <Setter Property="BorderBrush" Value="#FF4444"/>
+            <Setter Property="BorderBrush" Value="#FF8800"/>
             <Setter Property="BorderThickness" Value="2.5"/>
         </Style>
         <Style Selector="Border.ChartCardSelected:pointerover">
-            <Setter Property="BorderBrush" Value="#FF6666"/>
+            <Setter Property="BorderBrush" Value="#FFA500"/>
         </Style>
 
         <!-- 工具栏操作按钮样式 -->
@@ -195,6 +221,188 @@
         <Style Selector="Button.IconBtn:pressed /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Opacity" Value="0.6"/>
+        </Style>
+
+        <!-- 分类选择按钮样式 -->
+        <Style Selector="Button.ToolbarCategoryBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.ToolbarCategoryBtn /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.ToolbarCategoryBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#1AF25D9C"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.ToolbarCategoryBtn:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.08)"/>
+        </Style>
+        <Style Selector="Button.ToolbarCategoryBtn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#30F25D9C"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.ToolbarCategoryBtn:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.92)"/>
+        </Style>
+        <Style Selector="Button.ToolbarCategoryBtn PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextMainBrush}"/>
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.ToolbarCategoryBtn:pointerover PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}"/>
+        </Style>
+
+        <!-- 分类工具栏控制按钮样式 -->
+        <Style Selector="Button.CategoryControlBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.CategoryControlBtn /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.CategoryControlBtn:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.08)"/>
+        </Style>
+        <Style Selector="Button.CategoryControlBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#1AF25D9C"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.CategoryControlBtn:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.92)"/>
+        </Style>
+        <Style Selector="Button.CategoryControlBtn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#30F25D9C"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.CategoryControlBtn PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextMainBrush}"/>
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.CategoryControlBtn:pointerover PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}"/>
+        </Style>
+
+        <!-- 卡片操作小按钮样式 -->
+        <Style Selector="Button.CardActionBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.CardActionBtn /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.CardActionBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#1AF25D9C"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.CardActionBtn:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.08)"/>
+        </Style>
+        <Style Selector="Button.CardActionBtn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#30F25D9C"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.CardActionBtn:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.92)"/>
+        </Style>
+
+        <!-- 分类管理项容器样式 -->
+        <Style Selector="Border.CategoryItemBorder">
+            <Setter Property="Background" Value="#12FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#15FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.CategoryItemBorder:pointerover">
+            <Setter Property="Background" Value="#25FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#80FF8EBE"/>
+            <Setter Property="RenderTransform" Value="scale(1.03)"/>
+        </Style>
+        <Style Selector="Border.CategoryItemBorder.ActiveCategory">
+            <Setter Property="BorderBrush" Value="#FF8EBE"/>
+            <Setter Property="Background" Value="#20FF8EBE"/>
+        </Style>
+        <Style Selector="Border.CategoryItemBorder.SelectedForDeletion">
+            <Setter Property="BorderBrush" Value="#E81123"/>
+            <Setter Property="Background" Value="#20E81123"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
         </Style>
     </UserControl.Styles>
 
@@ -320,6 +528,16 @@
                                   Foreground="{DynamicResource SvgIconBrush}"/>
                     </Button>
 
+                    <!-- 批量移动分类 -->
+                    <Button Classes="ToolbarActionBtn"
+                            Command="{Binding OpenBatchMovePanelCommand}"
+                            IsVisible="{Binding IsBatchMode}"
+                            ToolTip.Tip="批量移动分类">
+                        <PathIcon Data="M864 288H480l-64-64H160c-35.3 0-64 28.7-64 64v512c0 35.3 28.7 64 64 64h704c35.3 0 64-28.7 64-64V352c0-35.3-28.7-64-64-64z M576 448l128 128-128 128v-96H384v-64h192v-96z"
+                                  Width="18" Height="18"
+                                  Foreground="{DynamicResource SvgIconBrush}"/>
+                    </Button>
+
                     <!-- 删除选中 -->
                     <Button Classes="ToolbarActionBtn"
                             IsVisible="{Binding IsBatchMode}"
@@ -332,7 +550,7 @@
                     <!-- 批量模式选中计数 -->
                     <TextBlock IsVisible="{Binding IsBatchMode}"
                                VerticalAlignment="Center"
-                               FontSize="12" Foreground="#FF4444" FontWeight="SemiBold">
+                               FontSize="12" Foreground="#FF8800" FontWeight="SemiBold">
                         <TextBlock.Text>
                             <MultiBinding StringFormat="已选 {0}">
                                 <Binding Path="SelectedCount"/>
@@ -343,9 +561,66 @@
             </Border>
         </Grid>
 
-        <!-- 工具栏：顶部分页栏 -->
-        <Grid Grid.Row="1" Margin="0,0,0,14">
-            <Border HorizontalAlignment="Center"
+        <!-- 工具栏：顶部分页栏与分类/排序栏 -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,*" Margin="18,0,18,14">
+            <!-- 左侧：分类选择与新建分类 -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <!-- 分类选择按钮 -->
+                <Button Command="{Binding OpenCategoryManagerPanelCommand}"
+                        Classes="CategoryControlBtn"
+                        Padding="12,8"
+                        ToolTip.Tip="选择分类">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <PathIcon Data="M192 149.33504h213.33504c47.1296 0 85.33504 38.20544 85.33504 85.33504V448a42.66496 42.66496 0 0 1-42.66496 42.66496h-256a42.66496 42.66496 0 0 1-42.66496-42.66496v-256a42.6496 42.6496 0 0 1 42.65984-42.66496z m512 341.32992c-94.2592 0.01024-170.6752-76.3904-170.69056-170.6496-0.01024-94.25408 76.3904-170.6752 170.6496-170.68544h0.04096c94.2592 0.01024 170.65984 76.43136 170.64448 170.68544-0.01024 94.24384-76.40576 170.63936-170.64448 170.6496z m-512 42.66496h213.33504c47.1296 0 85.33504 38.21056 85.33504 85.34016V832a42.66496 42.66496 0 0 1-42.66496 42.67008h-256a42.66496 42.66496 0 0 1-42.66496-42.67008v-256a42.65472 42.65472 0 0 1 42.65984-42.67008z m384 0h213.32992c47.1296 0 85.34016 38.21056 85.34016 85.34016V832a42.67008 42.67008 0 0 1-42.67008 42.67008h-256a42.67008 42.67008 0 0 1-42.67008-42.67008v-256a42.67008 42.67008 0 0 1 42.67008-42.67008z"
+                                  Width="14" Height="14"/>
+                        <TextBlock Text="{Binding SelectedCategoryDisplay, StringFormat='分类: \{0\}'}" FontSize="12" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- 新建分类按钮 -->
+                <Button Command="{Binding CreateCategoryCommand}"
+                        Classes="CategoryControlBtn"
+                        Width="38"
+                        Padding="8"
+                        ToolTip.Tip="新建分类">
+                    <PathIcon Data="M512 85.3a42.7 42.7 0 0 1 42.7 42.7v341.3h341.3a42.7 42.7 0 1 1 0 85.4H554.7v341.3a42.7 42.7 0 1 1-85.4 0V554.7H128a42.7 42.7 0 1 1 0-85.4h341.3V128a42.7 42.7 0 0 1 42.7-42.7z"
+                              Width="14" Height="14"/>
+                </Button>
+
+                <!-- 重命名分类按钮 -->
+                <Button Command="{Binding RenameSpecificCategoryCommand}"
+                        CommandParameter="{Binding SelectedCategory}"
+                        IsVisible="{Binding IsCategorySelected}"
+                        Classes="CategoryControlBtn"
+                        Width="38"
+                        Padding="8"
+                        ToolTip.Tip="重命名当前分类">
+                    <PathIcon Data="M853.333333 170.666667c-25.6 0-51.2 8.533333-68.266666 25.6l-507.733334 507.733333-89.6 256 256-89.6L951.466667 362.666667c38.4-38.4 38.4-102.4 0-140.8l-34.133334-34.133334c-17.066667-17.066667-42.666667-17.066667-64-17.066666zM716.8 273.066667l102.4 102.4-512 512H204.8v-102.4l512-512z"
+                              Width="14" Height="14"/>
+                </Button>
+
+                <!-- 删除分类按钮 -->
+                <Button Command="{Binding DeleteSpecificCategoryCommand}"
+                        CommandParameter="{Binding SelectedCategory}"
+                        IsVisible="{Binding IsCategorySelected}"
+                        Classes="CategoryControlBtn"
+                        Width="38"
+                        Padding="8"
+                        ToolTip.Tip="删除当前分类">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover PathIcon">
+                            <Setter Property="Foreground" Value="#FF6666"/>
+                        </Style>
+                    </Button.Styles>
+                    <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341z m0 0"
+                              Foreground="#FF4444"
+                              Width="14" Height="14"/>
+                </Button>
+            </StackPanel>
+
+            <!-- 中间：翻页组件 -->
+            <Border Grid.Column="1"
+                    HorizontalAlignment="Center"
                     Background="Transparent"
                     Padding="8,4"
                     VerticalAlignment="Center">
@@ -372,13 +647,36 @@
                         <TextBlock Text="页" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
                     </StackPanel>
                     <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="下一页">
-                        <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                        <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                     </Button>
                     <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="最末页">
                         <PathIcon Data="M706.19 106m41.47 0l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47Z M240.46 865l375.81-344.25-375.81-344.21a39.32 39.32 0 0 1-13.11-29c0-36.51 48.2-54.79 76.38-29L679.55 462.8c35 32 35 83.9 0 115.9L303.73 922.92c-28.18 25.81-76.38 7.53-76.38-29A39.33 39.33 0 0 1 240.46 865z" Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
                     </Button>
                 </StackPanel>
             </Border>
+
+            <!-- 右侧：排序 ComboBox -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <ComboBox ItemsSource="{Binding SortOptions}"
+                          SelectedIndex="{Binding SelectedSortIndex}"
+                          Width="130"
+                          CornerRadius="8"
+                          BorderThickness="0"
+                          FontSize="12"
+                          VerticalAlignment="Center">
+                    <ComboBox.Resources>
+                        <SolidColorBrush x:Key="ComboBoxBorderBrush">Transparent</SolidColorBrush>
+                        <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">Transparent</SolidColorBrush>
+                        <SolidColorBrush x:Key="ComboBoxBorderBrushFocused">Transparent</SolidColorBrush>
+                        <SolidColorBrush x:Key="ComboBoxBorderBrushPressed">Transparent</SolidColorBrush>
+                    </ComboBox.Resources>
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{Binding}" FontSize="12" VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
         </Grid>
 
         <!-- 主体区域 -->
@@ -474,9 +772,20 @@
                                                         CornerRadius="10,10,0,0"/>
                                                 <!-- New 标签叠加 -->
                                                 <Border IsVisible="{Binding IsNewDownload}" 
-                                                        Background="#e6aa1a1a" CornerRadius="4" Padding="6,2" Margin="6,0,0,6" 
-                                                        HorizontalAlignment="Left" VerticalAlignment="Bottom">
-                                                    <TextBlock Text="New" FontSize="10" FontWeight="Bold" Foreground="#ff4444"/>
+                                                        Background="#E81123" CornerRadius="4" Padding="6,2" Margin="6,0,0,6" 
+                                                        HorizontalAlignment="Left" VerticalAlignment="Bottom" Height="20">
+                                                    <TextBlock Text="New" FontSize="10" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <!-- 分类标签叠加 (长度自适应，超过4个字自动滚动) -->
+                                                <Border IsVisible="{Binding CategoryName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" 
+                                                        Background="#281423" BorderBrush="#FF8EBE" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="0,0,6,6" 
+                                                        HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="20">
+                                                    <controls:MarqueeText Text="{Binding CategoryName}"
+                                                                          FontSize="10" FontWeight="Bold"
+                                                                          Foreground="#FFE0EF"
+                                                                          MaxWidth="52"
+                                                                          IsScrollingEnabled="True"
+                                                                          Height="16"/>
                                                 </Border>
                                             </Panel>
                                         </Border>
@@ -536,34 +845,47 @@
                                             </StackPanel>
 
                                             <!-- 操作按钮行 -->
-                                            <Grid ColumnDefinitions="*,*" Margin="0,4,0,0"
-                                                  IsVisible="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).NotIsBatchMode}">
-                                                <!-- 试听按钮 -->
-                                                <Button Grid.Column="0"
-                                                        Classes="IconBtn"
-                                                        HorizontalAlignment="Center"
-                                                        Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).TogglePreviewCommand}"
-                                                        CommandParameter="{Binding}">
-                                                    <Panel>
-                                                        <PathIcon Data="M896 512L128 1024V0z"
-                                                                  Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"
-                                                                  IsVisible="{Binding !IsPlaying}"/>
-                                                        <PathIcon Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z"
-                                                                  Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"
-                                                                  IsVisible="{Binding IsPlaying}"/>
-                                                    </Panel>
-                                                </Button>
+                                             <Grid ColumnDefinitions="*,*,*" Margin="0,4,0,0"
+                                                   IsVisible="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).NotIsBatchMode}">
+                                                 <!-- 试听按钮 -->
+                                                 <Button Grid.Column="0"
+                                                         Classes="IconBtn"
+                                                         HorizontalAlignment="Center"
+                                                         Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).TogglePreviewCommand}"
+                                                         CommandParameter="{Binding}"
+                                                         ToolTip.Tip="试听">
+                                                     <Panel>
+                                                         <PathIcon Data="M896 512L128 1024V0z"
+                                                                   Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"
+                                                                   IsVisible="{Binding !IsPlaying}"/>
+                                                         <PathIcon Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z"
+                                                                   Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"
+                                                                   IsVisible="{Binding IsPlaying}"/>
+                                                     </Panel>
+                                                 </Button>
 
-                                                <!-- 卸载按钮 -->
-                                                <Button Grid.Column="1"
-                                                        Classes="IconBtn"
-                                                        HorizontalAlignment="Center"
-                                                        Click="OnDeleteChartClick"
-                                                        Tag="{Binding}">
-                                                    <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341z m0 0"
-                                                               Foreground="{DynamicResource SvgIconBrush}" Width="22" Height="22"/>
-                                                </Button>
-                                            </Grid>
+                                                 <!-- 移动分类按钮 -->
+                                                 <Button Grid.Column="1"
+                                                         Classes="IconBtn"
+                                                         HorizontalAlignment="Center"
+                                                         Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).OpenSingleMovePanelCommand}"
+                                                         CommandParameter="{Binding}"
+                                                         ToolTip.Tip="移动分类">
+                                                     <PathIcon Data="M864 288H480l-64-64H160c-35.3 0-64 28.7-64 64v512c0 35.3 28.7 64 64 64h704c35.3 0 64-28.7 64-64V352c0-35.3-28.7-64-64-64z M576 448l128 128-128 128v-96H384v-64h192v-96z"
+                                                               Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                                                 </Button>
+
+                                                 <!-- 卸载按钮 -->
+                                                 <Button Grid.Column="2"
+                                                         Classes="IconBtn"
+                                                         HorizontalAlignment="Center"
+                                                         Click="OnDeleteChartClick"
+                                                         Tag="{Binding}"
+                                                         ToolTip.Tip="删除">
+                                                     <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341z m0 0"
+                                                                 Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                                                 </Button>
+                                             </Grid>
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -607,6 +929,467 @@
             </Panel>
         </Grid>
     </Grid>
+
+        <!-- 移动分类悬浮面板 -->
+        <Grid IsVisible="{Binding IsMovePanelOpen}"
+              Background="#E00B060D"
+              PointerPressed="OnCloseMovePanelBackgroundPressed">
+            <Border Width="380"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    BorderBrush="{DynamicResource ShellOutlineBrush}"
+                    BorderThickness="1.5"
+                    CornerRadius="20"
+                    Padding="24"
+                    BoxShadow="0 15 45 0 #2A000000, 0 0 30 0 #20FF8EBE">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#2D1A2C" Offset="0"/>
+                        <GradientStop Color="#160F17" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Row="0" Text="移动谱面至分类" FontSize="18" FontWeight="Heavy" Margin="0,0,0,20" HorizontalAlignment="Center">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                <GradientStop Color="#FFA7D1" Offset="0"/>
+                                <GradientStop Color="#FF5C9D" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+
+                    <ScrollViewer Grid.Row="1" MaxHeight="240" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding MoveCategories}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" ItemWidth="NaN"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Button Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).ConfirmMoveToCategoryCommand}"
+                                            CommandParameter="{Binding}"
+                                            Margin="6"
+                                            Padding="14,8"
+                                            CornerRadius="10"
+                                            Background="#12FFFFFF"
+                                            BorderThickness="1"
+                                            BorderBrush="#15FFFFFF"
+                                            Foreground="{DynamicResource ThemeTextMainBrush}"
+                                            Cursor="Hand">
+                                        <Button.Styles>
+                                            <Style Selector="Button">
+                                                <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                                <Setter Property="Transitions">
+                                                    <Transitions>
+                                                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                                        <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                                        <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                                                    </Transitions>
+                                                </Setter>
+                                            </Style>
+                                            <Style Selector="Button:pointerover">
+                                                <Setter Property="Background" Value="#25FF8EBE"/>
+                                                <Setter Property="BorderBrush" Value="#80FF8EBE"/>
+                                                <Setter Property="RenderTransform" Value="scale(1.05)"/>
+                                            </Style>
+                                            <Style Selector="Button:pressed">
+                                                <Setter Property="RenderTransform" Value="scale(0.95)"/>
+                                            </Style>
+                                        </Button.Styles>
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <PathIcon Data="M896 256H512l-64-64H128c-35.3 0-64 28.7-64 64v512c0 35.3 28.7 64 64 64h768c35.3 0 64-28.7 64-64V320c0-35.3-28.7-64-64-64z"
+                                                      Width="12" Height="12"
+                                                      Foreground="{DynamicResource ThemeAccentBrush}"
+                                                      VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <Button Grid.Row="2" Content="取消"
+                            Command="{Binding CloseMovePanelCommand}"
+                            HorizontalAlignment="Center"
+                            Margin="0,20,0,0"
+                            Padding="24,8"
+                            CornerRadius="10"
+                            Background="#12FFFFFF"
+                            Foreground="{DynamicResource ThemeTextMainBrush}"
+                            BorderThickness="1"
+                            BorderBrush="#15FFFFFF"
+                            Cursor="Hand">
+                        <Button.Styles>
+                            <Style Selector="Button">
+                                <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                <Setter Property="Transitions">
+                                    <Transitions>
+                                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                        <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                        <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                                    </Transitions>
+                                </Setter>
+                            </Style>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#25FFFFFF"/>
+                                <Setter Property="BorderBrush" Value="#60FF8EBE"/>
+                                <Setter Property="RenderTransform" Value="scale(1.05)"/>
+                            </Style>
+                            <Style Selector="Button:pressed">
+                                <Setter Property="RenderTransform" Value="scale(0.95)"/>
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 分类管理与选择悬浮面板 -->
+        <Grid IsVisible="{Binding IsCategoryManagerPanelOpen}"
+              Background="#E00B060D"
+              PointerPressed="OnCloseCategoryManagerPanelBackgroundPressed">
+            <Border Width="600"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    BorderBrush="{DynamicResource ShellOutlineBrush}"
+                    BorderThickness="1.5"
+                    CornerRadius="20"
+                    Padding="28"
+                    BoxShadow="0 15 45 0 #2A000000, 0 0 30 0 #20FF8EBE">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#2D1A2C" Offset="0"/>
+                        <GradientStop Color="#160F17" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+                        <TextBlock Grid.Column="0" Text="选择分类" FontSize="20" FontWeight="Heavy" VerticalAlignment="Center">
+                            <TextBlock.Foreground>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                    <GradientStop Color="#FFA7D1" Offset="0"/>
+                                    <GradientStop Color="#FF5C9D" Offset="1"/>
+                                </LinearGradientBrush>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                        
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                            <!-- 全选 -->
+                            <Button Command="{Binding SelectAllCategoriesForDeletionCommand}"
+                                    IsVisible="{Binding IsCategoryDeleteMode}"
+                                    Content="全选"
+                                    Padding="14,8"
+                                    CornerRadius="10"
+                                    FontSize="12"
+                                    Background="#10FFFFFF"
+                                    BorderBrush="#20FFFFFF"
+                                    BorderThickness="1"
+                                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                                    Cursor="Hand">
+                                <Button.Styles>
+                                    <Style Selector="Button">
+                                        <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                        <Setter Property="Transitions">
+                                            <Transitions>
+                                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="Foreground" Duration="0:0:0.2"/>
+                                            </Transitions>
+                                        </Setter>
+                                    </Style>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Background" Value="#1AF25D9C"/>
+                                        <Setter Property="BorderBrush" Value="#80FF8EBE"/>
+                                        <Setter Property="Foreground" Value="#FF8EBE"/>
+                                        <Setter Property="RenderTransform" Value="scale(1.04)"/>
+                                    </Style>
+                                    <Style Selector="Button:pressed">
+                                        <Setter Property="RenderTransform" Value="scale(0.96)"/>
+                                        <Setter Property="Background" Value="#30F25D9C"/>
+                                        <Setter Property="BorderBrush" Value="#FF8EBE"/>
+                                        <Setter Property="Foreground" Value="#FF7DB2"/>
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+
+                            <!-- 反选 -->
+                            <Button Command="{Binding InvertCategorySelectionForDeletionCommand}"
+                                    IsVisible="{Binding IsCategoryDeleteMode}"
+                                    Content="反选"
+                                    Padding="14,8"
+                                    CornerRadius="10"
+                                    FontSize="12"
+                                    Background="#10FFFFFF"
+                                    BorderBrush="#20FFFFFF"
+                                    BorderThickness="1"
+                                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                                    Cursor="Hand">
+                                <Button.Styles>
+                                    <Style Selector="Button">
+                                        <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                        <Setter Property="Transitions">
+                                            <Transitions>
+                                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="Foreground" Duration="0:0:0.2"/>
+                                            </Transitions>
+                                        </Setter>
+                                    </Style>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Background" Value="#1AF25D9C"/>
+                                        <Setter Property="BorderBrush" Value="#80FF8EBE"/>
+                                        <Setter Property="Foreground" Value="#FF8EBE"/>
+                                        <Setter Property="RenderTransform" Value="scale(1.04)"/>
+                                    </Style>
+                                    <Style Selector="Button:pressed">
+                                        <Setter Property="RenderTransform" Value="scale(0.96)"/>
+                                        <Setter Property="Background" Value="#30F25D9C"/>
+                                        <Setter Property="BorderBrush" Value="#FF8EBE"/>
+                                        <Setter Property="Foreground" Value="#FF7DB2"/>
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+
+                            <Button Command="{Binding ToggleCategoryDeleteModeCommand}"
+                                    IsVisible="{Binding !IsCategoryDeleteMode}"
+                                    Content="批量删除"
+                                    Padding="14,8"
+                                    CornerRadius="10"
+                                    FontSize="12"
+                                    Background="#10FFFFFF"
+                                    BorderBrush="#20FFFFFF"
+                                    BorderThickness="1"
+                                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                                    Cursor="Hand">
+                                <Button.Styles>
+                                    <Style Selector="Button">
+                                        <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                        <Setter Property="Transitions">
+                                            <Transitions>
+                                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="Foreground" Duration="0:0:0.2"/>
+                                            </Transitions>
+                                        </Setter>
+                                    </Style>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Background" Value="#1AF25D9C"/>
+                                        <Setter Property="BorderBrush" Value="#80FF8EBE"/>
+                                        <Setter Property="Foreground" Value="#FF8EBE"/>
+                                        <Setter Property="RenderTransform" Value="scale(1.04)"/>
+                                    </Style>
+                                    <Style Selector="Button:pressed">
+                                        <Setter Property="RenderTransform" Value="scale(0.96)"/>
+                                        <Setter Property="Background" Value="#30F25D9C"/>
+                                        <Setter Property="BorderBrush" Value="#FF8EBE"/>
+                                        <Setter Property="Foreground" Value="#FF7DB2"/>
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+
+                            <Button Command="{Binding ToggleCategoryDeleteModeCommand}"
+                                    IsVisible="{Binding IsCategoryDeleteMode}"
+                                    Content="退出多选"
+                                    Padding="14,8"
+                                    CornerRadius="10"
+                                    FontSize="12"
+                                    Background="#10FFFFFF"
+                                    BorderBrush="#80FF8EBE"
+                                    BorderThickness="1"
+                                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                                    Cursor="Hand">
+                                <Button.Styles>
+                                    <Style Selector="Button">
+                                        <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                        <Setter Property="Transitions">
+                                            <Transitions>
+                                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                                            </Transitions>
+                                        </Setter>
+                                    </Style>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Background" Value="#1AF25D9C"/>
+                                        <Setter Property="BorderBrush" Value="#FF8EBE"/>
+                                        <Setter Property="Foreground" Value="#FF8EBE"/>
+                                        <Setter Property="RenderTransform" Value="scale(1.04)"/>
+                                    </Style>
+                                    <Style Selector="Button:pressed">
+                                        <Setter Property="RenderTransform" Value="scale(0.96)"/>
+                                        <Setter Property="Background" Value="#30F25D9C"/>
+                                        <Setter Property="BorderBrush" Value="#FF8EBE"/>
+                                        <Setter Property="Foreground" Value="#FF7DB2"/>
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1" MaxHeight="350" VerticalScrollBarVisibility="Auto" Margin="0,10">
+                        <ItemsControl ItemsSource="{Binding CategoryItems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" HorizontalAlignment="Stretch"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:CategoryItem">
+                                    <Border Classes="CategoryItemBorder" Classes.SelectedForDeletion="{Binding IsSelectedForDeletion}" Classes.ActiveCategory="{Binding IsActive}" Margin="6">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Button Grid.Column="0" Grid.ColumnSpan="2"
+                                                    Theme="{StaticResource CategoryCardBtn}"
+                                                    Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).CategoryItemClickCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    HorizontalAlignment="Stretch"
+                                                    VerticalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Left"
+                                                    VerticalContentAlignment="Center"
+                                                    Padding="12,6">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <CheckBox IsVisible="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).IsCategoryDeleteMode}"
+                                                              IsEnabled="{Binding IsCustom}"
+                                                              IsChecked="{Binding IsSelectedForDeletion, Mode=OneWay}"
+                                                              IsHitTestVisible="False"
+                                                              Margin="0,0,4,0"
+                                                              VerticalAlignment="Center"/>
+
+                                                    <PathIcon Data="M928 352v-48c0-35.3-28.7-64-64-64H485.2c-21 0-40.7-10.3-52.6-27.6l-61.5-88.9c-12-17.3-31.6-27.6-52.6-27.6H64c-35.3 0-64 28.7-64 64v656c0 70.7 57.3 128 128 128h638c57.8 0 108.5-38.8 123.6-94.6L928 707.2l74.2-274.5c11-40.7-19.6-80.7-61.8-80.7H928zM80 160h230.1c5.3 0 10.2 2.6 13.2 6.9l50.6 73.1H80c-8.8 0-16-7.2-16-16v-48c0-8.8 7.2-16 16-16z m0 144h768c8.8 0 16 7.2 16 16v32H209c-28.9 0-54.2 19.4-61.8 47.3L79.7 649c-2.4 9-15.7 7.3-15.7-2.1V320c0-35.3-28.7-64-64-16z m784 394.7l-36.2 134c-7.5 27.9-32.9 47.3-61.8 47.3H125.4c-21.1 0-36.4-20-30.9-40.3l111.3-411.8c1.9-7 8.2-11.8 15.4-11.8h698.3c10.5 0 18.2 10 15.4 20.2l-7 25.7L864 698.7z"
+                                                              Width="13" Height="13"
+                                                              Foreground="{DynamicResource ThemeAccentBrush}"
+                                                              VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding Name}" MaxWidth="135" FontSize="13" Foreground="{DynamicResource ThemeTextMainBrush}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <StackPanel Grid.Column="1" 
+                                                        Orientation="Horizontal" 
+                                                        Spacing="8" 
+                                                        VerticalAlignment="Center" 
+                                                        Margin="0,0,12,0">
+                                                <StackPanel.IsVisible>
+                                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                        <Binding Path="!$parent[UserControl].DataContext.IsCategoryDeleteMode"/>
+                                                        <Binding Path="IsCustom"/>
+                                                    </MultiBinding>
+                                                </StackPanel.IsVisible>
+                                                
+                                                <Button Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).RenameSpecificCategoryCommand}"
+                                                        CommandParameter="{Binding Name}"
+                                                        Classes="CardActionBtn"
+                                                        ToolTip.Tip="重命名">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover PathIcon">
+                                                            <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}"/>
+                                                        </Style>
+                                                    </Button.Styles>
+                                                    <PathIcon Data="M853.333333 170.666667c-25.6 0-51.2 8.533333-68.266666 25.6l-507.733334 507.733333-89.6 256 256-89.6L951.466667 362.666667c38.4-38.4 38.4-102.4 0-140.8l-34.133334-34.133334c-17.066667-17.066667-42.666667-17.066667-64-17.066666zM716.8 273.066667l102.4 102.4-512 512H204.8v-102.4l512-512z"
+                                                              Width="13" Height="13"
+                                                              Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                                </Button>
+                                                
+                                                <Button Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).DeleteSpecificCategoryCommand}"
+                                                        CommandParameter="{Binding Name}"
+                                                        Classes="CardActionBtn"
+                                                        ToolTip.Tip="删除分类">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover PathIcon">
+                                                            <Setter Property="Foreground" Value="#FF4D4D"/>
+                                                        </Style>
+                                                    </Button.Styles>
+                                                    <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m0 0"
+                                                              Width="13" Height="13"
+                                                              Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,16,0,0">
+                        <Button Content="{Binding SelectedCategoriesForDeletionCount, StringFormat='确认删除选中的 \{0\} 个分类'}"
+                                Command="{Binding DeleteSelectedCategoriesCommand}"
+                                IsVisible="{Binding IsCategoryDeleteMode}"
+                                IsEnabled="{Binding HasSelectedCategoriesForDeletion}"
+                                Padding="20,10"
+                                CornerRadius="10"
+                                FontSize="13"
+                                Background="#D9383A"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Cursor="Hand">
+                            <Button.Styles>
+                                <Style Selector="Button">
+                                    <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                    <Setter Property="Transitions">
+                                        <Transitions>
+                                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                            <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                        </Transitions>
+                                    </Setter>
+                                </Style>
+                                <Style Selector="Button:disabled">
+                                    <Setter Property="Opacity" Value="0.5"/>
+                                </Style>
+                                <Style Selector="Button:pointerover">
+                                    <Setter Property="Background" Value="#FF4D4F"/>
+                                    <Setter Property="RenderTransform" Value="scale(1.04)"/>
+                                </Style>
+                                <Style Selector="Button:pressed">
+                                    <Setter Property="RenderTransform" Value="scale(0.96)"/>
+                                    <Setter Property="Background" Value="#B82E30"/>
+                                </Style>
+                            </Button.Styles>
+                        </Button>
+                        
+                        <Button Content="关闭"
+                                Command="{Binding CloseCategoryManagerPanelCommand}"
+                                Padding="24,10"
+                                CornerRadius="10"
+                                FontSize="13"
+                                Background="#12FFFFFF"
+                                Foreground="{DynamicResource ThemeTextMainBrush}"
+                                BorderBrush="#20FFFFFF"
+                                BorderThickness="1"
+                                Cursor="Hand">
+                            <Button.Styles>
+                                <Style Selector="Button">
+                                    <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                    <Setter Property="Transitions">
+                                        <Transitions>
+                                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                            <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                            <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                                            <BrushTransition Property="Foreground" Duration="0:0:0.2"/>
+                                        </Transitions>
+                                    </Setter>
+                                </Style>
+                                <Style Selector="Button:pointerover">
+                                    <Setter Property="Background" Value="#1AF25D9C"/>
+                                    <Setter Property="BorderBrush" Value="#FF8EBE"/>
+                                    <Setter Property="Foreground" Value="#FF8EBE"/>
+                                    <Setter Property="RenderTransform" Value="scale(1.04)"/>
+                                </Style>
+                                <Style Selector="Button:pressed">
+                                    <Setter Property="RenderTransform" Value="scale(0.96)"/>
+                                    <Setter Property="Background" Value="#30F25D9C"/>
+                                    <Setter Property="BorderBrush" Value="#FF8EBE"/>
+                                    <Setter Property="Foreground" Value="#FF7DB2"/>
+                                </Style>
+                            </Button.Styles>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
 
     <!-- 加载中动画 -->
     <StackPanel IsVisible="{Binding IsLoading}"
