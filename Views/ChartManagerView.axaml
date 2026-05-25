@@ -494,14 +494,23 @@
                                                                   IsScrollingEnabled="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).EnableMarquee}"
                                                                   ToolTip.Tip="{Binding Name}"/>
 
-                                            <!-- 作曲 / 谱师 -->
-                                            <TextBlock Text="{Binding SubInfo}"
-                                                       helpers:TextBlockHelper.HighlightText="{Binding SubInfo}"
+                                            <!-- 曲师 -->
+                                            <TextBlock Text="{Binding DisplayArtist}"
+                                                       helpers:TextBlockHelper.HighlightText="{Binding DisplayArtist}"
                                                        helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).SearchText}"
-                                                       IsVisible="{Binding SubInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                       IsVisible="{Binding DisplayArtist, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                                        FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"
                                                        TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
-                                                       ToolTip.Tip="{Binding SubInfo}"/>
+                                                       ToolTip.Tip="{Binding DisplayArtist}"/>
+
+                                            <!-- 谱师 -->
+                                            <TextBlock Text="{Binding DisplayCharter}"
+                                                       helpers:TextBlockHelper.HighlightText="{Binding DisplayCharter}"
+                                                       helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).SearchText}"
+                                                       IsVisible="{Binding DisplayCharter, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                       FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                       ToolTip.Tip="{Binding DisplayCharter}"/>
 
                                             <!-- BPM和难度同行显示 -->
                                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">

@@ -210,14 +210,24 @@
                                 <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
                                     <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Title}"/>
 
-                                    <TextBlock Text="{Binding SubInfo}" 
-                                               FontSize="11" 
-                                               Foreground="{DynamicResource ThemeTextSubBrush}" 
-                                               TextWrapping="NoWrap" 
-                                               TextTrimming="CharacterEllipsis"
-
-                                               HorizontalAlignment="Center"
-                                               ToolTip.Tip="{Binding SubInfo}"/>
+                                     <!-- 曲师 -->
+                                     <TextBlock Text="{Binding DisplayArtist}" 
+                                                FontSize="11" 
+                                                Foreground="{DynamicResource ThemeTextSubBrush}" 
+                                                TextWrapping="NoWrap" 
+                                                TextTrimming="CharacterEllipsis"
+                                                HorizontalAlignment="Center"
+                                                IsVisible="{Binding DisplayArtist, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                ToolTip.Tip="{Binding DisplayArtist}"/>
+                                     <!-- 谱师 -->
+                                     <TextBlock Text="{Binding DisplayCharter}" 
+                                                FontSize="11" 
+                                                Foreground="{DynamicResource ThemeTextSubBrush}" 
+                                                TextWrapping="NoWrap" 
+                                                TextTrimming="CharacterEllipsis"
+                                                HorizontalAlignment="Center"
+                                                IsVisible="{Binding DisplayCharter, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                ToolTip.Tip="{Binding DisplayCharter}"/>
 
                                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2,0,0" MinHeight="16" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}" IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" VerticalAlignment="Center"/>

@@ -77,6 +77,16 @@ public partial class EuterpeChart : ObservableObject
     [property: JsonPropertyName("is_liked")]
     private bool _isLiked;
 
+    // 谱面绑定的标签列表
+    [ObservableProperty]
+    [property: JsonIgnore]
+    private List<EuterpeTag> _tags = new();
+
+    // 是否拥有标签
+    [ObservableProperty]
+    [property: JsonIgnore]
+    private bool _hasTags;
+
     // 衍生封面直连地址
     [JsonIgnore]
     public string CoverUrl => string.IsNullOrWhiteSpace(CoverThumbnailUrl) 

@@ -292,7 +292,22 @@
                                         </Border>
                                         <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
                                             <controls:MarqueeText Text="{Binding Title}" HighlightText="{Binding Title}" SearchText="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).SearchText}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" IsScrollingEnabled="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).EnableMarquee}" ToolTip.Tip="{Binding Title}"/>
-                                            <TextBlock IsVisible="{Binding SubInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding SubInfo}" helpers:TextBlockHelper.HighlightText="{Binding SubInfo}" helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).SearchText}"/>
+                                             <!-- 曲师 -->
+                                             <TextBlock Text="{Binding DisplayArtist}"
+                                                        helpers:TextBlockHelper.HighlightText="{Binding DisplayArtist}"
+                                                        helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).SearchText}"
+                                                        IsVisible="{Binding DisplayArtist, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                        FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                        TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                        ToolTip.Tip="{Binding DisplayArtist}"/>
+                                             <!-- 谱师 -->
+                                             <TextBlock Text="{Binding DisplayCharter}"
+                                                        helpers:TextBlockHelper.HighlightText="{Binding DisplayCharter}"
+                                                        helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ChartDownloadViewModel)DataContext).SearchText}"
+                                                        IsVisible="{Binding DisplayCharter, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                        FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                        TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                        ToolTip.Tip="{Binding DisplayCharter}"/>
                                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
                                                 <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}" IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" VerticalAlignment="Center"/>
                                                 <ItemsControl ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center"><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border Background="#26F25D9C" BorderBrush="#80F25D9C" BorderThickness="1" CornerRadius="4" Padding="5,1"><TextBlock Text="{Binding}" FontSize="10" Foreground="#FF8EBE" FontWeight="SemiBold"/></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>

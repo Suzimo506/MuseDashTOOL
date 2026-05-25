@@ -602,6 +602,24 @@
                                                 </ItemsControl>
                                             </StackPanel>
 
+                                            <!-- 谱面标签 -->
+                                            <ScrollViewer IsVisible="{Binding HasTags}" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Height="20" Margin="0,2,0,0">
+                                                <ItemsControl ItemsSource="{Binding Tags}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#1A5E3B75" BorderBrush="#355E3B75" BorderThickness="1" CornerRadius="4" Padding="4,1" Margin="0,0,6,0">
+                                                                <TextBlock Text="{Binding DisplayName}" FontSize="9.5" Foreground="#CDA0B7"/>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+
                                             <!-- 底部一排三大功能按钮：试听、点赞、下载 -->
                                             <Grid ColumnDefinitions="*,*,*" Margin="0,4,0,0">
                                                 

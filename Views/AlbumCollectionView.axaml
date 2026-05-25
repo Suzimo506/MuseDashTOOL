@@ -448,14 +448,24 @@
                                             <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
                                                 <controls:MarqueeText Text="{Binding Title}" HighlightText="{Binding Title}" SearchText="{Binding SearchText}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" ToolTip.Tip="{Binding Title}"/>
                                                 
-                                                <!-- 曲师和谱师信息 -->
-                                                <TextBlock helpers:TextBlockHelper.HighlightText="{Binding SubInfo}" 
-                                                           helpers:TextBlockHelper.SearchText="{Binding SearchText}" 
-                                                           FontSize="11" 
-                                                           Foreground="{DynamicResource ThemeTextSubBrush}" 
-                                                           TextWrapping="Wrap" 
-                                                           TextTrimming="CharacterEllipsis"
-                                                           ToolTip.Tip="{Binding SubInfo}"/>
+                                                 <!-- 曲师 -->
+                                                 <TextBlock helpers:TextBlockHelper.HighlightText="{Binding DisplayArtist}" 
+                                                            helpers:TextBlockHelper.SearchText="{Binding SearchText}" 
+                                                            IsVisible="{Binding DisplayArtist, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                            FontSize="11" 
+                                                            Foreground="{DynamicResource ThemeTextSubBrush}" 
+                                                            TextWrapping="NoWrap" 
+                                                            TextTrimming="CharacterEllipsis"
+                                                            ToolTip.Tip="{Binding DisplayArtist}"/>
+                                                 <!-- 谱师 -->
+                                                 <TextBlock helpers:TextBlockHelper.HighlightText="{Binding DisplayCharter}" 
+                                                            helpers:TextBlockHelper.SearchText="{Binding SearchText}" 
+                                                            IsVisible="{Binding DisplayCharter, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                            FontSize="11" 
+                                                            Foreground="{DynamicResource ThemeTextSubBrush}" 
+                                                            TextWrapping="NoWrap" 
+                                                            TextTrimming="CharacterEllipsis"
+                                                            ToolTip.Tip="{Binding DisplayCharter}"/>
 
                                                 <!-- BPM & 难度标签 -->
                                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">

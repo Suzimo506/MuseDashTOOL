@@ -578,8 +578,9 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                     TotalPages = CurrentPage + 1;
                 }
 
-                // 异步预载封面大图
+                // 异步预载封面大图与标签列表
                 _ = LoadCoversAsync(ct);
+                _ = LoadTagsAsync(ct);
             }
 
             RequestedScrollY = 0;
@@ -618,6 +619,37 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             catch
             {
                 // 封面加载失败时忽略，UI 将自动回退为默认提示图
+            }
+        }
+    }
+
+    // 异步拉取并缓冲本页所有谱面的标签
+    private async Task LoadTagsAsync(CancellationToken ct)
+    {
+        var snapshot = Charts.ToList();
+
+        foreach (var chart in snapshot)
+        {
+            if (ct.IsCancellationRequested) break;
+
+            try
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Get, $"charts/{chart.Cid}/tags");
+                using var response = await _httpClient.SendAsync(req, ct);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var tags = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.ListEuterpeTag);
+                    if (tags != null)
+                    {
+                        chart.Tags = tags;
+                        chart.HasTags = tags.Count > 0;
+                    }
+                }
+            }
+            catch
+            {
+                // 加载标签失败时忽略
             }
         }
     }

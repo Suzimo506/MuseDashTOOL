@@ -61,6 +61,12 @@ public partial class ChartInfo : ObservableObject
     [ObservableProperty]
     private bool _isSelected;
 
+    // 衍生曲师文本
+    public string DisplayArtist => string.IsNullOrWhiteSpace(MusicAuthor) ? string.Empty : $"曲：{MusicAuthor}";
+
+    // 衍生谱师文本
+    public string DisplayCharter => string.IsNullOrWhiteSpace(ChartAuthor) ? string.Empty : $"谱：{ChartAuthor}";
+
     /// <summary>副标题展示（作曲 + 谱师）</summary>
     public string SubInfo
     {
@@ -69,7 +75,7 @@ public partial class ChartInfo : ObservableObject
             var parts = new List<string>();
             if (!string.IsNullOrEmpty(MusicAuthor)) parts.Add($"曲：{MusicAuthor}");
             if (!string.IsNullOrEmpty(ChartAuthor)) parts.Add($"谱：{ChartAuthor}");
-            return string.Join("\n", parts);
+            return string.Join(" | ", parts);
         }
     }
 

@@ -149,6 +149,14 @@ public partial class MdmcChart : ObservableObject
     public string DemoMp3Url => !string.IsNullOrWhiteSpace(CustomDemoMp3Url) ? CustomDemoMp3Url : $"https://cdn.mdmc.moe/charts/{Id}/demo.mp3";
     public string DownloadUrl => !string.IsNullOrWhiteSpace(CustomDownloadUrl) ? CustomDownloadUrl : $"https://api.mdmc.moe/v3/charts/{Id}/download";
 
+    // 衍生曲师文本
+    [JsonIgnore]
+    public string DisplayArtist => string.IsNullOrWhiteSpace(Artist) ? string.Empty : $"曲：{Artist}";
+
+    // 衍生谱师文本
+    [JsonIgnore]
+    public string DisplayCharter => string.IsNullOrWhiteSpace(Charter) ? string.Empty : $"谱：{Charter}";
+
     /// <summary>副标题：曲 + 谱 (同向排列)</summary>
     public string SubInfo
     {
@@ -157,7 +165,7 @@ public partial class MdmcChart : ObservableObject
             var parts = new List<string>();
             if (!string.IsNullOrEmpty(Artist))  parts.Add($"曲：{Artist}");
             if (!string.IsNullOrEmpty(Charter)) parts.Add($"谱：{Charter}");
-            return string.Join("\n", parts);
+            return string.Join(" | ", parts);
         }
     }
 
