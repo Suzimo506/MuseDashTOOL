@@ -473,12 +473,12 @@
                                         </TextBlock.IsVisible>
                                     </TextBlock>
                                 </Grid>
-                                <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToMelonLoaderCommand}">
+                                <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToSponsorCommand}">
                                     <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                                        <PathIcon Data="M128 256h768v85.333333H128V256z m85.333333 213.333333h597.333334v85.333334H213.333333v-85.333334z m128 213.333334h341.333334v85.333333H341.333333v-85.333333z"
+                                        <PathIcon Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
                                                   Width="18" Height="18"
                                                   Foreground="{DynamicResource NavButtonSubBrush}"/>
-                                        <TextBlock Text="MelonLoader 管理" IsVisible="{Binding IsSidebarExpanded}"/>
+                                        <TextBlock Text="赞助打赏" IsVisible="{Binding IsSidebarExpanded}"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToSettingsCommand}">

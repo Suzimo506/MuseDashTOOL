@@ -35,7 +35,11 @@ public partial class SettingsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsMainPanelVisible))]
     private bool _isAdvancedPanelVisible = false;
 
-    public bool IsMainPanelVisible => !IsColorPanelVisible && !IsAdvancedPanelVisible;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsMainPanelVisible))]
+    private bool _isMelonLoaderPanelVisible = false;
+
+    public bool IsMainPanelVisible => !IsColorPanelVisible && !IsAdvancedPanelVisible && !IsMelonLoaderPanelVisible;
 
     // 可用透明效果列表
     [ObservableProperty]
@@ -104,9 +108,12 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
-    public SettingsViewModel(IConfigService configService, INotificationService? notificationService = null)
+    public MelonLoaderViewModel MelonLoaderVm { get; }
+
+    public SettingsViewModel(IConfigService configService, MelonLoaderViewModel melonLoaderVm, INotificationService? notificationService = null)
     {
         _configService = configService;
+        MelonLoaderVm = melonLoaderVm;
         _notificationService = notificationService ?? CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default.GetService<INotificationService>();
         
         // 初始化静态帮助类的优选状态
@@ -620,6 +627,7 @@ public partial class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(IsColorPanelVisible));
         OnPropertyChanged(nameof(IsMainPanelVisible));
         OnPropertyChanged(nameof(IsAdvancedPanelVisible));
+        OnPropertyChanged(nameof(IsMelonLoaderPanelVisible));
         OnPropertyChanged(nameof(SelectedDownloadSource));
         OnPropertyChanged(nameof(UseCustomIp));
         OnPropertyChanged(nameof(CustomIpAddress));
@@ -657,6 +665,16 @@ public partial class SettingsViewModel : ObservableObject
 
     [RelayCommand]
     private void CloseColorPanel() => IsColorPanelVisible = false;
+
+    [RelayCommand]
+    private async Task OpenMelonLoaderPanel()
+    {
+        IsMelonLoaderPanelVisible = true;
+        await MelonLoaderVm.InitializeAsync();
+    }
+
+    [RelayCommand]
+    private void CloseMelonLoaderPanel() => IsMelonLoaderPanelVisible = false;
 
     [RelayCommand]
     private void OpenAdvancedPanel()

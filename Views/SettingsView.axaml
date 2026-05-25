@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:MdModManager.ViewModels"
              xmlns:conv="using:MdModManager.Converters"
+             xmlns:views="using:MdModManager.Views"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="MdModManager.Views.SettingsView"
              x:DataType="vm:SettingsViewModel"
@@ -141,131 +142,189 @@
                         </Button>
                     </Grid>
 
-                    <!-- 设置列表 -->
-                    <Grid ColumnDefinitions="Auto, 20, *"
-                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-                          RowSpacing="15">
-
-                        <!-- 1. 自动翻译 -->
-                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                   Text="自动翻译至中文"
-                                   FontSize="18" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <CheckBox Grid.Row="0" Grid.Column="2"
-                                  IsChecked="{Binding AutoTranslateDescriptions}"
-                                  VerticalAlignment="Center"/>
-
-                        <!-- 1.5 以原版启动游戏 -->
-                        <TextBlock Grid.Row="1" Grid.Column="0"
-                                   Text="以原版启动游戏"
-                                   FontSize="18" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <CheckBox Grid.Row="1" Grid.Column="2"
-                                  IsChecked="{Binding IsOriginalModeEnabled}"
-                                  VerticalAlignment="Center"/>
-
-                        <!-- 1.6 隐藏控制台 -->
-                        <TextBlock Grid.Row="2" Grid.Column="0"
-                                   Text="启动游戏时隐藏控制台"
-                                   FontSize="18" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <CheckBox Grid.Row="2" Grid.Column="2"
-                                  IsChecked="{Binding HideConsoleOnLaunch}"
-                                  VerticalAlignment="Center"/>
-
-                        <!-- 2. 不兼容 Mod 提醒 -->
-                        <TextBlock Grid.Row="3" Grid.Column="0"
-                                   Text="下载不兼容 Mod 时不再提醒"
-                                   FontSize="18" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <CheckBox Grid.Row="3" Grid.Column="2"
-                                  IsChecked="{Binding SuppressIncompatibleModWarning}"
-                                  VerticalAlignment="Center"/>
-
-                        <!-- 3. 删除确认弹窗 -->
-                        <TextBlock Grid.Row="4" Grid.Column="0"
-                                   Text="删除时不再显示确认弹窗"
-                                   FontSize="18" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <CheckBox Grid.Row="4" Grid.Column="2"
-                                  IsChecked="{Binding SuppressDeleteConfirmation}"
-                                  VerticalAlignment="Center"/>
-
-                        <!-- 4. 谱面名称滚动 -->
-                        <TextBlock Grid.Row="5" Grid.Column="0"
-                                   Text="谱面名称过长时滚动显示"
-                                   FontSize="18" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <CheckBox Grid.Row="5" Grid.Column="2"
-                                  IsChecked="{Binding EnableChartNameMarquee}"
-                                  VerticalAlignment="Center"/>
-
-                        <!-- 5. 启动游戏确认弹窗 -->
-                        <TextBlock Grid.Row="6" Grid.Column="0"
-                                   Text="启动/重启游戏时不再显示确认弹窗"
-                                   FontSize="18" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <CheckBox Grid.Row="6" Grid.Column="2"
-                                  IsChecked="{Binding SuppressLaunchGameConfirmation}"
-                                  VerticalAlignment="Center"/>
-
-                        <!-- 6. 下载源 -->
-                        <TextBlock Grid.Row="7" Grid.Column="0"
-                                   Text="整合包与MelonLoader下载源"
-                                   FontSize="18" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <ComboBox Grid.Row="7" Grid.Column="2"
-                                  ItemsSource="{Binding DownloadSources}"
-                                  SelectedItem="{Binding SelectedDownloadSource}"
-                                  Foreground="{DynamicResource ThemeTextMainBrush}"
-                                  Width="180" HorizontalContentAlignment="Left"/>
-
-                        <!-- 启用搜索模糊匹配 -->
-                        <TextBlock Grid.Row="8" Grid.Column="0"
-                                   Text="启用搜索模糊匹配"
-                                   FontSize="18" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <CheckBox Grid.Row="8" Grid.Column="2"
-                                  IsChecked="{Binding EnableFuzzySearch}"
-                                  VerticalAlignment="Center"/>
-
-                        <!-- 7. 谱面试听音量 -->
-                        <TextBlock Grid.Row="9" Grid.Column="0"
-                                   Text="谱面试听音量"
-                                   FontSize="18" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <Slider Grid.Row="9" Grid.Column="2"
-                                Width="200" HorizontalAlignment="Left"
-                                Minimum="0" Maximum="1"
-                                Value="{Binding ChartPreviewVolume}"
-                                VerticalAlignment="Center"/>
+                    <!-- 运行与启动设置 -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="运行与启动" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.8" Margin="4,0,0,0"/>
+                        <Border Background="{DynamicResource CardBgBrush}" CornerRadius="10" Padding="20,16">
+                            <StackPanel Spacing="16">
+                                <!-- 以原版启动游戏 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="以原版启动游戏" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="跳过 MelonLoader 插件加载，直接运行官方原版游戏" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding IsOriginalModeEnabled}" VerticalAlignment="Center"/>
+                                </Grid>
                                 
-                        <!-- 8. 高级设置 -->
-                        <!-- 9. 调整界面样式 & 高级设置 -->
-                        <Button Grid.Row="10" Grid.Column="0"
-                                Command="{Binding OpenColorPanelCommand}"
-                                Theme="{StaticResource RobustPlainIconBtn}"
-                                HorizontalAlignment="Left"
-                                ToolTip.Tip="进入界面颜色 / 外观设置">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="调整界面样式" FontSize="18" VerticalAlignment="Center" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 启动游戏时隐藏控制台 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="启动时隐藏控制台" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="启动游戏时自动隐藏 MelonLoader 黑色控制台窗口" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding HideConsoleOnLaunch}" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 启动与重启免确认 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="启动与重启免确认" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="启动或重启游戏时不再弹出询问确认窗口" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding SuppressLaunchGameConfirmation}" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- MelonLoader 管理 -->
+                                <Button Command="{Binding OpenMelonLoaderPanelCommand}"
+                                        HorizontalAlignment="Stretch"
+                                        Theme="{StaticResource RobustPlainIconBtn}">
+                                    <Grid ColumnDefinitions="*, Auto" Background="Transparent">
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" HorizontalAlignment="Left">
+                                            <TextBlock Text="MelonLoader 环境管理" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                            <TextBlock Text="检查、安装、升级或卸载官方及镜像的 MelonLoader 插件运行环境" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        </StackPanel>
+                                        <PathIcon Grid.Column="1" Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" Foreground="{DynamicResource ThemeTextSubBrush}" Width="16" Height="16" VerticalAlignment="Center" Opacity="0.6"/>
+                                    </Grid>
+                                </Button>
                             </StackPanel>
-                        </Button>
-                        
-                        <Button Grid.Row="10" Grid.Column="2" 
-                                Command="{Binding OpenAdvancedPanelCommand}"
-                                Theme="{StaticResource RobustPlainIconBtn}"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center"
-                                ToolTip.Tip="高级设置">
-                            <Viewbox Width="24" Height="24">
-                                <Canvas Width="1024" Height="1024">
-                                    <Path Fill="{DynamicResource SvgIconBrush}" Data="M976 384l-12.8 19.2-83.2 108.8 9.728 14.272a287.36 287.36 0 0 0-81.664-14.144 68.608 68.608 0 0 1 14.336-44.928l76.8-102.4c-12.8-44.8-38.4-83.2-70.4-121.6l-128 12.8c-32 6.4-57.6-12.8-70.4-38.4l-51.2-115.2c-25.6-6.4-44.8-6.4-70.4-6.4-25.6 0-44.8 0-70.4 6.4l-51.2 115.2c-12.8 25.6-38.4 44.8-70.4 38.4l-128-12.8c-32 38.4-51.2 76.8-70.4 128l76.8 102.4c19.2 25.6 19.2 57.6 0 83.2l-76.8 102.4c12.8 44.8 38.4 83.2 70.4 121.6l128-12.8c32-6.4 57.6 12.8 70.4 38.4l51.2 115.2c25.6 6.4 44.8 6.4 70.4 6.4 11.904 0 22.4 0 32.832-0.64 10.112 20.48 22.528 39.552 37.056 56.96a414.08 414.08 0 0 1-76.288 7.68c-32 0-70.4-6.4-102.4-12.8l-19.2-6.4-6.4-12.8-51.2-128-153.6 19.2-12.8-12.8c-44.8-57.6-83.2-115.2-102.4-185.6l-6.4-19.2 6.4-12.8L137.6 512 48 390.4l6.4-19.2c19.2-70.4 51.2-134.4 102.4-185.6l12.8-12.8 147.2 19.2 64-140.8 25.6-6.4c32-6.4 64-12.8 102.4-12.8 38.4 0 70.4 6.4 102.4 12.8h25.6l64 140.8 153.6-19.2 12.8 12.8c44.8 57.6 83.2 115.2 102.4 185.6l6.4 19.2z" />
-                                    <Path Fill="{DynamicResource SvgIconBrush}" Data="M1024 814.912c0 16.64-13.632 29.888-29.696 29.888h-36.224a155.52 155.52 0 0 1-15.296 36.096l25.984 26.112c11.52 11.648 11.968 30.272 0.384 42.304l-21.376 21.568a30.208 30.208 0 0 1-42.496 0l-26.368-26.496c-10.688 5.76-22.272 10.368-33.792 13.632v36.096a30.272 30.272 0 0 1-30.08 29.888h-29.696a29.632 29.632 0 0 1-29.632-29.888v-36.096a152.448 152.448 0 0 1-35.072-14.464l-27.2 27.328a30.208 30.208 0 0 1-42.432 0l-21.44-21.12a30.208 30.208 0 0 1-0.384-42.304l27.584-27.84a159.36 159.36 0 0 1-14.4-34.816h-36.672A29.632 29.632 0 0 1 576 814.912v-29.824c0-16.64 13.184-29.888 29.696-29.888h36.224c3.328-11.648 7.872-23.232 13.632-34.048l-26.368-26.496a30.208 30.208 0 0 1-0.448-42.304l21.44-21.568a30.208 30.208 0 0 1 42.432 0l25.984 26.112c11.52-6.656 23.488-11.648 36.288-14.912v-36.096c0-16.64 13.184-29.888 29.632-29.888h30.528c16.512 0 29.696 13.248 29.696 29.888v36.096c12.352 3.264 23.872 8.32 35.008 14.464l25.6-25.28a30.208 30.208 0 0 1 42.432 0l21.44 21.12c11.52 11.648 11.904 30.72 0.384 42.368l-0.448 0.384-25.536 25.344c6.208 11.2 11.136 22.784 14.464 34.816h36.224c16.512 0 29.696 13.248 29.696 29.888v29.824zM800.192 710.4a89.6 89.6 0 0 0 0 179.2 89.6 89.6 0 0 0 0-179.2zM508.8 710.4c5.952 0 11.84-0.256 17.664-0.768 8.768-26.56 21.312-51.456 36.992-73.92a140.864 140.864 0 0 1-54.656 10.688c-76.8 0-134.4-64-134.4-134.4 0-76.8 57.6-134.4 134.4-134.4 76.8 0 134.4 64 134.4 134.4 0 19.2-3.584 37.12-10.176 53.312 22.4-15.936 47.104-28.8 73.6-37.824A199.424 199.424 0 0 0 508.8 313.6C399.936 313.6 310.336 403.2 310.336 512c0 108.8 89.6 198.4 198.4 198.4z" />
-                                </Canvas>
-                            </Viewbox>
-                        </Button>
-                    </Grid>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- 下载与搜索设置 -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="下载与搜索" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.8" Margin="4,0,0,0"/>
+                        <Border Background="{DynamicResource CardBgBrush}" CornerRadius="10" Padding="20,16">
+                            <StackPanel Spacing="16">
+                                <!-- 下载源配置 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="下载源配置" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="下载模组、整合包及 MelonLoader 时所使用的网络镜像源" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding DownloadSources}"
+                                              SelectedItem="{Binding SelectedDownloadSource}"
+                                              Foreground="{DynamicResource ThemeTextMainBrush}"
+                                              Width="150" HorizontalContentAlignment="Left"
+                                              VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 启用搜索模糊匹配 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="启用搜索模糊匹配" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="搜索框默认支持拼音首字母与跨字模糊匹配，关闭后使用常规精确包含" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding EnableFuzzySearch}" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 自动翻译 Mod 信息 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="自动翻译 Mod 信息" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="自动将 Mod 详情说明以及 Mod 配置文件（MelonPreferences）中的英文翻译为中文" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding AutoTranslateDescriptions}" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 下载不兼容 Mod 免提示 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="下载不兼容 Mod 免提示" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="下载版本不匹配或标记为不兼容的 Mod 时不再弹出确认警告" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding SuppressIncompatibleModWarning}" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 删除 Mod 免确认 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="删除 Mod 免确认" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="在本地管理中删除 Mod 时直接移除，不再进行弹窗确认" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding SuppressDeleteConfirmation}" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- 多媒体与个性化设置 -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="多媒体与个性化" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.8" Margin="4,0,0,0"/>
+                        <Border Background="{DynamicResource CardBgBrush}" CornerRadius="10" Padding="20,16">
+                            <StackPanel Spacing="16">
+                                <!-- 谱面试听音量 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="谱面试听音量" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="在谱面下载或本地管理页面点击试听时的播放音量大小" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <Slider Width="130" Minimum="0" Maximum="1"
+                                                Value="{Binding ChartPreviewVolume}"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ChartPreviewVolume, StringFormat={}{0:P0}}"
+                                                   Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                   FontSize="12" Width="40" TextAlignment="Right" VerticalAlignment="Center" Opacity="0.8"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 谱面名称跑马灯 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="谱面名称跑马灯" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="当列表中谱面名称长度超出显示宽度限制时自动跑马灯滚动" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding EnableChartNameMarquee}" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 调整界面样式 -->
+                                <Button Command="{Binding OpenColorPanelCommand}"
+                                        HorizontalAlignment="Stretch"
+                                        Theme="{StaticResource RobustPlainIconBtn}">
+                                    <Grid ColumnDefinitions="*, Auto" Background="Transparent">
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" HorizontalAlignment="Left">
+                                            <TextBlock Text="调整界面样式" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                            <TextBlock Text="自定义窗口透明度、磨砂玻璃效果、背景图片、界面字体与文本配色" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        </StackPanel>
+                                        <PathIcon Grid.Column="1" Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" Foreground="{DynamicResource ThemeTextSubBrush}" Width="16" Height="16" VerticalAlignment="Center" Opacity="0.6"/>
+                                    </Grid>
+                                </Button>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 高级设置 -->
+                                <Button Command="{Binding OpenAdvancedPanelCommand}"
+                                        HorizontalAlignment="Stretch"
+                                        Theme="{StaticResource RobustPlainIconBtn}">
+                                    <Grid ColumnDefinitions="*, Auto" Background="Transparent">
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" HorizontalAlignment="Left">
+                                            <TextBlock Text="高级设置" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                            <TextBlock Text="配置自定义优选 IP 地址以加速网络连接" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        </StackPanel>
+                                        <PathIcon Grid.Column="1" Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" Foreground="{DynamicResource ThemeTextSubBrush}" Width="16" Height="16" VerticalAlignment="Center" Opacity="0.6"/>
+                                    </Grid>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </Grid>
@@ -733,6 +792,41 @@
                                Foreground="{DynamicResource ThemeTextMainBrush}"
                                Margin="0,10,0,0"
                                HorizontalAlignment="Center"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- MelonLoader 管理面板 -->
+        <Grid IsVisible="{Binding IsMelonLoaderPanelVisible}">
+            <ScrollViewer VerticalScrollBarVisibility="Hidden">
+                <StackPanel Spacing="22" Margin="20">
+                    
+                    <!-- 顶部栏 -->
+                    <Grid ColumnDefinitions="Auto, 10, *">
+                        <!-- 返回按钮 -->
+                        <Button Grid.Column="0" HorizontalAlignment="Left"
+                                Command="{Binding CloseMelonLoaderPanelCommand}"
+                                Theme="{StaticResource SmallRoundBtn}"
+                                ToolTip.Tip="返回设置">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
+                                      Fill="{DynamicResource SvgIconBrush}" Stretch="Uniform" Width="22" Height="22" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- 标题 -->
+                        <TextBlock Grid.Column="2" Text="MelonLoader 管理" FontSize="28" FontWeight="Bold" VerticalAlignment="Center">
+                            <TextBlock.Foreground>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                    <GradientStop Color="#d4237a" Offset="0"/>
+                                    <GradientStop Color="#FF69B4" Offset="1"/>
+                                </LinearGradientBrush>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                    </Grid>
+                    
+                    <!-- MelonLoader 视图 -->
+                    <views:MelonLoaderView DataContext="{Binding MelonLoaderVm}"/>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

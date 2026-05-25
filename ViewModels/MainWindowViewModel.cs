@@ -767,12 +767,13 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task NavigateToSponsorAsync()
+    private async Task NavigateToSponsorAsync(object? parameter)
     {
         CleanupCurrentPage();
         IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         var vm = Ioc.Default.GetRequiredService<SponsorViewModel>();
+        vm.IsBackButtonVisible = (parameter as string) == "Welcome" || (parameter is bool b && b);
         CurrentPage = vm;
         await vm.InitializeAsync();
     }
@@ -800,16 +801,6 @@ public partial class MainWindowViewModel : ObservableObject
         await vm.InitializeAsync();
     }
 
-    [RelayCommand]
-    private async Task NavigateToMelonLoaderAsync()
-    {
-        CleanupCurrentPage();
-        IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
-
-        var vm = Ioc.Default.GetRequiredService<MelonLoaderViewModel>();
-        CurrentPage = vm;
-        await vm.InitializeAsync(_currentPageCts!.Token);
-    }
 
     private static bool IsAlbumCollectionSectionPage(object? page)
     {

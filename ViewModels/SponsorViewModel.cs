@@ -35,6 +35,9 @@ public partial class SponsorViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isLetterPopupOpen;
 
+    [ObservableProperty]
+    private bool _isBackButtonVisible = true;
+
     public bool IsAlipaySelected => SelectedPaymentMethod == "Alipay";
     public bool IsWeChatSelected => SelectedPaymentMethod == "WeChat";
 
