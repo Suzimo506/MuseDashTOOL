@@ -107,7 +107,18 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private ObservableCollection<string> _categories = new() { "全部", "未分类" };
 
     // 可用于移动的目标分类列表
-    public IEnumerable<string> MoveCategories => Categories.Where(c => c != "全部");
+    public IEnumerable<MoveCategoryItem> MoveCategories
+    {
+        get
+        {
+            var list = new List<MoveCategoryItem>
+            {
+                new MoveCategoryItem { Name = "新建分类", IsCreateNew = true }
+            };
+            list.AddRange(Categories.Where(c => c != "全部").Select(c => new MoveCategoryItem { Name = c, IsCreateNew = false }));
+            return list;
+        }
+    }
 
     // 分类包装项列表用于管理界面展示
     public ObservableCollection<CategoryItem> CategoryItems { get; } = new();
@@ -1073,19 +1084,89 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
     // 确认移动谱面至目标分类
     [RelayCommand]
-    private async Task ConfirmMoveToCategoryAsync(string targetCategory)
+    private async Task ConfirmMoveToCategoryAsync(MoveCategoryItem item)
     {
-        if (string.IsNullOrEmpty(targetCategory)) return;
+        if (item == null) return;
 
         IsMovePanelOpen = false;
 
-        if (CurrentMovingChart != null)
+        if (item.IsCreateNew)
         {
-            await MoveSingleChartToCategoryAsync(CurrentMovingChart, targetCategory);
+            await CreateCategoryAndMoveAsync();
         }
         else
         {
-            await MoveSelectedToCategoryAsync(targetCategory);
+            var targetCategory = item.Name;
+            if (string.IsNullOrEmpty(targetCategory)) return;
+
+            if (CurrentMovingChart != null)
+            {
+                await MoveSingleChartToCategoryAsync(CurrentMovingChart, targetCategory);
+            }
+            else
+            {
+                await MoveSelectedToCategoryAsync(targetCategory);
+            }
+        }
+    }
+
+    // 当场新建分类并移动谱面
+    private async Task CreateCategoryAndMoveAsync()
+    {
+        var gamePath = _configService.Config.GamePath;
+        if (string.IsNullOrEmpty(gamePath))
+        {
+            StatusMessage = "游戏路径未设置，无法创建分类";
+            return;
+        }
+
+        var app = Avalonia.Application.Current;
+        var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (mainWindow == null) return;
+
+        var catName = await InputDialog.ShowDialogAsync(mainWindow, "新建分类", "请输入新建分类的名称（将创建对应的合集文件夹）：");
+        if (string.IsNullOrWhiteSpace(catName))
+            return;
+
+        foreach (char c in System.IO.Path.GetInvalidFileNameChars())
+            catName = catName.Replace(c, '_');
+
+        var albumsDir = System.IO.Path.Combine(gamePath, "Custom_Albums");
+        var targetDir = System.IO.Path.Combine(albumsDir, catName);
+
+        if (System.IO.Directory.Exists(targetDir))
+        {
+            await MessageBox.ShowDialogAsync(mainWindow, "分类已存在");
+            return;
+        }
+
+        try
+        {
+            System.IO.Directory.CreateDirectory(targetDir);
+            var packJsonPath = System.IO.Path.Combine(targetDir, "pack.json");
+            var packData = new
+            {
+                Title = catName,
+                TitleColorHex = "#ffffff",
+                LongTextScroll = false
+            };
+            var jsonStr = JsonSerializer.Serialize(packData, new JsonSerializerOptions { WriteIndented = true });
+            await System.IO.File.WriteAllTextAsync(packJsonPath, jsonStr, System.Text.Encoding.UTF8);
+
+            StatusMessage = $"分类《{catName}》创建成功";
+
+            if (CurrentMovingChart != null)
+            {
+                await MoveSingleChartToCategoryAsync(CurrentMovingChart, catName);
+            }
+            else
+            {
+                await MoveSelectedToCategoryAsync(catName);
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"创建分类失败: {ex.Message}";
         }
     }
 
@@ -1258,4 +1339,11 @@ public class CategoryItem : ObservableObject
         get => _isActive;
         set => SetProperty(ref _isActive, value);
     }
+}
+
+// 移动目标分类项目包装类
+public class MoveCategoryItem
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsCreateNew { get; set; }
 }

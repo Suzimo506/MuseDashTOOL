@@ -965,48 +965,56 @@
                                     <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" ItemWidth="NaN"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="x:String">
-                                    <Button Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).ConfirmMoveToCategoryCommand}"
-                                            CommandParameter="{Binding}"
-                                            Margin="6"
-                                            Padding="14,8"
-                                            CornerRadius="10"
-                                            Background="#12FFFFFF"
-                                            BorderThickness="1"
-                                            BorderBrush="#15FFFFFF"
-                                            Foreground="{DynamicResource ThemeTextMainBrush}"
-                                            Cursor="Hand">
-                                        <Button.Styles>
-                                            <Style Selector="Button">
-                                                <Setter Property="RenderTransform" Value="scale(1.0)"/>
-                                                <Setter Property="Transitions">
-                                                    <Transitions>
-                                                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
-                                                        <BrushTransition Property="Background" Duration="0:0:0.2"/>
-                                                        <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
-                                                    </Transitions>
-                                                </Setter>
-                                            </Style>
-                                            <Style Selector="Button:pointerover">
-                                                <Setter Property="Background" Value="#25FF8EBE"/>
-                                                <Setter Property="BorderBrush" Value="#80FF8EBE"/>
-                                                <Setter Property="RenderTransform" Value="scale(1.05)"/>
-                                            </Style>
-                                            <Style Selector="Button:pressed">
-                                                <Setter Property="RenderTransform" Value="scale(0.95)"/>
-                                            </Style>
-                                        </Button.Styles>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <PathIcon Data="M896 256H512l-64-64H128c-35.3 0-64 28.7-64 64v512c0 35.3 28.7 64 64 64h768c35.3 0 64-28.7 64-64V320c0-35.3-28.7-64-64-64z"
-                                                      Width="12" Height="12"
-                                                      Foreground="{DynamicResource ThemeAccentBrush}"
-                                                      VerticalAlignment="Center"/>
-                                            <TextBlock Text="{Binding}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
+                             <ItemsControl.ItemTemplate>
+                                 <DataTemplate x:DataType="vm:MoveCategoryItem">
+                                     <Button Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).ConfirmMoveToCategoryCommand}"
+                                             CommandParameter="{Binding}"
+                                             Margin="6"
+                                             Padding="14,8"
+                                             CornerRadius="10"
+                                             Background="#12FFFFFF"
+                                             BorderThickness="1"
+                                             BorderBrush="#15FFFFFF"
+                                             Foreground="{DynamicResource ThemeTextMainBrush}"
+                                             Cursor="Hand">
+                                         <Button.Styles>
+                                             <Style Selector="Button">
+                                                 <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                                 <Setter Property="Transitions">
+                                                     <Transitions>
+                                                         <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                                         <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                                         <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                                                     </Transitions>
+                                                 </Setter>
+                                             </Style>
+                                             <Style Selector="Button:pointerover">
+                                                 <Setter Property="Background" Value="#25FF8EBE"/>
+                                                 <Setter Property="BorderBrush" Value="#80FF8EBE"/>
+                                                 <Setter Property="RenderTransform" Value="scale(1.05)"/>
+                                             </Style>
+                                             <Style Selector="Button:pressed">
+                                                 <Setter Property="RenderTransform" Value="scale(0.95)"/>
+                                             </Style>
+                                         </Button.Styles>
+                                         <StackPanel Orientation="Horizontal" Spacing="6">
+                                             <!-- 普通分类文件夹图标 -->
+                                             <PathIcon Data="M896 256H512l-64-64H128c-35.3 0-64 28.7-64 64v512c0 35.3 28.7 64 64 64h768c35.3 0 64-28.7 64-64V320c0-35.3-28.7-64-64-64z"
+                                                       Width="12" Height="12"
+                                                       Foreground="{DynamicResource ThemeAccentBrush}"
+                                                       VerticalAlignment="Center"
+                                                       IsVisible="{Binding !IsCreateNew}"/>
+                                             <!-- 新建分类加号图标 -->
+                                             <PathIcon Data="M512 85.3a42.7 42.7 0 0 1 42.7 42.7v341.3h341.3a42.7 42.7 0 1 1 0 85.4H554.7v341.3a42.7 42.7 0 1 1-85.4 0V554.7H128a42.7 42.7 0 1 1 0-85.4h341.3V128a42.7 42.7 0 0 1 42.7-42.7z"
+                                                       Width="12" Height="12"
+                                                       Foreground="{DynamicResource ThemeAccentBrush}"
+                                                       VerticalAlignment="Center"
+                                                       IsVisible="{Binding IsCreateNew}"/>
+                                             <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                         </StackPanel>
+                                     </Button>
+                                 </DataTemplate>
+                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
 
