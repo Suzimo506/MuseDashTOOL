@@ -151,11 +151,31 @@ public partial class MdmcChart : ObservableObject
 
     // 衍生曲师文本
     [JsonIgnore]
-    public string DisplayArtist => string.IsNullOrWhiteSpace(Artist) ? string.Empty : $"曲：{Artist}";
+    public string DisplayArtist
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Artist)) return string.Empty;
+            var idx = Artist.IndexOf('\n');
+            var firstLine = idx >= 0 ? Artist.Substring(0, idx) : Artist;
+            var clean = firstLine.Trim();
+            return string.IsNullOrEmpty(clean) ? string.Empty : $"曲：{clean}";
+        }
+    }
 
     // 衍生谱师文本
     [JsonIgnore]
-    public string DisplayCharter => string.IsNullOrWhiteSpace(Charter) ? string.Empty : $"谱：{Charter}";
+    public string DisplayCharter
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Charter)) return string.Empty;
+            var idx = Charter.IndexOf('\n');
+            var firstLine = idx >= 0 ? Charter.Substring(0, idx) : Charter;
+            var clean = firstLine.Trim();
+            return string.IsNullOrEmpty(clean) ? string.Empty : $"谱：{clean}";
+        }
+    }
 
     /// <summary>副标题：曲 + 谱 (同向排列)</summary>
     public string SubInfo

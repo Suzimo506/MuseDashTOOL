@@ -413,9 +413,10 @@ public partial class ModManagerViewModel : ObservableObject
 
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
+            var enableFuzzy = _configService.Config.EnableFuzzySearch;
             sourceList = sourceList.Where(m =>
-                (m.Name != null && m.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)) ||
-                (m.Author != null && m.Author.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+                SearchHelper.IsMatch(m.Name, SearchText, enableFuzzy) ||
+                SearchHelper.IsMatch(m.Author, SearchText, enableFuzzy)
             );
         }
 

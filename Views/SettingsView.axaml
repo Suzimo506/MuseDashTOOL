@@ -143,7 +143,7 @@
 
                     <!-- 设置列表 -->
                     <Grid ColumnDefinitions="Auto, 20, *"
-                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                           RowSpacing="15">
 
                         <!-- 1. 自动翻译 -->
@@ -220,12 +220,21 @@
                                   Foreground="{DynamicResource ThemeTextMainBrush}"
                                   Width="180" HorizontalContentAlignment="Left"/>
 
-                        <!-- 7. 谱面试听音量 -->
+                        <!-- 启用搜索模糊匹配 -->
                         <TextBlock Grid.Row="8" Grid.Column="0"
+                                   Text="启用搜索模糊匹配"
+                                   FontSize="18" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                        <CheckBox Grid.Row="8" Grid.Column="2"
+                                  IsChecked="{Binding EnableFuzzySearch}"
+                                  VerticalAlignment="Center"/>
+
+                        <!-- 7. 谱面试听音量 -->
+                        <TextBlock Grid.Row="9" Grid.Column="0"
                                    Text="谱面试听音量"
                                    FontSize="18" VerticalAlignment="Center"
                                    Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <Slider Grid.Row="8" Grid.Column="2"
+                        <Slider Grid.Row="9" Grid.Column="2"
                                 Width="200" HorizontalAlignment="Left"
                                 Minimum="0" Maximum="1"
                                 Value="{Binding ChartPreviewVolume}"
@@ -233,7 +242,7 @@
                                 
                         <!-- 8. 高级设置 -->
                         <!-- 9. 调整界面样式 & 高级设置 -->
-                        <Button Grid.Row="9" Grid.Column="0"
+                        <Button Grid.Row="10" Grid.Column="0"
                                 Command="{Binding OpenColorPanelCommand}"
                                 Theme="{StaticResource RobustPlainIconBtn}"
                                 HorizontalAlignment="Left"
@@ -243,7 +252,7 @@
                             </StackPanel>
                         </Button>
                         
-                        <Button Grid.Row="9" Grid.Column="2" 
+                        <Button Grid.Row="10" Grid.Column="2" 
                                 Command="{Binding OpenAdvancedPanelCommand}"
                                 Theme="{StaticResource RobustPlainIconBtn}"
                                 HorizontalAlignment="Left"

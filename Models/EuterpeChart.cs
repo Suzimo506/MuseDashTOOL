@@ -126,11 +126,31 @@ public partial class EuterpeChart : ObservableObject
 
     // 衍生曲师文本
     [JsonIgnore]
-    public string DisplayAuthor => $"曲：{Author}";
+    public string DisplayAuthor
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Author)) return string.Empty;
+            var idx = Author.IndexOf('\n');
+            var firstLine = idx >= 0 ? Author.Substring(0, idx) : Author;
+            var clean = firstLine.Trim();
+            return string.IsNullOrEmpty(clean) ? string.Empty : $"曲：{clean}";
+        }
+    }
 
     // 衍生谱师文本
     [JsonIgnore]
-    public string DisplayCharter => string.IsNullOrWhiteSpace(CharterInfo) ? string.Empty : $"谱：{CharterInfo}";
+    public string DisplayCharter
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(CharterInfo)) return string.Empty;
+            var idx = CharterInfo.IndexOf('\n');
+            var firstLine = idx >= 0 ? CharterInfo.Substring(0, idx) : CharterInfo;
+            var clean = firstLine.Trim();
+            return string.IsNullOrEmpty(clean) ? string.Empty : $"谱：{clean}";
+        }
+    }
 
     // 衍生难度星级列表
     [JsonIgnore]

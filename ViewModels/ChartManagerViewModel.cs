@@ -255,12 +255,14 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var search = SearchText?.Trim();
         _filteredCharts.Clear();
 
+        var enableFuzzy = _configService.Config.EnableFuzzySearch;
+
         foreach (var chart in _allCharts)
         {
             if (string.IsNullOrEmpty(search)
-                || chart.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
-                || (chart.MusicAuthor?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
-                || (chart.ChartAuthor?.Contains(search, StringComparison.OrdinalIgnoreCase) == true))
+                || MdModManager.Helpers.SearchHelper.IsMatch(chart.Name, search, enableFuzzy)
+                || MdModManager.Helpers.SearchHelper.IsMatch(chart.MusicAuthor, search, enableFuzzy)
+                || MdModManager.Helpers.SearchHelper.IsMatch(chart.ChartAuthor, search, enableFuzzy))
             {
                 _filteredCharts.Add(chart);
             }

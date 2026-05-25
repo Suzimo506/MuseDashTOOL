@@ -183,12 +183,21 @@ public partial class AlbumCollectionView : UserControl
         }
     }
 
+    private void OnSearchBoxLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is AlbumCollectionViewModel vm)
+        {
+            vm.ApplySearch();
+        }
+    }
+
     private void OnSearchBoxKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Enter)
-            return;
-
-        e.Handled = true;
+        if (e.Key == Key.Enter && DataContext is AlbumCollectionViewModel vm)
+        {
+            e.Handled = true;
+            vm.ApplySearch();
+        }
     }
 
     private void OnJumpToCategoryClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)

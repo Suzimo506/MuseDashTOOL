@@ -62,10 +62,30 @@ public partial class ChartInfo : ObservableObject
     private bool _isSelected;
 
     // 衍生曲师文本
-    public string DisplayArtist => string.IsNullOrWhiteSpace(MusicAuthor) ? string.Empty : $"曲：{MusicAuthor}";
+    public string DisplayArtist
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(MusicAuthor)) return string.Empty;
+            var idx = MusicAuthor.IndexOf('\n');
+            var firstLine = idx >= 0 ? MusicAuthor.Substring(0, idx) : MusicAuthor;
+            var clean = firstLine.Trim();
+            return string.IsNullOrEmpty(clean) ? string.Empty : $"曲：{clean}";
+        }
+    }
 
     // 衍生谱师文本
-    public string DisplayCharter => string.IsNullOrWhiteSpace(ChartAuthor) ? string.Empty : $"谱：{ChartAuthor}";
+    public string DisplayCharter
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(ChartAuthor)) return string.Empty;
+            var idx = ChartAuthor.IndexOf('\n');
+            var firstLine = idx >= 0 ? ChartAuthor.Substring(0, idx) : ChartAuthor;
+            var clean = firstLine.Trim();
+            return string.IsNullOrEmpty(clean) ? string.Empty : $"谱：{clean}";
+        }
+    }
 
     /// <summary>副标题展示（作曲 + 谱师）</summary>
     public string SubInfo

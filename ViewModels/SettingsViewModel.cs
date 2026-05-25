@@ -128,6 +128,21 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
+    // 是否开启搜索模糊匹配
+    public bool EnableFuzzySearch
+    {
+        get => _configService.Config.EnableFuzzySearch;
+        set
+        {
+            if (_configService.Config.EnableFuzzySearch != value)
+            {
+                _configService.Config.EnableFuzzySearch = value;
+                OnPropertyChanged();
+                _ = _configService.SaveAsync();
+            }
+        }
+    }
+
     /// <summary>自动翻译 Mod 详情信息的开关</summary>
     public bool AutoTranslateDescriptions
     {
@@ -614,6 +629,7 @@ public partial class SettingsViewModel : ObservableObject
             ? CustomIpAddress : null;
 
         OnPropertyChanged(nameof(SuppressIncompatibleModWarning));
+        OnPropertyChanged(nameof(EnableFuzzySearch));
         OnPropertyChanged(nameof(CustomBackgroundImagePath));
         OnPropertyChanged(nameof(HasBackgroundImage));
         OnPropertyChanged(nameof(CustomBackgroundOpacity));

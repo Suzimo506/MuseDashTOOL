@@ -588,6 +588,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
     [ObservableProperty]
     private string _searchText = string.Empty;
 
+    // 搜索草稿
+    [ObservableProperty]
+    private string _searchDraftText = string.Empty;
+
     // 是否正在由于搜索而过滤
     [ObservableProperty]
     private bool _isSearching;
@@ -600,6 +604,10 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     partial void OnSearchTextChanged(string value)
     {
+        if (SearchDraftText != value)
+        {
+            SearchDraftText = value;
+        }
         _ = SearchAndFilterAsync(value);
     }
 
@@ -875,8 +883,20 @@ public partial class AlbumCollectionViewModel : ObservableObject
     }
 
 
+    // 应用搜索
+    public void ApplySearch()
+    {
+        var newQuery = SearchDraftText?.Trim() ?? string.Empty;
+        if (newQuery == SearchText) return;
+        SearchText = newQuery;
+    }
+
     [RelayCommand]
-    public void ClearSearch() => SearchText = string.Empty;
+    public void ClearSearch()
+    {
+        SearchDraftText = string.Empty;
+        SearchText = string.Empty;
+    }
 
     [RelayCommand]
     private async Task DownloadPictures()

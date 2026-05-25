@@ -96,6 +96,9 @@ public class AppConfig
     // 侧边栏是否展开
     public bool IsSidebarExpanded { get; set; } = true;
 
+    /// <summary>是否开启搜索模糊匹配</summary>
+    public bool EnableFuzzySearch { get; set; } = true;
+
     // Euterpe 已点赞的谱面 cid 列表
     public System.Collections.Generic.List<long> EuterpeLikedCids { get; set; } = new();
 }

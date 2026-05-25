@@ -340,10 +340,11 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
         _filteredIndex = _allFullIndex;
         if (!string.IsNullOrWhiteSpace(query))
         {
+            var enableFuzzy = _configService.Config.EnableFuzzySearch;
             _filteredIndex = _allFullIndex.Where(c => 
-                c.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
-                c.Artist?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
-                c.Charter?.Contains(query, StringComparison.OrdinalIgnoreCase) == true
+                SearchHelper.IsMatch(c.Title, query, enableFuzzy) ||
+                SearchHelper.IsMatch(c.Artist, query, enableFuzzy) ||
+                SearchHelper.IsMatch(c.Charter, query, enableFuzzy)
             ).ToList();
         }
 

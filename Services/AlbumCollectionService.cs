@@ -531,11 +531,14 @@ public class AlbumCollectionService : IAlbumCollectionService
                 var charts = await GetLocalChartsAsync(col.Name);
                 if (charts == null || charts.Count == 0) continue;
 
+                var configService = CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default.GetRequiredService<IConfigService>();
+                var enableFuzzy = configService.Config.EnableFuzzySearch;
+
                 foreach (var chart in charts)
                 {
-                    if (chart.Title?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
-                        chart.Author?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true ||
-                        chart.Artist?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) == true)
+                    if (SearchHelper.IsMatch(chart.Title, normalizedQuery, enableFuzzy) ||
+                        SearchHelper.IsMatch(chart.Author, normalizedQuery, enableFuzzy) ||
+                        SearchHelper.IsMatch(chart.Artist, normalizedQuery, enableFuzzy))
                     {
                         results.Add((col, CloneAndNormalizeChart(chart)));
                     }
@@ -560,10 +563,13 @@ public class AlbumCollectionService : IAlbumCollectionService
             {
                 // 社区搜索同样优先使用本地缓存
                 var charts = await GetLocalCommunityChartsAsync(config.Name);
+                var configService = CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default.GetRequiredService<IConfigService>();
+                var enableFuzzy = configService.Config.EnableFuzzySearch;
+
                 var matches = charts.Where(c => 
-                    c.Title.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
-                    c.Artist.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
-                    c.Charter.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase)
+                    SearchHelper.IsMatch(c.Title, normalizedQuery, enableFuzzy) ||
+                    SearchHelper.IsMatch(c.Artist, normalizedQuery, enableFuzzy) ||
+                    SearchHelper.IsMatch(c.Charter, normalizedQuery, enableFuzzy)
                 ).ToList();
 
                 lock (results)

@@ -3,7 +3,7 @@
         "id": "1.4.5",
         "is_enabled": true,
         "title": "v1.4.5 更新内容",
-        "content": "1、Euterpe谱面下载新增按标签分类，方便快速查找\n2、UI修改\n3、修补部分已知问题",
+        "content": "1、Euterpe谱面下载新增按标签分类，方便快速查找\n2、谱面卡片UI修改，Euterpe谱面卡片新增标签显示\n3、所有搜索框默认开启模糊匹配，可以在设置里把它关掉开启精确匹配",
         "action_button_text": "进入新版喵斯兔",
         "cancel_button_text": "不再显示该弹窗"
     },

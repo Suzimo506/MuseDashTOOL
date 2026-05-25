@@ -335,10 +335,11 @@
             <!-- 搜索框 (样式同步自谱面下载界面) -->
             <TextBox Grid.Column="3" 
                      Width="300"
-                     Text="{Binding SearchText}"
+                     Text="{Binding SearchDraftText}"
                      Watermark="搜索整合包内的谱面名称、作者..."
                      VerticalAlignment="Center"
                      Padding="10,8"
+                     LostFocus="OnSearchBoxLostFocus"
                      KeyDown="OnSearchBoxKeyDown">
                 <TextBox.InnerLeftContent>
                     <PathIcon Data="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1C567.2 143.9 492.3 112 413 112s-154.2 31.9-211.1 88.9C145.5 257.5 114 332.7 114 412c0 79.3 31.3 154.5 88 211.4C259.3 680.3 334.4 712 413 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0 0 11.6 0l42.6-42.6a8.2 8.2 0 0 0 0-11.5zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z"
@@ -347,7 +348,7 @@
                 <TextBox.InnerRightContent>
                     <!-- 这里的 Theme 已改为 StaticResource RobustPlainIconBtn 以消除悬停灰色背景 -->
                     <Button Command="{Binding ClearSearchCommand}"
-                            IsVisible="{Binding SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            IsVisible="{Binding SearchDraftText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                             Theme="{StaticResource RobustPlainIconBtn}" 
                             Margin="0,0,10,0">
                         <TextBlock Text="清空" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource SvgIconBrush}"/>
