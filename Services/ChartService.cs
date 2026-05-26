@@ -267,8 +267,7 @@ public class ChartService : IChartService
                     using var stream = entry.Open();
                     using var ms = new MemoryStream();
                     stream.CopyTo(ms);
-                    ms.Position = 0;
-                    ParseInfoJson(ms, chart);
+                    ParseInfoJson(ms.ToArray(), chart);
                 }
                 catch (Exception ex)
                 {
@@ -317,9 +316,20 @@ public class ChartService : IChartService
         }
     }
 
-    private static void ParseInfoJson(Stream jsonStream, ChartInfo chart)
+    // 自动检测并使用合适的编码解码文本
+    private static string DecodeText(byte[] bytes)
     {
-        var root = JsonNode.Parse(jsonStream);
+        var utf8 = System.Text.Encoding.UTF8.GetString(bytes);
+        if (!utf8.Contains('\uFFFD'))
+            return utf8;
+
+        return System.Text.Encoding.Default.GetString(bytes);
+    }
+
+    private static void ParseInfoJson(byte[] bytes, ChartInfo chart)
+    {
+        var text = DecodeText(bytes);
+        var root = JsonNode.Parse(text);
         if (root == null) return;
 
         // Song name — prefer localised "name" field

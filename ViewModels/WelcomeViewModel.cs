@@ -197,7 +197,15 @@ public partial class WelcomeViewModel : ViewModelBase
                 var chartsDir = Path.Combine(gamePath, "Custom_Albums");
                 if (Directory.Exists(chartsDir))
                 {
-                    TotalCharts = Directory.GetFiles(chartsDir, "*.mdm").Length;
+                    var count = Directory.GetFiles(chartsDir, "*.mdm").Length;
+                    foreach (var subDir in Directory.GetDirectories(chartsDir))
+                    {
+                        if (File.Exists(Path.Combine(subDir, "pack.json")))
+                        {
+                            count += Directory.GetFiles(subDir, "*.mdm").Length;
+                        }
+                    }
+                    TotalCharts = count;
                 }
             }
             catch

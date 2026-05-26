@@ -249,11 +249,11 @@
 
                                 <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
 
-                                <!-- 删除 Mod 免确认 -->
+                                <!-- 删除操作免确认 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="删除 Mod 免确认" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="在本地管理中删除 Mod 时直接移除，不再进行弹窗确认" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="删除操作免确认" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="在本地管理中删除模组、谱面、配置文件等内容时直接移除，不再进行弹窗确认" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding SuppressDeleteConfirmation}" VerticalAlignment="Center"/>
                                 </Grid>
