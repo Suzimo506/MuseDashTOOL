@@ -319,11 +319,27 @@ public class ChartService : IChartService
     // 自动检测并使用合适的编码解码文本
     private static string DecodeText(byte[] bytes)
     {
-        var utf8 = System.Text.Encoding.UTF8.GetString(bytes);
+        int offset = 0;
+        if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+        {
+            offset = 3;
+        }
+
+        var utf8 = System.Text.Encoding.UTF8.GetString(bytes, offset, bytes.Length - offset);
+        if (utf8.StartsWith('\uFEFF'))
+        {
+            utf8 = utf8.Substring(1);
+        }
+
         if (!utf8.Contains('\uFFFD'))
             return utf8;
 
-        return System.Text.Encoding.Default.GetString(bytes);
+        var gbk = System.Text.Encoding.Default.GetString(bytes);
+        if (gbk.StartsWith('\uFEFF'))
+        {
+            gbk = gbk.Substring(1);
+        }
+        return gbk;
     }
 
     private static void ParseInfoJson(byte[] bytes, ChartInfo chart)
