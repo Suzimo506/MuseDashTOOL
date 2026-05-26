@@ -16,7 +16,7 @@ using MdModManager.Helpers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Net.Http;
-using System.Text.RegularExpressions;
+using MdModManager.Views;
 
 namespace MdModManager.ViewModels;
 
@@ -473,5 +473,56 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
             ReleaseResources();
             mainVm.CurrentPage = Ioc.Default.GetRequiredService<AlbumCollectionViewModel>();
         }
+    }
+
+    [RelayCommand]
+    private async Task DownloadAllAsync()
+    {
+        if (_filteredIndex.Count == 0)
+            return;
+
+        if (!IsDotNet6Installed())
+        {
+            var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.MainWindow as MainWindow
+                : null;
+
+            if (mainWindow != null)
+            {
+                await mainWindow.ShowMessageBoxAsync("请先安装.net6环境！");
+            }
+
+            return;
+        }
+
+        var queued = 0;
+        foreach (var chart in _filteredIndex)
+        {
+            var url = chart.CustomDownloadUrl;
+            if (string.IsNullOrWhiteSpace(url))
+                continue;
+
+            // 修复特殊路径在批量下载时的镜像识别问题
+            if (url.Contains("~%23FFFFFF~") || url.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true))
+            {
+                var manualUrl = url.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
+                url = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
+                chart.CustomDownloadUrl = url;
+            }
+
+            _downloadManagerService.EnqueueDownload(chart);
+            queued++;
+        }
+
+        if (queued > 0)
+        {
+            _notificationService.ShowSuccess($"已添加 {queued} 张谱面到下载列表");
+            Log($"Queued {queued} charts for category '{CategoryName}'.");
+        }
+    }
+
+    private bool IsDotNet6Installed()
+    {
+        return DotNetRuntimeHelper.IsDotNet6Installed();
     }
 }
