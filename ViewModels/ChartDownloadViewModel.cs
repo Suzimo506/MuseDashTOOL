@@ -727,7 +727,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             return;
         }
 
-        StatusMessage = $"第 {CurrentPage} / {TotalPages} 页，今日更新 {TodayUpdatesCount} 张谱面";
+        StatusMessage = string.Format(Services.I18nService.Instance["Str_349"], CurrentPage, TotalPages, TodayUpdatesCount);
     }
 
 

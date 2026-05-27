@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -118,7 +118,7 @@
 
                     <!-- 标题行：左侧标题 + 右侧功能按钮组 -->
                     <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Grid.Column="0" Text="设置" FontSize="28" FontWeight="Bold"
+                        <TextBlock Grid.Column="0" Text="{Binding [Str_155], Source={x:Static i18n:I18nService.Instance}}" FontSize="28" FontWeight="Bold"
                                    VerticalAlignment="Center">
                             <TextBlock.Foreground>
                                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
@@ -137,21 +137,23 @@
                                 BorderThickness="0"
                                 CornerRadius="6"
                                 Cursor="Hand"
-                                ToolTip.Tip="检查环境并安装自制谱">
-                            <TextBlock Text="一键安装自制谱" FontSize="14" FontWeight="Bold"/>
+                                ToolTip.Tip="{Binding [Str_189], Source={x:Static i18n:I18nService.Instance}}">
+                            <TextBlock Text="{Binding [Str_190], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold"/>
                         </Button>
                     </Grid>
 
                     <!-- 运行与启动设置 -->
                     <StackPanel Spacing="8">
-                        <TextBlock Text="运行与启动" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.8" Margin="4,0,0,0"/>
+                        <TextBlock Text="{Binding [Str_191], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.8" Margin="4,0,0,0"/>
                         <Border Background="{DynamicResource CardBgBrush}" CornerRadius="10" Padding="20,16">
                             <StackPanel Spacing="16">
+
+
                                 <!-- 以原版启动游戏 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="以原版启动游戏" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="跳过 MelonLoader 插件加载，直接运行官方原版游戏" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="{Binding [Str_192], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_193], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding IsOriginalModeEnabled}" VerticalAlignment="Center"/>
                                 </Grid>
@@ -161,8 +163,8 @@
                                 <!-- 启动游戏时隐藏控制台 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="启动时隐藏控制台" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="启动游戏时自动隐藏 MelonLoader 黑色控制台窗口" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="{Binding [Str_194], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_195], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding HideConsoleOnLaunch}" VerticalAlignment="Center"/>
                                 </Grid>
@@ -172,8 +174,8 @@
                                 <!-- 启动与重启免确认 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="启动与重启免确认" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="启动或重启游戏时不再弹出询问确认窗口" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="{Binding [Str_196], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_197], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding SuppressLaunchGameConfirmation}" VerticalAlignment="Center"/>
                                 </Grid>
@@ -186,8 +188,8 @@
                                         Theme="{StaticResource RobustPlainIconBtn}">
                                     <Grid ColumnDefinitions="*, Auto" Background="Transparent">
                                         <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" HorizontalAlignment="Left">
-                                            <TextBlock Text="MelonLoader 环境管理" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                            <TextBlock Text="检查、安装、升级或卸载官方及镜像的 MelonLoader 插件运行环境" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                            <TextBlock Text="{Binding [Str_198], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                            <TextBlock Text="{Binding [Str_199], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                         </StackPanel>
                                         <PathIcon Grid.Column="1" Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" Foreground="{DynamicResource ThemeTextSubBrush}" Width="16" Height="16" VerticalAlignment="Center" Opacity="0.6"/>
                                     </Grid>
@@ -198,14 +200,14 @@
 
                     <!-- 下载与搜索设置 -->
                     <StackPanel Spacing="8">
-                        <TextBlock Text="下载与搜索" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.8" Margin="4,0,0,0"/>
+                        <TextBlock Text="{Binding [Str_200], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.8" Margin="4,0,0,0"/>
                         <Border Background="{DynamicResource CardBgBrush}" CornerRadius="10" Padding="20,16">
                             <StackPanel Spacing="16">
                                 <!-- 下载源配置 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="下载源配置" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="下载模组、整合包及 MelonLoader 时所使用的网络镜像源" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="{Binding [Str_201], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_202], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <ComboBox Grid.Column="1" ItemsSource="{Binding DownloadSources}"
                                               SelectedItem="{Binding SelectedDownloadSource}"
@@ -219,8 +221,8 @@
                                 <!-- 启用搜索模糊匹配 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="启用搜索模糊匹配" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="搜索框默认支持拼音首字母与跨字模糊匹配，关闭后使用常规精确包含" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="{Binding [Str_203], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_204], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding EnableFuzzySearch}" VerticalAlignment="Center"/>
                                 </Grid>
@@ -230,8 +232,8 @@
                                 <!-- 自动翻译 Mod 信息 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="自动翻译 Mod 信息" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="自动将 Mod 详情说明以及 Mod 配置文件（MelonPreferences）中的英文翻译为中文" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="{Binding [Str_205], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_206], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding AutoTranslateDescriptions}" VerticalAlignment="Center"/>
                                 </Grid>
@@ -241,8 +243,8 @@
                                 <!-- 下载不兼容 Mod 免提示 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="下载不兼容 Mod 免提示" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="下载版本不匹配或标记为不兼容的 Mod 时不再弹出确认警告" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="{Binding [Str_207], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_208], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding SuppressIncompatibleModWarning}" VerticalAlignment="Center"/>
                                 </Grid>
@@ -252,8 +254,8 @@
                                 <!-- 删除操作免确认 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="删除操作免确认" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="在本地管理中删除模组、谱面、配置文件等内容时直接移除，不再进行弹窗确认" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="{Binding [Str_209], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_210], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding SuppressDeleteConfirmation}" VerticalAlignment="Center"/>
                                 </Grid>
@@ -263,14 +265,14 @@
 
                     <!-- 多媒体与个性化设置 -->
                     <StackPanel Spacing="8">
-                        <TextBlock Text="多媒体与个性化" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.8" Margin="4,0,0,0"/>
+                        <TextBlock Text="{Binding [Str_211], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.8" Margin="4,0,0,0"/>
                         <Border Background="{DynamicResource CardBgBrush}" CornerRadius="10" Padding="20,16">
                             <StackPanel Spacing="16">
                                 <!-- 谱面试听音量 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="谱面试听音量" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="在谱面下载或本地管理页面点击试听时的播放音量大小" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="{Binding [Str_212], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_213], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                                         <Slider Width="130" Minimum="0" Maximum="1"
@@ -287,8 +289,8 @@
                                 <!-- 谱面名称跑马灯 -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
-                                        <TextBlock Text="谱面名称跑马灯" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                        <TextBlock Text="当列表中谱面名称长度超出显示宽度限制时自动跑马灯滚动" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                        <TextBlock Text="{Binding [Str_214], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_215], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding EnableChartNameMarquee}" VerticalAlignment="Center"/>
                                 </Grid>
@@ -301,8 +303,8 @@
                                         Theme="{StaticResource RobustPlainIconBtn}">
                                     <Grid ColumnDefinitions="*, Auto" Background="Transparent">
                                         <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" HorizontalAlignment="Left">
-                                            <TextBlock Text="调整界面样式" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                            <TextBlock Text="自定义窗口透明度、磨砂玻璃效果、背景图片、界面字体与文本配色" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                            <TextBlock Text="{Binding [Str_216], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                            <TextBlock Text="{Binding [Str_217], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                         </StackPanel>
                                         <PathIcon Grid.Column="1" Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" Foreground="{DynamicResource ThemeTextSubBrush}" Width="16" Height="16" VerticalAlignment="Center" Opacity="0.6"/>
                                     </Grid>
@@ -316,13 +318,37 @@
                                         Theme="{StaticResource RobustPlainIconBtn}">
                                     <Grid ColumnDefinitions="*, Auto" Background="Transparent">
                                         <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" HorizontalAlignment="Left">
-                                            <TextBlock Text="高级设置" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                            <TextBlock Text="配置自定义优选 IP 地址以加速网络连接" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                            <TextBlock Text="{Binding [Str_218], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                            <TextBlock Text="{Binding [Str_219], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
                                         </StackPanel>
                                         <PathIcon Grid.Column="1" Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" Foreground="{DynamicResource ThemeTextSubBrush}" Width="16" Height="16" VerticalAlignment="Center" Opacity="0.6"/>
                                     </Grid>
                                 </Button>
                             </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- 语言设置 / Language -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="{Binding [Str_356], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.8" Margin="4,0,0,0"/>
+                        <Border Background="{DynamicResource CardBgBrush}" CornerRadius="10" Padding="20,16">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                    <TextBlock Text="{Binding [Str_357], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                    <TextBlock Text="{Binding [Str_358], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding Languages}"
+                                          SelectedItem="{Binding SelectedLanguage}"
+                                          Foreground="{DynamicResource ThemeTextMainBrush}"
+                                          Width="150" HorizontalContentAlignment="Left"
+                                          VerticalAlignment="Center">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
                         </Border>
                     </StackPanel>
                 </StackPanel>
@@ -344,7 +370,7 @@
                     <Button Grid.Column="0"
                             Command="{Binding CloseColorPanelCommand}"
                             Theme="{StaticResource SmallRoundBtn}"
-                            ToolTip.Tip="返回设置">
+                            ToolTip.Tip="{Binding [Str_220], Source={x:Static i18n:I18nService.Instance}}">
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <!-- New SVG back arrow icon -->
                             <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
@@ -359,19 +385,19 @@
 
                         <Button Command="{Binding ToggleThemeCommand}"
                                 Theme="{StaticResource SmallRoundBtn}"
-                                ToolTip.Tip="切换深色/浅色主题">
+                                ToolTip.Tip="{Binding [Str_221], Source={x:Static i18n:I18nService.Instance}}">
                             <PathIcon Data="{Binding ThemeToggleIconData}"
                                       Foreground="{DynamicResource SvgIconBrush}" Width="18" Height="18" />
                         </Button>
 
                         <Button Command="{Binding SelectBackgroundImageCommand}"
                                 Theme="{StaticResource SmallRoundBtn}"
-                                ToolTip.Tip="鼠标左键：导入自定义背景图片&#x0a;鼠标右键：清除背景图片"
+                                ToolTip.Tip="{Binding [Str_222], Source={x:Static i18n:I18nService.Instance}}"
                                 PointerReleased="OnImportImagePointerReleased">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <PathIcon Data="M737.7 447.9c-51.9 0-95.9-44-95.9-95.9 0-52 44-96 95.9-96 52 0 96 44 96 96-0.1 51.9-44 95.9-96 95.9z m168-319.8c32 0 55.9 23.9 55.9 56v655.6c0 32-23.9 55.9-55.9 55.9H122c-32.1 0-56-24-56-55.9V184c0-32.1 23.9-56 56-56l783.7 0.1zM699.6 523.9l198 211.8V215.9c0-13.9-12-23.9-26.1-23.9H155.9c-14 0-24 10.1-26 23.9v519.8L381.8 432c8-8.1 20-16 34-16 13.9 0 25.9 4 34 14l108 118 8 7.8c6 4 13.9 8 22 8 8 0 16-4 23.9-10l36.1-32c7.9-6 15.9-10 25.9-10 10 0.1 20 4.1 25.9 12.1z"
                                       Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
-                                <TextBlock Text="导入图片" Foreground="{DynamicResource ThemeTextMainBrush}" FontSize="13"/>
+                                <TextBlock Text="{Binding [Str_223], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}" FontSize="13"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -380,7 +406,7 @@
                 <!-- ─── 分组：透明窗口效果 ─── -->
                 <Border Background="{DynamicResource CardBgBrush}" CornerRadius="10" Padding="16,12">
                     <StackPanel Spacing="12">
-                        <TextBlock Text="透明窗口效果"
+                        <TextBlock Text="{Binding [Str_224], Source={x:Static i18n:I18nService.Instance}}"
                                    FontSize="16" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ThemeTextMainBrush}"/>
                         <StackPanel Orientation="Horizontal" Spacing="10">
@@ -389,7 +415,7 @@
                             <Button Command="{Binding SetTransparencyModeCommand}"
                                     CommandParameter="None"
                                     Theme="{StaticResource TranspOptionBtn}">
-                                <TextBlock Text="⬛ 无效果"
+                                <TextBlock Text="{Binding [Str_225], Source={x:Static i18n:I18nService.Instance}}"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             </Button>
 
@@ -399,7 +425,7 @@
                             <Button Command="{Binding SetTransparencyModeCommand}"
                                     CommandParameter="Transparent"
                                     Theme="{StaticResource TranspOptionBtn}">
-                                <TextBlock Text="💨 全透明"
+                                <TextBlock Text="{Binding [Str_226], Source={x:Static i18n:I18nService.Instance}}"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             </Button>
 
@@ -407,7 +433,7 @@
                             <Button Command="{Binding SetTransparencyModeCommand}"
                                     CommandParameter="Mica"
                                     Theme="{StaticResource TranspOptionBtn}"
-                                    ToolTip.Tip="采样桌面壁纸颜色模糊，性能极佳，需要 Windows 11">
+                                    ToolTip.Tip="{Binding [Str_227], Source={x:Static i18n:I18nService.Instance}}">
                                 <TextBlock Text="🪨 Mica"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             </Button>
@@ -416,7 +442,7 @@
                             <Button Command="{Binding SetTransparencyModeCommand}"
                                     CommandParameter="AcrylicBlur"
                                     Theme="{StaticResource TranspOptionBtn}"
-                                    ToolTip.Tip="抓取窗口下方所有元素（含其他窗口）进行模糊">
+                                    ToolTip.Tip="{Binding [Str_228], Source={x:Static i18n:I18nService.Instance}}">
                                 <TextBlock Text="🫧 Acrylic"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             </Button>
@@ -435,7 +461,7 @@
                     <Grid ColumnDefinitions="*, 20, *">
                         <!-- 左半边：背景亮度 -->
                         <StackPanel Grid.Column="0" Spacing="10">
-                            <TextBlock Text="背景亮度"
+                            <TextBlock Text="{Binding [Str_229], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             <Grid ColumnDefinitions="*,50">
@@ -461,7 +487,7 @@
 
                         <!-- 右半边：左侧按键字体横向间隔 -->
                         <StackPanel Grid.Column="2" Spacing="10">
-                            <TextBlock Text="左侧按键字体横向间隔"
+                            <TextBlock Text="{Binding [Str_230], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             <Grid ColumnDefinitions="*,50">
@@ -484,7 +510,7 @@
                     <Grid ColumnDefinitions="*, 20, *">
                         <!-- 左半边：背景透明度 (原窗口透明度) -->
                         <StackPanel Grid.Column="0" Spacing="10">
-                            <TextBlock Text="背景不透明度"
+                            <TextBlock Text="{Binding [Str_231], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             <Grid ColumnDefinitions="*,50">
@@ -510,7 +536,7 @@
 
                         <!-- 右半边：背景模糊程度 -->
                         <StackPanel Grid.Column="2" Spacing="10">
-                            <TextBlock Text="背景模糊程度"
+                            <TextBlock Text="{Binding [Str_232], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             <Grid ColumnDefinitions="*,50">
@@ -534,7 +560,7 @@
                     <Grid ColumnDefinitions="*, 20, *">
                         <!-- 左半边：字体选择与预览 -->
                         <StackPanel Grid.Column="0" Spacing="10" VerticalAlignment="Center">
-                            <TextBlock Text="界面字体"
+                            <TextBlock Text="{Binding [Str_233], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"
                                        VerticalAlignment="Center"/>
@@ -557,7 +583,7 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                                 <TextBlock Grid.Column="1" VerticalAlignment="Center"
-                                           Text="Preview预览123" TextAlignment="Left"
+                                           Text="{Binding [Str_234], Source={x:Static i18n:I18nService.Instance}}" TextAlignment="Left"
                                            Foreground="{DynamicResource ThemeTextSubBrush}"
                                            FontSize="14" TextTrimming="CharacterEllipsis">
                                     <TextBlock.FontFamily>
@@ -567,7 +593,7 @@
                                 <Button Grid.Column="2"
                                         Command="{Binding ImportFontCommand}"
                                         Theme="{StaticResource RobustPlainIconBtn}"
-                                        ToolTip.Tip="支持导入zip、ttf、otf、tte等字体文件格式"
+                                        ToolTip.Tip="{Binding [Str_235], Source={x:Static i18n:I18nService.Instance}}"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center">
                                     <PathIcon Data="M563.2 42.666667v640c0 23.466667-19.2 42.666667-42.666667 42.666666s-42.666667-19.2-42.666666-42.666666V42.666667c0-23.466667 19.2-42.666667 42.666666-42.666667s42.666667 19.2 42.666667 42.666667 M806.1952 457.275733L550.5792 712.900267a42.7776 42.7776 0 0 1-60.330667 0c-16.597333-16.605867-16.597333-43.776 0-60.330667l255.616-255.624533a42.7776 42.7776 0 0 1 60.330667 0 42.7776 42.7776 0 0 1 0 60.330666 M490.350933 712.8832L234.734933 457.275733a42.7776 42.7776 0 0 1 0-60.330666c16.597333-16.605867 43.776-16.605867 60.330667 0l255.616 255.616a42.7776 42.7776 0 0 1 0 60.330666 42.7776 42.7776 0 0 1-60.330667 0 M904.533333 1024H136.533333c-70.570667 0-128-57.429333-128-128V640c0-23.594667 19.072-42.666667 42.666667-42.666667s42.666667 19.072 42.666667 42.666667v256c0 23.552 19.114667 42.666667 42.666666 42.666667h768c23.552 0 42.666667-19.114667 42.666667-42.666667V640c0-23.594667 19.072-42.666667 42.666667-42.666667s42.666667 19.072 42.666666 42.666667v256c0 70.570667-57.429333 128-128 128" 
@@ -581,7 +607,7 @@
 
                         <!-- 右半边：字体大小调整 -->
                         <StackPanel Grid.Column="2" Spacing="10" VerticalAlignment="Center" Margin="0,0,0,0">
-                            <TextBlock Text="字体大小"
+                            <TextBlock Text="{Binding [Str_236], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
@@ -600,7 +626,7 @@
                 <Border Background="{DynamicResource CardBgBrush}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
                     <StackPanel Orientation="Vertical" Spacing="10">
                         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                            <TextBlock Text="文本颜色"
+                            <TextBlock Text="{Binding [Str_237], Source={x:Static i18n:I18nService.Instance}}"
                                        FontWeight="SemiBold" 
                                        Foreground="{DynamicResource ThemeTextMainBrush}"
                                        VerticalAlignment="Center"/>
@@ -612,14 +638,14 @@
                                         <Setter Property="Background" Value="Transparent"/>
                                     </Style>
                                 </Button.Styles>
-                                <TextBlock Text="不知道什么是十六进制颜色？" 
+                                <TextBlock Text="{Binding [Str_238], Source={x:Static i18n:I18nService.Instance}}" 
                                            FontSize="11" Opacity="0.6"
                                            TextDecorations="Underline"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             </Button>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="10" MinHeight="30">
-                            <TextBlock Text="左侧栏按键颜色"
+                            <TextBlock Text="{Binding [Str_239], Source={x:Static i18n:I18nService.Instance}}"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"
                                        VerticalAlignment="Center"
                                        FontSize="13"/>
@@ -633,7 +659,7 @@
 
                             <Control Width="1" Margin="10,5"/>
 
-                            <TextBlock Text="右侧面板文本颜色"
+                            <TextBlock Text="{Binding [Str_240], Source={x:Static i18n:I18nService.Instance}}"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"
                                        VerticalAlignment="Center"
                                        FontSize="13"/>
@@ -647,7 +673,7 @@
                                      
                             <Control Width="1" Margin="10,5"/>
 
-                            <TextBlock Text="主题颜色"
+                            <TextBlock Text="{Binding [Str_241], Source={x:Static i18n:I18nService.Instance}}"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"
                                        VerticalAlignment="Center"
                                        FontSize="13"/>
@@ -666,7 +692,7 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Padding="5"
-                                    ToolTip.Tip="一键重置所有自定义颜色">
+                                    ToolTip.Tip="{Binding [Str_242], Source={x:Static i18n:I18nService.Instance}}">
                                 <Button.Styles>
                                     <Style Selector="Button:pointerover /template/ ContentPresenter">
                                         <Setter Property="Background" Value="Transparent" />
@@ -683,7 +709,7 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Padding="5"
-                                    ToolTip.Tip="撤回一键清除">
+                                    ToolTip.Tip="{Binding [Str_243], Source={x:Static i18n:I18nService.Instance}}">
                                 <Button.Styles>
                                     <Style Selector="Button:pointerover /template/ ContentPresenter">
                                         <Setter Property="Background" Value="Transparent" />
@@ -713,14 +739,14 @@
                         <Button Grid.Column="0" HorizontalAlignment="Left"
                                 Command="{Binding CloseAdvancedPanelCommand}"
                                 Theme="{StaticResource SmallRoundBtn}"
-                                ToolTip.Tip="返回设置">
+                                ToolTip.Tip="{Binding [Str_220], Source={x:Static i18n:I18nService.Instance}}">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
                                       Fill="{DynamicResource SvgIconBrush}" Stretch="Uniform" Width="22" Height="22" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
-                        <TextBlock Grid.Column="2" Text="高级设置" FontSize="28" FontWeight="Bold" VerticalAlignment="Center">
+                        <TextBlock Grid.Column="2" Text="{Binding [Str_218], Source={x:Static i18n:I18nService.Instance}}" FontSize="28" FontWeight="Bold" VerticalAlignment="Center">
                             <TextBlock.Foreground>
                                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                                     <GradientStop Color="#d4237a" Offset="0"/>
@@ -736,7 +762,7 @@
                             <Grid ColumnDefinitions="*, Auto">
                                 <StackPanel Grid.Column="0" Spacing="4">
                                     <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                                        <TextBlock Text="自定义优选 IP"
+                                        <TextBlock Text="{Binding [Str_244], Source={x:Static i18n:I18nService.Instance}}"
                                                    FontSize="16" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource ThemeTextMainBrush}"/>
                                         <!-- 显示当前正在使用的 IP -->
@@ -745,7 +771,7 @@
                                                    Foreground="{DynamicResource ThemeTextSubBrush}"
                                                    IsVisible="{Binding UseOptimizedIps}"/>
                                     </StackPanel>
-                                    <TextBlock Text="打开后将强制使用您选择的IP进行加速（仅作用于高速DNS），此功能为实验性功能，不了解此功能的作用请不要开启。"
+                                    <TextBlock Text="{Binding [Str_245], Source={x:Static i18n:I18nService.Instance}}"
                                                FontSize="12" Opacity="0.6"
                                                Foreground="{DynamicResource ThemeTextMainBrush}"/>
                                 </StackPanel>
@@ -760,7 +786,7 @@
                                 <TextBox Width="320"
                                          HorizontalAlignment="Left"
                                          Text="{Binding CustomIpAddress}"
-                                         Watermark="例如: 104.16.160.1"
+                                         Watermark="{Binding [Str_246], Source={x:Static i18n:I18nService.Instance}}"
                                          IsEnabled="{Binding UseCustomIp}"
                                          Height="36"
                                          VerticalContentAlignment="Center"
@@ -779,7 +805,7 @@
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <PathIcon Data="M834.1 182.2c-15.1-15.1-39.6-15.1-54.7 0L383.6 578 244.7 439.1c-15.1-15.1-39.6-15.1-54.7 0-15.1 15.1-15.1 39.6 0 54.7l163.6 163.6c15.1 15.1 39.6 15.1 54.7 0l425.8-425.8c15.1-15.1 15.1-39.6-0-54.7z" 
                                                   Width="14" Height="14" Foreground="{DynamicResource SvgIconBrush}"/>
-                                        <TextBlock Text="确认生效" VerticalAlignment="Center" FontSize="14"/>
+                                        <TextBlock Text="{Binding [Str_247], Source={x:Static i18n:I18nService.Instance}}" VerticalAlignment="Center" FontSize="14"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
@@ -787,7 +813,7 @@
                     </Border>
                     
                     <!-- 以后在这里填充更多高级设置内容 -->
-                    <TextBlock Text="更多高级功能即将推出..." 
+                    <TextBlock Text="{Binding [Str_248], Source={x:Static i18n:I18nService.Instance}}" 
                                FontSize="14" Opacity="0.4"
                                Foreground="{DynamicResource ThemeTextMainBrush}"
                                Margin="0,10,0,0"
@@ -807,7 +833,7 @@
                         <Button Grid.Column="0" HorizontalAlignment="Left"
                                 Command="{Binding CloseMelonLoaderPanelCommand}"
                                 Theme="{StaticResource SmallRoundBtn}"
-                                ToolTip.Tip="返回设置">
+                                ToolTip.Tip="{Binding [Str_220], Source={x:Static i18n:I18nService.Instance}}">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <Path Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z"
                                       Fill="{DynamicResource SvgIconBrush}" Stretch="Uniform" Width="22" Height="22" VerticalAlignment="Center"/>
@@ -815,7 +841,7 @@
                         </Button>
 
                         <!-- 标题 -->
-                        <TextBlock Grid.Column="2" Text="MelonLoader 管理" FontSize="28" FontWeight="Bold" VerticalAlignment="Center">
+                        <TextBlock Grid.Column="2" Text="{Binding [Str_249], Source={x:Static i18n:I18nService.Instance}}" FontSize="28" FontWeight="Bold" VerticalAlignment="Center">
                             <TextBlock.Foreground>
                                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                                     <GradientStop Color="#d4237a" Offset="0"/>

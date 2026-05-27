@@ -234,7 +234,10 @@ public partial class LocalMod : ObservableObject
     public string RemoteVersionText => RemoteInfo?.Version ?? "";
 
     /// <summary>本地列表中"有更新可用"的状态显示文本</summary>
-    public string UpdateAvailableText => $"有更新可用：{RemoteVersionText}";
+    public string UpdateAvailableText => string.Format(MdModManager.Services.I18nService.Instance["Str_392"], RemoteVersionText);
+
+    public string DisplayVersion => string.Format(MdModManager.Services.I18nService.Instance["Str_394"], Version);
+    public string DisplayAuthor => string.Format(MdModManager.Services.I18nService.Instance["Str_395"], Author);
 
     /// <summary>Mod 对应的配置文件路径 (UserData 目录下)</summary>
     [ObservableProperty]

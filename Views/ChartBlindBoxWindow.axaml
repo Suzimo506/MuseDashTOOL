@@ -1,4 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:MdModManager.ViewModels"
         xmlns:models="using:MdModManager.Models"
@@ -7,7 +7,7 @@
         xmlns:animated="clr-namespace:AnimatedImage.Avalonia;assembly=AnimatedImage.Avalonia"
         x:Class="MdModManager.Views.ChartBlindBoxWindow"
         x:DataType="vm:ChartBlindBoxViewModel"
-        Title="谱面盲盒"
+        Title="{Binding [Str_017], Source={x:Static i18n:I18nService.Instance}}"
         Width="1200" Height="820"
         MinWidth="900" MinHeight="650"
         CanResize="True"
@@ -111,25 +111,25 @@
                         Classes.selected="{Binding IsFilterAll}"
                         Cursor="Hand" Padding="12,6" CornerRadius="8"
                         Foreground="White">
-                    <TextBlock Text="全部" FontSize="13"/>
+                    <TextBlock Text="{Binding [Str_042], Source={x:Static i18n:I18nService.Instance}}" FontSize="13"/>
                 </Button>
                 <Button Click="OnFilterClick" Tag="1" Classes="FilterBtn"
                         Classes.selected="{Binding IsFilterHigh}"
                         Cursor="Hand" Padding="12,6" CornerRadius="8"
                         Foreground="White">
-                    <TextBlock Text="🔥高难" FontSize="13"/>
+                    <TextBlock Text="{Binding [Str_043], Source={x:Static i18n:I18nService.Instance}}" FontSize="13"/>
                 </Button>
                 <Button Click="OnFilterClick" Tag="2" Classes="FilterBtn"
                         Classes.selected="{Binding IsFilterLow}"
                         Cursor="Hand" Padding="12,6" CornerRadius="8"
                         Foreground="White">
-                    <TextBlock Text="🌱低难" FontSize="13"/>
+                    <TextBlock Text="{Binding [Str_044], Source={x:Static i18n:I18nService.Instance}}" FontSize="13"/>
                 </Button>
             </StackPanel>
 
             <!-- 中间: 标题 (第 3 列) -->
             <StackPanel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
-                <TextBlock Text="谱面盲盒" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center">
+                <TextBlock Text="{Binding [Str_017], Source={x:Static i18n:I18nService.Instance}}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center">
                     <TextBlock.Foreground>
                         <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                             <GradientStop Color="#FF00FF" Offset="0"/>
@@ -169,14 +169,14 @@
                         <Setter Property="RenderTransform" Value="scale(0.96)"/>
                     </Style>
                 </Button.Styles>
-                <TextBlock Text="换一批" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding [Str_045], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
             </Button>
         </Grid>
 
         <!-- 加载中提示 -->
         <StackPanel Grid.Row="1" IsVisible="{Binding IsLoading}" 
                     HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
-            <TextBlock Text="正在加载谱面池..." FontSize="18" Foreground="#888888" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding [Str_046], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" Foreground="#888888" HorizontalAlignment="Center"/>
         </StackPanel>
 
         <!-- 谱面卡片区域 -->
@@ -198,7 +198,7 @@
                                         <Border Background="#333333" CornerRadius="10,10,0,0" IsVisible="{Binding !HasDisplayCoverSource}"><TextBlock Text="🎵" FontSize="56" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555"/></Border>
                                         <Image IsVisible="{Binding ShouldShowAnimatedCover}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" animated:ImageBehavior.AnimatedSource="{Binding AnimatedDisplayCoverSource}" />
                                         <asyncImageLoader:AdvancedImage Source="{Binding DisplayCoverSource}" IsVisible="{Binding ShouldShowStaticCover}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0"><TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                        <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0"><TextBlock Text="{Binding [Str_030], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                                         <!-- 来源标签 -->
                                         <Border Background="#cc000000" CornerRadius="4" Padding="6,2" Margin="6,6,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                                             <TextBlock Text="{Binding SourceCategoryName}" FontSize="9" Foreground="#aaaaaa" MaxWidth="120" TextTrimming="CharacterEllipsis"/>
@@ -239,8 +239,8 @@
 
                                     <!-- 试听和下载 -->
                                     <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
-                                        <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[Window].((vm:ChartBlindBoxViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="试听 / 停止"><Panel><PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/><PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Panel></Button>
-                                        <Button Grid.Column="1" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[Window].((vm:ChartBlindBoxViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="下载到 Custom_Albums"><PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Button>
+                                        <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[Window].((vm:ChartBlindBoxViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding [Str_031], Source={x:Static i18n:I18nService.Instance}}"><Panel><PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/><PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Panel></Button>
+                                        <Button Grid.Column="1" Theme="{StaticResource RobustIconBtn}" HorizontalAlignment="Center" Command="{Binding $parent[Window].((vm:ChartBlindBoxViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding [Str_033], Source={x:Static i18n:I18nService.Instance}}"><PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/></Button>
                                     </Grid>
                                 </StackPanel>
                             </Grid>
@@ -251,7 +251,7 @@
         </ScrollViewer>
 
         <!-- 底部免责声明 -->
-        <TextBlock Grid.Row="2" Text="该功能为实验性功能，盲盒结果为完全随机抽取，仅供娱乐，无任何参考价值" 
+        <TextBlock Grid.Row="2" Text="{Binding [Str_047], Source={x:Static i18n:I18nService.Instance}}" 
                    FontSize="10" Foreground="HotPink" 
                    HorizontalAlignment="Center" Margin="0,5,0,10"/>
     </Grid>

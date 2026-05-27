@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MdModManager.ViewModels"
              x:Class="MdModManager.Views.WelcomeView"
@@ -101,7 +101,7 @@
                         </LinearGradientBrush>
                     </Border.Background>
                     <StackPanel Spacing="16">
-                        <TextBlock Text="运行状态" FontSize="16" FontWeight="Bold"
+                        <TextBlock Text="{Binding [Str_319], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" FontWeight="Bold"
                                    Foreground="{DynamicResource ThemeTextMainBrush}" Opacity="0.9"/>
 
                         <!-- 游戏路径 -->
@@ -109,7 +109,7 @@
                             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                 <PathIcon Data="M928 352v-48c0-35.3-28.7-64-64-64H485.2c-21 0-40.7-10.3-52.6-27.6l-61.5-88.9c-12-17.3-31.6-27.6-52.6-27.6H64c-35.3 0-64 28.7-64 64v656c0 70.7 57.3 128 128 128h638c57.8 0 108.5-38.8 123.6-94.6L928 707.2l74.2-274.5c11-40.7-19.6-80.7-61.8-80.7H928z"
                                           Width="14" Height="14" Foreground="{DynamicResource SvgIconBrush}"/>
-                                <TextBlock Text="游戏路径" FontSize="13" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                <TextBlock Text="{Binding [Str_320], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" Foreground="{DynamicResource ThemeTextSubBrush}"/>
                             </StackPanel>
                             <TextBlock Grid.Column="1"
                                        Text="{Binding GamePath}"
@@ -148,7 +148,7 @@
                                     <TextBlock Text="{Binding TotalMods}"
                                                FontSize="18" FontWeight="Bold"
                                                Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                    <TextBlock Text="个"
+                                    <TextBlock Text="{Binding [Str_321], Source={x:Static i18n:I18nService.Instance}}"
                                                FontSize="12"
                                                Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                                VerticalAlignment="Bottom" Margin="0,0,0,2"/>
@@ -157,9 +157,9 @@
                                            Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                            HorizontalAlignment="Center">
                                     <Run Text="{Binding EnabledMods}"/>
-                                    <Run Text="启用 / "/>
+                                    <Run Text="{Binding [Str_322], Source={x:Static i18n:I18nService.Instance}}"/>
                                     <Run Text="{Binding DisabledMods}"/>
-                                    <Run Text="禁用"/>
+                                    <Run Text="{Binding [Str_323], Source={x:Static i18n:I18nService.Instance}}"/>
                                 </TextBlock>
                             </StackPanel>
                             <!-- 谱面 -->
@@ -171,12 +171,12 @@
                                     <TextBlock Text="{Binding TotalCharts}"
                                                FontSize="18" FontWeight="Bold"
                                                Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                    <TextBlock Text="首"
+                                    <TextBlock Text="{Binding [Str_324], Source={x:Static i18n:I18nService.Instance}}"
                                                FontSize="12"
                                                Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                                VerticalAlignment="Bottom" Margin="0,0,0,2"/>
                                 </StackPanel>
-                                <TextBlock Text="自制谱面"
+                                <TextBlock Text="{Binding [Str_325], Source={x:Static i18n:I18nService.Instance}}"
                                            FontSize="11"
                                            Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                            HorizontalAlignment="Center"/>
@@ -228,7 +228,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <PathIcon Data="M896 512L128 1024V0z"
                                   Width="18" Height="18" Foreground="White"/>
-                        <TextBlock Text="启动 / 重启游戏" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="{Binding [Str_326], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" FontWeight="Bold" Foreground="White"/>
                     </StackPanel>
                 </Button>
 
@@ -258,7 +258,7 @@
                                 Padding="0"
                                 Cursor="Hand"
                                 Margin="26,0,0,0">
-                            <TextBlock Text="查看详情 ›" FontSize="12"
+                            <TextBlock Text="{Binding [Str_327], Source={x:Static i18n:I18nService.Instance}}" FontSize="12"
                                        Foreground="{DynamicResource ThemeAccentBrush}"/>
                         </Button>
                     </StackPanel>
@@ -285,7 +285,7 @@
                         <Image Source="/Assets/MuseDashTOOL.ico" Width="56" Height="56"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="喵斯兔" FontSize="20" FontWeight="Bold"
+                    <TextBlock Text="{Binding [Str_397], Source={x:Static i18n:I18nService.Instance}}" FontSize="20" FontWeight="Bold"
                                LetterSpacing="4" HorizontalAlignment="Center">
                         <TextBlock.Foreground>
                             <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
@@ -297,7 +297,7 @@
                 </StackPanel>
 
                 <!-- 快捷入口标题 -->
-                <TextBlock Text="快捷入口" FontSize="15" FontWeight="SemiBold"
+                <TextBlock Text="{Binding [Str_328], Source={x:Static i18n:I18nService.Instance}}" FontSize="15" FontWeight="SemiBold"
                            Foreground="{DynamicResource ThemeTextSubBrush}"
                            Margin="4,0,0,0"/>
 
@@ -313,9 +313,9 @@
                             <PathIcon Data="M406.186667 120.874667a213.418667 213.418667 0 0 1 211.669333 0l3.370667 1.92a42.666667 42.666667 0 0 1-42.368 74.112l-3.370667-1.92a128.042667 128.042667 0 0 0-126.976 0L267.050667 298.666667a128 128 0 0 0-32.853334 26.794666l0.298667 0.170667L512 484.181333l277.504-158.549333c0.085333 0 0.170667-0.085333 0.256-0.170667A128 128 0 0 0 756.992 298.666667l-2.048-1.152a42.666667 42.666667 0 1 1 42.325333-74.069334l2.048 1.152a213.376 213.376 0 0 1 107.52 185.216v204.373334a213.333333 213.333333 0 0 1-107.52 185.173333l-181.461333 103.722667a213.376 213.376 0 0 1-211.669333 0l-3.413334-1.877334a42.666667 42.666667 0 0 1 42.410667-74.112l3.328 1.92a128 128 0 0 0 21.333333 9.728A42.88 42.88 0 0 1 469.333333 832v-273.92L202.666667 405.76c-0.042667 1.322667-0.128 2.688-0.128 4.053333v204.373334A128 128 0 0 0 267.093333 725.333333l2.048 1.152a42.666667 42.666667 0 0 1-42.368 74.069334l-2.005333-1.152a213.333333 213.333333 0 0 1-107.52-185.216v-204.373334a213.333333 213.333333 0 0 1 107.52-185.173333L406.186667 120.874667zM554.666667 558.08v273.92a42.368 42.368 0 0 1-0.597334 6.741333c7.338667-2.56 14.506667-5.802667 21.418667-9.728L756.992 725.333333a128 128 0 0 0 64.512-111.146666v-204.373334c0-1.365333-0.128-2.773333-0.170667-4.138666L554.666667 558.08z"
                                       Width="22" Height="22"
                                       Foreground="{DynamicResource SvgIconBrush}"/>
-                            <TextBlock Text="Mod 管理" FontSize="14" FontWeight="Bold"
+                            <TextBlock Text="{Binding [Str_329], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <TextBlock Text="安装、启用或禁用模组"
+                            <TextBlock Text="{Binding [Str_330], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="11"
                                        Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                        TextWrapping="Wrap"/>
@@ -331,9 +331,9 @@
                             <PathIcon Data="M870.4 307.568V262.4a57.664 57.664 0 0 0-51.2-57.232V160a57.664 57.664 0 0 0-57.6-57.6H262.4a57.664 57.664 0 0 0-57.6 57.6v45.168A57.664 57.664 0 0 0 153.6 262.4v45.168A57.664 57.664 0 0 0 102.4 364.8v550.4a57.664 57.664 0 0 0 57.6 57.6h704a57.664 57.664 0 0 0 57.6-57.6V364.8a57.664 57.664 0 0 0-51.2-57.232zM262.4 153.6h499.2a6.4 6.4 0 0 1 6.4 6.4v44.8H256v-44.8a6.4 6.4 0 0 1 6.4-6.4z m-51.2 102.4h601.6a6.4 6.4 0 0 1 6.4 6.4v44.8H204.8v-44.8a6.4 6.4 0 0 1 6.4-6.4z m659.2 659.2a6.4 6.4 0 0 1-6.4 6.4H160a6.4 6.4 0 0 1-6.4-6.4V364.8a6.4 6.4 0 0 1 6.4-6.4h704a6.4 6.4 0 0 1 6.4 6.4zM620.304 536.336a83.136 83.136 0 0 0-29.456-24.256 92.456 92.456 0 0 1-12-16.128C566.184 474.4 563.352 450.888 563.2 434.96a25.6 25.6 0 0 0-25.6-25.36h-0.12A25.6 25.6 0 0 0 512 435.2v240.368c-14.976-6.4-32.424-9.968-51.2-9.968-57.424 0-102.4 33.736-102.4 76.8s44.976 76.8 102.4 76.8 102.4-33.736 102.4-76.8V555.672a24.624 24.624 0 0 0 3.464 1.664 30.768 30.768 0 0 1 13.032 10.192c6.648 8.656 8.664 18.864 9.272 24.184a25.6 25.6 0 0 0 50.864-5.824c-1.48-12.928-6.064-32.024-19.528-49.552zM460.8 768c-31.256 0-51.2-15.2-51.2-25.6s19.944-25.6 51.2-25.6 51.2 15.2 51.2 25.6-19.944 25.6-51.2 25.6z"
                                       Width="22" Height="22"
                                       Foreground="{DynamicResource SvgIconBrush}"/>
-                            <TextBlock Text="谱面管理" FontSize="14" FontWeight="Bold"
+                            <TextBlock Text="{Binding [Str_064], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <TextBlock Text="管理本地自制谱面"
+                            <TextBlock Text="{Binding [Str_331], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="11"
                                        Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                        TextWrapping="Wrap"/>
@@ -349,9 +349,9 @@
                             <PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z"
                                       Width="22" Height="22"
                                       Foreground="{DynamicResource SvgIconBrush}"/>
-                            <TextBlock Text="谱面下载" FontSize="14" FontWeight="Bold"
+                            <TextBlock Text="{Binding [Str_149], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <TextBlock Text="从线上平台下载谱面"
+                            <TextBlock Text="{Binding [Str_332], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="11"
                                        Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                        TextWrapping="Wrap"/>
@@ -367,9 +367,9 @@
                             <PathIcon Data="M512 85.333333C276.266667 85.333333 85.333333 276.266667 85.333333 512s190.933333 426.666667 426.666667 426.666667 426.666667-190.933333 426.666667-426.666667S747.733333 85.333333 512 85.333333z m42.666667 640h-85.333334v-256h85.333334v256z m0-341.333333h-85.333334v-85.333333h85.333334v85.333333z"
                                       Width="22" Height="22"
                                       Foreground="{DynamicResource SvgIconBrush}"/>
-                            <TextBlock Text="使用说明" FontSize="14" FontWeight="Bold"
+                            <TextBlock Text="{Binding [Str_151], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <TextBlock Text="新手教程与常见问题"
+                            <TextBlock Text="{Binding [Str_333], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="11"
                                        Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                        TextWrapping="Wrap"/>
@@ -398,9 +398,9 @@
                                           Width="14" Height="14" Foreground="#FF69B4"/>
                             </Border>
                             <StackPanel Spacing="1" VerticalAlignment="Center">
-                                <TextBlock Text="GitHub 仓库" FontSize="12" FontWeight="SemiBold"
+                                <TextBlock Text="{Binding [Str_334], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                <TextBlock Text="开源代码与反馈" FontSize="10"
+                                <TextBlock Text="{Binding [Str_335], Source={x:Static i18n:I18nService.Instance}}" FontSize="10"
                                            Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
@@ -425,7 +425,7 @@
                             <StackPanel Spacing="1" VerticalAlignment="Center">
                                 <TextBlock Text="Euterpe" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                <TextBlock Text="自制谱面社区平台" FontSize="10"
+                                <TextBlock Text="{Binding [Str_336], Source={x:Static i18n:I18nService.Instance}}" FontSize="10"
                                            Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
@@ -450,7 +450,7 @@
                             <StackPanel Spacing="1" VerticalAlignment="Center">
                                 <TextBlock Text="MDMC" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                <TextBlock Text="自制谱面社区平台" FontSize="10"
+                                <TextBlock Text="{Binding [Str_336], Source={x:Static i18n:I18nService.Instance}}" FontSize="10"
                                            Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
@@ -475,7 +475,7 @@
                             <StackPanel Spacing="1" VerticalAlignment="Center">
                                 <TextBlock Text="MuseDashTOOL" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                <TextBlock Text="上千首自制谱仓库" FontSize="10"
+                                <TextBlock Text="{Binding [Str_337], Source={x:Static i18n:I18nService.Instance}}" FontSize="10"
                                            Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
@@ -500,9 +500,9 @@
                                           Width="14" Height="14" Foreground="#FF5566"/>
                             </Border>
                             <StackPanel Spacing="1" VerticalAlignment="Center">
-                                <TextBlock Text="打赏" FontSize="12" FontWeight="SemiBold"
+                                <TextBlock Text="{Binding [Str_338], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                <TextBlock Text="支持喵斯兔" FontSize="10"
+                                <TextBlock Text="{Binding [Str_252], Source={x:Static i18n:I18nService.Instance}}" FontSize="10"
                                            Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
@@ -516,7 +516,9 @@
                     <!-- 右侧版本号 -->
                     <TextBlock Grid.Column="11" Text="v1.4.5" FontSize="11"
                                Foreground="{DynamicResource ThemeTextTertiaryBrush}"
-                               VerticalAlignment="Center" Opacity="0.5"/>
+                               VerticalAlignment="Center" Opacity="0.5"
+                               x:CompileBindings="False"
+                               IsVisible="{Binding !$parent[Window].DataContext.IsSidebarExpanded}"/>
                 </Grid>
             </Border>
         </Grid>

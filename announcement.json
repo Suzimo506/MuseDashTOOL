@@ -3,40 +3,60 @@
         "id": "1.4.5",
         "is_enabled": true,
         "title": "v1.4.5 更新内容",
+        "title_en": "v1.4.5 Update",
         "content": "1、谱面管理界面支持对谱面进行分类管理了！进行了分类的自制谱在游戏内也会分类展示。如果需要使用这个功能，请先去设置界面点击一键安装自制谱下载支持谱面分类的CustomAlbums！下载过后Cinema也会自动替换为可以在游戏内用C键控制视频播放开关的功能版本。[Red]（旧版CustomAlbums请不要使用分类管理功能！否则会导致谱面读取失败）[/Red]\n2、谱面卡片UI修改，Euterpe谱面卡片新增标签显示\n3、所有搜索框默认开启新增的模糊匹配功能，可以在设置里把它关掉开启精确匹配\n4、Euterpe谱面下载新增按标签分类，方便快速查找\n5、修复了一些已知问题",
+        "content_en": "1. Chart Manager now supports category grouping! Grouped custom charts will also be displayed by categories in-game. To use this feature, please go to Settings and click 'One-Click Install Custom Charts' to download the supported CustomAlbums! Cinema will also be replaced with a version that supports toggling video playback with the 'C' key in-game. [Red](Do NOT use grouping on old CustomAlbums versions! It will cause chart loading failures!)[/Red]\n2. Chart card UI updated. Euterpe chart cards now display tags.\n3. All search boxes now enable fuzzy matching by default. You can disable it in settings for exact matching.\n4. Euterpe chart downloads can now be categorized by tags for quick searching.\n5. Fixed some known issues.",
         "action_button_text": "进入新版喵斯兔",
-        "cancel_button_text": "不再显示该弹窗"
+        "action_button_text_en": "Enter New MuseDashTOOL",
+        "cancel_button_text": "不再显示该弹窗",
+        "cancel_button_text_en": "Don't Show Again"
     },
     {
         "id": "1.4.5.1",
         "is_enabled": true,
         "title": "自制谱MOD更新",
+        "title_en": "CustomAlbums Update",
         "content": "1、游戏内选中自定义标签，在游戏内支持按住ctrl+A/D(左方向键/右方向键)快速跳转至上一个/下一个分类，配合喵斯兔谱面管理的分类功能，让谱面管理与游玩变得轻轻松松！\n2、新版MOD修复了游戏内的闪退问题（应该）不会再出现闪退\n3、感兴趣的朋友请前往设置点击一键安装自制谱按键安装新版CustomAlbums，未安装前请不要使用分类功能！[Red]此CustomAlbums为作者自己修改的版本，如果遇到问题，请不要向官方的CustomAlbums提出！[/Red]",
+        "content_en": "1. When selecting a custom tag in-game, you can now hold Ctrl+A/D (or Left/Right arrow keys) to quickly jump to the previous/next category. Combined with the grouping feature in MuseDashTOOL, managing and playing charts is a breeze!\n2. The new MOD fixes the in-game crash issue. It (probably) won't crash anymore.\n3. If interested, please go to Settings and click 'One-Click Install Custom Charts' to install the new CustomAlbums. Do not use the grouping feature before installing! [Red]This CustomAlbums is modified by the author. If you encounter issues, do NOT report them to the official CustomAlbums![/Red]",
         "action_button_text": "进入新版喵斯兔",
-        "cancel_button_text": "不再显示该弹窗"
+        "action_button_text_en": "Enter New MuseDashTOOL",
+        "cancel_button_text": "不再显示该弹窗",
+        "cancel_button_text_en": "Don't Show Again"
     },
     {
         "id": "1.4.5.2",
-        "is_enabled": false,
+        "is_enabled": true,
         "title": "补丁更新",
-        "content": "1、更新了某些地方的错误文本显示\n2、修复了某些地方的UI错位",
+        "title_en": "Patch Update",
+        "content": "1、更新了某些地方的错误文本显示\n2、修复了某些地方的UI错位\n3、修复了Mod更新提示的错误，不再提醒之后依然会提醒\n4、增加英文模式，可进入设置切换",
+        "content_en": "1. Fixed incorrect text display in some areas.\n2. Fixed UI misalignment in some areas.\n3. Fixed a bug where dismissed mod updates would still show notifications.\n4. Added English mode, toggle in settings.",
         "action_button_text": "进入新版喵斯兔",
-        "cancel_button_text": "不再显示该弹窗"
+        "action_button_text_en": "Enter New MuseDashTOOL",
+        "cancel_button_text": "不再显示该弹窗",
+        "cancel_button_text_en": "Don't Show Again"
     },
     {
         "id": "Emergency_20260526",
         "is_enabled": true,
         "title": "紧急修复",
+        "title_en": "Emergency Fix",
         "content": "请在北京时间5月26日23：30以前使用了一键安装自制谱的用户，重新点击一键安装自制谱按键，否则会导致：\n[Red]在自定义分组内打出成绩的谱面移出分组后成绩会消失[/Red]\n如无影响或在这个时间之后一键安装的用户可忽视这条公告。",
+        "content_en": "Users who used 'One-Click Install Custom Charts' before 23:30 (UTC+8) on May 26, please click the button again to reinstall. Otherwise, it will cause:\n[Red]Scores achieved on charts within a custom group to disappear after moving the chart out of the group.[/Red]\nUsers unaffected or who installed after this time can ignore this announcement.",
         "action_button_text": "OK",
-        "cancel_button_text": "不再提醒"
+        "action_button_text_en": "OK",
+        "cancel_button_text": "不再提醒",
+        "cancel_button_text_en": "Don't Remind Again"
     },
     {
         "id": "New_Collection_01",
         "is_enabled": false,
         "title": "新大型曲包更新",
+        "title_en": "New Large Song Pack Update",
         "content": "浅浅小饼干组织的，专为喵斯兔提供的长期多系列曲包『TEdgeool』更新！目前内含四个曲包，不定时更新，欢迎各位前往游玩！（更新至最新版本有惊喜！）",
+        "content_en": "Organized by 'QianQianXiaoBingGan', the long-term multi-series song pack 'TEdgeool' exclusively for MuseDashTOOL has been updated! It currently contains four song packs and is updated periodically. Welcome to play! (There's a surprise if you update to the latest version!)",
         "action_button_text": "太好啦！",
-        "cancel_button_text": "不再提醒"
+        "action_button_text_en": "Awesome!",
+        "cancel_button_text": "不再提醒",
+        "cancel_button_text_en": "Don't Remind"
     }
 ]

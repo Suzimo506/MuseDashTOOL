@@ -22,11 +22,11 @@ public partial class WelcomeViewModel : ViewModelBase
 
     // 问候语
     [ObservableProperty]
-    private string _greetingText = "欢迎回来";
+    private string _greetingText = Services.I18nService.Instance["Str_383"];
 
     // 副标题
     [ObservableProperty]
-    private string _subtitleText = "您的 Muse Dash 专属助手";
+    private string _subtitleText = Services.I18nService.Instance["Str_382"];
 
     // 游戏路径
     [ObservableProperty]
@@ -104,12 +104,13 @@ public partial class WelcomeViewModel : ViewModelBase
         var hour = DateTime.Now.Hour;
         var timeGreeting = hour switch
         {
-            >= 5 and < 12 => "早上好",
-            >= 12 and < 14 => "中午好",
-            >= 14 and < 18 => "下午好",
-            _ => "晚上好"
+            >= 5 and < 12 => Services.I18nService.Instance["Str_384"],
+            >= 12 and < 14 => Services.I18nService.Instance["Str_385"],
+            >= 14 and < 18 => Services.I18nService.Instance["Str_386"],
+            _ => Services.I18nService.Instance["Str_387"]
         };
 
+        var separator = Services.I18nService.Instance.CurrentLanguage == "en-US" ? ", " : "，";
         // 尝试从注册表读取 Steam 用户名
         try
         {
@@ -120,7 +121,7 @@ public partial class WelcomeViewModel : ViewModelBase
             {
                 var bytes = System.Text.Encoding.GetEncoding(0).GetBytes(steamName);
                 steamName = System.Text.Encoding.UTF8.GetString(bytes);
-                GreetingText = $"{timeGreeting}，{steamName}";
+                GreetingText = $"{timeGreeting}{separator}{steamName}";
                 return;
             }
         }
@@ -129,7 +130,7 @@ public partial class WelcomeViewModel : ViewModelBase
             // 注册表读取失败则回退
         }
 
-        GreetingText = $"{timeGreeting}，欢迎回来";
+        GreetingText = $"{timeGreeting}{separator}{Services.I18nService.Instance["Str_383"]}";
     }
 
     // 异步加载新闻
@@ -171,7 +172,7 @@ public partial class WelcomeViewModel : ViewModelBase
             var mlService = Ioc.Default.GetService<IMelonLoaderService>();
             var mlVersion = mlService?.GetCurrentVersion();
             IsMelonLoaderInstalled = !string.IsNullOrEmpty(mlVersion);
-            MelonLoaderVersion = mlVersion ?? "未安装";
+            MelonLoaderVersion = mlVersion ?? Services.I18nService.Instance["Str_388"];
 
             // 统计 Mod 数量
             try

@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -123,7 +123,7 @@
                             Width="110"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Right">
-                    <TextBlock Text="上榜歌曲" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding [Str_001], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right"/>
                     <TextBlock Text="{Binding RecordsCount}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Right"/>
                 </StackPanel>
 
@@ -132,14 +132,14 @@
                             Width="90"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Right">
-                    <TextBlock Text="金S数" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding [Str_002], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right"/>
                     <TextBlock Text="{Binding PerfectsCount}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Right"/>
                 </StackPanel>
 
                 <Grid Grid.Column="3" RowDefinitions="Auto,Auto" ColumnDefinitions="92,Auto" Margin="26,0,18,0" VerticalAlignment="Center" RowSpacing="8" ColumnSpacing="14">
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="定级" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding [Str_003], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                     <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding RelativeLevel}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="平均准确率" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding [Str_004], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                     <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AverageAccuracy}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                 </Grid>
 
@@ -150,7 +150,7 @@
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Margin="0,0,-8,0"
-                        ToolTip.Tip="刷新账号数据">
+                        ToolTip.Tip="{Binding [Str_005], Source={x:Static i18n:I18nService.Instance}}">
                     <PathIcon Data="M874.666667 512a362.666667 362.666667 0 0 1-623.36 252.16l-72.533334 72.533333A465.066667 465.066667 0 0 0 977.066667 512h-102.4zM149.333333 512a362.666667 362.666667 0 0 1 623.36-252.16l-92.16 92.16H938.666667V93.866667l-93.44 93.44A465.066667 465.066667 0 0 0 46.933333 512h102.4z"
                               Width="22"
                               Height="22"
@@ -172,7 +172,7 @@
                 <Button Grid.Column="0"
                         Theme="{StaticResource ToolbarSmallBtn}"
                         Command="{Binding CycleSortModeCommand}"
-                        ToolTip.Tip="点击切换排序方式：默认 → 排名最高 → 准确率最高 → 最难">
+                        ToolTip.Tip="{Binding [Str_006], Source={x:Static i18n:I18nService.Instance}}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <PathIcon Data="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"
                                   Width="14"
@@ -192,7 +192,7 @@
                             Command="{Binding SearchPrevCommand}"
                             IsVisible="{Binding HasSearchResults}"
                             Padding="6,6"
-                            ToolTip.Tip="上一项">
+                            ToolTip.Tip="{Binding [Str_007], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
                                   Width="14"
                                   Height="14"
@@ -212,7 +212,7 @@
                             Command="{Binding SearchNextCommand}"
                             IsVisible="{Binding HasSearchResults}"
                             Padding="6,6"
-                            ToolTip.Tip="下一项">
+                            ToolTip.Tip="{Binding [Str_008], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"
                                   Width="14"
                                   Height="14"
@@ -225,7 +225,7 @@
                             <TextBox Grid.Column="0"
                                      x:Name="SearchBox"
                                      Text="{Binding SearchText, Mode=TwoWay}"
-                                     Watermark="搜索歌曲..."
+                                     Watermark="{Binding [Str_009], Source={x:Static i18n:I18nService.Instance}}"
                                      FontSize="12"
                                      MinWidth="140"
                                      Background="Transparent"
@@ -239,7 +239,7 @@
                                     Command="{Binding SearchConfirmCommand}"
                                     PointerPressed="OnSearchButtonPointerPressed"
                                     Padding="4,4"
-                                    ToolTip.Tip="搜索 (右键清空)">
+                                    ToolTip.Tip="{Binding [Str_010], Source={x:Static i18n:I18nService.Instance}}">
                                 <PathIcon Data="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
                                           Width="14"
                                           Height="14"

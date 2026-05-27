@@ -57,6 +57,8 @@ public class AnnouncementService : IAnnouncementService
                 // 本地没有则请求远程
                 System.Diagnostics.Debug.WriteLine("Fetching remote announcement...");
                 var fetchUrl = GitHubMirrorHelper.ApplyMirror(AnnouncementUrl, _configService.Config.DownloadSource);
+                // 添加时间戳参数绕过 GitHub raw 的缓存
+                fetchUrl += $"?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
                 jsonContent = await _httpClient.GetStringAsync(fetchUrl);
             }
 

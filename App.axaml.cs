@@ -34,6 +34,9 @@ public partial class App : Application
             if (configService != null)
             {
                 configService.Load();
+                
+                // 初始化多语言
+                I18nService.Instance.LoadLanguage(configService.Config.Language);
 
                 // 运行日志优先放在喵斯快跑游戏根目录，方便直接在游戏目录里查看。
                 // 如果配置里没有有效游戏路径，就尝试自动探测一次；写入失败时会自动回退到 LocalAppData。

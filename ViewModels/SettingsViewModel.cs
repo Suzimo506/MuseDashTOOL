@@ -26,6 +26,24 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string[] _downloadSources = new[] { "高速 DNS", "Suzimo" };
 
+    public ObservableCollection<string> Languages { get; } = new ObservableCollection<string> { "简体中文", "English" };
+
+    public string SelectedLanguage
+    {
+        get => _configService.Config.Language == "en-US" ? "English" : "简体中文";
+        set
+        {
+            string newLang = value == "English" ? "en-US" : "zh-CN";
+            if (_configService.Config.Language != newLang)
+            {
+                _configService.Config.Language = newLang;
+                OnPropertyChanged();
+                I18nService.Instance.LoadLanguage(newLang);
+                _ = _configService.SaveAsync();
+            }
+        }
+    }
+
     // 控制主设置面板与颜色子面板、高级设置面板的切换
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsMainPanelVisible))]

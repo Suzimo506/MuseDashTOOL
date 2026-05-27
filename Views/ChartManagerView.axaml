@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -6,6 +6,7 @@
              xmlns:models="using:MdModManager.Models"
              xmlns:controls="using:MdModManager.Views.Controls"
              xmlns:helpers="using:MdModManager.Helpers"
+             xmlns:conv="using:MdModManager.Converters"
              xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
              xmlns:animated="clr-namespace:AnimatedImage.Avalonia;assembly=AnimatedImage.Avalonia"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
@@ -14,6 +15,7 @@
              DragDrop.AllowDrop="True">
 
     <UserControl.Resources>
+        <conv:CategoryNameConverter x:Key="CategoryNameConverter"/>
         <ControlTheme x:Key="PagingIconBtn" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
@@ -413,7 +415,7 @@
         <!-- 顶部标题 -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="18,0,18,16">
             <StackPanel Grid.Column="0" Spacing="4">
-                <TextBlock Text="谱面管理" FontSize="22" FontWeight="Bold">
+                <TextBlock Text="{Binding [Str_064], Source={x:Static i18n:I18nService.Instance}}" FontSize="22" FontWeight="Bold">
                     <TextBlock.Foreground>
                         <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                             <GradientStop Color="#FF00FF" Offset="0"/>
@@ -450,7 +452,7 @@
                                 </Setter>
                             </Style>
                             <Style Selector="TextBox.ExpandableSearch:focus, TextBox.ExpandableSearch.HasText">
-                                <Setter Property="Watermark" Value="搜索谱面名称或作者..." />
+                                <Setter Property="Watermark" Value="{Binding [Str_339], Source={x:Static i18n:I18nService.Instance}}" />
                             </Style>
                             <Style Selector="TextBox.ExpandableSearch:not(:focus):not(.HasText)">
                                 <Setter Property="Width" Value="36" />
@@ -469,7 +471,7 @@
                             <Border Background="Transparent" 
                                     PointerPressed="OnSearchIconPointerPressed" 
                                     Cursor="Hand" 
-                                    ToolTip.Tip="搜索" 
+                                    ToolTip.Tip="{Binding [Str_065], Source={x:Static i18n:I18nService.Instance}}" 
                                     VerticalAlignment="Center" 
                                     Padding="8">
                                 <PathIcon Data="M415.59889935 818.40673751c-103.69194019 0-207.38388041-39.48836529-286.31642412-118.42090898-157.86508737-157.87981634-157.86508737-414.78248979 0-572.66230613 157.85035841-157.85035841 414.76776082-157.90927428 572.64757719 0 157.86508737 157.87981634 157.86508737 414.78248979 0 572.66230613-78.93254368 78.93254368-182.63921287 118.42090898-286.33115307 118.42090898z m0-725.22496474c-82.09927197 0-164.21327292 31.25487175-226.70828746 93.74988629-125.00475803 125.00475803-125.00475803 328.44127481 0 453.44603281 125.01948701 124.9753001 328.41181686 125.03421596 453.43130386 0 125.00475803-125.00475803 125.00475803-328.44127481 0-453.44603281-62.5097435-62.49501453-144.60901547-93.74988627-226.7230164-93.74988629z M973.48804978 1013.69813456c-10.78160515 0-21.57793927-4.10938229-29.79670383-12.34287584L658.31757585 715.95203069c-16.46698708-16.46698708-16.46698708-43.14114955 0-59.60813666s43.14114955-16.46698708 59.60813665 0l285.37377009 285.38849908c16.46698708 16.46698708 16.46698708 43.14114955 0 59.60813663a42.07329932 42.07329932 0 0 1-29.81143281 12.35760482z"
@@ -480,21 +482,21 @@
                     <!-- 导入 -->
                     <Button Classes="ToolbarActionBtn"
                             Click="OnImportClick"
-                            ToolTip.Tip="导入谱面">
+                            ToolTip.Tip="{Binding [Str_066], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M563.2 42.666667v640c0 23.466667-19.2 42.666667-42.666667 42.666666s-42.666667-19.2-42.666666-42.666666V42.666667c0-23.466667 19.2-42.666667 42.666666-42.666667s42.666667 19.2 42.666667 42.666667 M806.1952 457.275733L550.5792 712.900267a42.7776 42.7776 0 0 1-60.330667 0c-16.597333-16.605867-16.597333-43.776 0-60.330667l255.616-255.624533a42.7776 42.7776 0 0 1 60.330667 0 42.7776 42.7776 0 0 1 0 60.330666 M490.350933 712.8832L234.734933 457.275733a42.7776 42.7776 0 0 1 0-60.330666c16.597333-16.605867 43.776-16.605867 60.330667 0l255.616 255.616a42.7776 42.7776 0 0 1 0 60.330666 42.7776 42.7776 0 0 1-60.330667 0 M904.533333 1024H136.533333c-70.570667 0-128-57.429333-128-128V640c0-23.594667 19.072-42.666667 42.666667-42.666667s42.666667 19.072 42.666667 42.666667v256c0 23.552 19.114667 42.666667 42.666666 42.666667h768c23.552 0 42.666667-19.114667 42.666667-42.666667V640c0-23.594667 19.072-42.666667 42.666667-42.666667s42.666667 19.072 42.666666 42.666667v256c0 70.570667-57.429333 128-128 128"/>
                     </Button>
                     
                     <!-- 文件夹 -->
                     <Button Classes="ToolbarActionBtn"
                             Command="{Binding OpenFolderCommand}"
-                            ToolTip.Tip="打开文件夹">
+                            ToolTip.Tip="{Binding [Str_067], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M928 352v-48c0-35.3-28.7-64-64-64H485.2c-21 0-40.7-10.3-52.6-27.6l-61.5-88.9c-12-17.3-31.6-27.6-52.6-27.6H64c-35.3 0-64 28.7-64 64v656c0 70.7 57.3 128 128 128h638c57.8 0 108.5-38.8 123.6-94.6L928 707.2l74.2-274.5c11-40.7-19.6-80.7-61.8-80.7H928zM80 160h230.1c5.3 0 10.2 2.6 13.2 6.9l50.6 73.1H80c-8.8 0-16-7.2-16-16v-48c0-8.8 7.2-16 16-16z m0 144h768c8.8 0 16 7.2 16 16v32H209c-28.9 0-54.2 19.4-61.8 47.3L79.7 649c-2.4 9-15.7 7.3-15.7-2.1V320c0-8.8 7.2-16 16-16z m784 394.7l-36.2 134c-7.5 27.9-32.9 47.3-61.8 47.3H125.4c-21.1 0-36.4-20-30.9-40.3l111.3-411.8c1.9-7 8.2-11.8 15.4-11.8h698.3c10.5 0 18.2 10 15.4 20.2l-7 25.7L864 698.7z"/>
                     </Button>
 
                     <!-- 刷新 -->
                     <Button Classes="ToolbarActionBtn"
                             Command="{Binding RefreshCommand}"
-                            ToolTip.Tip="刷新列表">
+                            ToolTip.Tip="{Binding [Str_068], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M369.777778 160.568889a42.666667 42.666667 0 0 1-42.666667 42.666667H128a42.666667 42.666667 0 1 1 0-85.333334h199.111111a42.666667 42.666667 0 0 1 42.666667 42.666667 M327.111111 402.346667a42.666667 42.666667 0 0 1-42.666667-42.666667v-199.111111a42.666667 42.666667 0 1 1 85.333334 0v199.111111a42.666667 42.666667 0 0 1-42.666667 42.666667 M512.014222 938.652444h-0.753778a424.533333 424.533333 0 0 1-294.272-124.913777c-80.583111-80.583111-124.956444-187.733333-124.956444-301.696 0-113.976889 44.373333-221.112889 124.970667-301.696l73.088-73.116445a42.680889 42.680889 0 0 1 60.359111 60.344889l-73.102222 73.102222a339.057778 339.057778 0 0 0-99.982223 241.351111A339.128889 339.128889 0 0 0 277.333333 753.422222a339.640889 339.640889 0 0 0 235.406223 99.911111 42.680889 42.680889 0 0 1-0.725334 85.333334 M654.222222 863.473778v-0.014222a42.666667 42.666667 0 0 1 42.666667-42.666667h199.111111a42.666667 42.666667 0 0 1 0 85.333333H696.888889a42.666667 42.666667 0 0 1-42.666667-42.666666 M696.888889 621.681778a42.666667 42.666667 0 0 1 42.666667 42.666666v199.111112a42.666667 42.666667 0 0 1-85.333334 0v-199.111112a42.666667 42.666667 0 0 1 42.666667-42.666666 M703.715556 899.285333a42.638222 42.638222 0 0 1-30.165334-72.832l73.130667-73.102222c133.077333-133.091556 133.077333-349.653333 0-482.730667A339.100444 339.100444 0 0 0 505.315556 170.666667a42.666667 42.666667 0 1 1 0-85.333334c113.976889 0 221.112889 44.387556 301.681777 124.970667 166.357333 166.343111 166.357333 437.048889 0 603.377778l-73.102222 73.116444a42.524444 42.524444 0 0 1-30.165333 12.515556"/>
                     </Button>
 
@@ -505,7 +507,7 @@
                     <Button Classes="ToolbarActionBtn"
                             Command="{Binding ToggleBatchModeCommand}"
                             IsVisible="{Binding !IsBatchMode}"
-                            ToolTip.Tip="批量操作">
+                            ToolTip.Tip="{Binding [Str_069], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M533.01342 0.015975h-336.323199a187.380068 187.380068 0 0 0-138.132742 58.135868A187.380068 187.380068 0 0 0 0.421612 195.804123v336.323199a48.046171 48.046171 0 1 0 95.251534 0V210.33809a123.238429 123.238429 0 0 1 30.389204-84.0808 123.238429 123.238429 0 0 1 84.681376-30.389203h322.269694a48.046171 48.046171 0 1 0 0-95.251535z M373.860478 538.73367l-2.402309 2.282194a46.124324 46.124324 0 0 0-1.201154 66.423831L518.959915 756.743172a46.124324 46.124324 0 0 0 65.222677 0l410.194187-410.794764a46.124324 46.124324 0 0 0 0-65.222677 46.124324 46.124324 0 0 0-65.102562 0L584.182592 621.373085a46.124324 46.124324 0 0 1-65.102562 0L437.882001 540.535402a46.24444 46.24444 0 0 0-64.021523-1.801732zM868.856157 928.868581H337.945965a72.069257 72.069257 0 0 1-72.069257-72.069257V320.483938a57.174944 57.174944 0 0 1 57.174944-57.174944h371.156673a48.046171 48.046171 0 0 0 48.046171-48.046171 48.046171 48.046171 0 0 0-48.046171-48.046172H266.35717a95.37165 95.37165 0 0 0-95.131419 95.131419v666.520511a95.37165 95.37165 0 0 0 95.131419 95.131419h665.559587a95.37165 95.37165 0 0 0 95.011303-95.131419V596.02873a48.046171 48.046171 0 0 0-47.445594-47.445594 48.046171 48.046171 0 0 0-48.046171 47.445594v269.779251a63.0606 63.0606 0 0 1-62.580138 63.0606z"
                                   Foreground="{DynamicResource SvgIconBrush}"/>
                     </Button>
@@ -514,7 +516,7 @@
                     <Button Classes="ToolbarActionBtn"
                             Command="{Binding ToggleBatchModeCommand}"
                             IsVisible="{Binding IsBatchMode}"
-                            ToolTip.Tip="退出批量操作">
+                            ToolTip.Tip="{Binding [Str_070], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M36.571429 512.073143v452.900571C36.571429 997.558857 65.316571 1024 100.937143 1024h683.885714c35.547429 0 64.402286-26.441143 64.402286-59.026286 0-32.621714-28.745143-59.062857-64.365714-59.062857H165.302857V118.125714h619.629714c35.474286 0 64.365714-26.441143 64.365715-59.062857 0-32.585143-28.745143-59.026286-64.365715-59.026286H100.937143C65.462857 0 36.571429 26.441143 36.571429 59.026286v453.046857z m930.706285-42.752a58.075429 58.075429 0 0 1 0 87.954286l-203.227428 177.115428a62.281143 62.281143 0 0 1-40.777143 15.177143c-33.645714 0-60.964571-26.550857-60.964572-59.172571 0-17.408 7.862857-33.097143 20.297143-43.849143l85.138286-74.24H397.933714c-33.645714 0-60.964571-26.404571-60.964571-59.026286 0-32.585143 27.282286-59.026286 60.964571-59.026286h369.554286l-85.138286-74.24a58.185143 58.185143 0 0 1-20.260571-43.958857c0-32.585143 27.392-59.026286 60.928-59.026286 15.725714 0 29.988571 5.668571 40.813714 15.177143l203.446857 177.115429z"
                                   Foreground="{DynamicResource SvgIconBrush}"/>
                     </Button>
@@ -523,7 +525,7 @@
                     <Button Classes="ToolbarActionBtn"
                             Command="{Binding ToggleSelectAllCommand}"
                             IsVisible="{Binding IsBatchMode}"
-                            ToolTip.Tip="全选 / 取消全选">
+                            ToolTip.Tip="{Binding [Str_071], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M412.16 738.304a51.2 51.2 0 0 1 0 69.12l-3.072 3.328L210.432 998.4a51.2 51.2 0 0 1-67.072 2.816L140.032 998.4 16.384 880.64a51.2 51.2 0 0 1 67.072-76.8l3.328 2.816 88.832 84.224 164.096-153.6a51.2 51.2 0 0 1 72.448 2.304zM972.8 824.576a51.2 51.2 0 0 1 0 102.4H563.2a51.2 51.2 0 0 1 0-102.4zM412.16 379.904a51.2 51.2 0 0 1 0 69.376l-3.072 3.072L210.432 640a51.2 51.2 0 0 1-67.072 2.816L140.032 640 16.384 522.24a51.2 51.2 0 0 1 67.072-76.8l3.328 2.816 88.832 84.48 164.096-153.6a51.2 51.2 0 0 1 72.448 2.048zM972.8 466.176a51.2 51.2 0 0 1 0 102.4H563.2a51.2 51.2 0 0 1 0-102.4zM412.16 21.76a51.2 51.2 0 0 1 0 69.12l-2.56 3.072L210.432 281.6a51.2 51.2 0 0 1-67.072 2.816L140.032 281.6 16.384 163.84a51.2 51.2 0 0 1 67.072-76.8l3.328 3.072L175.616 174.08l164.096-153.6a51.2 51.2 0 0 1 72.448 1.28zM972.8 108.032a51.2 51.2 0 0 1 44.288 76.8 51.2 51.2 0 0 1-44.288 25.6H563.2a51.2 51.2 0 0 1-44.288-25.6 51.2 51.2 0 0 1 44.288-76.8z m0 0"
                                   Foreground="{DynamicResource SvgIconBrush}"/>
                     </Button>
@@ -532,7 +534,7 @@
                     <Button Classes="ToolbarActionBtn"
                             Command="{Binding OpenBatchMovePanelCommand}"
                             IsVisible="{Binding IsBatchMode}"
-                            ToolTip.Tip="批量移动分类">
+                            ToolTip.Tip="{Binding [Str_072], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M864 288H480l-64-64H160c-35.3 0-64 28.7-64 64v512c0 35.3 28.7 64 64 64h704c35.3 0 64-28.7 64-64V352c0-35.3-28.7-64-64-64z M576 448l128 128-128 128v-96H384v-64h192v-96z"
                                   Width="18" Height="18"
                                   Foreground="{DynamicResource SvgIconBrush}"/>
@@ -542,21 +544,19 @@
                     <Button Classes="ToolbarActionBtn"
                             IsVisible="{Binding IsBatchMode}"
                             Click="OnBatchDeleteClick"
-                            ToolTip.Tip="删除选中">
+                            ToolTip.Tip="{Binding [Str_073], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341z m0 0"
                                   Foreground="#FF4444"/>
                     </Button>
 
                     <!-- 批量模式选中计数 -->
-                    <TextBlock IsVisible="{Binding IsBatchMode}"
-                               VerticalAlignment="Center"
-                               FontSize="12" Foreground="#FF8800" FontWeight="SemiBold">
-                        <TextBlock.Text>
-                            <MultiBinding StringFormat="已选 {0}">
-                                <Binding Path="SelectedCount"/>
-                            </MultiBinding>
-                        </TextBlock.Text>
-                    </TextBlock>
+                    <StackPanel IsVisible="{Binding IsBatchMode}"
+                                Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding [Str_351], Source={x:Static i18n:I18nService.Instance}}"
+                                   FontSize="12" Foreground="#FF8800" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding SelectedCount}"
+                                   FontSize="12" Foreground="#FF8800" FontWeight="SemiBold"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </Grid>
@@ -569,11 +569,14 @@
                 <Button Command="{Binding OpenCategoryManagerPanelCommand}"
                         Classes="CategoryControlBtn"
                         Padding="12,8"
-                        ToolTip.Tip="选择分类">
+                        ToolTip.Tip="{Binding [Str_074], Source={x:Static i18n:I18nService.Instance}}">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                         <PathIcon Data="M192 149.33504h213.33504c47.1296 0 85.33504 38.20544 85.33504 85.33504V448a42.66496 42.66496 0 0 1-42.66496 42.66496h-256a42.66496 42.66496 0 0 1-42.66496-42.66496v-256a42.6496 42.6496 0 0 1 42.65984-42.66496z m512 341.32992c-94.2592 0.01024-170.6752-76.3904-170.69056-170.6496-0.01024-94.25408 76.3904-170.6752 170.6496-170.68544h0.04096c94.2592 0.01024 170.65984 76.43136 170.64448 170.68544-0.01024 94.24384-76.40576 170.63936-170.64448 170.6496z m-512 42.66496h213.33504c47.1296 0 85.33504 38.21056 85.33504 85.34016V832a42.66496 42.66496 0 0 1-42.66496 42.67008h-256a42.66496 42.66496 0 0 1-42.66496-42.67008v-256a42.65472 42.65472 0 0 1 42.65984-42.67008z m384 0h213.32992c47.1296 0 85.34016 38.21056 85.34016 85.34016V832a42.67008 42.67008 0 0 1-42.67008 42.67008h-256a42.67008 42.67008 0 0 1-42.67008-42.67008v-256a42.67008 42.67008 0 0 1 42.67008-42.67008z"
                                   Width="14" Height="14"/>
-                        <TextBlock Text="{Binding SelectedCategoryDisplay, StringFormat='分类: \{0\}'}" FontSize="12" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding [Str_353], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextMainBrush}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding SelectedCategoryDisplay}" FontSize="12" Foreground="{DynamicResource ThemeTextMainBrush}" FontWeight="SemiBold"/>
+                        </StackPanel>
                     </StackPanel>
                 </Button>
 
@@ -582,7 +585,7 @@
                         Classes="CategoryControlBtn"
                         Width="38"
                         Padding="8"
-                        ToolTip.Tip="新建分类">
+                        ToolTip.Tip="{Binding [Str_075], Source={x:Static i18n:I18nService.Instance}}">
                     <PathIcon Data="M512 85.3a42.7 42.7 0 0 1 42.7 42.7v341.3h341.3a42.7 42.7 0 1 1 0 85.4H554.7v341.3a42.7 42.7 0 1 1-85.4 0V554.7H128a42.7 42.7 0 1 1 0-85.4h341.3V128a42.7 42.7 0 0 1 42.7-42.7z"
                               Width="14" Height="14"/>
                 </Button>
@@ -594,7 +597,7 @@
                         Classes="CategoryControlBtn"
                         Width="38"
                         Padding="8"
-                        ToolTip.Tip="重命名当前分类">
+                        ToolTip.Tip="{Binding [Str_076], Source={x:Static i18n:I18nService.Instance}}">
                     <PathIcon Data="M853.333333 170.666667c-25.6 0-51.2 8.533333-68.266666 25.6l-507.733334 507.733333-89.6 256 256-89.6L951.466667 362.666667c38.4-38.4 38.4-102.4 0-140.8l-34.133334-34.133334c-17.066667-17.066667-42.666667-17.066667-64-17.066666zM716.8 273.066667l102.4 102.4-512 512H204.8v-102.4l512-512z"
                               Width="14" Height="14"/>
                 </Button>
@@ -606,7 +609,7 @@
                         Classes="CategoryControlBtn"
                         Width="38"
                         Padding="8"
-                        ToolTip.Tip="删除当前分类">
+                        ToolTip.Tip="{Binding [Str_077], Source={x:Static i18n:I18nService.Instance}}">
                     <Button.Styles>
                         <Style Selector="Button:pointerover PathIcon">
                             <Setter Property="Foreground" Value="#FF6666"/>
@@ -625,14 +628,14 @@
                     Padding="8,4"
                     VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="10">
-                    <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="第一页">
+                    <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="{Binding [Str_022], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z" Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
                     </Button>
-                    <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="上一页">
+                    <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="{Binding [Str_023], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                     </Button>
                     <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                        <TextBlock Text="第" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
+                        <TextBlock Text="{Binding [Str_024], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
                         <Panel VerticalAlignment="Center">
                             <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="ExtraBold" FontSize="12" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
                             <TextBox Name="PageJumpTextBox_Top" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="12" Width="42" Height="22" Padding="2,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" CornerRadius="4" LostFocus="OnPageJumpLostFocus" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}">
@@ -644,12 +647,12 @@
                         </Panel>
                         <TextBlock Text="/" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
                         <TextBlock Text="{Binding TotalPages}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
-                        <TextBlock Text="页" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
+                        <TextBlock Text="{Binding [Str_025], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
                     </StackPanel>
-                    <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="下一页">
+                    <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="{Binding [Str_026], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                     </Button>
-                    <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="最末页">
+                    <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="{Binding [Str_027], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M706.19 106m41.47 0l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47Z M240.46 865l375.81-344.25-375.81-344.21a39.32 39.32 0 0 1-13.11-29c0-36.51 48.2-54.79 76.38-29L679.55 462.8c35 32 35 83.9 0 115.9L303.73 922.92c-28.18 25.81-76.38 7.53-76.38-29A39.33 39.33 0 0 1 240.46 865z" Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
                     </Button>
                 </StackPanel>
@@ -687,7 +690,7 @@
                 <!-- 缺少 Custom_Albums 文件夹提示 -->
                 <StackPanel IsVisible="{Binding IsCustomAlbumsMissing}"
                         HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="15">
-                <TextBlock Text="请先创建Custom_Albums文件夹" FontSize="18" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding [Str_078], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Center"/>
             </StackPanel>
 
             <!-- 文件夹存在但没有谱面时的正常空状态提示 -->
@@ -699,16 +702,16 @@
                     </MultiBinding>
                 </StackPanel.IsVisible>
                 <TextBlock Text="🎵" FontSize="60" HorizontalAlignment="Center" Foreground="Gray"/>
-                <TextBlock Text="Custom_Albums 中没有找到谱面" FontSize="18" Foreground="Gray" HorizontalAlignment="Center"/>
-                <TextBlock Text="请将 .mdm 文件放入游戏目录下的 Custom_Albums 文件夹" FontSize="13" Foreground="#555555" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding [Str_079], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" Foreground="Gray" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding [Str_080], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" Foreground="#555555" HorizontalAlignment="Center"/>
             </StackPanel>
 
             <StackPanel IsVisible="{Binding HasNoSearchResults}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Spacing="15">
-                <TextBlock Text="没有找到符合条件的谱面" FontSize="18" Foreground="Gray" HorizontalAlignment="Center"/>
-                <TextBlock Text="试试别的关键词，或清空搜索后查看全部谱面" FontSize="13" Foreground="#666666" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding [Str_060], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" Foreground="Gray" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding [Str_081], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" Foreground="#666666" HorizontalAlignment="Center"/>
             </StackPanel>
 
             <!-- 谱面卡片网格 -->
@@ -762,7 +765,7 @@
                                                 <Border IsVisible="{Binding IsPlaying}"
                                                         Background="#80000000"
                                                         CornerRadius="10,10,0,0">
-                                                    <TextBlock Text="▶ 试听中" FontSize="14" FontWeight="Bold"
+                                                    <TextBlock Text="{Binding [Str_030], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold"
                                                                Foreground="White"
                                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
@@ -853,7 +856,7 @@
                                                          HorizontalAlignment="Center"
                                                          Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).TogglePreviewCommand}"
                                                          CommandParameter="{Binding}"
-                                                         ToolTip.Tip="试听">
+                                                         ToolTip.Tip="{Binding [Str_082], Source={x:Static i18n:I18nService.Instance}}">
                                                      <Panel>
                                                          <PathIcon Data="M896 512L128 1024V0z"
                                                                    Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"
@@ -870,7 +873,7 @@
                                                          HorizontalAlignment="Center"
                                                          Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).OpenSingleMovePanelCommand}"
                                                          CommandParameter="{Binding}"
-                                                         ToolTip.Tip="移动分类">
+                                                         ToolTip.Tip="{Binding [Str_083], Source={x:Static i18n:I18nService.Instance}}">
                                                      <PathIcon Data="M864 288H480l-64-64H160c-35.3 0-64 28.7-64 64v512c0 35.3 28.7 64 64 64h704c35.3 0 64-28.7 64-64V352c0-35.3-28.7-64-64-64z M576 448l128 128-128 128v-96H384v-64h192v-96z"
                                                                Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
                                                  </Button>
@@ -881,7 +884,7 @@
                                                          HorizontalAlignment="Center"
                                                          Click="OnDeleteChartClick"
                                                          Tag="{Binding}"
-                                                         ToolTip.Tip="删除">
+                                                         ToolTip.Tip="{Binding [Str_084], Source={x:Static i18n:I18nService.Instance}}">
                                                      <PathIcon Data="M981.465503 192.054069v42.678682a20.185863 20.185863 0 0 1-6.055759 15.283582 20.474233 20.474233 0 0 1-15.283582 6.055759H896.108139v630.952408a152.259082 152.259082 0 0 1-31.143904 95.738665 92.85497 92.85497 0 0 1-75.264432 40.371727H234.300197a93.720079 93.720079 0 0 1-75.264432-38.929879 145.914954 145.914954 0 0 1-31.143904-94.296818v-634.412842H63.873838a19.897494 19.897494 0 0 1-15.283582-6.055759 20.474233 20.474233 0 0 1-6.055759-15.283582V192.342439a20.185863 20.185863 0 0 1 6.055759-15.283582 20.474233 20.474233 0 0 1 15.283582-6.055759h206.184174l46.715855-111.310617A94.008448 94.008448 0 0 1 352.820051 17.590538a94.873557 94.873557 0 0 1 52.771613-17.302169h213.393411a94.008448 94.008448 0 0 1 52.771613 17.302169 91.989862 91.989862 0 0 1 36.046184 42.101943l46.715855 111.310617h205.895804a20.185863 20.185863 0 0 1 15.283582 6.055759 20.762602 20.762602 0 0 1 5.47902 14.995212z m-597.501549 640.180231V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759H319.945931a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341zM362.624613 170.714728h298.750774l-32.009011-77.859758a18.167277 18.167277 0 0 0-11.534779-7.209236h-211.086455a18.744016 18.744016 0 0 0-11.534779 7.209236z m192.054069 661.519572V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.185863 20.185863 0 0 0 15.283582-6.055759 20.762602 20.762602 0 0 0 6.055759-15.283582z m170.714728 0V362.768798a20.185863 20.185863 0 0 0-6.055759-15.283583 20.474233 20.474233 0 0 0-15.283582-6.055759h-42.678682a20.185863 20.185863 0 0 0-15.283582 6.055759 20.474233 20.474233 0 0 0-6.055759 15.283583v469.465502a20.185863 20.185863 0 0 0 6.055759 15.283582 20.474233 20.474233 0 0 0 15.283582 6.055759h42.678682a20.474233 20.474233 0 0 0 21.339341-21.339341z m0 0"
                                                                  Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
                                                  </Button>
@@ -895,14 +898,14 @@
 
                     <Border Grid.Row="1" Background="Transparent" Margin="10,20,10,30" Padding="15,8" CornerRadius="10">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
-                            <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="第一页">
+                            <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="{Binding [Str_022], Source={x:Static i18n:I18nService.Instance}}">
                                 <PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                             </Button>
-                            <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="上一页">
+                            <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="{Binding [Str_023], Source={x:Static i18n:I18nService.Instance}}">
                                 <PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="18" Height="18"/>
                             </Button>
                             <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <TextBlock Text="第" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Text="{Binding [Str_024], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
                                 <Panel VerticalAlignment="Center">
                                     <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="14" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
                                     <TextBox Name="PageJumpTextBox_Bottom" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="14" Width="50" Height="28" Padding="4,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" CornerRadius="4" LostFocus="OnPageJumpLostFocus" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}">
@@ -914,12 +917,12 @@
                                 </Panel>
                                 <TextBlock Text="/" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
                                 <TextBlock Text="{Binding TotalPages}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
-                                <TextBlock Text="页" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Text="{Binding [Str_025], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="13"/>
                             </StackPanel>
-                            <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="下一页">
+                            <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="{Binding [Str_026], Source={x:Static i18n:I18nService.Instance}}">
                                 <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="18" Height="18"/>
                             </Button>
-                            <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="最末页">
+                            <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource PagingIconBtn}" ToolTip.Tip="{Binding [Str_027], Source={x:Static i18n:I18nService.Instance}}">
                                 <PathIcon Data="M706.19 106m41.47 0l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47Z M240.46 865l375.81-344.25-375.81-344.21a39.32 39.32 0 0 1-13.11-29c0-36.51 48.2-54.79 76.38-29L679.55 462.8c35 32 35 83.9 0 115.9L303.73 922.92c-28.18 25.81-76.38 7.53-76.38-29A39.33 39.33 0 0 1 240.46 865z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                             </Button>
                         </StackPanel>
@@ -949,7 +952,7 @@
                     </LinearGradientBrush>
                 </Border.Background>
                 <Grid RowDefinitions="Auto,*,Auto">
-                    <TextBlock Grid.Row="0" Text="移动谱面至分类" FontSize="18" FontWeight="Heavy" Margin="0,0,0,20" HorizontalAlignment="Center">
+                    <TextBlock Grid.Row="0" Text="{Binding [Str_085], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Heavy" Margin="0,0,0,20" HorizontalAlignment="Center">
                         <TextBlock.Foreground>
                             <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                                 <GradientStop Color="#FFA7D1" Offset="0"/>
@@ -1010,7 +1013,7 @@
                                                        Foreground="{DynamicResource ThemeAccentBrush}"
                                                        VerticalAlignment="Center"
                                                        IsVisible="{Binding IsCreateNew}"/>
-                                             <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                             <TextBlock Text="{Binding DisplayName}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                          </StackPanel>
                                      </Button>
                                  </DataTemplate>
@@ -1018,7 +1021,7 @@
                         </ItemsControl>
                     </ScrollViewer>
 
-                    <Button Grid.Row="2" Content="取消"
+                    <Button Grid.Row="2" Content="{Binding [Str_086], Source={x:Static i18n:I18nService.Instance}}"
                             Command="{Binding CloseMovePanelCommand}"
                             HorizontalAlignment="Center"
                             Margin="0,20,0,0"
@@ -1074,7 +1077,7 @@
                 </Border.Background>
                 <Grid RowDefinitions="Auto,*,Auto">
                     <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
-                        <TextBlock Grid.Column="0" Text="选择分类" FontSize="20" FontWeight="Heavy" VerticalAlignment="Center">
+                        <TextBlock Grid.Column="0" Text="{Binding [Str_074], Source={x:Static i18n:I18nService.Instance}}" FontSize="20" FontWeight="Heavy" VerticalAlignment="Center">
                             <TextBlock.Foreground>
                                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                                     <GradientStop Color="#FFA7D1" Offset="0"/>
@@ -1087,7 +1090,7 @@
                             <!-- 全选 -->
                             <Button Command="{Binding SelectAllCategoriesForDeletionCommand}"
                                     IsVisible="{Binding IsCategoryDeleteMode}"
-                                    Content="全选"
+                                    Content="{Binding [Str_087], Source={x:Static i18n:I18nService.Instance}}"
                                     Padding="14,8"
                                     CornerRadius="10"
                                     FontSize="12"
@@ -1126,7 +1129,7 @@
                             <!-- 反选 -->
                             <Button Command="{Binding InvertCategorySelectionForDeletionCommand}"
                                     IsVisible="{Binding IsCategoryDeleteMode}"
-                                    Content="反选"
+                                    Content="{Binding [Str_088], Source={x:Static i18n:I18nService.Instance}}"
                                     Padding="14,8"
                                     CornerRadius="10"
                                     FontSize="12"
@@ -1164,7 +1167,7 @@
 
                             <Button Command="{Binding ToggleCategoryDeleteModeCommand}"
                                     IsVisible="{Binding !IsCategoryDeleteMode}"
-                                    Content="批量删除"
+                                    Content="{Binding [Str_089], Source={x:Static i18n:I18nService.Instance}}"
                                     Padding="14,8"
                                     CornerRadius="10"
                                     FontSize="12"
@@ -1202,7 +1205,7 @@
 
                             <Button Command="{Binding ToggleCategoryDeleteModeCommand}"
                                     IsVisible="{Binding IsCategoryDeleteMode}"
-                                    Content="退出多选"
+                                    Content="{Binding [Str_090], Source={x:Static i18n:I18nService.Instance}}"
                                     Padding="14,8"
                                     CornerRadius="10"
                                     FontSize="12"
@@ -1271,7 +1274,7 @@
                                                               Width="13" Height="13"
                                                               Foreground="{DynamicResource ThemeAccentBrush}"
                                                               VerticalAlignment="Center"/>
-                                                    <TextBlock Text="{Binding Name}" MaxWidth="135" FontSize="13" Foreground="{DynamicResource ThemeTextMainBrush}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding DisplayName}" MaxWidth="135" FontSize="13" Foreground="{DynamicResource ThemeTextMainBrush}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
                                             </Button>
 
@@ -1290,7 +1293,7 @@
                                                 <Button Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).RenameSpecificCategoryCommand}"
                                                         CommandParameter="{Binding Name}"
                                                         Classes="CardActionBtn"
-                                                        ToolTip.Tip="重命名">
+                                                        ToolTip.Tip="{Binding [Str_091], Source={x:Static i18n:I18nService.Instance}}">
                                                     <Button.Styles>
                                                         <Style Selector="Button:pointerover PathIcon">
                                                             <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}"/>
@@ -1304,7 +1307,7 @@
                                                 <Button Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).DeleteSpecificCategoryCommand}"
                                                         CommandParameter="{Binding Name}"
                                                         Classes="CardActionBtn"
-                                                        ToolTip.Tip="删除分类">
+                                                        ToolTip.Tip="{Binding [Str_092], Source={x:Static i18n:I18nService.Instance}}">
                                                     <Button.Styles>
                                                         <Style Selector="Button:pointerover PathIcon">
                                                             <Setter Property="Foreground" Value="#FF4D4D"/>
@@ -1358,7 +1361,7 @@
                             </Button.Styles>
                         </Button>
                         
-                        <Button Content="关闭"
+                        <Button Content="{Binding [Str_093], Source={x:Static i18n:I18nService.Instance}}"
                                 Command="{Binding CloseCategoryManagerPanelCommand}"
                                 Padding="24,10"
                                 CornerRadius="10"
@@ -1410,7 +1413,7 @@
                      Foreground="{DynamicResource ThemeAccentBrush}"
                      Background="#251F2E"
                      CornerRadius="2"/>
-        <TextBlock Text="正在载入本地谱面列表…"
+        <TextBlock Text="{Binding [Str_094], Source={x:Static i18n:I18nService.Instance}}"
                    FontSize="13"
                    Foreground="#8A8594"
                    HorizontalAlignment="Center"/>

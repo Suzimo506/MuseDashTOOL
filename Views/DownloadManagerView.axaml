@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MdModManager.ViewModels"
              xmlns:models="using:MdModManager.Models"
@@ -79,7 +79,7 @@
         <!-- 头部 -->
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
             <StackPanel Grid.Column="0" Spacing="4" Margin="0" VerticalAlignment="Center">
-                <TextBlock Text="下载列表" FontSize="22" FontWeight="Bold">
+                <TextBlock Text="{Binding [Str_117], Source={x:Static i18n:I18nService.Instance}}" FontSize="22" FontWeight="Bold">
                     <TextBlock.Foreground>
                         <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                             <GradientStop Color="#FF00FF" Offset="0"/>
@@ -87,7 +87,7 @@
                         </LinearGradientBrush>
                     </TextBlock.Foreground>
                 </TextBlock>
-                <TextBlock Text="管理正在下载的谱面" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                <TextBlock Text="{Binding [Str_118], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}"/>
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
@@ -115,7 +115,7 @@
                         Height="36"
                         Command="{Binding CancelAllCommand}"
                         IsEnabled="{Binding Tasks.Count}"
-                        ToolTip.Tip="取消所有任务">
+                        ToolTip.Tip="{Binding [Str_119], Source={x:Static i18n:I18nService.Instance}}">
                     <PathIcon Data="M1004.032007 907.639505l-395.605202-395.605201 395.605202-395.673468c12.902396-12.902396 19.967993-30.037323 19.967993-48.298651 0-18.158927-7.099731-35.259722-19.93386-48.059717A67.583977 67.583977 0 0 0 955.938156 0.000341c-18.295461 0-35.430388 7.099731-48.298651 19.967994L512.000171 415.573536 116.360836 19.968335A67.720511 67.720511 0 0 0 68.164585 0.000341C49.971525 0.000341 32.87073 7.100072 19.968335 19.968335A67.549844 67.549844 0 0 0 0.000341 68.096319c0 18.227194 7.065598 35.362122 19.967994 48.264517l395.673468 395.673468L19.968335 907.605372A67.720511 67.720511 0 0 0 0.000341 955.835756c0 18.193061 7.099731 35.327988 19.967994 48.196251 12.902396 12.868262 30.00319 19.967993 48.19625 19.967993 18.193061 0 35.327988-7.099731 48.196251-19.967993l395.673468-395.605202 395.605201 395.605202c12.868262 12.868262 30.037323 19.967993 48.230384 19.967993 18.227194 0 35.293855-7.099731 48.127984-19.93386a68.266644 68.266644 0 0 0 0-96.426635z"
                               Foreground="{DynamicResource SvgIconBrush}"
                               Width="18"
@@ -125,7 +125,7 @@
         </Grid>
 
         <!-- 列表 空状态 -->
-        <TextBlock Grid.Row="1" Text="当前没有下载任务" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !Tasks.Count}"/>
+        <TextBlock Grid.Row="1" Text="{Binding [Str_120], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !Tasks.Count}"/>
 
         <!-- 列表 -->
         <ScrollViewer Grid.Row="1">
@@ -163,19 +163,19 @@
                                     <Button Theme="{DynamicResource RobustIconBtn}" Width="32" Height="32"
                                             Command="{Binding $parent[UserControl].((vm:DownloadManagerViewModel)DataContext).PauseCommand}" 
                                             CommandParameter="{Binding}" 
-                                            IsVisible="{Binding CanPause}" ToolTip.Tip="暂停">
+                                            IsVisible="{Binding CanPause}" ToolTip.Tip="{Binding [Str_121], Source={x:Static i18n:I18nService.Instance}}">
                                         <PathIcon Data="M128 106.858667C128 94.976 137.621333 85.333333 149.12 85.333333h85.76c11.648 0 21.12 9.6 21.12 21.525334V917.12c0 11.882667-9.621333 21.525333-21.12 21.525333H149.12A21.290667 21.290667 0 0 1 128 917.141333V106.88z m640 0c0-11.882667 9.621333-21.525333 21.12-21.525334h85.76c11.648 0 21.12 9.6 21.12 21.525334V917.12c0 11.882667-9.621333 21.525333-21.12 21.525333h-85.76a21.290667 21.290667 0 0 1-21.12-21.525333V106.88z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                                     </Button>
                                     <Button Theme="{DynamicResource RobustIconBtn}" Width="32" Height="32"
                                             Command="{Binding $parent[UserControl].((vm:DownloadManagerViewModel)DataContext).ResumeCommand}" 
                                             CommandParameter="{Binding}" 
-                                            IsVisible="{Binding CanResume}" ToolTip.Tip="继续">
+                                            IsVisible="{Binding CanResume}" ToolTip.Tip="{Binding [Str_122], Source={x:Static i18n:I18nService.Instance}}">
                                         <PathIcon Data="M874.666667 85.333333h-128V42.666667c0-25.6-17.066667-42.666667-42.666667-42.666667s-42.666667 17.066667-42.666667 42.666667v42.666666h-298.666666V42.666667c0-25.6-17.066667-42.666667-42.666667-42.666667s-42.666667 17.066667-42.666667 42.666667v42.666666h-128C89.6 85.333333 42.666667 132.266667 42.666667 192v725.333333C42.666667 977.066667 89.6 1024 149.333333 1024h725.333334c59.733333 0 106.666667-46.933333 106.666666-106.666667v-725.333333C981.333333 132.266667 934.4 85.333333 874.666667 85.333333z m21.333333 832c0 12.8-8.533333 21.333333-21.333333 21.333334h-725.333334c-12.8 0-21.333333-8.533333-21.333333-21.333334v-725.333333c0-12.8 8.533333-21.333333 21.333333-21.333333h128v42.666666c0 25.6 17.066667 42.666667 42.666667 42.666667s42.666667-17.066667 42.666667-42.666667V170.666667h298.666666v42.666666c0 25.6 17.066667 42.666667 42.666667 42.666667s42.666667-17.066667 42.666667-42.666667V170.666667h128c12.8 0 21.333333 8.533333 21.333333 21.333333v725.333333zM695.466667 537.6l-221.866667-162.133333c-21.333333-12.8-46.933333-17.066667-68.266667-4.266667-25.6 12.8-42.666667 38.4-42.666666 64v324.266667c0 29.866667 17.066667 55.466667 38.4 64 8.533333 4.266667 21.333333 8.533333 29.866666 8.533333 12.8 0 25.6-4.266667 38.4-12.8l221.866667-162.133333c17.066667-12.8 29.866667-34.133333 29.866667-59.733334 4.266667-25.6-8.533333-46.933333-25.6-59.733333z m-247.466667 192v-268.8l183.466667 132.266667-183.466667 136.533333z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                                     </Button>
                                     <Button Theme="{DynamicResource RobustIconBtn}" Width="32" Height="32"
                                             Command="{Binding $parent[UserControl].((vm:DownloadManagerViewModel)DataContext).CancelCommand}" 
                                             CommandParameter="{Binding}" 
-                                            IsEnabled="{Binding !IsCompleted}" ToolTip.Tip="取消">
+                                            IsEnabled="{Binding !IsCompleted}" ToolTip.Tip="{Binding [Str_086], Source={x:Static i18n:I18nService.Instance}}">
                                         <PathIcon Data="M1004.032007 907.639505l-395.605202-395.605201 395.605202-395.673468c12.902396-12.902396 19.967993-30.037323 19.967993-48.298651 0-18.158927-7.099731-35.259722-19.93386-48.059717A67.583977 67.583977 0 0 0 955.938156 0.000341c-18.295461 0-35.430388 7.099731-48.298651 19.967994L512.000171 415.573536 116.360836 19.968335A67.720511 67.720511 0 0 0 68.164585 0.000341C49.971525 0.000341 32.87073 7.100072 19.968335 19.968335A67.549844 67.549844 0 0 0 0.000341 68.096319c0 18.227194 7.065598 35.362122 19.967994 48.264517l395.673468 395.673468L19.968335 907.605372A67.720511 67.720511 0 0 0 0.000341 955.835756c0 18.193061 7.099731 35.327988 19.967994 48.196251 12.902396 12.868262 30.00319 19.967993 48.19625 19.967993 18.193061 0 35.327988-7.099731 48.196251-19.967993l395.673468-395.605202 395.605201 395.605202c12.868262 12.868262 30.037323 19.967993 48.230384 19.967993 18.227194 0 35.293855-7.099731 48.127984-19.93386a68.266644 68.266644 0 0 0 0-96.426635z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                                     </Button>
                                 </StackPanel>

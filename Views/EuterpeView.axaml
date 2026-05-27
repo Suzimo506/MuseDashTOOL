@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -405,7 +405,7 @@
                     </StackPanel>
 
                     <!-- 退出登录门型按钮 -->
-                    <Button Grid.Column="2" Theme="{StaticResource LogoutBtn}" Command="{Binding LogoutCommand}" ToolTip.Tip="退出 Euterpe 登录" VerticalAlignment="Center">
+                    <Button Grid.Column="2" Theme="{StaticResource LogoutBtn}" Command="{Binding LogoutCommand}" ToolTip.Tip="{Binding [Str_123], Source={x:Static i18n:I18nService.Instance}}" VerticalAlignment="Center">
                         <Path Fill="{Binding $parent[Button].Foreground}" Stretch="Uniform" Width="16" Height="16" Data="M10 2H5C3.34 2 2 3.34 2 5v14c0 1.66 1.34 3 3 3h5c.55 0 1-.45 1-1s-.45-1-1-1H5c-.55 0-1-.45-1-1V5c0-.55.45-1 1-1h5c.55 0 1-.45 1-1s-.45-1-1-1z M19.78 11.22l-4-4c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41L16.59 11H9c-.55 0-1 .45-1 1s.45 1 1 1h7.59l-2.22 2.22c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l4-4c.39-.39.39-1.03 0-1.42z"/>
                     </Button>
                 </Grid>
@@ -420,13 +420,13 @@
                     </LinearGradientBrush>
                 </Border.Background>
                 <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#8A8594" VerticalAlignment="Center">
-                    <Run Text="喵斯兔并不是Euterpe官方APP，只是调用了Euterpe的接口，这个软件与Euterpe并无任何关系。如果遇到了喵斯兔内的问题，请不要向Euterpe网站反馈。喵斯兔不会存储您Euterpe账号的任何数据与隐私，在喵斯兔内仅提供谱面的试听，点赞，下载功能，如果需要查看谱面的更多详细信息（标签，note组成等等）以及使用谱面上传等功能，请前往"/>
+                    <Run Text="{Binding [Str_124], Source={x:Static i18n:I18nService.Instance}}"/>
                     <InlineUIContainer>
                         <Button Command="{Binding OpenEuterpeWebCommand}" Cursor="Hand" Padding="0" Margin="2,0,2,-2" Background="Transparent" BorderThickness="0" VerticalAlignment="Bottom">
                             <TextBlock Text="Euterpe-org.com" Foreground="#00C0FF" FontSize="11" TextDecorations="Underline" FontWeight="Bold"/>
                         </Button>
                     </InlineUIContainer>
-                    <Run Text="或下载Euterpe官方APP使用。"/>
+                    <Run Text="{Binding [Str_125], Source={x:Static i18n:I18nService.Instance}}"/>
                 </TextBlock>
             </Border>
         </Grid>
@@ -434,14 +434,14 @@
         <!-- 工具栏：搜索 + 排序 ComboBox + 顶部分页栏 (Row 1) -->
         <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,16">
             <!-- 搜索框 -->
-            <TextBox Grid.Column="0" Name="SearchTextBox" Text="{Binding SearchDraftText}" Watermark="搜索 Euterpe 谱面名称、作者..." VerticalAlignment="Center" Padding="10,8" IsHitTestVisible="{Binding !IsLoading}" IsReadOnly="{Binding IsLoading}" LostFocus="OnSearchBoxLostFocus" KeyDown="OnSearchBoxKeyDown" CornerRadius="10">
+            <TextBox Grid.Column="0" Name="SearchTextBox" Text="{Binding SearchDraftText}" Watermark="{Binding [Str_126], Source={x:Static i18n:I18nService.Instance}}" VerticalAlignment="Center" Padding="10,8" IsHitTestVisible="{Binding !IsLoading}" IsReadOnly="{Binding IsLoading}" LostFocus="OnSearchBoxLostFocus" KeyDown="OnSearchBoxKeyDown" CornerRadius="10">
                 <TextBox.InnerLeftContent>
                     <PathIcon Data="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1C567.2 143.9 492.3 112 413 112s-154.2 31.9-211.1 88.9C145.5 257.5 114 332.7 114 412c0 79.3 31.3 154.5 88 211.4C259.3 680.3 334.4 712 413 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0 0 11.6 0l42.6-42.6a8.2 8.2 0 0 0 0-11.5zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z"
                               Foreground="#888888" Width="16" Height="16" Margin="6,0,0,0"/>
                 </TextBox.InnerLeftContent>
                 <TextBox.InnerRightContent>
                     <Button Command="{Binding ClearSearchCommand}" IsVisible="{Binding SearchDraftText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Theme="{StaticResource RobustPlainIconBtn}" Margin="0,0,10,0">
-                        <TextBlock Text="清空" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource SvgIconBrush}"/>
+                        <TextBlock Text="{Binding [Str_021], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource SvgIconBrush}"/>
                     </Button>
                 </TextBox.InnerRightContent>
             </TextBox>
@@ -459,7 +459,7 @@
             <Button Grid.Column="2" Command="{Binding ToggleTagPanelCommand}" Theme="{StaticResource TagFilterBtn}" Margin="10,0,0,0" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <PathIcon Data="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 8.25c-.97 0-1.75-.78-1.75-1.75s.78-1.75 1.75-1.75 1.75.78 1.75 1.75-.78 1.75-1.75 1.75z" Width="12" Height="12" Foreground="{Binding $parent[Button].Foreground}"/>
-                    <TextBlock Text="标签:" Foreground="{Binding $parent[Button].Foreground}" FontSize="13" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding [Str_127], Source={x:Static i18n:I18nService.Instance}}" Foreground="{Binding $parent[Button].Foreground}" FontSize="13" VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding SelectedTag.DisplayName, FallbackValue='全部标签'}" Foreground="{Binding $parent[Button].Foreground}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
@@ -467,29 +467,29 @@
             <!-- 顶部分页栏 -->
             <Border Grid.Column="3" Name="TopPaginationBorder" Background="#1E1624" BorderBrush="#2D2136" BorderThickness="1" Margin="10,0,0,0" Padding="8,4" CornerRadius="10" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="第一页">
+                    <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_022], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z"
                                   Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
                     </Button>
-                    <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="上一页">
+                    <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_023], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z"
                                   Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
                     </Button>
                     <StackPanel Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
-                        <TextBlock Text="第 " Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding [Str_128], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="12" VerticalAlignment="Center"/>
                         <Panel VerticalAlignment="Center">
                             <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="13" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
                             <TextBox Name="PageJumpTextBox_Top" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="11" Width="42" Height="22" Padding="2,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" CornerRadius="4" LostFocus="OnPageJumpLostFocus" KeyDown="OnPageJumpKeyDown" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}"/>
                         </Panel>
                         <TextBlock Text=" / " Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="12" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding TotalPages}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="12" VerticalAlignment="Center"/>
-                        <TextBlock Text=" 页" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding [Str_129], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextSubBrush}" FontSize="12" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="下一页">
+                    <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_026], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z"
                                   Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
                     </Button>
-                    <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="最末页">
+                    <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_027], Source={x:Static i18n:I18nService.Instance}}">
                         <PathIcon Data="M706.19 106m41.47 0l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47Z M240.46 865l375.81-344.25-375.81-344.21a39.32 39.32 0 0 1-13.11-29c0-36.51 48.2-54.79 76.38-29L679.55 462.8c35 32 35 83.9 0 115.9L303.73 922.92c-28.18 25.81-76.38 7.53-76.38-29A39.33 39.33 0 0 1 240.46 865z"
                                   Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
                     </Button>
@@ -501,7 +501,7 @@
         <Grid Grid.Row="2" Background="Transparent">
             <!-- 加载中 -->
             <StackPanel IsVisible="{Binding IsLoading}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
-                <TextBlock Text="正在拉取 Euterpe 谱面…" FontSize="16" Foreground="#888888" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding [Str_130], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="#888888" HorizontalAlignment="Center"/>
             </StackPanel>
 
             <!-- 空状态 -->
@@ -513,8 +513,8 @@
                     </MultiBinding>
                 </StackPanel.IsVisible>
                 <StackPanel Spacing="8">
-                    <TextBlock Text="未发现匹配当前筛选条件的 Euterpe 谱面" FontSize="16" Foreground="Gray" HorizontalAlignment="Center"/>
-                    <TextBlock Text="可以尝试换个搜索词或点击刷新" FontSize="12" Foreground="#666666" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding [Str_131], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="Gray" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding [Str_132], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="#666666" HorizontalAlignment="Center"/>
                 </StackPanel>
                 
                 <Button Command="{Binding RefreshCommand}" 
@@ -527,7 +527,7 @@
                         HorizontalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <PathIcon Data="M512 0c141.385 0 269.41 57.308 362.039 149.937l83.945-83.945c15.114-15.114 40.941-4.417 40.941 16.971v271.074c0 14.137-11.46 25.597-25.597 25.597h-271.074c-21.388 0-32.085-25.827-16.971-40.941l95.539-95.539c-73.491-73.491-174.607-118.956-286.039-118.956-224.234 0-406.403 182.169-406.403 406.403s182.169 406.403 406.403 406.403c141.385 0 269.41-57.308 362.039-149.937 15.114-15.114 40.941-4.417 40.941 16.971s-10.826 31.11-25.94 46.224c-109.117 109.117-259.945 176.431-426.452 176.431-335.791 0-608-272.209-608-608s272.209-608 608-608z" Width="12" Height="12"/>
-                        <TextBlock Text="重试加载" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding [Str_133], Source={x:Static i18n:I18nService.Instance}}" FontWeight="Bold"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -558,7 +558,7 @@
                                                 
                                                 <!-- 试听覆盖遮罩 -->
                                                 <Border IsVisible="{Binding IsPlaying}" Background="#CC110D17">
-                                                    <TextBlock Text="▶ 试听中" FontSize="13" FontWeight="Bold" Foreground="#FFFF00FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding [Str_030], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" FontWeight="Bold" Foreground="#FFFF00FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
 
                                                 <!-- 下载量与点赞数角标 -->
@@ -624,7 +624,7 @@
                                             <Grid ColumnDefinitions="*,*,*" Margin="0,4,0,0">
                                                 
                                                 <!-- 试听 -->
-                                                <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="在线试听">
+                                                <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding [Str_134], Source={x:Static i18n:I18nService.Instance}}">
                                                     <Panel>
                                                         <PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                                                         <PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="#FFFF00FF" Width="16" Height="16"/>
@@ -632,7 +632,7 @@
                                                 </Button>
 
                                                 <!-- 心形交互点赞 -->
-                                                <Button Grid.Column="1" Classes="LikeBtn" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).ToggleLikeCommand}" CommandParameter="{Binding}" ToolTip.Tip="喜欢 / 取消喜欢">
+                                                <Button Grid.Column="1" Classes="LikeBtn" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).ToggleLikeCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding [Str_135], Source={x:Static i18n:I18nService.Instance}}">
                                                     <Panel>
                                                         <!-- 未点赞：空心心形 -->
                                                         <PathIcon IsVisible="{Binding !IsLiked}" Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35zM12 5.4C11.16 4.5 9.9 4 8.5 4 6 4 4 6 4 8.5c0 2.78 2.85 5.56 7.61 9.87l.39.35.39-.35C17.15 14.06 20 11.28 20 8.5 20 6 18 4 15.5 4c-1.4 0-2.66.5-3.5 1.4z"
@@ -644,7 +644,7 @@
                                                 </Button>
 
                                                 <!-- 下载 -->
-                                                <Button Grid.Column="2" Theme="{StaticResource RobustIconBtn}" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="一键下载">
+                                                <Button Grid.Column="2" Theme="{StaticResource RobustIconBtn}" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding [Str_136], Source={x:Static i18n:I18nService.Instance}}">
                                                     <PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z"
                                                               Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                                                 </Button>
@@ -659,26 +659,26 @@
                     <!-- 底部分页控制栏 -->
                     <Border Grid.Row="1" Name="BottomPaginationBorder" Background="#1E1624" BorderBrush="#2D2136" BorderThickness="1" Margin="10,20,10,30" Padding="20,10" CornerRadius="20" HorizontalAlignment="Center">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="24">
-                            <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="第一页">
+                            <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_022], Source={x:Static i18n:I18nService.Instance}}">
                                 <PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                             </Button>
-                            <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="上一页">
+                            <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_023], Source={x:Static i18n:I18nService.Instance}}">
                                 <PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                             </Button>
                             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <TextBlock Text="第" Foreground="#8A8594" VerticalAlignment="Center" FontSize="14"/>
+                                <TextBlock Text="{Binding [Str_024], Source={x:Static i18n:I18nService.Instance}}" Foreground="#8A8594" VerticalAlignment="Center" FontSize="14"/>
                                 <Panel VerticalAlignment="Center" Margin="4,0">
                                     <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="15" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
                                     <TextBox Name="PageJumpTextBox_Bottom" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="14" Width="55" Height="28" Padding="4,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" CornerRadius="6" LostFocus="OnPageJumpLostFocus" KeyDown="OnPageJumpKeyDown" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}"/>
                                 </Panel>
                                 <TextBlock Text="/" Foreground="#8A8594" VerticalAlignment="Center" FontSize="14"/>
                                 <TextBlock Text="{Binding TotalPages}" Foreground="#8A8594" VerticalAlignment="Center" FontSize="14" Margin="4,0"/>
-                                <TextBlock Text="页" Foreground="#8A8594" VerticalAlignment="Center" FontSize="14"/>
+                                <TextBlock Text="{Binding [Str_025], Source={x:Static i18n:I18nService.Instance}}" Foreground="#8A8594" VerticalAlignment="Center" FontSize="14"/>
                             </StackPanel>
-                            <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="下一页">
+                            <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_026], Source={x:Static i18n:I18nService.Instance}}">
                                 <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c-10.88 8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                             </Button>
-                            <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="最末页">
+                            <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_027], Source={x:Static i18n:I18nService.Instance}}">
                                 <PathIcon Data="M706.19 106m41.47 0l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47Z M240.46 865l375.81-344.25-375.81-344.21a39.32 39.32 0 0 1-13.11-29c0-36.51 48.2-54.79 76.38-29L679.55 462.8c35 32 35 83.9 0 115.9L303.73 922.92c-28.18 25.81-76.38 7.53-76.38-29A39.33 39.33 0 0 1 240.46 865z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
                             </Button>
                         </StackPanel>
@@ -716,8 +716,8 @@
                     <!-- 头部 -->
                     <Border Grid.Row="0" Padding="20,16" BorderThickness="0,0,0,1" BorderBrush="#22FFFFFF">
                         <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Text="选择筛选标签" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Command="{Binding ToggleTagPanelCommand}" Theme="{StaticResource RobustPlainIconBtn}" ToolTip.Tip="关闭">
+                            <TextBlock Text="{Binding [Str_137], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Command="{Binding ToggleTagPanelCommand}" Theme="{StaticResource RobustPlainIconBtn}" ToolTip.Tip="{Binding [Str_093], Source={x:Static i18n:I18nService.Instance}}">
                                 <TextBlock Text="✕" FontSize="18" Foreground="#88FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Button>
                         </Grid>

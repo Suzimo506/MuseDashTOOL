@@ -1,7 +1,7 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="MdModManager.Views.MessageBox"
-        Title="提示"
+        Title="{Binding [Str_167], Source={x:Static i18n:I18nService.Instance}}"
         Width="400" Height="180"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
@@ -13,7 +13,7 @@
         <!-- 提示文本 -->
         <TextBlock x:Name="MessageText"
                    Grid.Row="0"
-                   Text="提示信息"
+                   Text="{Binding [Str_168], Source={x:Static i18n:I18nService.Instance}}"
                    TextWrapping="Wrap"
                    FontSize="15"
                    Foreground="{DynamicResource ThemeTextMainBrush}"
@@ -42,7 +42,7 @@
                     HorizontalAlignment="Center"
                     Margin="0,16,0,0">
             <Button x:Name="CancelButton"
-                    Content="取消"
+                    Content="{Binding [Str_086], Source={x:Static i18n:I18nService.Instance}}"
                     Width="100"
                     Height="32"
                     HorizontalContentAlignment="Center"
@@ -53,7 +53,7 @@
                     IsVisible="False"
                     Click="OnCancelClick"/>
             <Button x:Name="ConfirmButton"
-                    Content="确定"
+                    Content="{Binding [Str_144], Source={x:Static i18n:I18nService.Instance}}"
                     Width="100"
                     Height="32"
                     HorizontalContentAlignment="Center"

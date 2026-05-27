@@ -20,7 +20,7 @@ public partial class ConfigManagerViewModel : ObservableObject
 
     private ObservableCollection<CfgFolderNode> _allCfgNodes = new();
     private System.Threading.CancellationTokenSource? _statusCts;
-    private string _baselineStatus = "就绪";
+    private string _baselineStatus = Services.I18nService.Instance["Str_359"];
 
     [ObservableProperty]
     private ObservableCollection<CfgFolderNode> _cfgNodes = new();
@@ -30,7 +30,7 @@ public partial class ConfigManagerViewModel : ObservableObject
     private CfgFile? _selectedFile;
 
     [ObservableProperty]
-    private string _statusMessage = "就绪";
+    private string _statusMessage = Services.I18nService.Instance["Str_359"];
 
     [ObservableProperty]
     private bool _isLoading;
@@ -49,10 +49,13 @@ public partial class ConfigManagerViewModel : ObservableObject
         SelectedFile = file;
         if (file != null && _configService?.Config.AutoTranslateDescriptions == true && !file.HasBeenTranslated)
         {
-            StatusMessage = "正在翻译当前配置项注释...";
-            await TranslateSingleFileAsync(file);
+            if (Services.I18nService.Instance.CurrentLanguage != "en-US")
+            {
+                StatusMessage = Services.I18nService.Instance["Str_360"];
+                await TranslateSingleFileAsync(file);
+            }
             file.HasBeenTranslated = true;
-            StatusMessage = $"已选中 {file.DisplayName}";
+            StatusMessage = string.Format(Services.I18nService.Instance["Str_361"], file.DisplayName);
         }
     }
 
@@ -81,7 +84,7 @@ public partial class ConfigManagerViewModel : ObservableObject
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrWhiteSpace(gamePath))
         {
-            StatusMessage = "⚠️ 请先在主界面设置游戏路径";
+            StatusMessage = Services.I18nService.Instance["Str_362"];
             return;
         }
 
@@ -89,7 +92,7 @@ public partial class ConfigManagerViewModel : ObservableObject
         if (!System.IO.Directory.Exists(userDataPath))
         {
             IsUserDataMissing = true;
-            StatusMessage = "请先安装Melon Loader";
+            StatusMessage = Services.I18nService.Instance["Str_363"];
             CfgNodes.Clear();
             SelectedFile = null;
             return;
@@ -97,7 +100,7 @@ public partial class ConfigManagerViewModel : ObservableObject
         IsUserDataMissing = false;
 
         IsLoading = true;
-        StatusMessage = "正在扫描配置文件...";
+        StatusMessage = Services.I18nService.Instance["Str_364"];
         CfgNodes.Clear();
         SelectedFile = null;
 
@@ -166,8 +169,8 @@ public partial class ConfigManagerViewModel : ObservableObject
             );
 
             _baselineStatus = CfgNodes.Count == 0
-                ? "未找到任何配置文件（请确认游戏路径下有 UserData 文件夹）"
-                : $"共找到 {files.Count} 个配置文件";
+                ? Services.I18nService.Instance["Str_365"]
+                : string.Format(Services.I18nService.Instance["Str_366"], files.Count);
             StatusMessage = _baselineStatus;
 
             // 处理预选文件/文件夹逻辑
@@ -190,7 +193,7 @@ public partial class ConfigManagerViewModel : ObservableObject
         }
         catch (System.Exception ex)
         {
-            StatusMessage = $"❌ 扫描失败：{ex.Message}";
+            StatusMessage = string.Format(Services.I18nService.Instance["Str_367"], ex.Message);
         }
         finally
         {
@@ -287,7 +290,7 @@ public partial class ConfigManagerViewModel : ObservableObject
 
     private async Task TranslateSingleFileAsync(CfgFile file)
     {
-        StatusMessage = $"正在翻译 {file.DisplayName} 当前配置项...";
+        StatusMessage = string.Format(Services.I18nService.Instance["Str_368"], file.DisplayName);
         var textsToTranslate = new System.Collections.Generic.List<string>();
         var entriesWithComments = new System.Collections.Generic.List<CfgEntry>();
 
@@ -303,7 +306,7 @@ public partial class ConfigManagerViewModel : ObservableObject
         if (textsToTranslate.Count == 0)
         {
             file.HasBeenTranslated = true;
-            StatusMessage = "就绪";
+            StatusMessage = Services.I18nService.Instance["Str_359"];
             return;
         }
 
@@ -357,7 +360,7 @@ public partial class ConfigManagerViewModel : ObservableObject
                 e.IsModified = wasModified;
         }
 
-        await ShowStatusMessageAsync($"已保存 {entry.Key}");
+        await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_369"], entry.Key));
     }
 
     [RelayCommand]
@@ -380,7 +383,7 @@ public partial class ConfigManagerViewModel : ObservableObject
         // 调用服务将对应的行从物理文件中擦除
         await _configFileService.DeleteSectionAsync(SelectedFile, sectionNameToDelete);
 
-        await ShowStatusMessageAsync($"已删除节点 [{sectionNameToDelete}]");
+        await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_370"], sectionNameToDelete));
     }
 
     [RelayCommand]
@@ -389,7 +392,7 @@ public partial class ConfigManagerViewModel : ObservableObject
         if (SelectedFile == null || _configFileService == null) return;
 
         await _configFileService.SaveCfgFileAsync(SelectedFile);
-        await ShowStatusMessageAsync($"已保存 {SelectedFile.FileName} 的所有修改");
+        await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_371"], SelectedFile.FileName));
     }
 
     [RelayCommand]
@@ -398,7 +401,7 @@ public partial class ConfigManagerViewModel : ObservableObject
         var gamePath = _configService?.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            _ = ShowStatusMessageAsync("打开失败: 游戏路径未设置");
+            _ = ShowStatusMessageAsync(Services.I18nService.Instance["Str_372"]);
             return;
         }
 
@@ -411,7 +414,7 @@ public partial class ConfigManagerViewModel : ObservableObject
             }
             catch (System.Exception ex)
             {
-                _ = ShowStatusMessageAsync($"打开失败: 无法创建 UserData 文件夹: {ex.Message}");
+                _ = ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_373"], ex.Message));
                 return;
             }
         }
@@ -427,7 +430,7 @@ public partial class ConfigManagerViewModel : ObservableObject
         }
         catch (System.Exception ex)
         {
-            _ = ShowStatusMessageAsync($"打开失败: {ex.Message}");
+            _ = ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_374"], ex.Message));
         }
     }
 
@@ -436,7 +439,7 @@ public partial class ConfigManagerViewModel : ObservableObject
         var gamePath = _configService?.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            await ShowStatusMessageAsync("⚠️ 请先在主界面设置游戏路径");
+            await ShowStatusMessageAsync(Services.I18nService.Instance["Str_362"]);
             return;
         }
 
@@ -449,7 +452,7 @@ public partial class ConfigManagerViewModel : ObservableObject
             }
             catch (System.Exception ex)
             {
-                await ShowStatusMessageAsync($"导入失败：无法创建 UserData 文件夹。{ex.Message}");
+                await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_375"], ex.Message));
                 return;
             }
         }
@@ -459,11 +462,11 @@ public partial class ConfigManagerViewModel : ObservableObject
         {
             System.IO.File.Copy(filePath, destPath, overwrite: true);
             await RefreshAsync();
-            await ShowStatusMessageAsync($"成功导入：{System.IO.Path.GetFileName(filePath)}");
+            await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_376"], System.IO.Path.GetFileName(filePath)));
         }
         catch (System.Exception ex)
         {
-            await ShowStatusMessageAsync($"导入失败：{ex.Message}");
+            await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_377"], ex.Message));
         }
     }
 
@@ -486,11 +489,11 @@ public partial class ConfigManagerViewModel : ObservableObject
 
             // 重新扫描以更新列表
             await RefreshAsync();
-            await ShowStatusMessageAsync($"已删除配置：{node.FileItem.FileName}");
+            await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_378"], node.FileItem.FileName));
         }
         catch (System.Exception ex)
         {
-            await ShowStatusMessageAsync($"删除异常：{ex.Message}");
+            await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_379"], ex.Message));
         }
     }
 
@@ -528,7 +531,7 @@ public partial class ConfigManagerViewModel : ObservableObject
 
         if (folderFullPath == null || !System.IO.Directory.Exists(folderFullPath))
         {
-            await ShowStatusMessageAsync($"删除失败：无法定位文件夹 [{node.FolderName}]");
+            await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_380"], node.FolderName));
             return;
         }
 
@@ -543,11 +546,11 @@ public partial class ConfigManagerViewModel : ObservableObject
             }
 
             await RefreshAsync();
-            await ShowStatusMessageAsync($"已删除文件夹并且所有内部配置：{node.FolderName}");
+            await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_381"], node.FolderName));
         }
         catch (System.Exception ex)
         {
-            await ShowStatusMessageAsync($"删除异常：{ex.Message}");
+            await ShowStatusMessageAsync(string.Format(Services.I18nService.Instance["Str_379"], ex.Message));
         }
     }
 

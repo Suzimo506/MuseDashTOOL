@@ -130,7 +130,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     public bool HasSelectedCategoriesForDeletion => SelectedCategoriesForDeletionCount > 0;
 
     [ObservableProperty]
-    private ObservableCollection<string> _sortOptions = new() { "按名称排序", "按分类排序" };
+    private ObservableCollection<string> _sortOptions = new() { Services.I18nService.Instance["Str_343"], Services.I18nService.Instance["Str_352"] };
 
     [ObservableProperty]
     private int _selectedSortIndex = 0;
@@ -154,8 +154,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     {
         get
         {
-            if (string.IsNullOrEmpty(SelectedCategory)) return string.Empty;
-            return SelectedCategory.Length > 6 ? SelectedCategory.Substring(0, 6) + ".." : SelectedCategory;
+            string displayName = string.IsNullOrEmpty(SelectedCategory) || SelectedCategory == "全部" ? Services.I18nService.Instance["Str_389"] : 
+                                 (SelectedCategory == "未分类" ? Services.I18nService.Instance["Str_390"] : SelectedCategory);
+            return displayName.Length > 6 ? displayName.Substring(0, 6) + ".." : displayName;
         }
     }
 
@@ -485,11 +486,11 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         if (SelectedCategory == "全部")
         {
-            StatusMessage = $"第 {CurrentPage} / {TotalPages} 页，共 {_allCharts.Count} 张谱面";
+            StatusMessage = string.Format(Services.I18nService.Instance["Str_344"], CurrentPage, TotalPages, _allCharts.Count);
         }
         else
         {
-            StatusMessage = $"当前分类 {categoryTotal} 张谱面";
+            StatusMessage = string.Format(Services.I18nService.Instance["Str_346"], categoryTotal);
         }
     }
 
@@ -1324,6 +1325,9 @@ public class CategoryItem : ObservableObject
         set => SetProperty(ref _name, value);
     }
 
+    public string DisplayName => Name == "全部" ? MdModManager.Services.I18nService.Instance["Str_389"] :
+                                 (Name == "未分类" ? MdModManager.Services.I18nService.Instance["Str_390"] : Name);
+
     public bool IsCustom => Name != "全部" && Name != "未分类";
 
     private bool _isSelectedForDeletion;
@@ -1346,4 +1350,8 @@ public class MoveCategoryItem
 {
     public string Name { get; set; } = string.Empty;
     public bool IsCreateNew { get; set; }
+
+    public string DisplayName => Name == "新建分类" ? MdModManager.Services.I18nService.Instance["Str_391"] :
+                                 (Name == "全部" ? MdModManager.Services.I18nService.Instance["Str_389"] :
+                                 (Name == "未分类" ? MdModManager.Services.I18nService.Instance["Str_390"] : Name));
 }

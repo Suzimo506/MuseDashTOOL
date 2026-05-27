@@ -55,13 +55,9 @@ public partial class ModManagerViewModel : ObservableObject
     [ObservableProperty]
     private int _modCount = 0;
 
-    // 已被用户“不再提醒”的 Mod → 远端版本号（格式：name::version）
-    // 当该 mod 又出现新版本时，对应的 key 就不同了，自然重新提醒
-    private HashSet<string> _dismissedUpdateKeys = new(StringComparer.OrdinalIgnoreCase);
-
     // 是否显示粉色更新提示（有未被关闭的更新）
     public bool ShowUpdateBadge => _allLocalMods.Any(m =>
-        m.HasUpdate && !_dismissedUpdateKeys.Contains(DismissKey(m)));
+        m.HasUpdate && !(_configService.Config.DismissedUpdateKeys?.Contains(DismissKey(m)) ?? false));
 
     // 只有在“更新”Tab下，并且该列表不为空，才显示“不再提醒”按钮
     public bool ShowDismissUpdateNoticeButton => IsUpdateTabSelected && !IsUpdateTabEmpty;
@@ -484,10 +480,18 @@ public partial class ModManagerViewModel : ObservableObject
     private void DismissUpdateNotice()
     {
         // 将当前列表中所有有更新的 mod+版本加入已关闭集合
+        var config = _configService.Config;
+        config.DismissedUpdateKeys ??= new System.Collections.Generic.List<string>();
         foreach (var mod in _allLocalMods.Where(m => m.HasUpdate))
         {
-            _dismissedUpdateKeys.Add(DismissKey(mod));
+            var key = DismissKey(mod);
+            if (!config.DismissedUpdateKeys.Contains(key))
+            {
+                config.DismissedUpdateKeys.Add(key);
+            }
         }
+        _configService.SaveAsync();
+        
         RefreshList();
         // 通知 UI ShowUpdateBadge 已改变
         OnPropertyChanged(nameof(ShowUpdateBadge));

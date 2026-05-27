@@ -1,7 +1,7 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="MdModManager.Views.IncompatibleModDialog"
-        Title="下载不兼容 Mod" 
+        Title="{Binding [Str_138], Source={x:Static i18n:I18nService.Instance}}" 
         Width="480" Height="220"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
@@ -12,7 +12,7 @@
 
         <!-- 提示文本 -->
         <TextBlock Grid.Row="0"
-                   Text="该 mod 根据版本号判断不兼容，但并不一定完全不可用，如果下载使用可能会造成游戏无法打开、影响其他 mod 功能等问题，确定下载使用吗？"
+                   Text="{Binding [Str_139], Source={x:Static i18n:I18nService.Instance}}"
                    TextWrapping="Wrap"
                    FontSize="14"
                    Foreground="{DynamicResource ThemeTextMainBrush}"
@@ -24,14 +24,14 @@
             <!-- 左下角：不再提示复选框 -->
             <CheckBox Grid.Column="0"
                       x:Name="DontShowAgainCheckBox"
-                      Content="不再显示此提示"
+                      Content="{Binding [Str_140], Source={x:Static i18n:I18nService.Instance}}"
                       Foreground="{DynamicResource ThemeTextSubBrush}"
                       CornerRadius="6"
                       FontSize="13"/>
 
             <!-- 右下角：取消 / 确认 -->
             <Button Grid.Column="2"
-                    Content="取消"
+                    Content="{Binding [Str_086], Source={x:Static i18n:I18nService.Instance}}"
                     Width="80"
                     HorizontalContentAlignment="Center"
                     Background="{DynamicResource ControlBgBrush}" Foreground="{DynamicResource ThemeTextMainBrush}"
@@ -39,7 +39,7 @@
                     Click="OnCancelClick"/>
 
             <Button Grid.Column="4"
-                    Content="确认"
+                    Content="{Binding [Str_141], Source={x:Static i18n:I18nService.Instance}}"
                     Width="90"
                     HorizontalContentAlignment="Center"
                     Background="{DynamicResource ThemeAccentBrush}" Foreground="White"

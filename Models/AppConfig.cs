@@ -90,6 +90,9 @@ public class AppConfig
     /// <summary>用户已点击确认过的红点标记列表（格式: "版本号:标记名"，如 "1.2.6:Tutorial"）</summary>
     public System.Collections.Generic.List<string> DismissedBadges { get; set; } = new();
 
+    /// <summary>已被用户“不再提醒”的 Mod 更新（格式：name::version）</summary>
+    public System.Collections.Generic.List<string> DismissedUpdateKeys { get; set; } = new();
+
     /// <summary>整合包页是否使用列表模式</summary>
     public bool AlbumCollectionListMode { get; set; } = false;
 
@@ -101,6 +104,9 @@ public class AppConfig
 
     // Euterpe 已点赞的谱面 cid 列表
     public System.Collections.Generic.List<long> EuterpeLikedCids { get; set; } = new();
+
+    /// <summary>应用语言</summary>
+    public string Language { get; set; } = "zh-CN";
 }
 
 public class NoticeInfo
@@ -123,8 +129,32 @@ public class NoticeInfo
     [JsonPropertyName("cancel_button_text")]
     public string CancelButtonText { get; set; } = "不再显示该弹窗";
 
+    [JsonPropertyName("title_en")]
+    public string TitleEn { get; set; } = "";
+
+    [JsonPropertyName("content_en")]
+    public string ContentEn { get; set; } = "";
+
+    [JsonPropertyName("action_button_text_en")]
+    public string ActionButtonTextEn { get; set; } = "";
+
+    [JsonPropertyName("cancel_button_text_en")]
+    public string CancelButtonTextEn { get; set; } = "";
+
     [JsonPropertyName("badge")]
     public string Badge { get; set; } = "";
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string DisplayTitle => MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" && !string.IsNullOrEmpty(TitleEn) ? TitleEn : Title;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string DisplayContent => MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" && !string.IsNullOrEmpty(ContentEn) ? ContentEn : Content;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string DisplayActionButtonText => MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" && !string.IsNullOrEmpty(ActionButtonTextEn) ? ActionButtonTextEn : ActionButtonText;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string DisplayCancelButtonText => MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" && !string.IsNullOrEmpty(CancelButtonTextEn) ? CancelButtonTextEn : CancelButtonText;
 
     // 动态解析公告角标
     [JsonIgnore]

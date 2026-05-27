@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -11,7 +11,7 @@
 
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="18">
         <StackPanel Grid.Row="0" Spacing="6">
-            <TextBlock Text="谱面上传" FontSize="22" FontWeight="Bold">
+            <TextBlock Text="{Binding [Str_095], Source={x:Static i18n:I18nService.Instance}}" FontSize="22" FontWeight="Bold">
                 <TextBlock.Foreground>
                     <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                         <GradientStop Color="#FF00FF" Offset="0"/>
@@ -19,7 +19,7 @@
                     </LinearGradientBrush>
                 </TextBlock.Foreground>
             </TextBlock>
-            <TextBlock Text="上传的谱面在几分钟后出现在【未经审查】分类里"
+            <TextBlock Text="{Binding [Str_096], Source={x:Static i18n:I18nService.Instance}}"
                        TextWrapping="Wrap"
                        Foreground="{DynamicResource ThemeTextSubBrush}"/>
         </StackPanel>
@@ -30,7 +30,7 @@
                     CornerRadius="12"
                     Padding="18">
                 <StackPanel Spacing="8">
-                    <TextBlock Text="当前账号" FontSize="15" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding [Str_097], Source={x:Static i18n:I18nService.Instance}}" FontSize="15" FontWeight="SemiBold"/>
                     <TextBlock Text="{Binding AccountSummary}"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource ThemeTextMainBrush}"/>
@@ -46,9 +46,9 @@
                     CornerRadius="12"
                     Padding="18">
                 <StackPanel Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="B站视频链接 (选填)" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding [Str_098], Source={x:Static i18n:I18nService.Instance}}" VerticalAlignment="Center"/>
                     <TextBox Text="{Binding Burl}"
-                             Watermark="例如 https://www.bilibili.com/video/BV..."
+                             Watermark="{Binding [Str_099], Source={x:Static i18n:I18nService.Instance}}"
                              IsEnabled="{Binding CanEditQueue}"/>
                 </StackPanel>
             </Border>
@@ -97,7 +97,7 @@
                     <TextBlock Text="{Binding DropZoneTitle}"
                                FontSize="16"
                                FontWeight="SemiBold"/>
-                    <TextBlock Text="一次仅允许上传一个文件"
+                    <TextBlock Text="{Binding [Str_100], Source={x:Static i18n:I18nService.Instance}}"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource ThemeTextSubBrush}"/>
                 </StackPanel>
@@ -120,16 +120,16 @@
                 CornerRadius="12"
                 Padding="18">
             <StackPanel Spacing="8" VerticalAlignment="Center">
-                <TextBlock Text="B站视频链接用于展示你的谱面演示，如果你填写了这一栏，未来有活动或审查时会将你的谱面纳入审查范围。如果没有视频链接可以留空。" 
+                <TextBlock Text="{Binding [Str_101], Source={x:Static i18n:I18nService.Instance}}" 
                            TextWrapping="Wrap" 
                            Foreground="{DynamicResource ThemeTextSubBrush}"/>
-                <TextBlock Text="确认你上传的谱面是你的原创，不接受未经授权的转载以及改编谱面" 
+                <TextBlock Text="{Binding [Str_102], Source={x:Static i18n:I18nService.Instance}}" 
                            TextWrapping="Wrap" 
                            Foreground="{DynamicResource ThemeTextSubBrush}"/>
-                <TextBlock Text="谱面大小不能超过100MB，请压缩后上传" 
+                <TextBlock Text="{Binding [Str_103], Source={x:Static i18n:I18nService.Instance}}" 
                            TextWrapping="Wrap" 
                            Foreground="{DynamicResource ThemeTextSubBrush}"/>
-                <TextBlock Text="感谢你对MDMC社区做出的贡献！" 
+                <TextBlock Text="{Binding [Str_104], Source={x:Static i18n:I18nService.Instance}}" 
                            TextWrapping="Wrap" 
                            Foreground="{DynamicResource ThemeTextSubBrush}"/>
             </StackPanel>

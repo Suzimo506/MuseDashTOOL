@@ -59,7 +59,8 @@ public static class BingTranslateHelper
 
         try
         {
-            var url = "https://api-edge.cognitive.microsofttranslator.com/translate?from=&to=zh-Hans&api-version=3.0";
+            var targetLang = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "en" : "zh-Hans";
+            var url = $"https://api-edge.cognitive.microsofttranslator.com/translate?from=&to={targetLang}&api-version=3.0";
             
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

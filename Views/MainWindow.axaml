@@ -1,4 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:MdModManager.ViewModels"
         xmlns:svc="using:MdModManager.Services"
@@ -8,7 +8,7 @@
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="MdModManager.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="喵斯兔"
+        Title="{Binding [Str_147], Source={x:Static i18n:I18nService.Instance}}"
         Icon="/Assets/MuseDashTOOL.ico"
         Width="1280" Height="800"
         Background="Transparent"
@@ -66,7 +66,7 @@
                                 </Button.Styles>
                                 <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                                     <Image Source="/Assets/MuseDashTOOL.ico" Width="24" Height="24" VerticalAlignment="Center"/>
-                                    <TextBlock Text="喵斯兔" FontSize="22" FontWeight="Bold" LetterSpacing="3" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding [Str_147], Source={x:Static i18n:I18nService.Instance}}" FontSize="22" FontWeight="Bold" LetterSpacing="3" VerticalAlignment="Center">
                                         <TextBlock.Foreground>
                                             <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                                                 <GradientStop Color="#FF00FF" Offset="0"/>
@@ -200,7 +200,7 @@
                                         <PathIcon Data="M406.186667 120.874667a213.418667 213.418667 0 0 1 211.669333 0l3.370667 1.92a42.666667 42.666667 0 0 1-42.368 74.112l-3.370667-1.92a128.042667 128.042667 0 0 0-126.976 0L267.050667 298.666667a128 128 0 0 0-32.853334 26.794666l0.298667 0.170667L512 484.181333l277.504-158.549333c0.085333 0 0.170667-0.085333 0.256-0.170667A128 128 0 0 0 756.992 298.666667l-2.048-1.152a42.666667 42.666667 0 1 1 42.325333-74.069334l2.048 1.152a213.376 213.376 0 0 1 107.52 185.216v204.373334a213.333333 213.333333 0 0 1-107.52 185.173333l-181.461333 103.722667a213.376 213.376 0 0 1-211.669333 0l-3.413334-1.877334a42.666667 42.666667 0 0 1 42.410667-74.112l3.328 1.92a128 128 0 0 0 21.333333 9.728A42.88 42.88 0 0 1 469.333333 832v-273.92L202.666667 405.76c-0.042667 1.322667-0.128 2.688-0.128 4.053333v204.373334A128 128 0 0 0 267.093333 725.333333l2.048 1.152a42.666667 42.666667 0 0 1-42.368 74.069334l-2.005333-1.152a213.333333 213.333333 0 0 1-107.52-185.216v-204.373334a213.333333 213.333333 0 0 1 107.52-185.173333L406.186667 120.874667zM554.666667 558.08v273.92a42.368 42.368 0 0 1-0.597334 6.741333c7.338667-2.56 14.506667-5.802667 21.418667-9.728L756.992 725.333333a128 128 0 0 0 64.512-111.146666v-204.373334c0-1.365333-0.128-2.773333-0.170667-4.138666L554.666667 558.08z"
                                                   Width="18" Height="18"
                                                   Foreground="{DynamicResource NavButtonMainBrush}"/>
-                                        <TextBlock Text="Mod管理" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
+                                        <TextBlock Text="{Binding [Str_148], Source={x:Static i18n:I18nService.Instance}}" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToChartManagerCommand}">
@@ -208,7 +208,7 @@
                                         <PathIcon Data="M870.4 307.568V262.4a57.664 57.664 0 0 0-51.2-57.232V160a57.664 57.664 0 0 0-57.6-57.6H262.4a57.664 57.664 0 0 0-57.6 57.6v45.168A57.664 57.664 0 0 0 153.6 262.4v45.168A57.664 57.664 0 0 0 102.4 364.8v550.4a57.664 57.664 0 0 0 57.6 57.6h704a57.664 57.664 0 0 0 57.6-57.6V364.8a57.664 57.664 0 0 0-51.2-57.232zM262.4 153.6h499.2a6.4 6.4 0 0 1 6.4 6.4v44.8H256v-44.8a6.4 6.4 0 0 1 6.4-6.4z m-51.2 102.4h601.6a6.4 6.4 0 0 1 6.4 6.4v44.8H204.8v-44.8a6.4 6.4 0 0 1 6.4-6.4z m659.2 659.2a6.4 6.4 0 0 1-6.4 6.4H160a6.4 6.4 0 0 1-6.4-6.4V364.8a6.4 6.4 0 0 1 6.4-6.4h704a6.4 6.4 0 0 1 6.4 6.4zM620.304 536.336a83.136 83.136 0 0 0-29.456-24.256 92.456 92.456 0 0 1-12-16.128C566.184 474.4 563.352 450.888 563.2 434.96a25.6 25.6 0 0 0-25.6-25.36h-0.12A25.6 25.6 0 0 0 512 435.2v240.368c-14.976-6.4-32.424-9.968-51.2-9.968-57.424 0-102.4 33.736-102.4 76.8s44.976 76.8 102.4 76.8 102.4-33.736 102.4-76.8V555.672a24.624 24.624 0 0 0 3.464 1.664 30.768 30.768 0 0 1 13.032 10.192c6.648 8.656 8.664 18.864 9.272 24.184a25.6 25.6 0 0 0 50.864-5.824c-1.48-12.928-6.064-32.024-19.528-49.552zM460.8 768c-31.256 0-51.2-15.2-51.2-25.6s19.944-25.6 51.2-25.6 51.2 15.2 51.2 25.6-19.944 25.6-51.2 25.6z"
                                                   Width="18" Height="18"
                                                   Foreground="{DynamicResource NavButtonMainBrush}"/>
-                                        <TextBlock Text="谱面管理" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
+                                        <TextBlock Text="{Binding [Str_064], Source={x:Static i18n:I18nService.Instance}}" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
                                     </StackPanel>
                                 </Button>
                                 
@@ -231,7 +231,7 @@
                                                            Width="18" Height="18"
                                                            Foreground="{DynamicResource NavButtonMainBrush}"/>
                                                 <TextBlock Grid.Column="1"
-                                                           Text="谱面下载"
+                                                           Text="{Binding [Str_149], Source={x:Static i18n:I18nService.Instance}}"
                                                            LetterSpacing="{Binding NavButtonLetterSpacing}"
                                                            VerticalAlignment="Center"/>
                                                 <Panel Grid.Column="2" Width="13" Height="13" VerticalAlignment="Center">
@@ -252,17 +252,17 @@
                                                      Margin="18,0,0,0"
                                                      IsVisible="{Binding IsChartDownloadMenuExpanded}">
                                             <Button Classes="NavBtn" Command="{Binding NavigateToChartDownloadCommand}">
-                                                <TextBlock Text="mdmc谱面" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                                <TextBlock Text="{Binding [Str_048], Source={x:Static i18n:I18nService.Instance}}" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
                                             </Button>
                                             <Button Classes="NavBtn" Command="{Binding NavigateToEuterpeDownloadCommand}" ToolTip.Tip="{Binding EuterpeButtonToolTip}">
                                                 <TextBlock Text="{Binding EuterpeButtonText}" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
                                             </Button>
                                             <Button Classes="NavBtn" Command="{Binding NavigateToAlbumCollectionCommand}">
-                                                <TextBlock Text="QQ群谱面" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                                <TextBlock Text="{Binding [Str_012], Source={x:Static i18n:I18nService.Instance}}" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
                                             </Button>
                                             <!-- 下载列表子按钮 -->
                                             <Button Classes="NavBtn" Command="{Binding NavigateToDownloadManagerCommand}">
-                                                <TextBlock Text="下载列表" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                                <TextBlock Text="{Binding [Str_117], Source={x:Static i18n:I18nService.Instance}}" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
                                             </Button>
                                         </StackPanel>
                                     </StackPanel>
@@ -312,7 +312,7 @@
                                         <PathIcon Data="M595.017 974.043H166.62c-65.609 0-119.003-54.637-119.003-121.782V316.562c0-67.072 53.394-121.783 119.003-121.783h428.398c57.417 0 105.472 41.838 116.59 97.28 15.36-4.388 30.866-7.899 46.592-9.874-15.58-77.531-82.798-136.046-163.182-136.046H342.31c11.117-55.588 59.172-97.426 116.59-97.426h231.13c65.683 0 119.077 54.638 119.077 121.71V280.43c16.092 0.731 31.89 2.925 47.543 6.144V170.423C856.65 76.434 781.97 0 690.103 0H458.97C375.223 0 306.47 63.78 294.766 146.14H166.619C74.752 146.14 0 222.573 0 316.561v535.699c0 93.988 74.752 170.422 166.62 170.422h428.397c72.192 0 133.12-47.542 156.306-113.298a302.592 302.592 0 0 1-46.372-10.752 119.15 119.15 0 0 1-109.934 75.41zM142.775 322.56H459.63v36.571H142.775V322.56z m0 162.377h244.004v36.498H142.775v-36.571z m0 162.377h244.004v36.499H142.775V647.24z m0 162.304H459.63v36.572H142.775v-36.572z m829.147-226.596l43.667-16.457a11.995 11.995 0 0 0 6.875-15.36l-36.352-100.572a11.63 11.63 0 0 0-14.994-7.022l-43.52 16.384c-5.998 2.341-13.312 1.317-16.238-2.194-2.926-3.51-8.997-17.042-6.363-22.894l19.456-43.154a12.069 12.069 0 0 0-5.706-15.799l-95.158-44.91a11.557 11.557 0 0 0-15.434 5.852L788.7 380.05c-2.706 5.925-8.557 10.533-13.019 10.24-4.389-0.292-18.14-5.34-20.334-11.483l-16.091-44.69a11.703 11.703 0 0 0-14.994-7.095l-98.304 37.156a11.995 11.995 0 0 0-6.949 15.36l16.091 44.617c2.195 6.071 1.317 13.605-2.194 16.604-3.364 2.926-16.457 9.216-22.308 6.436l-42.13-19.894a11.557 11.557 0 0 0-15.434 5.851l-43.886 97.426a12.142 12.142 0 0 0 5.632 15.8l42.13 19.894c5.852 2.78 10.314 8.777 10.021 13.166-0.22 4.608-5.266 18.651-11.264 20.919l-43.593 16.457a11.995 11.995 0 0 0-6.875 15.36l36.279 100.644a11.703 11.703 0 0 0 14.92 7.095l43.594-16.457c5.998-2.34 13.385-1.317 16.238 2.194 2.998 3.365 9.07 16.896 6.363 22.894l-19.456 43.008a12.142 12.142 0 0 0 5.705 15.799l95.232 44.983c5.852 2.706 12.8 0.073 15.433-5.852l19.456-43.08c2.633-5.999 8.485-10.533 12.947-10.24 4.388 0.219 18.139 5.339 20.333 11.483l16.092 44.544c2.194 6.144 8.923 9.362 14.92 7.094l98.451-37.083a12.142 12.142 0 0 0 6.876-15.36l-16.092-44.617c-2.194-6.144-1.243-13.605 2.194-16.604 3.438-2.998 16.53-9.216 22.455-6.436l42.057 19.895a11.63 11.63 0 0 0 15.434-5.852l43.885-97.426a12.069 12.069 0 0 0-5.778-15.872l-41.984-19.822c-5.851-2.78-9.801-17.188-9.801-21.65 0-4.535 4.9-10.167 10.971-12.434z m-167.79 120.612a115.931 115.931 0 0 1-149.65-70.583c-22.235-61.732 8.631-130.34 69.047-153.16a115.785 115.785 0 0 1 149.577 70.582c22.236 61.806-8.63 130.414-68.973 153.161z"
                                                    Width="18" Height="18"
                                                    Foreground="{DynamicResource NavButtonMainBrush}"/>
-                                        <TextBlock Text="配置文件" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
+                                        <TextBlock Text="{Binding [Str_105], Source={x:Static i18n:I18nService.Instance}}" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToAccountCommand}">
@@ -320,7 +320,7 @@
                                         <PathIcon Data="M512 128a192 192 0 1 0 192 192A192 192 0 0 0 512 128z m0 469.333333c-128 0-384 64-384 192v42.666667h768v-42.666667c0-128-256-192-384-192z"
                                                   Width="18" Height="18"
                                                   Foreground="{DynamicResource NavButtonMainBrush}"/>
-                                        <TextBlock Text="我的账号" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
+                                        <TextBlock Text="{Binding [Str_150], Source={x:Static i18n:I18nService.Instance}}" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToTutorialCommand}">
@@ -329,7 +329,7 @@
                                             <PathIcon Data="M512 85.333333C276.266667 85.333333 85.333333 276.266667 85.333333 512s190.933333 426.666667 426.666667 426.666667 426.666667-190.933333 426.666667-426.666667S747.733333 85.333333 512 85.333333z m42.666667 640h-85.333334v-256h85.333334v256z m0-341.333333h-85.333334v-85.333333h85.333334v85.333333z"
                                                       Width="18" Height="18"
                                                       Foreground="{DynamicResource NavButtonMainBrush}"/>
-                                            <TextBlock Text="使用说明" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
+                                            <TextBlock Text="{Binding [Str_151], Source={x:Static i18n:I18nService.Instance}}" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
                                         </StackPanel>
                                         <Ellipse Width="8" Height="8" Fill="#FF4444"
                                                  HorizontalAlignment="Right" VerticalAlignment="Top"
@@ -441,13 +441,13 @@
                                                 <PathIcon Data="M896 512L128 1024V0z"
                                                           Width="18" Height="18"
                                                           Foreground="{DynamicResource NavButtonSubBrush}"/>
-                                                <TextBlock Text="启动/重启游戏" IsVisible="{Binding IsSidebarExpanded}"/>
+                                                <TextBlock Text="{Binding [Str_152], Source={x:Static i18n:I18nService.Instance}}" IsVisible="{Binding IsSidebarExpanded}"/>
                                             </StackPanel>
                                             <!-- 折叠状态下的红点提示 -->
                                             <Ellipse Width="8" Height="8" Fill="#FF4444"
                                                      HorizontalAlignment="Right" VerticalAlignment="Top"
                                                      Margin="0,-2,-2,0"
-                                                     ToolTip.Tip="有 Mod 已暂存，将在游戏关闭后自动安装">
+                                                     ToolTip.Tip="{Binding [Str_153], Source={x:Static i18n:I18nService.Instance}}">
                                                 <Ellipse.IsVisible>
                                                     <MultiBinding Converter="{x:Static BoolConverters.And}">
                                                         <Binding Path="!IsSidebarExpanded"/>
@@ -464,7 +464,7 @@
                                                FontSize="14"
                                                VerticalAlignment="Center"
                                                Margin="4,0,8,0"
-                                               ToolTip.Tip="有 Mod 已暂存，将在游戏关闭后自动安装">
+                                               ToolTip.Tip="{Binding [Str_153], Source={x:Static i18n:I18nService.Instance}}">
                                         <TextBlock.IsVisible>
                                             <MultiBinding Converter="{x:Static BoolConverters.And}">
                                                 <Binding Path="IsSidebarExpanded"/>
@@ -478,7 +478,7 @@
                                         <PathIcon Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
                                                   Width="18" Height="18"
                                                   Foreground="{DynamicResource NavButtonSubBrush}"/>
-                                        <TextBlock Text="赞助打赏" IsVisible="{Binding IsSidebarExpanded}"/>
+                                        <TextBlock Text="{Binding [Str_154], Source={x:Static i18n:I18nService.Instance}}" IsVisible="{Binding IsSidebarExpanded}"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToSettingsCommand}">
@@ -486,7 +486,7 @@
                                         <PathIcon Data="M896 554.666667v-85.333334l-94.293333-12.373333a292.266667 292.266667 0 0 0-24.746667-59.733333l57.173333-76.373334-60.373333-60.373333-76.373333 57.173333a292.266667 292.266667 0 0 0-59.733334-24.746666L554.666667 128h-85.333334l-12.373333 94.293333a292.266667 292.266667 0 0 0-59.733333 24.746667l-76.373334-57.173333-60.373333 60.373333 57.173333 76.373333a292.266667 292.266667 0 0 0-24.746666 59.733334L128 469.333333v85.333334l94.293333 12.373333a292.266667 292.266667 0 0 0 24.746667 59.733333l-57.173333 76.373334 60.373333 60.373333 76.373333-57.173333a292.266667 292.266667 0 0 0 59.733334 24.746666L469.333333 896h85.333334l12.373333-94.293333a292.266667 292.266667 0 0 0 59.733333-24.746667l76.373334 57.173333 60.373333-60.373333-57.173333-76.373333a292.266667 292.266667 0 0 0 24.746666-59.733334L896 554.666667zM512 682.666667a170.666667 170.666667 0 1 1 170.666667-170.666667 170.666667 170.666667 0 0 1-170.666667 170.666667z"
                                                   Width="18" Height="18"
                                                   Foreground="{DynamicResource NavButtonSubBrush}"/>
-                                        <TextBlock Text="设置" IsVisible="{Binding IsSidebarExpanded}"/>
+                                        <TextBlock Text="{Binding [Str_155], Source={x:Static i18n:I18nService.Instance}}" IsVisible="{Binding IsSidebarExpanded}"/>
                                     </StackPanel>
                                 </Button>
                                 
@@ -496,7 +496,7 @@
                                         <PathIcon Data="M928 352v-48c0-35.3-28.7-64-64-64H485.2c-21 0-40.7-10.3-52.6-27.6l-61.5-88.9c-12-17.3-31.6-27.6-52.6-27.6H64c-35.3 0-64 28.7-64 64v656c0 70.7 57.3 128 128 128h638c57.8 0 108.5-38.8 123.6-94.6L928 707.2l74.2-274.5c11-40.7-19.6-80.7-61.8-80.7H928z"
                                                   Width="18" Height="18"
                                                   Foreground="{DynamicResource NavButtonSubBrush}"/>
-                                        <TextBlock Text="选择游戏目录" IsVisible="{Binding IsSidebarExpanded}"/>
+                                        <TextBlock Text="{Binding [Str_156], Source={x:Static i18n:I18nService.Instance}}" IsVisible="{Binding IsSidebarExpanded}"/>
                                     </StackPanel>
                                 </Button>
                                 <!-- 版本号精准对齐并在折叠时隐去 -->
@@ -544,7 +544,7 @@
                     </Border>
 
                     <!-- 标题渐变字 -->
-                    <TextBlock Text="{Binding CurrentAnnouncement.Title}"
+                    <TextBlock Text="{Binding CurrentAnnouncement.DisplayTitle}"
                                FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"
                                TextAlignment="Center" TextWrapping="Wrap" MaxWidth="380">
                         <TextBlock.Foreground>
@@ -558,7 +558,7 @@
                     <!-- 内容卡片 -->
                     <Border Background="#07FFFFFF" BorderBrush="#0DFFFFFF" BorderThickness="1" CornerRadius="16" Padding="20,16">
                         <ScrollViewer MaxHeight="250" VerticalScrollBarVisibility="Auto">
-                            <TextBlock helpers:TextBlockHelper.MarkupText="{Binding CurrentAnnouncement.Content}"
+                            <TextBlock helpers:TextBlockHelper.MarkupText="{Binding CurrentAnnouncement.DisplayContent}"
                                        TextWrapping="Wrap" LineHeight="22" FontSize="13.5"
                                        Foreground="#E2E2E8"
                                        Opacity="0.9"/>
@@ -610,7 +610,7 @@
                                     <Setter Property="Foreground" Value="#EEEEEE"/>
                                 </Style>
                             </Button.Styles>
-                            <TextBlock Text="{Binding CurrentAnnouncement.CancelButtonText}"
+                            <TextBlock Text="{Binding CurrentAnnouncement.DisplayCancelButtonText}"
                                        FontSize="13"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
@@ -667,7 +667,7 @@
                                     <Setter Property="Foreground" Value="White"/>
                                 </Style>
                             </Button.Styles>
-                            <TextBlock Text="{Binding CurrentAnnouncement.ActionButtonText}" 
+                            <TextBlock Text="{Binding CurrentAnnouncement.DisplayActionButtonText}" 
                                        FontWeight="Bold" FontSize="13"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>

@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MdModManager.ViewModels"
              xmlns:models="using:MdModManager.Models"
@@ -203,7 +203,7 @@
                     <PathIcon Data="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
                               Width="16" Height="16"
                               Foreground="{DynamicResource SvgIconBrush}"/>
-                    <TextBlock Text="返回欢迎页"
+                    <TextBlock Text="{Binding [Str_250], Source={x:Static i18n:I18nService.Instance}}"
                                FontSize="13"
                                Foreground="{DynamicResource ThemeTextSubBrush}"
                                VerticalAlignment="Center"/>
@@ -212,7 +212,7 @@
 
             <!-- 标题居中 -->
             <StackPanel Grid.Column="1" HorizontalAlignment="Center" Orientation="Horizontal" Spacing="10">
-                <TextBlock Text="打赏支持"
+                <TextBlock Text="{Binding [Str_251], Source={x:Static i18n:I18nService.Instance}}"
                            FontSize="24"
                            FontWeight="Bold"
                            LetterSpacing="2">
@@ -256,13 +256,13 @@
                                 <PathIcon Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
                                           Width="16" Height="16"
                                           Foreground="#FF69B4"/>
-                                <TextBlock Text="支持喵斯兔"
+                                <TextBlock Text="{Binding [Str_252], Source={x:Static i18n:I18nService.Instance}}"
                                            FontSize="15"
                                            FontWeight="Bold"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
                             </StackPanel>
                             
-                            <TextBlock Text="您打赏的米会用于喵斯兔后续的QQ群谱面的云存储，加速域名的租赁，CDN，以及后续的开发等。即使您不打赏，作者也承诺喵斯兔将永久免费并且长期维护。"
+                            <TextBlock Text="{Binding [Str_253], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="13"
                                        Foreground="{DynamicResource ThemeTextSubBrush}"
                                        TextWrapping="Wrap"
@@ -279,7 +279,7 @@
                                               Width="14" Height="14"
                                               Foreground="#FF4444"
                                               VerticalAlignment="Center"/>
-                                    <TextBlock Text="喵斯兔是一个独立的工具软件，并不属于mdmc.moe或Euterpe，如果您需要赞助他们，请前往对应的网站。"
+                                    <TextBlock Text="{Binding [Str_254], Source={x:Static i18n:I18nService.Instance}}"
                                                FontSize="12"
                                                Foreground="#FF4444"
                                                FontWeight="SemiBold"
@@ -311,8 +311,8 @@
                                 </Border>
                                 <!-- 引导文本 -->
                                 <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="来自作者的一封信" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                    <TextBlock Text="点击拆开，倾听作者开发喵斯兔的心路历程" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                    <TextBlock Text="{Binding [Str_255], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                    <TextBlock Text="{Binding [Str_256], Source={x:Static i18n:I18nService.Instance}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"/>
                                 </StackPanel>
                                 <!-- 箭头 -->
                                 <PathIcon Name="ArrowIcon" Grid.Column="2" Data="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" Width="16" Height="16" Foreground="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.6"/>
@@ -327,7 +327,7 @@
                             BorderThickness="1"
                             BorderBrush="{DynamicResource FloatingPanelBorder}">
                         <StackPanel Spacing="0">
-                            <TextBlock Text="请选择打赏方式"
+                            <TextBlock Text="{Binding [Str_257], Source={x:Static i18n:I18nService.Instance}}"
                                        FontSize="14"
                                        FontWeight="Bold"
                                        Foreground="{DynamicResource ThemeTextMainBrush}"
@@ -347,7 +347,7 @@
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <PathIcon Data="M860.16 0C950.272 0 1024 73.889684 1024 164.163368v531.509895s-32.768-4.122947-180.224-53.355789c-40.96-14.362947-96.256-34.896842-157.696-57.478737 36.864-63.595789 65.536-137.485474 86.016-215.444211h-202.752v-71.841684h247.808V256.512h-247.808V135.437474h-100.352c-18.432 0-18.432 18.458947-18.432 18.458947v104.663579H200.704v41.040842h249.856v69.793684H243.712v41.013895H645.12c-14.336 51.307789-34.816 98.519579-57.344 141.608421-129.024-43.115789-268.288-77.985684-356.352-55.403789-55.296 14.362947-92.16 38.992842-112.64 63.595789-96.256 116.978526-26.624 295.504842 176.128 295.504842 120.832 0 237.568-67.718737 327.68-178.526316C757.76 742.858105 1024 853.692632 1024 853.692632v6.144C1024 950.110316 950.272 1024 860.16 1024H163.84C73.728 1024 0 950.137263 0 859.836632V164.163368C0 73.889684 73.728 0 163.84 0h696.32zM268.126316 553.121684c93.049263-10.374737 180.062316 26.974316 283.270737 78.874948-74.886737 95.501474-165.941895 155.701895-256.970106 155.701894-157.830737 0-204.368842-126.652632-125.466947-197.200842 26.300632-22.851368 72.838737-35.301053 99.166316-37.376z"
                                                   Width="14" Height="14"/>
-                                        <TextBlock Text="支付宝"
+                                        <TextBlock Text="{Binding [Str_258], Source={x:Static i18n:I18nService.Instance}}"
                                                    FontSize="13"
                                                    FontWeight="SemiBold"/>
                                     </StackPanel>
@@ -365,7 +365,7 @@
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <PathIcon Data="M891.380364 0h-764.043637C57.285818 0 0 57.297455 0 127.336727v764.043637c0 70.050909 57.297455 127.336727 127.336727 127.336727h764.043637c70.050909 0 127.336727-57.297455 127.336727-127.336727v-764.043637C1018.717091 57.285818 961.419636 0 891.380364 0z m-382.021819 783.150545c-44.567273 0-82.781091-6.376727-120.96-19.118545-25.472 12.741818-63.674182 44.567273-76.404363 50.944-25.472 12.730182-19.118545-12.741818-19.118546-12.741818l12.741819-76.404364C229.213091 674.909091 184.634182 592.128 184.634182 502.993455c0-159.185455 146.443636-286.510545 324.724363-286.510546 108.253091 0 210.094545 50.932364 267.403637 120.971636L458.437818 483.886545s-25.472 12.741818-50.944-6.353454l-50.932363-38.202182s-38.202182-31.848727-19.10691 19.083636l50.932364 114.618182s6.376727 31.825455 44.578909 12.730182c31.848727-12.730182 267.403636-159.162182 369.28-216.482909 19.118545 38.202182 31.825455 82.781091 31.825455 127.348364 0 152.808727-146.420364 286.522182-324.701091 286.522181z"
                                                   Width="14" Height="14"/>
-                                        <TextBlock Text="微信支付"
+                                        <TextBlock Text="{Binding [Str_259], Source={x:Static i18n:I18nService.Instance}}"
                                                    FontSize="13"
                                                    FontWeight="SemiBold"/>
                                     </StackPanel>
@@ -391,7 +391,7 @@
                                               Width="12" Height="12"
                                               Foreground="#FF69B4"
                                               VerticalAlignment="Center"/>
-                                    <TextBlock Text="微信/支付宝 不支持自动获取打赏者的名字，请您转账时备注姓名，作者会尽快把名字加在打赏者列表里。感谢您的慷概解囊！您的支持是我最大的动力！"
+                                    <TextBlock Text="{Binding [Str_260], Source={x:Static i18n:I18nService.Instance}}"
                                                FontSize="10.5"
                                                Foreground="#FF69B4"
                                                FontWeight="SemiBold"
@@ -416,11 +416,11 @@
                 <Grid RowDefinitions="Auto,*">
                     <!-- 列表标题 -->
                     <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,16">
-                        <TextBlock Text="感谢各位出色的赞助者！"
+                        <TextBlock Text="{Binding [Str_261], Source={x:Static i18n:I18nService.Instance}}"
                                    FontSize="16"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource ThemeAccentBrush}"/>
-                        <TextBlock Text="您的支持是项目维护的最大动力"
+                        <TextBlock Text="{Binding [Str_262], Source={x:Static i18n:I18nService.Instance}}"
                                    FontSize="11"
                                    Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
                     </StackPanel>
@@ -520,7 +520,7 @@
                 <Grid RowDefinitions="Auto,*,Auto">
                     <!-- 信件标题 -->
                     <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,16">
-                        <TextBlock Text="致 喵斯兔用户的一封信"
+                        <TextBlock Text="{Binding [Str_263], Source={x:Static i18n:I18nService.Instance}}"
                                    FontSize="18"
                                    FontWeight="Bold"
                                    Foreground="#5C3A21"
@@ -544,13 +544,13 @@
                     <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
                         <!-- 信件落款 -->
                         <StackPanel Grid.Column="0" VerticalAlignment="Bottom">
-                            <TextBlock Text="其实我叫苏子沫" FontSize="12.5" FontWeight="SemiBold" Foreground="#8C6E58"/>
-                            <TextBlock Text="写于打赏开启之际" FontSize="10.5" Foreground="#A88B74" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding [Str_264], Source={x:Static i18n:I18nService.Instance}}" FontSize="12.5" FontWeight="SemiBold" Foreground="#8C6E58"/>
+                            <TextBlock Text="{Binding [Str_265], Source={x:Static i18n:I18nService.Instance}}" FontSize="10.5" Foreground="#A88B74" Margin="0,2,0,0"/>
                         </StackPanel>
                         <!-- 关闭按钮 -->
                         <Button Grid.Column="1"
                                 Command="{Binding CloseLetterPopupCommand}"
-                                Content="合上信件"
+                                Content="{Binding [Str_266], Source={x:Static i18n:I18nService.Instance}}"
                                 Background="#A05C3A21"
                                 Foreground="White"
                                 BorderThickness="0"
