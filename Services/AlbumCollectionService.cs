@@ -688,7 +688,7 @@ public class AlbumCollectionService : IAlbumCollectionService
 
         if (items == null) return new List<MdmcChart>();
 
-        var charts = items.Select(item => MapToIndexChart(item, rawBaseUrlFinal, repoUrl, defaultReleaseTags)).ToList();
+        var charts = items.AsEnumerable().Reverse().Select(item => MapToIndexChart(item, rawBaseUrlFinal, repoUrl, defaultReleaseTags)).ToList();
         _communityChartsCache[name] = charts;
         return charts;
     }

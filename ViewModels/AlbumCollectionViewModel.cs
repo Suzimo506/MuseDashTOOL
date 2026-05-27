@@ -1201,13 +1201,31 @@ public partial class AlbumCollectionViewModel : ObservableObject
                 // 同时同步社区曲包
                 var communityTasks = AlbumCollectionService.CommunityConfigs.Select(async config =>
                 {
-                    try { await _collectionService.GetCommunityChartsAsync(config.Name, config.RepoUrl); } catch { }
-                });
+                    var cachePath = Path.Combine(AppContext.BaseDirectory, "Cache", "CommunityIndexes", $"{config.Name}.json");
+                    var hadLocalSnapshot = File.Exists(cachePath);
+                    List<MdmcChart> localCharts = hadLocalSnapshot
+                        ? await _collectionService.GetLocalCommunityChartsAsync(config.Name)
+                        : new List<MdmcChart>();
+
+                    try
+                    {
+                        var charts = await _collectionService.GetCommunityChartsAsync(config.Name, config.RepoUrl);
+                        var contentUpdated = hadLocalSnapshot && DesignerChartUpdateComparer.HasChartListChanged(localCharts, charts);
+                        return (CategoryName: config.Name, ContentUpdated: contentUpdated);
+                    }
+                    catch
+                    {
+                        return (CategoryName: config.Name, ContentUpdated: false);
+                    }
+                }).ToList();
 
                 var syncResults = await Task.WhenAll(syncTasks);
+                var communitySyncResults = await Task.WhenAll(communityTasks);
+
                 var updatedCollections = syncResults
                     .Where(x => x.ContentUpdated)
                     .Select(x => x.Category.Name)
+                    .Concat(communitySyncResults.Where(x => x.ContentUpdated).Select(x => x.CategoryName))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
@@ -1236,7 +1254,6 @@ public partial class AlbumCollectionViewModel : ObservableObject
                     });
                 }
 
-                await Task.WhenAll(communityTasks);
                 Log("Full background sync completed: All indexes are now up-to-date locally.");
             }
             catch (Exception ex) { Log($"Failed to sync collections in background: {ex.Message}"); }

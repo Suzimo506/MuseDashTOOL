@@ -74,11 +74,13 @@ public partial class CommunityCategoryDetailViewModel : ObservableObject, IDispo
     [ObservableProperty]
     private int _selectedSortIndex = 0;
 
-    public bool IsSortByName => SelectedSortIndex == 0;
-    public bool IsSortByLatest => SelectedSortIndex == 1;
+    public bool IsSortByDefault => SelectedSortIndex == 0;
+    public bool IsSortByName => SelectedSortIndex == 1;
+    public bool IsSortByLatest => SelectedSortIndex == 2;
 
     partial void OnSelectedSortIndexChanged(int value)
     {
+        OnPropertyChanged(nameof(IsSortByDefault));
         OnPropertyChanged(nameof(IsSortByName));
         OnPropertyChanged(nameof(IsSortByLatest));
         CurrentPage = 1;
