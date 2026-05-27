@@ -29,7 +29,8 @@
                  VerticalContentAlignment="Center"
                  HorizontalAlignment="Center"
                  CornerRadius="10"
-                 Background="{DynamicResource ControlBgBrush}"/>
+                 Background="{DynamicResource ControlBgBrush}"
+                 ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
 
         <!-- 底部按钮区 -->
         <StackPanel Grid.Row="2"
