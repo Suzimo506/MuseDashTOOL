@@ -131,13 +131,20 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     public bool HasSelectedCategoriesForDeletion => SelectedCategoriesForDeletionCount > 0;
 
     [ObservableProperty]
-    private ObservableCollection<string> _sortOptions = new() { Services.I18nService.Instance["Str_343"], Services.I18nService.Instance["Str_352"] };
+    private ObservableCollection<string> _sortOptions = new()
+    {
+        Services.I18nService.Instance["Str_343"] ?? "按名称排序",
+        Services.I18nService.Instance["Str_352"] ?? "按分类排序",
+        Services.I18nService.Instance["Str_402"] ?? "难度从高到低",
+        Services.I18nService.Instance["Str_403"] ?? "难度从低到高"
+    };
 
     [ObservableProperty]
     private int _selectedSortIndex = 0;
 
     partial void OnSelectedSortIndexChanged(int value)
     {
+        if (_isUpdatingSortOptions || value < 0) return;
         CurrentPage = 1;
         ApplyFilter();
     }
@@ -201,6 +208,15 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         _chartService = chartService;
         _configService = configService;
         _downloadManagerService = downloadManagerService;
+
+        // 订阅语言变更更新排序选项
+        Services.I18nService.Instance.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == "Item")
+            {
+                UpdateSortOptions();
+            }
+        };
     }
 
     public async Task InitializeAsync(CancellationToken ct = default)
@@ -421,13 +437,25 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             }
         }
 
-        // 排序规则
+        // 按照选定的规则排序数据
         var sorted = _filteredCharts.OrderByDescending(c => c.IsNewDownload);
         IOrderedEnumerable<ChartInfo> finalSorted;
         if (SelectedSortIndex == 1)
         {
             finalSorted = sorted
                 .ThenBy(c => c.CategoryName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase);
+        }
+        else if (SelectedSortIndex == 2)
+        {
+            finalSorted = sorted
+                .ThenByDescending(c => GetMaxDifficulty(c))
+                .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase);
+        }
+        else if (SelectedSortIndex == 3)
+        {
+            finalSorted = sorted
+                .ThenBy(c => GetMaxDifficulty(c))
                 .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase);
         }
         else
@@ -1376,6 +1404,77 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         {
             StatusMessage = $"创建分类失败: {ex.Message}";
         }
+    }
+
+    private bool _isUpdatingSortOptions = false;
+
+    // 动态刷新本地化排序文本列表
+    private void UpdateSortOptions()
+    {
+        int currentIndex = SelectedSortIndex;
+        _isUpdatingSortOptions = true;
+        try
+        {
+            SortOptions.Clear();
+            SortOptions.Add(Services.I18nService.Instance["Str_343"] ?? "按名称排序");
+            SortOptions.Add(Services.I18nService.Instance["Str_352"] ?? "按分类排序");
+            SortOptions.Add(Services.I18nService.Instance["Str_402"] ?? "难度从高到低");
+            SortOptions.Add(Services.I18nService.Instance["Str_403"] ?? "难度从低到高");
+        }
+        finally
+        {
+            _isUpdatingSortOptions = false;
+        }
+
+        if (currentIndex >= 0 && currentIndex < SortOptions.Count)
+        {
+            SelectedSortIndex = currentIndex;
+        }
+        else
+        {
+            SelectedSortIndex = 0;
+        }
+    }
+
+    // 解析单项难度数值以供比较
+    private static bool TryParseDifficulty(string? diff, out int level)
+    {
+        level = 0;
+        if (string.IsNullOrWhiteSpace(diff)) return false;
+
+        string part = diff;
+        int colonIdx = diff.LastIndexOf(':');
+        if (colonIdx >= 0 && colonIdx < diff.Length - 1)
+        {
+            part = diff.Substring(colonIdx + 1);
+        }
+
+        var digits = new string(part.Where(c => char.IsDigit(c) || c == '.').ToArray());
+        if (string.IsNullOrEmpty(digits)) return false;
+
+        if (double.TryParse(digits, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out double d))
+        {
+            level = (int)Math.Floor(d);
+            return true;
+        }
+        return false;
+    }
+
+    // 获取当前谱面所包含的最高难度
+    private static int GetMaxDifficulty(ChartInfo chart)
+    {
+        if (chart.Difficulties == null || chart.Difficulties.Count == 0) return 0;
+        int maxLevel = 0;
+        foreach (var diff in chart.Difficulties)
+        {
+            if (TryParseDifficulty(diff, out int level))
+            {
+                if (level > maxLevel)
+                    maxLevel = level;
+            }
+        }
+        return maxLevel;
     }
 }
 
