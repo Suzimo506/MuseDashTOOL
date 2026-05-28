@@ -1,0 +1,42 @@
+<Window xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MdModManager.Views.CustomAlbumsWarningDialog"
+        Title="{Binding [Str_411], Source={x:Static i18n:I18nService.Instance}}"
+        Width="500" Height="220"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource CardBgBrush}"
+        Foreground="{DynamicResource ThemeTextMainBrush}">
+
+    <Grid RowDefinitions="*, Auto" Margin="24">
+
+        <!-- 提示文本 -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding [Str_412], Source={x:Static i18n:I18nService.Instance}}"
+                   TextWrapping="Wrap"
+                   FontSize="15"
+                   Foreground="{DynamicResource ThemeTextMainBrush}"
+                   VerticalAlignment="Center"/>
+
+        <!-- 底部按钮区 -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto, *, Auto" Margin="0,16,0,0">
+
+            <!-- 左下角：不再提示复选框 -->
+            <CheckBox Grid.Column="0"
+                      x:Name="DontShowAgainCheckBox"
+                      Content="{Binding [Str_140], Source={x:Static i18n:I18nService.Instance}}"
+                      Foreground="{DynamicResource ThemeTextSubBrush}"
+                      CornerRadius="6"
+                      FontSize="13"/>
+
+            <!-- 右下角：确认 -->
+            <Button Grid.Column="2"
+                    Content="{Binding [Str_141], Source={x:Static i18n:I18nService.Instance}}"
+                    Width="90"
+                    HorizontalContentAlignment="Center"
+                    Background="{DynamicResource ThemeAccentBrush}" Foreground="White"
+                    CornerRadius="10"
+                    Click="OnConfirmClick"/>
+        </Grid>
+    </Grid>
+</Window>

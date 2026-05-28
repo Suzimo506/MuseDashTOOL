@@ -21,6 +21,8 @@ public partial class ChartManagerView : UserControl
         InitializeComponent();
         AddHandler(DragDrop.DragOverEvent, DragOver);
         AddHandler(DragDrop.DropEvent, Drop);
+        
+        this.Loaded += OnLoaded;
 
         _chartScrollViewer = this.FindControl<ScrollViewer>("ChartScrollViewer");
 
@@ -62,6 +64,18 @@ public partial class ChartManagerView : UserControl
                 };
             }
         };
+    }
+
+    private async void OnLoaded(object? sender, RoutedEventArgs e)
+    {
+        // 显示谱面分类功能提示弹窗
+        var configService = Ioc.Default.GetService<IConfigService>();
+        var owner = TopLevel.GetTopLevel(this) as Window;
+        
+        if (configService != null && owner != null)
+        {
+            await CustomAlbumsWarningDialog.ShowDialogAsync(owner, configService);
+        }
     }
     
     private void OnBackgroundPointerPressed(object? sender, PointerPressedEventArgs e)

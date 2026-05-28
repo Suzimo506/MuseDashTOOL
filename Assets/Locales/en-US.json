@@ -408,5 +408,7 @@
   "Str_407": "Clean Up Broken Chart Files",
   "Str_408": "No broken chart files found.",
   "Str_409": "Found {0} unrecognized/broken chart files. Are you sure you want to delete them?\n\n{1}",
-  "Str_410": "Successfully cleaned up {0} broken chart files."
+  "Str_410": "Successfully cleaned up {0} broken chart files.",
+  "Str_411": "Chart Category Feature Warning",
+  "Str_412": "To use the chart category feature, please go to the Mod download page and download the CustomAlbums version modified by the author (author name contains Suzimo), otherwise please DO NOT use the chart category feature.\n(Don't worry, performance is exactly the same, it just adds the category feature)"
 }

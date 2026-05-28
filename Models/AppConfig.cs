@@ -25,6 +25,7 @@ public class AppConfig
 
     /// <summary>启动游戏时不再显示确认弹窗</summary>
     public bool SuppressLaunchGameConfirmation { get; set; } = false;
+    public bool SuppressCustomAlbumsWarning { get; set; } = false;
 
 
     /// <summary>谱面试听音量</summary>
