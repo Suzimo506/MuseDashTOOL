@@ -49,9 +49,6 @@ public class NotificationService : INotificationService
     public void ShowFailure(string message, string reason) =>
         ShowNotification(new DownloadNotification { Message = $"失败：{reason}", IsSuccess = false });
 
-    public void ShowFailure(string message, string reason) =>
-        ShowNotification(new DownloadNotification { Message = $"失败：{reason}", IsSuccess = false });
-
     public void ShowInfo(string message, int durationMs = 1500) =>
         ShowNotification(new DownloadNotification { Message = message, IsInfo = true, DurationMs = durationMs });
 

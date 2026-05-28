@@ -312,7 +312,6 @@ public partial class AccountViewModel : ObservableObject
         PerfectsCount = profile.PerfectsCount;
         AverageAccuracy = $"{profile.AverageAccuracy:0.00} %";
         
-        bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
         StatusMessage = isEn ? "Data Synced" : "数据已同步";
 
         _allRecentPlays.Clear();
