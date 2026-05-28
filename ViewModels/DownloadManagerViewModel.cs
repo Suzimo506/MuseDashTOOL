@@ -18,9 +18,16 @@ public partial class DownloadManagerViewModel : ObservableObject
 
     public ObservableCollection<DownloadTaskItem> Tasks => _downloadManagerService.Tasks;
 
-    public string PauseResumeAllText => Tasks.Any(t => t.Status == DownloadStatus.Waiting || t.Status == DownloadStatus.Downloading)
-        ? "全部暂停"
-        : "全部开始";
+    public string PauseResumeAllText
+    {
+        get
+        {
+            bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
+            return Tasks.Any(t => t.Status == DownloadStatus.Waiting || t.Status == DownloadStatus.Downloading)
+                ? (isEn ? "Pause All" : "全部暂停")
+                : (isEn ? "Start All" : "全部开始");
+        }
+    }
 
     public bool IsBulkPauseMode => Tasks.Any(t => t.Status == DownloadStatus.Waiting || t.Status == DownloadStatus.Downloading);
 

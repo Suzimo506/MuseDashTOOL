@@ -211,7 +211,10 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                         item.DestinationPath = GetUniqueDestinationPath(item.Chart);
 
                     if (string.IsNullOrEmpty(item.DestinationPath))
-                        throw new Exception("无法确定下载路径，请检查游戏目录设置");
+                    {
+                        bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
+                        throw new Exception(isEn ? "Cannot determine download path, please check game directory settings" : "无法确定下载路径，请检查游戏目录设置");
+                    }
 
                     if (string.IsNullOrEmpty(item.PartialDownloadPath))
                         item.PartialDownloadPath = GetPartialDownloadPath(item.DestinationPath);
@@ -585,8 +588,9 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
     private static string TranslateDownloadErrorMessage(string? reason)
     {
+        bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
         if (string.IsNullOrWhiteSpace(reason))
-            return "下载失败";
+            return isEn ? "Download failed" : "下载失败";
 
         var message = reason.Trim();
 
@@ -595,16 +599,16 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             var statusCode = TryExtractHttpStatusCode(message);
             return statusCode switch
             {
-                400 => "下载失败：请求无效（400）",
-                401 => "下载失败：未通过身份验证（401）",
-                403 => "下载失败：服务器拒绝访问（403）",
-                404 => "下载失败：资源不存在（404）",
-                408 => "下载失败：请求超时（408）",
-                416 => "下载失败：断点续传范围无效（416）",
-                429 => "下载失败：请求过于频繁（429）",
-                >= 500 and <= 599 => $"下载失败：服务器暂时不可用（HTTP {statusCode}）",
-                int code when code > 0 => $"下载失败（HTTP {code}）",
-                _ => "下载失败：服务器返回了错误响应"
+                400 => isEn ? "Download failed: Bad Request (400)" : "下载失败：请求无效（400）",
+                401 => isEn ? "Download failed: Unauthorized (401)" : "下载失败：未通过身份验证（401）",
+                403 => isEn ? "Download failed: Forbidden (403)" : "下载失败：服务器拒绝访问（403）",
+                404 => isEn ? "Download failed: Not Found (404)" : "下载失败：资源不存在（404）",
+                408 => isEn ? "Download failed: Timeout (408)" : "下载失败：请求超时（408）",
+                416 => isEn ? "Download failed: Range Not Satisfiable (416)" : "下载失败：断点续传范围无效（416）",
+                429 => isEn ? "Download failed: Too Many Requests (429)" : "下载失败：请求过于频繁（429）",
+                >= 500 and <= 599 => isEn ? $"Download failed: Server Unavailable (HTTP {statusCode})" : $"下载失败：服务器暂时不可用（HTTP {statusCode}）",
+                int code when code > 0 => isEn ? $"Download failed (HTTP {code})" : $"下载失败（HTTP {code}）",
+                _ => isEn ? "Download failed: Server returned an error" : "下载失败：服务器返回了错误响应"
             };
         }
 
@@ -612,33 +616,33 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             message.Contains("A task was canceled", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("timed out", StringComparison.OrdinalIgnoreCase))
         {
-            return "下载超时";
+            return isEn ? "Download Timeout" : "下载超时";
         }
 
         if (message.Contains("No such host is known", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("Name or service not known", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("Temporary failure in name resolution", StringComparison.OrdinalIgnoreCase))
         {
-            return "下载失败：无法解析服务器地址";
+            return isEn ? "Download failed: Host not found" : "下载失败：无法解析服务器地址";
         }
 
         if (message.Contains("actively refused", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("Connection refused", StringComparison.OrdinalIgnoreCase))
         {
-            return "下载失败：服务器拒绝连接";
+            return isEn ? "Download failed: Connection refused" : "下载失败：服务器拒绝连接";
         }
 
         if (message.Contains("forcibly closed", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("Connection reset", StringComparison.OrdinalIgnoreCase))
         {
-            return "下载失败：连接被服务器中断";
+            return isEn ? "Download failed: Connection reset by peer" : "下载失败：连接被服务器中断";
         }
 
         if (message.Contains("SSL", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("TLS", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("secure connection", StringComparison.OrdinalIgnoreCase))
         {
-            return "下载失败：安全连接建立失败";
+            return isEn ? "Download failed: SSL/TLS error" : "下载失败：安全连接建立失败";
         }
 
         return message;
@@ -690,7 +694,8 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             }
             else
             {
-                item.DownloadInfo = $"{downloadedMb:F2} MB / 未知大小";
+                bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
+                item.DownloadInfo = $"{downloadedMb:F2} MB / " + (isEn ? "Unknown Size" : "未知大小");
             }
         }
     }

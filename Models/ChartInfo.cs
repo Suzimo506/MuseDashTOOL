@@ -71,7 +71,7 @@ public partial class ChartInfo : ObservableObject
             var firstLine = idx >= 0 ? MusicAuthor.Substring(0, idx) : MusicAuthor;
             var clean = firstLine.Trim();
             bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
-            return string.IsNullOrEmpty(clean) ? string.Empty : (isEn ? $"Music: {clean}" : $"曲：{clean}");
+            return string.IsNullOrEmpty(clean) ? string.Empty : (isEn ? $"Author: {clean}" : $"曲：{clean}");
         }
     }
 
@@ -96,7 +96,7 @@ public partial class ChartInfo : ObservableObject
         {
             var parts = new List<string>();
             bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
-            if (!string.IsNullOrEmpty(MusicAuthor)) parts.Add(isEn ? $"Music: {MusicAuthor}" : $"曲：{MusicAuthor}");
+            if (!string.IsNullOrEmpty(MusicAuthor)) parts.Add(isEn ? $"Author: {MusicAuthor}" : $"曲：{MusicAuthor}");
             if (!string.IsNullOrEmpty(ChartAuthor)) parts.Add(isEn ? $"Charter: {ChartAuthor}" : $"谱：{ChartAuthor}");
             return string.Join(" | ", parts);
         }

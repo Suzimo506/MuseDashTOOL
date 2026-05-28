@@ -97,7 +97,7 @@ public partial class EuterpeChart : ObservableObject
 
     // 衍生谱面副标题信息
     [JsonIgnore]
-    public string SubInfo => MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? $"Music: {Author} | BPM: {Bpm}" : $"曲：{Author} | BPM：{Bpm}";
+    public string SubInfo => MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? $"Author: {Author} | BPM: {Bpm}" : $"曲：{Author} | BPM：{Bpm}";
 
     // 衍生谱师去重列表
     [JsonIgnore]
@@ -135,7 +135,7 @@ public partial class EuterpeChart : ObservableObject
             var firstLine = idx >= 0 ? Author.Substring(0, idx) : Author;
             var clean = firstLine.Trim();
             bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
-            return string.IsNullOrEmpty(clean) ? string.Empty : (isEn ? $"Music: {clean}" : $"曲：{clean}");
+            return string.IsNullOrEmpty(clean) ? string.Empty : (isEn ? $"Author: {clean}" : $"曲：{clean}");
         }
     }
 

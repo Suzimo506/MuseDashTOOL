@@ -45,16 +45,23 @@ public partial class DownloadTaskItem : ObservableObject
 
     public event EventHandler? StatusChanged;
 
-    public string StatusText => Status switch
+    public string StatusText
     {
-        DownloadStatus.Waiting => "等待中",
-        DownloadStatus.Downloading => "下载中",
-        DownloadStatus.Paused => "已暂停",
-        DownloadStatus.Completed => "已完成",
-        DownloadStatus.Canceled => "已取消",
-        DownloadStatus.Error => "错误",
-        _ => "未知状态"
-    };
+        get
+        {
+            bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
+            return Status switch
+            {
+                DownloadStatus.Waiting => isEn ? "Waiting" : "等待中",
+                DownloadStatus.Downloading => isEn ? "Downloading" : "下载中",
+                DownloadStatus.Paused => isEn ? "Paused" : "已暂停",
+                DownloadStatus.Completed => isEn ? "Completed" : "已完成",
+                DownloadStatus.Canceled => isEn ? "Canceled" : "已取消",
+                DownloadStatus.Error => isEn ? "Error" : "错误",
+                _ => isEn ? "Unknown" : "未知状态"
+            };
+        }
+    }
 
     [ObservableProperty]
     private string _errorMessage = string.Empty;

@@ -160,7 +160,7 @@ public partial class MdmcChart : ObservableObject
             var firstLine = idx >= 0 ? Artist.Substring(0, idx) : Artist;
             var clean = firstLine.Trim();
             bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
-            return string.IsNullOrEmpty(clean) ? string.Empty : (isEn ? $"Music: {clean}" : $"曲：{clean}");
+            return string.IsNullOrEmpty(clean) ? string.Empty : (isEn ? $"Author: {clean}" : $"曲：{clean}");
         }
     }
 
@@ -186,7 +186,7 @@ public partial class MdmcChart : ObservableObject
         {
             var parts = new List<string>();
             bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
-            if (!string.IsNullOrEmpty(Artist))  parts.Add(isEn ? $"Music: {Artist}" : $"曲：{Artist}");
+            if (!string.IsNullOrEmpty(Artist))  parts.Add(isEn ? $"Author: {Artist}" : $"曲：{Artist}");
             if (!string.IsNullOrEmpty(Charter)) parts.Add(isEn ? $"Charter: {Charter}" : $"谱：{Charter}");
             return string.Join(" | ", parts);
         }
