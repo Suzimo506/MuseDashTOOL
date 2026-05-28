@@ -159,7 +159,8 @@ public partial class MdmcChart : ObservableObject
             var idx = Artist.IndexOf('\n');
             var firstLine = idx >= 0 ? Artist.Substring(0, idx) : Artist;
             var clean = firstLine.Trim();
-            return string.IsNullOrEmpty(clean) ? string.Empty : $"曲：{clean}";
+            bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
+            return string.IsNullOrEmpty(clean) ? string.Empty : (isEn ? $"Music: {clean}" : $"曲：{clean}");
         }
     }
 
@@ -173,7 +174,8 @@ public partial class MdmcChart : ObservableObject
             var idx = Charter.IndexOf('\n');
             var firstLine = idx >= 0 ? Charter.Substring(0, idx) : Charter;
             var clean = firstLine.Trim();
-            return string.IsNullOrEmpty(clean) ? string.Empty : $"谱：{clean}";
+            bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
+            return string.IsNullOrEmpty(clean) ? string.Empty : (isEn ? $"Charter: {clean}" : $"谱：{clean}");
         }
     }
 
@@ -183,8 +185,9 @@ public partial class MdmcChart : ObservableObject
         get
         {
             var parts = new List<string>();
-            if (!string.IsNullOrEmpty(Artist))  parts.Add($"曲：{Artist}");
-            if (!string.IsNullOrEmpty(Charter)) parts.Add($"谱：{Charter}");
+            bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
+            if (!string.IsNullOrEmpty(Artist))  parts.Add(isEn ? $"Music: {Artist}" : $"曲：{Artist}");
+            if (!string.IsNullOrEmpty(Charter)) parts.Add(isEn ? $"Charter: {Charter}" : $"谱：{Charter}");
             return string.Join(" | ", parts);
         }
     }

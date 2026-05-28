@@ -45,7 +45,7 @@ public partial class MainWindowViewModel : ObservableObject
     public string EuterpeButtonText => "Euterpe";
 
     // Euterpe 按钮的提示信息
-    public string EuterpeButtonToolTip => "点击管理 Euterpe 账号";
+    public string EuterpeButtonToolTip => MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Manage Euterpe Account" : "点击管理 Euterpe 账号";
 
     [ObservableProperty]
     private Avalonia.Media.Imaging.Bitmap? _customBackgroundBitmap;

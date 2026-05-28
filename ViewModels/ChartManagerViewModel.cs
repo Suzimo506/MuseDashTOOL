@@ -116,7 +116,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             {
                 new MoveCategoryItem { Name = "新建分类", IsCreateNew = true }
             };
-            list.AddRange(Categories.Where(c => c != "全部" && c != RootCategoryKey).Select(c => new MoveCategoryItem { Name = c, IsCreateNew = false }));
+            list.AddRange(Categories.Where(c => c != "全部").Select(c => new MoveCategoryItem { Name = c, IsCreateNew = false }));
             return list;
         }
     }

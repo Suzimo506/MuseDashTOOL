@@ -13,7 +13,7 @@ namespace MdModManager.ViewModels;
 public partial class AccountViewModel : ObservableObject
 {
     [ObservableProperty]
-    private string _nickname = "未登录";
+    private string _nickname = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Not Logged In" : "未登录";
 
     [ObservableProperty]
     private string _uid = "-";
@@ -37,14 +37,14 @@ public partial class AccountViewModel : ObservableObject
     private bool _isLoading = true;
 
     [ObservableProperty]
-    private string _statusMessage = "正在读取账号信息...";
+    private string _statusMessage = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Reading Account Info..." : "正在读取账号信息...";
 
     // 排序方式: 0=默认, 1=排名最高, 2=准确率最高, 3=最难
     [ObservableProperty]
     private int _sortMode = 0;
 
     [ObservableProperty]
-    private string _sortLabel = "默认排序";
+    private string _sortLabel = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Default Sort" : "默认排序";
 
     // 搜索相关
     [ObservableProperty]
@@ -124,19 +124,19 @@ public partial class AccountViewModel : ObservableObject
         switch (SortMode)
         {
             case 1:
-                SortLabel = "排名排序";
+                SortLabel = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Rank Sort" : "排名排序";
                 _sortedPlays = _allRecentPlays.OrderBy(r => r.RawRank).ToList();
                 break;
             case 2:
-                SortLabel = "准确率排序";
+                SortLabel = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Accuracy Sort" : "准确率排序";
                 _sortedPlays = _allRecentPlays.OrderByDescending(r => r.RawAccuracy).ToList();
                 break;
             case 3:
-                SortLabel = "难度排序";
+                SortLabel = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Difficulty Sort" : "难度排序";
                 _sortedPlays = _allRecentPlays.OrderByDescending(r => r.RawDifficulty).ToList();
                 break;
             default:
-                SortLabel = "默认排序";
+                SortLabel = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Default Sort" : "默认排序";
                 _sortedPlays = _allRecentPlays.ToList();
                 break;
         }
@@ -184,7 +184,7 @@ public partial class AccountViewModel : ObservableObject
 
         if (_searchMatchIndices.Count == 0)
         {
-            SearchStatus = "无结果";
+            SearchStatus = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "No Results" : "无结果";
             HasSearchResults = false;
             _currentSearchIndex = -1;
             return;
@@ -247,9 +247,11 @@ public partial class AccountViewModel : ObservableObject
             return;
         }
 
+        bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
+
         // ── Prefetch in progress: show subtle spinner, await completion ───────
         IsLoading = true;
-        StatusMessage = "正在同步数据...";
+        StatusMessage = isEn ? "Syncing data..." : "正在同步数据...";
 
         await Task.Yield();
 
@@ -266,20 +268,20 @@ public partial class AccountViewModel : ObservableObject
         }
 
         // ── Fallback: prefetch failed entirely, try a fresh fetch ─────────────
-        StatusMessage = "正在从 musedash.moe 获取数据...";
+        StatusMessage = isEn ? "Fetching data from musedash.moe..." : "正在从 musedash.moe 获取数据...";
 
         var info = await Task.Run(() => MuseDashAccountService.ReadAccountInfo());
         if (info == null)
         {
             IsLoggedIn = false;
-            Nickname = "未登录";
-            StatusMessage = "未找到登录信息，请先打开喵斯快跑并登录。";
+            Nickname = isEn ? "Not Logged In" : "未登录";
+            StatusMessage = isEn ? "Login info not found, please open Muse Dash and login first." : "未找到登录信息，请先打开喵斯快跑并登录。";
             IsLoading = false;
             return;
         }
 
         Uid = info.Uid ?? "-";
-        Nickname = "正在加载...";
+        Nickname = isEn ? "Loading..." : "正在加载...";
 
         var profile = await MuseDashAccountService.FetchPlayerProfileAsync(info.Uid ?? "");
         IsLoading = false;
@@ -290,32 +292,35 @@ public partial class AccountViewModel : ObservableObject
         }
         else
         {
-            var rawNick = info.Nickname ?? info.Username ?? info.Uid ?? "玩家";
-            Nickname = IsLikelyUid(rawNick) ? "（未设置昵称）" : rawNick;
-            var reason = MuseDashAccountService.LastError ?? "网络不可达";
-            StatusMessage = $"连接失败：{reason}";
+            var rawNick = info.Nickname ?? info.Username ?? info.Uid ?? (isEn ? "Player" : "玩家");
+            Nickname = IsLikelyUid(rawNick) ? (isEn ? "(Nickname not set)" : "（未设置昵称）") : rawNick;
+            var reason = MuseDashAccountService.LastError ?? (isEn ? "Network unreachable" : "网络不可达");
+            StatusMessage = isEn ? $"Connection failed: {reason}" : $"连接失败：{reason}";
         }
     }
 
     private void ApplyProfile(MuseDashAccountInfo info, PlayerProfileData profile)
     {
+        bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
         IsLoggedIn = true;
         Uid = info.Uid ?? "-";
         Nickname = string.IsNullOrWhiteSpace(profile.Nickname)
-            ? (info.Nickname ?? "玩家")
+            ? (info.Nickname ?? (isEn ? "Player" : "玩家"))
             : profile.Nickname;
         RelativeLevel = $"『{profile.RelativeLevel:0.000}』";
         RecordsCount = profile.RecordsCount;
         PerfectsCount = profile.PerfectsCount;
         AverageAccuracy = $"{profile.AverageAccuracy:0.00} %";
-        StatusMessage = "数据已同步";
+        
+        bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
+        StatusMessage = isEn ? "Data Synced" : "数据已同步";
 
         _allRecentPlays.Clear();
         _allRecentPlays.AddRange(profile.RecentPlays);
 
         // 重置排序为默认
         SortMode = 0;
-        SortLabel = "默认排序";
+        SortLabel = isEn ? "Default Sort" : "默认排序";
         _sortedPlays = _allRecentPlays.ToList();
 
         RecentPlays.Clear();
