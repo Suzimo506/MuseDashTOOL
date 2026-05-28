@@ -852,7 +852,7 @@ public partial class SettingsViewModel : ObservableObject
 
     private static async System.Threading.Tasks.Task<bool> ConfirmCustomChartInstallerAsync()
     {
-        const string message = "是否开始一键安装自制谱？";
+        string message = MdModManager.Services.I18nService.Instance["Str_405"] ?? "是否开始一键安装自制谱？";
 
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
             && desktop.MainWindow is MdModManager.Views.MainWindow mainWindow)

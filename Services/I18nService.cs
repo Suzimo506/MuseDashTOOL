@@ -16,7 +16,7 @@ public class I18nService : INotifyPropertyChanged
 
     private Dictionary<string, string> _strings = new Dictionary<string, string>();
 
-    public string CurrentLanguage { get; private set; } = "zh-CN";
+    public string CurrentLanguage { get; private set; } = System.Globalization.CultureInfo.CurrentUICulture.Name == "zh-CN" ? "zh-CN" : "en-US";
 
     public string this[string key]
     {

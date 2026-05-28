@@ -160,12 +160,12 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     // 排序选项
     public EuterpeSortOption[] SortOptions { get; } = new[]
     {
-        new EuterpeSortOption("推荐排序", "recommended"),
-        new EuterpeSortOption("最新上传", "created_at"),
-        new EuterpeSortOption("最多点赞", "likes"),
-        new EuterpeSortOption("最多下载", "downloads"),
-        new EuterpeSortOption("难度从高到低", "rating_desc"),
-        new EuterpeSortOption("难度从低到高", "rating_asc")
+        new EuterpeSortOption(I18nService.Instance["Str_398"] ?? "推荐排序", "recommended"),
+        new EuterpeSortOption(I18nService.Instance["Str_399"] ?? "最新上传", "created_at"),
+        new EuterpeSortOption(I18nService.Instance["Str_400"] ?? "最多点赞", "likes"),
+        new EuterpeSortOption(I18nService.Instance["Str_401"] ?? "最多下载", "downloads"),
+        new EuterpeSortOption(I18nService.Instance["Str_402"] ?? "难度从高到低", "rating_desc"),
+        new EuterpeSortOption(I18nService.Instance["Str_403"] ?? "难度从低到高", "rating_asc")
     };
 
     private int _selectedSortIndex = 0;
@@ -339,7 +339,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         _downloadManagerService = downloadManagerService;
 
         _httpClient = new HttpClient(authHeaderHandler) { BaseAddress = new Uri("https://euterpe-org.com/api/") };
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.5");
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.6");
     }
 
     // 初始化加载
@@ -603,7 +603,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     {
         var snapshot = Charts.ToList();
         var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.5");
+        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.6");
 
         foreach (var chart in snapshot)
         {
@@ -692,7 +692,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             // 请求音频文件字节数据
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.5");
+            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.6");
             using var req = new HttpRequestMessage(HttpMethod.Get, previewUrl);
             using var response = await client.SendAsync(req, ct);
             response.EnsureSuccessStatusCode();
@@ -824,7 +824,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             var mainWindow = desktop?.MainWindow as MainWindow;
             if (mainWindow != null)
             {
-                await mainWindow.ShowMessageBoxAsync("请先安装 .net6 运行环境！");
+                await mainWindow.ShowMessageBoxAsync(MdModManager.Services.I18nService.Instance["Str_404"] ?? "请先安装.net6环境！");
                 return;
             }
         }

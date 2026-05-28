@@ -143,8 +143,8 @@ public partial class WelcomeViewModel : ViewModelBase
             var news = await _newsService.GetLatestNewsAsync();
             if (news != null && !string.IsNullOrWhiteSpace(news.Title))
             {
-                NewsTitle = news.Title;
-                NewsContent = news.Content;
+                NewsTitle = news.DisplayTitle;
+                NewsContent = news.DisplayContent;
                 NewsUrl = news.Url;
                 HasNews = true;
                 OnPropertyChanged(nameof(HasNewsUrl));

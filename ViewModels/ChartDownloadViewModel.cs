@@ -540,7 +540,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow as MainWindow : null;
             if (mainWindow != null)
             {
-                await mainWindow.ShowMessageBoxAsync("请先安装.net6环境！");
+                await mainWindow.ShowMessageBoxAsync(MdModManager.Services.I18nService.Instance["Str_404"] ?? "请先安装.net6环境！");
                 return;
             }
         }

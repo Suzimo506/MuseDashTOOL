@@ -662,7 +662,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
             if (mainWindow != null)
             {
-                await mainWindow.ShowMessageBoxAsync("请先安装.net6环境！");
+                await mainWindow.ShowMessageBoxAsync(MdModManager.Services.I18nService.Instance["Str_404"] ?? "请先安装.net6环境！");
             }
 
             return;

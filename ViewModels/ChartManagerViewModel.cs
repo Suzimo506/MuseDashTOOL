@@ -22,6 +22,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private readonly IConfigService _configService;
     private readonly IDownloadManagerService _downloadManagerService;
     private const int PageSize = 16;
+    public const string RootCategoryKey = "Root_Uncategorized";
 
     /// <summary>全量谱面列表（原始数据）</summary>
     private ObservableCollection<ChartInfo> _allCharts = new();
@@ -104,7 +105,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private ChartInfo? _currentMovingChart;
 
     [ObservableProperty]
-    private ObservableCollection<string> _categories = new() { "全部", "未分类" };
+    private ObservableCollection<string> _categories = new() { "全部", RootCategoryKey };
 
     // 可用于移动的目标分类列表
     public IEnumerable<MoveCategoryItem> MoveCategories
@@ -115,7 +116,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             {
                 new MoveCategoryItem { Name = "新建分类", IsCreateNew = true }
             };
-            list.AddRange(Categories.Where(c => c != "全部").Select(c => new MoveCategoryItem { Name = c, IsCreateNew = false }));
+            list.AddRange(Categories.Where(c => c != "全部" && c != RootCategoryKey).Select(c => new MoveCategoryItem { Name = c, IsCreateNew = false }));
             return list;
         }
     }
@@ -147,7 +148,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private string _selectedCategory = "全部";
 
     // 选中自定义分类
-    public bool IsCategorySelected => SelectedCategory != "全部" && SelectedCategory != "未分类";
+    public bool IsCategorySelected => SelectedCategory != "全部" && SelectedCategory != RootCategoryKey;
 
     // 限制分类名显示字数
     public string SelectedCategoryDisplay
@@ -155,7 +156,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         get
         {
             string displayName = string.IsNullOrEmpty(SelectedCategory) || SelectedCategory == "全部" ? Services.I18nService.Instance["Str_389"] : 
-                                 (SelectedCategory == "未分类" ? Services.I18nService.Instance["Str_390"] : SelectedCategory);
+                                 (SelectedCategory == RootCategoryKey ? (MdModManager.Services.I18nService.Instance.CurrentLanguage == "zh-CN" ? "未分类" : "Uncategorized") : SelectedCategory);
             return displayName.Length > 6 ? displayName.Substring(0, 6) + ".." : displayName;
         }
     }
@@ -321,14 +322,26 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var albumsDir = System.IO.Path.Combine(gamePath, "Custom_Albums");
         bool isCustomAlbumsMissing = !System.IO.Directory.Exists(albumsDir);
 
-        var categories = new List<string> { "全部", "未分类" };
+        var categories = new List<string> { "全部" };
+        bool hasRootCharts = false;
         if (!isCustomAlbumsMissing)
         {
+            if (System.IO.Directory.GetFiles(albumsDir, "*.mdm").Length > 0)
+            {
+                hasRootCharts = true;
+            }
+
+            if (hasRootCharts)
+            {
+                categories.Insert(1, RootCategoryKey);
+            }
+
             foreach (var subDir in System.IO.Directory.GetDirectories(albumsDir))
             {
+                var folderName = System.IO.Path.GetFileName(subDir);
                 if (System.IO.File.Exists(System.IO.Path.Combine(subDir, "pack.json")))
                 {
-                    categories.Add(System.IO.Path.GetFileName(subDir));
+                    categories.Add(folderName);
                 }
             }
         }
@@ -385,7 +398,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         foreach (var chart in _allCharts)
         {
             // 分类过滤
-            if (SelectedCategory == "未分类")
+            if (SelectedCategory == RootCategoryKey)
             {
                 var parentName = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(chart.FilePath));
                 if (parentName != "Custom_Albums")
@@ -471,7 +484,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         }
 
         int categoryTotal = _allCharts.Count(c => {
-            if (SelectedCategory == "未分类")
+            if (SelectedCategory == RootCategoryKey)
             {
                 var parentName = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(c.FilePath));
                 return parentName == "Custom_Albums";
@@ -870,7 +883,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task RenameSpecificCategoryAsync(string oldName)
     {
-        if (string.IsNullOrEmpty(oldName) || oldName == "全部" || oldName == "未分类") return;
+        if (string.IsNullOrEmpty(oldName) || oldName == "全部" || oldName == "未分类" || oldName == "Uncategorized" || oldName == RootCategoryKey) return;
 
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
@@ -940,7 +953,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task DeleteSpecificCategoryAsync(string oldName)
     {
-        if (string.IsNullOrEmpty(oldName) || oldName == "全部" || oldName == "未分类") return;
+        if (string.IsNullOrEmpty(oldName) || oldName == "全部" || oldName == "未分类" || oldName == "Uncategorized" || oldName == RootCategoryKey) return;
 
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
@@ -980,6 +993,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 System.IO.Directory.Delete(sourceDir, true);
             }
 
+
             StatusMessage = $"分类《{oldName}》删除成功，谱面已移回未分类";
             if (SelectedCategory == oldName)
             {
@@ -991,6 +1005,53 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         {
             StatusMessage = $"删除分类失败: {ex.Message}";
         }
+    }
+
+    [RelayCommand]
+    private async Task CleanUpBrokenChartsAsync()
+    {
+        var app = Avalonia.Application.Current;
+        var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (mainWindow == null) return;
+
+        var brokenCharts = _chartService.BrokenCharts;
+        if (brokenCharts == null || brokenCharts.Count == 0)
+        {
+            await MessageBox.ShowDialogAsync(mainWindow, MdModManager.Services.I18nService.Instance["Str_408"] ?? "没有发现损坏的谱面文件。");
+            return;
+        }
+
+        string fileList = string.Join("\n", brokenCharts.Select(System.IO.Path.GetFileName));
+        if (brokenCharts.Count > 10)
+        {
+            string moreText = MdModManager.Services.I18nService.Instance.CurrentLanguage == "zh-CN" ? $"\n...等共 {brokenCharts.Count} 个文件" : $"\n...and others ({brokenCharts.Count} in total)";
+            fileList = string.Join("\n", brokenCharts.Take(10).Select(System.IO.Path.GetFileName)) + moreText;
+        }
+
+        string template = MdModManager.Services.I18nService.Instance["Str_409"] ?? "发现 {0} 个无法识别的损坏谱面文件，是否确认删除？\n\n{1}";
+        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, string.Format(template, brokenCharts.Count, fileList), true);
+        if (!confirmed) return;
+
+        int deletedCount = 0;
+        foreach (var file in brokenCharts)
+        {
+            try
+            {
+                if (System.IO.File.Exists(file))
+                {
+                    System.IO.File.Delete(file);
+                    deletedCount++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ChartManager] Failed to delete broken chart {file}: {ex.Message}");
+            }
+        }
+
+        string successTemplate = MdModManager.Services.I18nService.Instance["Str_410"] ?? "成功清理了 {0} 个损坏的谱面文件。";
+        StatusMessage = string.Format(successTemplate, deletedCount);
+        Reload();
     }
 
     // 批量删除所有勾选的分类
@@ -1042,6 +1103,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                     deletedCount++;
                 }
             }
+
 
             StatusMessage = $"成功删除 {deletedCount} 个分类，谱面已移回未分类";
             IsCategoryDeleteMode = false;
@@ -1180,7 +1242,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         if (string.IsNullOrEmpty(gamePath)) return;
 
         var albumsDir = System.IO.Path.Combine(gamePath, "Custom_Albums");
-        string destFolder = targetCategory == "未分类" 
+        string destFolder = targetCategory == RootCategoryKey 
             ? albumsDir 
             : System.IO.Path.Combine(albumsDir, targetCategory);
 
@@ -1201,6 +1263,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 if (System.IO.File.Exists(destPath))
                     System.IO.File.Delete(destPath);
                 System.IO.File.Move(chart.FilePath, destPath);
+    
                 StatusMessage = $"成功移动谱面至分类《{targetCategory}》";
                 Reload();
             }
@@ -1225,7 +1288,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         if (string.IsNullOrEmpty(gamePath)) return;
 
         var albumsDir = System.IO.Path.Combine(gamePath, "Custom_Albums");
-        string destFolder = targetCategory == "未分类" 
+        string destFolder = targetCategory == RootCategoryKey 
             ? albumsDir 
             : System.IO.Path.Combine(albumsDir, targetCategory);
 
@@ -1256,6 +1319,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 Console.WriteLine($"[ChartManager] Move error: {ex.Message}");
             }
         }
+
 
         StatusMessage = $"成功移动 {successCount} 张谱面至分类《{targetCategory}》";
         Reload();
@@ -1326,9 +1390,9 @@ public class CategoryItem : ObservableObject
     }
 
     public string DisplayName => Name == "全部" ? MdModManager.Services.I18nService.Instance["Str_389"] :
-                                 (Name == "未分类" ? MdModManager.Services.I18nService.Instance["Str_390"] : Name);
+                                 (Name == ChartManagerViewModel.RootCategoryKey ? (MdModManager.Services.I18nService.Instance.CurrentLanguage == "zh-CN" ? "未分类" : "Uncategorized") : Name);
 
-    public bool IsCustom => Name != "全部" && Name != "未分类";
+    public bool IsCustom => Name != "全部" && Name != ChartManagerViewModel.RootCategoryKey;
 
     private bool _isSelectedForDeletion;
     public bool IsSelectedForDeletion
@@ -1353,5 +1417,5 @@ public class MoveCategoryItem
 
     public string DisplayName => Name == "新建分类" ? MdModManager.Services.I18nService.Instance["Str_391"] :
                                  (Name == "全部" ? MdModManager.Services.I18nService.Instance["Str_389"] :
-                                 (Name == "未分类" ? MdModManager.Services.I18nService.Instance["Str_390"] : Name));
+                                 (Name == ChartManagerViewModel.RootCategoryKey ? (MdModManager.Services.I18nService.Instance.CurrentLanguage == "zh-CN" ? "未分类" : "Uncategorized") : Name));
 }

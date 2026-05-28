@@ -106,7 +106,7 @@ public class AppConfig
     public System.Collections.Generic.List<long> EuterpeLikedCids { get; set; } = new();
 
     /// <summary>应用语言</summary>
-    public string Language { get; set; } = "zh-CN";
+    public string Language { get; set; } = System.Globalization.CultureInfo.CurrentUICulture.Name == "zh-CN" ? "zh-CN" : "en-US";
 }
 
 public class NoticeInfo
@@ -164,25 +164,27 @@ public class NoticeInfo
         {
             if (!string.IsNullOrWhiteSpace(Badge))
                 return Badge;
+
+            bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
             if (Title.Contains("紧急") || Title.Contains("故障") || Title.Contains("修复") || Id.Contains("Emergency", System.StringComparison.OrdinalIgnoreCase))
-                return "紧急通知";
+                return isEn ? "Emergency" : "紧急通知";
             if (Title.Contains("更新") || Title.Contains("版本") || System.Text.RegularExpressions.Regex.IsMatch(Title, @"v\d+\.\d+"))
-                return "更新公告";
-            return "系统公告";
+                return isEn ? "Update" : "更新公告";
+            return isEn ? "System" : "系统公告";
         }
     }
 
     // 动态角标颜色
     [JsonIgnore]
-    public string DisplayBadgeColor => DisplayBadge == "紧急通知" ? "#FF4D4D" : "#FF75A9";
+    public string DisplayBadgeColor => DisplayBadge == "紧急通知" || DisplayBadge == "Emergency" ? "#FF4D4D" : "#FF75A9";
 
     // 动态角标边框颜色
     [JsonIgnore]
-    public string DisplayBadgeBorderColor => DisplayBadge == "紧急通知" ? "#33FF4D4D" : "#33FF75A9";
+    public string DisplayBadgeBorderColor => DisplayBadge == "紧急通知" || DisplayBadge == "Emergency" ? "#33FF4D4D" : "#33FF75A9";
 
     // 动态角标背景颜色
     [JsonIgnore]
-    public string DisplayBadgeBackgroundColor => DisplayBadge == "紧急通知" ? "#10FF4D4D" : "#10FF75A9";
+    public string DisplayBadgeBackgroundColor => DisplayBadge == "紧急通知" || DisplayBadge == "Emergency" ? "#10FF4D4D" : "#10FF75A9";
 }
 
 [JsonSerializable(typeof(AppConfig))]

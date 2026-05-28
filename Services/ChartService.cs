@@ -10,6 +10,7 @@ namespace MdModManager.Services;
 
 public interface IChartService
 {
+    IReadOnlyList<string> BrokenCharts { get; }
     IEnumerable<ChartInfo> LoadCharts(string gamePath, IReadOnlySet<string>? sessionDownloadedFiles = null);
     void DeleteChart(ChartInfo chart);
     Stream? OpenDemoStream(ChartInfo chart);
@@ -31,8 +32,12 @@ public class ChartService : IChartService
     private static HashSet<string>? _snapshotFilenames = null;
     private static readonly object _snapshotLock = new();
 
+    public IReadOnlyList<string> BrokenCharts => _brokenCharts;
+    private readonly List<string> _brokenCharts = new();
+
     public IEnumerable<ChartInfo> LoadCharts(string gamePath, IReadOnlySet<string>? sessionDownloadedFiles = null)
     {
+        _brokenCharts.Clear();
         var albumsDir = Path.Combine(gamePath, "Custom_Albums");
         if (!Directory.Exists(albumsDir))
             yield break;
@@ -91,6 +96,10 @@ public class ChartService : IChartService
                 }
 
                 yield return info;
+            }
+            else
+            {
+                _brokenCharts.Add(file);
             }
         }
     }
@@ -356,16 +365,28 @@ public class ChartService : IChartService
             chart.Name = name;
 
         // Music author
-        chart.MusicAuthor = root["author"]?.GetValue<string>()
-                            ?? root["music_author"]?.GetValue<string>()
-                            ?? root["artist"]?.GetValue<string>()
-                            ?? root["composer"]?.GetValue<string>();
+        var musicAuthorKeys = new[] { "author", "music_author", "artist", "composer" };
+        foreach (var key in musicAuthorKeys)
+        {
+            var val = root[key]?.ToString();
+            if (!string.IsNullOrWhiteSpace(val))
+            {
+                chart.MusicAuthor = val;
+                break;
+            }
+        }
 
         // Chart/level designer
-        chart.ChartAuthor = root["levelDesigner"]?.GetValue<string>()
-                            ?? root["level_designer"]?.GetValue<string>()
-                            ?? root["charter"]?.GetValue<string>()
-                            ?? root["mapper"]?.GetValue<string>();
+        var charterKeys = new[] { "levelDesigner", "levelDesigner1", "levelDesigner2", "levelDesigner3", "levelDesigner4", "levelDesigner5", "level_designer", "charter", "mapper" };
+        foreach (var key in charterKeys)
+        {
+            var val = root[key]?.ToString();
+            if (!string.IsNullOrWhiteSpace(val))
+            {
+                chart.ChartAuthor = val;
+                break;
+            }
+        }
 
         // BPM
         var bpm = root["bpm"]?.GetValue<string>()

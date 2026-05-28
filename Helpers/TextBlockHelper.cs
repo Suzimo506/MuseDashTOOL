@@ -115,7 +115,7 @@ public static class TextBlockHelper
         if (string.IsNullOrEmpty(text)) return;
 
         // 简单的正则表达式解析
-        var pattern = @"\[(Red|Pink)\](.*?)\[\/\1\]";
+        var pattern = @"\[(Red|Pink|Blue|Green|Yellow)\](.*?)\[\/\1\]";
         var lastIndex = 0;
         foreach (System.Text.RegularExpressions.Match match in System.Text.RegularExpressions.Regex.Matches(text, pattern, System.Text.RegularExpressions.RegexOptions.Singleline))
         {
@@ -128,7 +128,15 @@ public static class TextBlockHelper
             // 标记内容
             var colorTag = match.Groups[1].Value;
             var content = match.Groups[2].Value;
-            var brush = colorTag.ToLower() == "red" ? Brushes.Red : Brushes.HotPink;
+            IBrush brush = colorTag.ToLower() switch
+            {
+                "red" => Brushes.Red,
+                "pink" => Brushes.HotPink,
+                "blue" => Brushes.DodgerBlue,
+                "green" => Brushes.MediumSeaGreen,
+                "yellow" => Brushes.Gold,
+                _ => Brushes.HotPink
+            };
 
             textBlock.Inlines?.Add(new Run
             {
