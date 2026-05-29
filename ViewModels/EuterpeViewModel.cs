@@ -324,19 +324,32 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     private CancellationTokenSource? _stopCts;
     private CancellationTokenSource? _listCts;
 
+    private readonly IChartIndexService _chartIndexService;
+
+    [ObservableProperty]
+    private bool _isDuplicateDialogOpen;
+
+    [ObservableProperty]
+    private EuterpeChart? _duplicateDialogTarget;
+
+    [ObservableProperty]
+    private List<ChartInfo> _duplicateDialogItems = new();
+
     public EuterpeViewModel(
         IAuthService authService,
         AuthState authState,
         IConfigService configService,
         INotificationService notificationService,
         IDownloadManagerService downloadManagerService,
-        AuthHeaderHandler authHeaderHandler)
+        AuthHeaderHandler authHeaderHandler,
+        IChartIndexService chartIndexService)
     {
         _authService = authService;
         _authState = authState;
         _configService = configService;
         _notificationService = notificationService;
         _downloadManagerService = downloadManagerService;
+        _chartIndexService = chartIndexService;
 
         _httpClient = new HttpClient(authHeaderHandler) { BaseAddress = new Uri("https://euterpe-org.com/api/") };
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.6");
@@ -829,12 +842,28 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             }
         }
 
+        if (_configService.Config.EnableDownloadDuplicateCheck)
+        {
+            var charter = string.Join(", ", chart.Maps?.SelectMany(m => m.Charters ?? Array.Empty<string>()).Distinct() ?? Array.Empty<string>());
+            var duplicates = _chartIndexService.FindDuplicatesOf(chart.Name, chart.Author, charter);
+            if (duplicates.Count > 0)
+            {
+                DuplicateDialogTarget = chart;
+                DuplicateDialogItems = duplicates;
+                IsDuplicateDialogOpen = true;
+                return;
+            }
+        }
+
+        await ExecuteDownloadAsync(chart);
+    }
+
+    private async Task ExecuteDownloadAsync(EuterpeChart chart)
+    {
         try
         {
-            // 获取令牌
             var token = await _authService.GetAccessTokenAsync();
 
-            // 请求打包服务接口
             var buildZipPath = $"workspace/charts/{chart.Cid}/build-zip";
             using var buildReq = new HttpRequestMessage(HttpMethod.Post, buildZipPath);
             using var buildResponse = await _httpClient.SendAsync(buildReq);
@@ -848,14 +877,12 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             }
 
             var zipDownloadUrl = buildZipResult.Path;
-            // 附带身份凭证用于下载授权
             if (zipDownloadUrl.Contains("euterpe-org.com", StringComparison.OrdinalIgnoreCase) && !zipDownloadUrl.Contains("t="))
             {
                 var connector = zipDownloadUrl.Contains('?') ? "&" : "?";
                 zipDownloadUrl += $"{connector}t={Uri.EscapeDataString(token)}";
             }
 
-            // 翻译模型结构，免侵入完美对接原有下载管理器
             var mdmc = new MdmcChart
             {
                 Id = chart.Cid.ToString(),
@@ -875,12 +902,51 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             };
 
             _downloadManagerService.EnqueueDownload(mdmc);
-            _notificationService.ShowSuccess($"已添加到下载队列: 《{chart.Name}》");
+            string successMsg = MdModManager.Services.I18nService.Instance.CurrentLanguage == "zh-CN"
+                ? $"已添加到下载队列: 《{chart.Name}》"
+                : $"Added to download queue: \"{chart.Name}\"";
+            _notificationService.ShowSuccess(successMsg);
         }
         catch (Exception ex)
         {
             _notificationService.ShowFailure("投递下载失败", ex.Message);
         }
+    }
+
+    /// <summary>确认单谱面查重拦截后的操作</summary>
+    [RelayCommand]
+    private async Task ConfirmSingleDownloadActionAsync(string action)
+    {
+        IsDuplicateDialogOpen = false;
+        var chart = DuplicateDialogTarget;
+        if (chart == null) return;
+
+        if (action == "overwrite")
+        {
+            foreach (var local in DuplicateDialogItems)
+            {
+                try
+                {
+                    if (System.IO.File.Exists(local.FilePath))
+                    {
+                        System.IO.File.Delete(local.FilePath);
+                    }
+                    _chartIndexService.RemoveFromIndex(local.FilePath);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[EuterpeDownload] Failed to delete duplicate local chart {local.FilePath}: {ex.Message}");
+                }
+            }
+            await ExecuteDownloadAsync(chart);
+        }
+        else if (action == "both")
+        {
+            await ExecuteDownloadAsync(chart);
+        }
+
+        DuplicateDialogTarget = null;
+        DuplicateDialogItems.Clear();
     }
 
     // 退出登录，擦除本地 Token 并安全切回 Mod 管理首页

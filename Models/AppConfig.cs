@@ -103,6 +103,12 @@ public class AppConfig
     /// <summary>是否开启搜索模糊匹配</summary>
     public bool EnableFuzzySearch { get; set; } = true;
 
+    /// <summary>启用下载单谱查重提示</summary>
+    public bool EnableDownloadDuplicateCheck { get; set; } = true;
+
+    /// <summary>启用批量下载去重提示</summary>
+    public bool EnableBatchDownloadDuplicateCheck { get; set; } = true;
+
     // Euterpe 已点赞的谱面 cid 列表
     public System.Collections.Generic.List<long> EuterpeLikedCids { get; set; } = new();
 

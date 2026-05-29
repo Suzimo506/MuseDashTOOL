@@ -168,6 +168,36 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
+    // 启用下载单谱查重提示
+    public bool EnableDownloadDuplicateCheck
+    {
+        get => _configService.Config.EnableDownloadDuplicateCheck;
+        set
+        {
+            if (_configService.Config.EnableDownloadDuplicateCheck != value)
+            {
+                _configService.Config.EnableDownloadDuplicateCheck = value;
+                OnPropertyChanged();
+                _ = _configService.SaveAsync();
+            }
+        }
+    }
+
+    // 启用批量下载去重提示
+    public bool EnableBatchDownloadDuplicateCheck
+    {
+        get => _configService.Config.EnableBatchDownloadDuplicateCheck;
+        set
+        {
+            if (_configService.Config.EnableBatchDownloadDuplicateCheck != value)
+            {
+                _configService.Config.EnableBatchDownloadDuplicateCheck = value;
+                OnPropertyChanged();
+                _ = _configService.SaveAsync();
+            }
+        }
+    }
+
     /// <summary>自动翻译 Mod 详情信息的开关</summary>
     public bool AutoTranslateDescriptions
     {
@@ -656,6 +686,8 @@ public partial class SettingsViewModel : ObservableObject
 
         OnPropertyChanged(nameof(SuppressIncompatibleModWarning));
         OnPropertyChanged(nameof(EnableFuzzySearch));
+        OnPropertyChanged(nameof(EnableDownloadDuplicateCheck));
+        OnPropertyChanged(nameof(EnableBatchDownloadDuplicateCheck));
         OnPropertyChanged(nameof(CustomBackgroundImagePath));
         OnPropertyChanged(nameof(HasBackgroundImage));
         OnPropertyChanged(nameof(CustomBackgroundOpacity));

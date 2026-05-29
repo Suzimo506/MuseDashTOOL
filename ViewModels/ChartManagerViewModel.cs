@@ -202,11 +202,29 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private ChartInfo? _playingChart;
     private CancellationTokenSource? _stopCts;
 
-    public ChartManagerViewModel(IChartService chartService, IConfigService configService, IDownloadManagerService downloadManagerService)
+    private readonly IChartIndexService _chartIndexService;
+
+    [ObservableProperty]
+    private bool _isToolboxPanelOpen;
+
+    [ObservableProperty]
+    private bool _isToolboxMinimized = true;
+
+    [ObservableProperty]
+    private bool _isDeduplicationRunning;
+
+    public ObservableCollection<DuplicateCheckItem> LocalDuplicatesList { get; } = new();
+
+    public ChartManagerViewModel(
+        IChartService chartService, 
+        IConfigService configService, 
+        IDownloadManagerService downloadManagerService,
+        IChartIndexService chartIndexService)
     {
         _chartService = chartService;
         _configService = configService;
         _downloadManagerService = downloadManagerService;
+        _chartIndexService = chartIndexService;
 
         // 订阅语言变更更新排序选项
         Services.I18nService.Instance.PropertyChanged += (s, e) =>
@@ -397,6 +415,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
             foreach (var chart in charts)
                 _allCharts.Add(chart);
+
+            // 构建自制谱内存快速哈希索引结构
+            _chartIndexService.IndexAll(_allCharts);
 
             ApplyFilter();
             IsLoading = false;
@@ -1471,6 +1492,182 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             }
         }
         return maxLevel;
+    }
+
+    [RelayCommand]
+    private void ToggleToolbox()
+    {
+        IsToolboxPanelOpen = !IsToolboxPanelOpen;
+        if (IsToolboxPanelOpen)
+        {
+            IsToolboxMinimized = false;
+        }
+    }
+
+    [RelayCommand]
+    private void MinimizeToolbox()
+    {
+        IsToolboxPanelOpen = false;
+        IsToolboxMinimized = true;
+    }
+
+    [RelayCommand]
+    private async Task RunDeduplicationAsync()
+    {
+        IsDeduplicationRunning = true;
+        StatusMessage = Services.I18nService.Instance["Str_420"] ?? "正在扫描重复谱面...";
+
+        await Task.Run(() =>
+        {
+            var groups = new Dictionary<string, List<ChartInfo>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var chart in _allCharts)
+            {
+                if (chart == null || string.IsNullOrEmpty(chart.Name)) continue;
+
+                var normTitle = NormalizeText(chart.Name);
+                var normArtist = NormalizeText(chart.MusicAuthor);
+                var normCharter = NormalizeText(chart.ChartAuthor);
+
+                var groupKey = $"{normTitle}_{normArtist}_{normCharter}";
+                if (!groups.TryGetValue(groupKey, out var list))
+                {
+                    list = new List<ChartInfo>();
+                    groups[groupKey] = list;
+                }
+                list.Add(chart);
+            }
+
+            var duplicateItems = new List<DuplicateCheckItem>();
+            int groupCount = 0;
+            foreach (var kvp in groups)
+            {
+                if (kvp.Value.Count > 1)
+                {
+                    groupCount++;
+                    foreach (var chart in kvp.Value)
+                    {
+                        duplicateItems.Add(new DuplicateCheckItem(chart, kvp.Key));
+                    }
+                }
+            }
+
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                LocalDuplicatesList.Clear();
+                foreach (var item in duplicateItems)
+                {
+                    LocalDuplicatesList.Add(item);
+                }
+
+                IsDeduplicationRunning = false;
+
+                string resultPattern = Services.I18nService.Instance["Str_416"] ?? "扫描完成，发现 {0} 组共 {1} 个重复谱面。";
+                StatusMessage = string.Format(resultPattern, groupCount, duplicateItems.Count);
+            });
+        });
+    }
+
+    private string NormalizeText(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+        var chars = s.ToLowerInvariant()
+                     .Where(c => char.IsLetterOrDigit(c))
+                     .ToArray();
+        return new string(chars);
+    }
+
+    [RelayCommand]
+    private void AutoSelectDuplicates(string strategy)
+    {
+        if (LocalDuplicatesList.Count == 0) return;
+
+        var groups = LocalDuplicatesList.GroupBy(item => item.GroupKey);
+
+        foreach (var grp in groups)
+        {
+            var itemsList = grp.ToList();
+            if (itemsList.Count <= 1) continue;
+
+            DuplicateCheckItem keepItem = itemsList[0];
+
+            if (strategy == "keep_newest")
+            {
+                keepItem = itemsList.OrderByDescending(i => i.LastWriteTime).First();
+            }
+            else if (strategy == "keep_smallest")
+            {
+                keepItem = itemsList.OrderBy(i => i.FileSize).First();
+            }
+            else if (strategy == "keep_largest")
+            {
+                keepItem = itemsList.OrderByDescending(i => i.FileSize).First();
+            }
+
+            foreach (var item in itemsList)
+            {
+                item.IsRedundant = (item != keepItem);
+            }
+        }
+
+        var temp = LocalDuplicatesList.ToList();
+        LocalDuplicatesList.Clear();
+        foreach (var item in temp)
+        {
+            LocalDuplicatesList.Add(item);
+        }
+    }
+
+    [RelayCommand]
+    private void ClickDuplicateChart(DuplicateCheckItem item)
+    {
+        if (item == null) return;
+
+        SearchText = item.Name;
+        IsToolboxPanelOpen = false;
+        IsToolboxMinimized = true;
+    }
+
+    [RelayCommand]
+    private async Task DeleteSelectedDuplicatesAsync()
+    {
+        var toDelete = LocalDuplicatesList.Where(i => i.IsRedundant).ToList();
+        if (toDelete.Count == 0) return;
+
+        var app = Avalonia.Application.Current;
+        var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (mainWindow == null) return;
+
+        string confirmTemplate = Services.I18nService.Instance["Str_421"] ?? "是否确认删除选中的 {0} 个重复谱面？\n此操作不可撤销！";
+        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, string.Format(confirmTemplate, toDelete.Count), true);
+        if (!confirmed) return;
+
+        int deletedCount = 0;
+        foreach (var item in toDelete)
+        {
+            try
+            {
+                if (System.IO.File.Exists(item.FilePath))
+                {
+                    System.IO.File.Delete(item.FilePath);
+                    deletedCount++;
+                }
+
+                _chartIndexService.RemoveFromIndex(item.FilePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Toolbox] Failed to delete duplicate file {item.FilePath}: {ex.Message}");
+            }
+        }
+
+        string successTemplate = Services.I18nService.Instance["Str_422"] ?? "成功删除了 {0} 个重复的谱面文件。";
+        StatusMessage = string.Format(successTemplate, deletedCount);
+
+        Reload();
+
+        LocalDuplicatesList.Clear();
+        await RunDeduplicationAsync();
     }
 }
 
