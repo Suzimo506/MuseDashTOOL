@@ -190,7 +190,6 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     partial void OnCurrentPageChanged(int value)
     {
         JumpPageText = value.ToString();
-        UpdateIsAllSelected();
     }
 
     public bool EnableMarquee => _configService.Config.EnableChartNameMarquee;
@@ -492,6 +491,8 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         HasVisibleCharts = Charts.Count > 0;
         RequestedScrollY = 0;
+        // 数据刷新后更新全选状态
+        UpdateIsAllSelected();
     }
 
     private void UpdateStateAndStatus()
