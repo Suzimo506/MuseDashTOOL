@@ -799,12 +799,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         try
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = customAlbumsPath,
-                UseShellExecute = true,
-                Verb = "open"
-            });
+            MdModManager.Helpers.ProcessHelper.OpenFolder(customAlbumsPath);
         }
         catch (Exception ex)
         {

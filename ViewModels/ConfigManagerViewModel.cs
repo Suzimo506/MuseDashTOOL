@@ -421,12 +421,7 @@ public partial class ConfigManagerViewModel : ObservableObject
 
         try
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = userDataPath,
-                UseShellExecute = true,
-                Verb = "open"
-            });
+            ProcessHelper.OpenFolder(userDataPath);
         }
         catch (System.Exception ex)
         {

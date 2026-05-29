@@ -458,12 +458,7 @@ public partial class ModManagerViewModel : ObservableObject
 
         try
         {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = modsFolderPath,
-                UseShellExecute = true,
-                Verb = "open"
-            });
+            ProcessHelper.OpenFolder(modsFolderPath);
         }
         catch (Exception ex)
         {
