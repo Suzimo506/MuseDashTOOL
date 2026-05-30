@@ -108,7 +108,23 @@ public class AppConfig
 
     /// <summary>应用语言</summary>
     public string Language { get; set; } = System.Globalization.CultureInfo.CurrentUICulture.Name == "zh-CN" ? "zh-CN" : "en-US";
+
+    // 是否不再提醒第一次进入喵斯兔的欢迎教程
+    public bool SuppressWelcomeTutorial { get; set; } = false;
+
+    // 是否不再提醒Mod管理界面教程
+    public bool SuppressModManagerTutorial { get; set; } = false;
+
+    // 是否不再提醒谱面管理界面教程
+    public bool SuppressChartManagerTutorial { get; set; } = false;
+
+    // 是否不再提醒QQ群谱面界面教程
+    public bool SuppressAlbumCollectionTutorial { get; set; } = false;
+
+    // 是否不再提醒配置文件界面教程
+    public bool SuppressConfigManagerTutorial { get; set; } = false;
 }
+
 
 public class NoticeInfo
 {

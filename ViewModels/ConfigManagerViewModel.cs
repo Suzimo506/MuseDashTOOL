@@ -17,6 +17,7 @@ public partial class ConfigManagerViewModel : ObservableObject
     private readonly IConfigFileService? _configFileService;
     private readonly IConfigService? _configService;
     private readonly Services.ILocalModService? _localModService;
+    private bool _hasShownTutorial;
 
     private ObservableCollection<CfgFolderNode> _allCfgNodes = new();
     private System.Threading.CancellationTokenSource? _statusCts;
@@ -73,6 +74,24 @@ public partial class ConfigManagerViewModel : ObservableObject
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
+        // 检测并弹出配置文件管理教程
+        if (!_hasShownTutorial && _configService != null && !_configService.Config.SuppressConfigManagerTutorial)
+        {
+            _hasShownTutorial = true;
+            var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+            if (mainWindow != null)
+            {
+                var title = Services.I18nService.Instance["Tutorial_Title"] ?? "教程提示";
+                var message = Services.I18nService.Instance["Tutorial_ConfigManager"];
+                bool dontRemind = await Views.TutorialDialog.ShowDialogAsync(mainWindow, title, message);
+                if (dontRemind)
+                {
+                    _configService.Config.SuppressConfigManagerTutorial = true;
+                    await _configService.SaveAsync();
+                }
+            }
+        }
+
         await RefreshAsync(cancellationToken);
     }
 

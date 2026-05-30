@@ -21,6 +21,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private readonly IChartService _chartService;
     private readonly IConfigService _configService;
     private readonly IDownloadManagerService _downloadManagerService;
+    private bool _hasShownTutorial;
     private const int PageSize = 16;
     public const string RootCategoryKey = "Root_Uncategorized";
 
@@ -208,18 +209,45 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         _configService = configService;
         _downloadManagerService = downloadManagerService;
 
-        // 订阅语言变更更新排序选项
+        // 订阅语言变更更新排序选项与重新加载文字
         Services.I18nService.Instance.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == "Item")
             {
                 UpdateSortOptions();
+                _ = Task.Run(() => Reload());
             }
         };
     }
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
+        // 获取主窗口实例
+        var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+
+        // 1. 检测并弹出谱面管理界面教程
+        if (!_hasShownTutorial && !_configService.Config.SuppressChartManagerTutorial)
+        {
+            _hasShownTutorial = true;
+            if (mainWindow != null)
+            {
+                var title = Services.I18nService.Instance["Tutorial_Title"] ?? "教程提示";
+                var message = Services.I18nService.Instance["Tutorial_ChartManager"];
+                bool dontRemind = await Views.TutorialDialog.ShowDialogAsync(mainWindow, title, message);
+                if (dontRemind)
+                {
+                    _configService.Config.SuppressChartManagerTutorial = true;
+                    await _configService.SaveAsync();
+                }
+            }
+        }
+
+        // 2. 教程关闭或跳过后，检测并串行弹出谱面分类提示弹窗
+        if (mainWindow != null && !_configService.Config.SuppressCustomAlbumsWarning)
+        {
+            await Views.CustomAlbumsWarningDialog.ShowDialogAsync(mainWindow, _configService);
+        }
+
         await Task.Run(() => Reload(), ct);
     }
 
@@ -320,7 +348,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             SelectedCount = 0;
             IsAllSelected = false;
             IsLoading = true;
-            StatusMessage = "正在加载...";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Loading..." : "正在加载...";
         });
 
         var gamePath = _configService.Config.GamePath;
@@ -329,7 +357,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
                 IsLoading = false;
-                StatusMessage = "游戏路径未设置，请先在设置中配置游戏目录";
+                StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US"
+                    ? "Game path not set, please configure the game directory in settings first"
+                    : "游戏路径未设置，请先在设置中配置游戏目录";
             });
             return;
         }
@@ -656,7 +686,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法导入";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot import" : "游戏路径未设置，无法导入";
             return;
         }
 
@@ -779,7 +809,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "打开失败: 游戏路径未设置";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Open failed: Game path not set" : "打开失败: 游戏路径未设置";
             return;
         }
 
@@ -912,7 +942,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法重命名";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot rename" : "游戏路径未设置，无法重命名";
             return;
         }
 
@@ -982,7 +1012,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法删除";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot delete" : "游戏路径未设置，无法删除";
             return;
         }
 
@@ -990,7 +1020,10 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
-        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, $"确定要删除分类《{oldName}》吗？\n删除分类将把其中的所有谱面文件移动回“未分类”。", true);
+        var confirmMsg = Services.I18nService.Instance.CurrentLanguage == "en-US"
+            ? $"Are you sure you want to delete the category \"{oldName}\"?\nDeleting this category will move all of its charts back to \"Uncategorized\"."
+            : $"确定要删除分类《{oldName}》吗？\n删除分类将把其中的所有谱面文件移动回“未分类”。";
+        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, confirmMsg, true);
         if (!confirmed) return;
 
         StopCurrentPlayback();
@@ -1088,7 +1121,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法删除";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot delete" : "游戏路径未设置，无法删除";
             return;
         }
 
@@ -1096,7 +1129,10 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
-        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, $"确定要删除选中的 {toDelete.Count} 个分类吗？\n删除分类将把其中的所有谱面文件移动回“未分类”。", true);
+        var confirmMsg = Services.I18nService.Instance.CurrentLanguage == "en-US"
+            ? $"Are you sure you want to delete these {toDelete.Count} selected categories?\nDeleting categories will move all of their charts back to \"Uncategorized\"."
+            : $"确定要删除选中的 {toDelete.Count} 个分类吗？\n删除分类将把其中的所有谱面文件移动回“未分类”。";
+        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, confirmMsg, true);
         if (!confirmed) return;
 
         StopCurrentPlayback();
@@ -1203,7 +1239,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法创建分类";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot create category" : "游戏路径未设置，无法创建分类";
             return;
         }
 
@@ -1211,7 +1247,11 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
-        var catName = await InputDialog.ShowDialogAsync(mainWindow, "新建分类", "请输入新建分类的名称（将创建对应的合集文件夹）：");
+        var dialogTitle = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Create Category" : "新建分类";
+        var dialogPrompt = Services.I18nService.Instance.CurrentLanguage == "en-US"
+            ? "Please enter the name of the new category (a matching folder will be created):"
+            : "请输入新建分类的名称（将创建对应的合集文件夹）：";
+        var catName = await InputDialog.ShowDialogAsync(mainWindow, dialogTitle, dialogPrompt);
         if (string.IsNullOrWhiteSpace(catName))
             return;
 
@@ -1356,7 +1396,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法创建分类";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot create category" : "游戏路径未设置，无法创建分类";
             return;
         }
 
@@ -1364,7 +1404,11 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
-        var catName = await InputDialog.ShowDialogAsync(mainWindow, "新建分类", "请输入新建分类的名称（将创建对应的合集文件夹）：");
+        var dialogTitle = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Create Category" : "新建分类";
+        var dialogPrompt = Services.I18nService.Instance.CurrentLanguage == "en-US"
+            ? "Please enter the name of the new category (a matching folder will be created):"
+            : "请输入新建分类的名称（将创建对应的合集文件夹）：";
+        var catName = await InputDialog.ShowDialogAsync(mainWindow, dialogTitle, dialogPrompt);
         if (string.IsNullOrWhiteSpace(catName))
             return;
 

@@ -24,6 +24,7 @@ public partial class ModManagerViewModel : ObservableObject
     private readonly INotificationService _notificationService;
     private readonly ModStagingService _stagingService;
     private readonly INavigationService _navigationService;
+    private bool _hasShownTutorial;
 
     // 后台定时器：检测游戏进程，游戏关闭后自动将暂存文件移入 Mods 文件夹
     private Timer? _stagingWatcherTimer;
@@ -188,6 +189,25 @@ public partial class ModManagerViewModel : ObservableObject
     public async Task InitializeAsync(bool forceRefresh, CancellationToken cancellationToken = default)
     {
         IsLoading = true;
+
+        // 检测并弹出Mod管理界面教程
+        if (!_hasShownTutorial && !_configService.Config.SuppressModManagerTutorial)
+        {
+            _hasShownTutorial = true;
+            var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+            if (mainWindow != null)
+            {
+                var title = I18nService.Instance["Tutorial_Title"] ?? "教程提示";
+                var message = I18nService.Instance["Tutorial_ModManager"];
+                bool dontRemind = await Views.TutorialDialog.ShowDialogAsync(mainWindow, title, message);
+                if (dontRemind)
+                {
+                    _configService.Config.SuppressModManagerTutorial = true;
+                    await _configService.SaveAsync();
+                }
+            }
+        }
+
         try
         {
             // 读取游戏版本（用于兼容性判断），失败时为空串（所有 mod 视为兼容）

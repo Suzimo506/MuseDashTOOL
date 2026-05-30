@@ -1,11 +1,11 @@
-﻿<Window xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
+<Window xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="MdModManager.Views.MessageBox"
         Title="{Binding [Str_167], Source={x:Static i18n:I18nService.Instance}}"
         Width="400" Height="180"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource CardBgBrush}"
+        Background="{DynamicResource DialogBgBrush}"
         Foreground="{DynamicResource ThemeTextMainBrush}"
         SystemDecorations="Full">
 
