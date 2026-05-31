@@ -93,13 +93,8 @@
                         Padding="22,20"
                         BorderThickness="1"
                         BorderBrush="{DynamicResource FloatingPanelBorder}"
-                        BoxShadow="0 4 16 0 #20000000">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                            <GradientStop Color="#1A1018" Offset="0"/>
-                            <GradientStop Color="#20161E" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
+                        BoxShadow="0 4 16 0 #20000000"
+                        Background="{DynamicResource WelcomeStatusBgBrush}">
                     <StackPanel Spacing="16">
                         <TextBlock Text="{Binding [Str_319], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" FontWeight="Bold"
                                    Foreground="{DynamicResource ThemeTextMainBrush}" Opacity="0.9"/>

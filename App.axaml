@@ -31,6 +31,8 @@
         <SolidColorBrush x:Key="ControlHoverBgBrush" Color="#2A1F28"/>
         <SolidColorBrush x:Key="ControlPressedBgBrush" Color="#372734"/>
         <SolidColorBrush x:Key="SettingsCardBgBrush" Color="#221A21"/>
+        <SolidColorBrush x:Key="EuterpeTopPanelBgBrush" Color="#251F2E"/>
+        <SolidColorBrush x:Key="WelcomeStatusBgBrush" Color="#1A1018"/>
         <SolidColorBrush x:Key="ShellSidebarBrush" Color="#1B151C"/>
         <SolidColorBrush x:Key="ShellContentBrush" Color="#161118"/>
         <SolidColorBrush x:Key="ShellOutlineBrush" Color="#3B2A36"/>

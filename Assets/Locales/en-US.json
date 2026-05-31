@@ -460,5 +460,7 @@
   "Str_438": "Click a duplicate group to highlight search and collapse toolbox to floating button.",
   "Str_439": "Restore Toolbox",
   "Str_ConfirmDownload": "Confirm Download",
-  "Str_Cancel": "Cancel"
+  "Str_Cancel": "Cancel",
+  "Str_440": "Minimize to Float Button",
+  "Str_441": "Close Toolbox"
 }

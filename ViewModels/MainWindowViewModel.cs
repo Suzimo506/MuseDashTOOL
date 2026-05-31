@@ -421,7 +421,7 @@ public partial class MainWindowViewModel : ObservableObject
                 ThemeTextMainBrush = rightMainBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#4C1D36"));
                 ThemeTextSubBrush = rightSubBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8C5874"));
                 ThemeTextTertiaryBrush = rightTertiaryBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#BD91A9"));
-                FloatingPanelBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFFFFF"));
+                FloatingPanelBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#B3FFFFFF"));
                 FloatingPanelBorder = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFEBF3"));
             }
             else
@@ -429,7 +429,7 @@ public partial class MainWindowViewModel : ObservableObject
                 ThemeTextMainBrush = rightMainBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFE6F1"));
                 ThemeTextSubBrush = rightSubBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#CDA0B7"));
                 ThemeTextTertiaryBrush = rightTertiaryBrush ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8F697C"));
-                FloatingPanelBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#241820"));
+                FloatingPanelBackground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#99241820"));
                 FloatingPanelBorder = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3D2131"));
             }
         }
@@ -438,7 +438,8 @@ public partial class MainWindowViewModel : ObservableObject
         NavButtonSubBrush = customSubBrush ?? (isLightTheme && CustomBackgroundBitmap == null ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8C5874")) : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#CDA0B7")));
 
         Avalonia.Media.IBrush cardBg, cardHoverBg, modCardBg, controlBg, controlHoverBg, controlPressedBg;
-        if (IsNormalTheme)
+        bool showTransparentCards = CustomBackgroundBitmap != null;
+        if (!showTransparentCards)
         {
             if (isLightTheme)
             {
@@ -451,9 +452,19 @@ public partial class MainWindowViewModel : ObservableObject
             }
             else
             {
-                cardBg       = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2D1E28"));
+                // 卡片无背景图时维持不透明渐变背景
+                cardBg = new Avalonia.Media.LinearGradientBrush
+                {
+                    StartPoint = new Avalonia.RelativePoint(0, 0, Avalonia.RelativeUnit.Relative),
+                    EndPoint = new Avalonia.RelativePoint(1, 1, Avalonia.RelativeUnit.Relative),
+                    GradientStops = new Avalonia.Media.GradientStops
+                    {
+                        new Avalonia.Media.GradientStop(Avalonia.Media.Color.Parse("#2C1E2B"), 0),
+                        new Avalonia.Media.GradientStop(Avalonia.Media.Color.Parse("#191018"), 1)
+                    }
+                };
                 cardHoverBg  = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#382633"));
-                modCardBg    = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#231820"));
+                modCardBg    = cardBg; // mod卡片也使用渐变色
                 controlBg    = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#20161D"));
                 controlHoverBg   = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2C1E28"));
                 controlPressedBg = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3B2835"));
@@ -461,16 +472,29 @@ public partial class MainWindowViewModel : ObservableObject
         }
         else
         {
-            cardBg           = Avalonia.Media.Brushes.Transparent;
-            cardHoverBg      = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1AFFFFFF"));
-            modCardBg        = Avalonia.Media.Brushes.Transparent;
+            if (isLightTheme)
+            {
+                cardBg           = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#99FFFFFF"));
+                cardHoverBg      = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#B3FFFFFF"));
+                modCardBg        = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#99FFF8FA"));
+                controlBg        = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#99FFF2F7"));
+                controlHoverBg   = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#B3FFF0F6"));
+                controlPressedBg = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#CCFFF0F6"));
+            }
+            else
+            {
+                cardBg           = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#802D1E28"));
+                cardHoverBg      = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#99382633"));
+                modCardBg        = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#80231820"));
+                controlBg        = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8020161D"));
+                controlHoverBg   = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#992C1E28"));
+                controlPressedBg = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#B33B2835"));
+            }
             
             Avalonia.Application.Current?.Resources.Remove("SettingsCardBgBrush");
-            Avalonia.Application.Current?.Resources.Add("SettingsCardBgBrush", Avalonia.Media.Brushes.Transparent);
-
-            controlBg        = Avalonia.Media.Brushes.Transparent;
-            controlHoverBg   = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1AFFFFFF"));
-            controlPressedBg = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#33FFFFFF"));
+            Avalonia.Application.Current?.Resources.Add("SettingsCardBgBrush", 
+                isLightTheme ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#99FFFDFE"))
+                             : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#802D232C")));
         }
 
         if (Avalonia.Application.Current != null)
@@ -498,6 +522,38 @@ public partial class MainWindowViewModel : ObservableObject
             Avalonia.Application.Current.Resources["ControlBgBrush"]     = controlBg;
             Avalonia.Application.Current.Resources["ControlHoverBgBrush"]    = controlHoverBg;
             Avalonia.Application.Current.Resources["ControlPressedBgBrush"] = controlPressedBg;
+
+            // 普通主题下的渐变背景与背景图下的毛玻璃材质
+            if (!showTransparentCards)
+            {
+                var euterpeNormalBg = new Avalonia.Media.LinearGradientBrush
+                {
+                    StartPoint = new Avalonia.RelativePoint(0, 0, Avalonia.RelativeUnit.Relative),
+                    EndPoint = new Avalonia.RelativePoint(1, 1, Avalonia.RelativeUnit.Relative),
+                    GradientStops = new Avalonia.Media.GradientStops
+                    {
+                        new Avalonia.Media.GradientStop(Avalonia.Media.Color.Parse("#251F2E"), 0),
+                        new Avalonia.Media.GradientStop(Avalonia.Media.Color.Parse("#16131C"), 1)
+                    }
+                };
+                var welcomeNormalBg = new Avalonia.Media.LinearGradientBrush
+                {
+                    StartPoint = new Avalonia.RelativePoint(0, 0, Avalonia.RelativeUnit.Relative),
+                    EndPoint = new Avalonia.RelativePoint(1, 1, Avalonia.RelativeUnit.Relative),
+                    GradientStops = new Avalonia.Media.GradientStops
+                    {
+                        new Avalonia.Media.GradientStop(Avalonia.Media.Color.Parse("#1A1018"), 0),
+                        new Avalonia.Media.GradientStop(Avalonia.Media.Color.Parse("#20161E"), 1)
+                    }
+                };
+                Avalonia.Application.Current.Resources["EuterpeTopPanelBgBrush"] = euterpeNormalBg;
+                Avalonia.Application.Current.Resources["WelcomeStatusBgBrush"] = welcomeNormalBg;
+            }
+            else
+            {
+                Avalonia.Application.Current.Resources["EuterpeTopPanelBgBrush"] = cardBg;
+                Avalonia.Application.Current.Resources["WelcomeStatusBgBrush"] = cardBg;
+            }
             
             // 全局主题高亮色 (供打勾框、滑动条、进度条使用) - 现在固定为粉色
             Avalonia.Application.Current.Resources["ThemeAccentBrush"] = accentBrush;

@@ -1,4 +1,4 @@
-﻿<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MdModManager.ViewModels"
              xmlns:models="using:MdModManager.Models"
@@ -114,14 +114,7 @@
     <UserControl.Styles>
         <!-- 谱面卡片样式升级 -->
         <Style Selector="Border.Card">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                        <GradientStop Color="#2C1E2B" Offset="0"/>
-                        <GradientStop Color="#191018" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
             <Setter Property="BorderBrush" Value="#15FF8EBE"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="RenderTransform" Value="scale(1.0)"/>
@@ -139,14 +132,7 @@
 
         <!-- 文件夹/曲包分类卡片样式 (无悬浮缩放，仅有发光轮廓细线) -->
         <Style Selector="Border.FolderCard">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                        <GradientStop Color="#2C1E2B" Offset="0"/>
-                        <GradientStop Color="#191018" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
             <Setter Property="BorderBrush" Value="#15FF8EBE"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Transitions">

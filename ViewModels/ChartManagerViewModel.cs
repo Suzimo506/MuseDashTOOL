@@ -1573,6 +1573,13 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private void CloseToolbox()
+    {
+        IsToolboxPanelOpen = false;
+        IsToolboxMinimized = false;
+    }
+
+    [RelayCommand]
     private void RestoreToolbox()
     {
         IsToolboxPanelOpen = true;

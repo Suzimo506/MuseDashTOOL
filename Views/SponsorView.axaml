@@ -1,4 +1,4 @@
-﻿<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MdModManager.ViewModels"
              xmlns:models="using:MdModManager.Models"
@@ -130,7 +130,7 @@
 
         <!-- 信封按钮内框样式及渐变过渡 -->
         <Style Selector="Button.EnvelopeBtn Border#EnvelopeBorder">
-            <Setter Property="Background" Value="#221018"/>
+            <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
             <Setter Property="BorderBrush" Value="#40FF69B4"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Transitions">
@@ -141,11 +141,11 @@
             </Setter>
         </Style>
         <Style Selector="Button.EnvelopeBtn:pointerover Border#EnvelopeBorder">
-            <Setter Property="Background" Value="#2D1621"/>
+            <Setter Property="Background" Value="{DynamicResource CardHoverBgBrush}"/>
             <Setter Property="BorderBrush" Value="#FF69B4"/>
         </Style>
         <Style Selector="Button.EnvelopeBtn:pressed Border#EnvelopeBorder">
-            <Setter Property="Background" Value="#1A0A12"/>
+            <Setter Property="Background" Value="{DynamicResource ControlPressedBgBrush}"/>
             <Setter Property="BorderBrush" Value="#80FF69B4"/>
         </Style>
 
@@ -243,13 +243,8 @@
                             Padding="20"
                             BorderThickness="1.5"
                             BorderBrush="#33FF69B4"
+                            Background="{DynamicResource CardBgBrush}"
                             BoxShadow="0 4 20 0 #20000000">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                                <GradientStop Color="#221018" Offset="0"/>
-                                <GradientStop Color="#160810" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
                         <StackPanel Spacing="12">
                             <!-- 承诺文字 -->
                             <StackPanel Orientation="Horizontal" Spacing="8">

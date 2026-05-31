@@ -69,14 +69,7 @@
     <UserControl.Styles>
         <!-- 谱面卡片样式升级 -->
         <Style Selector="Border.Card">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                        <GradientStop Color="#2C1E2B" Offset="0"/>
-                        <GradientStop Color="#191018" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
             <Setter Property="BorderBrush" Value="#15FF8EBE"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="RenderTransform" Value="scale(1.0)"/>
@@ -357,7 +350,7 @@
 
         <!-- 查重对话框 Overlay -->
         <Grid Background="#B0000000" IsVisible="{Binding IsDuplicateDialogOpen}">
-            <Border Background="{DynamicResource CardBgBrush}" 
+            <Border Background="{DynamicResource DialogBgBrush}" 
                     BorderBrush="#FF8EBE" 
                     BorderThickness="1.5" 
                     CornerRadius="16" 

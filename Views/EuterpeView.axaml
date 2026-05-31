@@ -184,7 +184,7 @@
     <UserControl.Styles>
         <!-- 谱面卡片Hover缩放发光和阴影过渡动画 -->
         <Style Selector="Border.ChartCard">
-            <Setter Property="Background" Value="#1E1624"/>
+            <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
             <Setter Property="BorderBrush" Value="#2D2136"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="14"/>
@@ -373,13 +373,7 @@
 
         <!-- 顶部个人信息玻璃卡片 (Row 0，占左半侧) -->
         <Grid Grid.Row="0" ColumnDefinitions="*,*" Margin="0,0,0,16">
-            <Border Grid.Column="0" Padding="16" CornerRadius="16" BorderThickness="1" BorderBrush="#33FFFFFF" ClipToBounds="True">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                        <GradientStop Color="#251F2E" Offset="0"/>
-                        <GradientStop Color="#16131C" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
+            <Border Grid.Column="0" Padding="16" CornerRadius="16" BorderThickness="1" BorderBrush="#33FFFFFF" ClipToBounds="True" Background="{DynamicResource EuterpeTopPanelBgBrush}">
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     
                     <!-- 发光紫粉渐变外圈头像 -->
@@ -412,13 +406,7 @@
             </Border>
             
             <!-- 右半侧免责声明面板 -->
-            <Border Grid.Column="1" Margin="16,0,0,0" Padding="16" CornerRadius="16" BorderThickness="1" BorderBrush="#33FFFFFF" ClipToBounds="True">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                        <GradientStop Color="#251F2E" Offset="0"/>
-                        <GradientStop Color="#16131C" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
+            <Border Grid.Column="1" Margin="16,0,0,0" Padding="16" CornerRadius="16" BorderThickness="1" BorderBrush="#33FFFFFF" ClipToBounds="True" Background="{DynamicResource EuterpeTopPanelBgBrush}">
                 <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#8A8594" VerticalAlignment="Center">
                     <Run Text="{Binding [Str_124], Source={x:Static i18n:I18nService.Instance}}"/>
                     <InlineUIContainer>
@@ -744,7 +732,7 @@
 
         <!-- 查重对话框 Overlay -->
         <Grid Background="#B0000000" IsVisible="{Binding IsDuplicateDialogOpen}">
-            <Border Background="{DynamicResource CardBgBrush}" 
+            <Border Background="{DynamicResource DialogBgBrush}" 
                     BorderBrush="#FF8EBE" 
                     BorderThickness="1.5" 
                     CornerRadius="16" 

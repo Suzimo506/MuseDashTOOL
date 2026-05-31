@@ -114,14 +114,7 @@
     <UserControl.Styles>
         <!-- 谱面卡片样式升级 -->
         <Style Selector="Border.ChartCard">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                        <GradientStop Color="#2C1E2B" Offset="0"/>
-                        <GradientStop Color="#191018" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
             <Setter Property="BorderBrush" Value="#15FF8EBE"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="RenderTransform" Value="scale(1.0)"/>
@@ -1431,7 +1424,7 @@
 
         <!-- 工具箱控制面板 Overlay -->
         <Grid Background="#B0000000" IsVisible="{Binding IsToolboxPanelOpen}">
-            <Border Background="{DynamicResource CardBgBrush}" 
+            <Border Background="{DynamicResource DialogBgBrush}" 
                     BorderBrush="#FF8EBE" 
                     BorderThickness="1.5" 
                     CornerRadius="16" 
@@ -1445,7 +1438,7 @@
                     <!-- 头部 -->
                     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
                         <!-- 返回按钮，状态B可见 -->
-                        <Button Grid.Column="0" Command="{Binding GoBackToToolboxCommand}" IsVisible="{Binding IsShowingDeduplication}" Theme="{StaticResource RobustPlainIconBtn}">
+                        <Button Grid.Column="0" Command="{Binding GoBackToToolboxCommand}" IsVisible="{Binding IsShowingDeduplication}" Theme="{StaticResource RobustPlainIconBtn}" ZIndex="1">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <PathIcon Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z" 
                                           Foreground="#FF8EBE" Width="14" Height="14" VerticalAlignment="Center"/>
@@ -1454,17 +1447,21 @@
                         </Button>
                         
                         <!-- 标题 -->
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
-                            <PathIcon Data="M1015.98866 134.008505H795.48511625V71.0042525A63.08363152 63.08363152 0 0 0 732.48086375 8H417.49362125a63.08363152 63.08363152 0 0 0-63.0042525 63.0042525v63.0042525H133.997165A126.12190303 126.12190303 0 0 0 8 260.00567v629.985825a126.12190303 126.12190303 0 0 0 125.997165 125.997165h881.991495A126.12190303 126.12190303 0 0 0 1141.985825 889.991495V260.00567a126.12190303 126.12190303 0 0 0-125.997165-125.997165zM417.49362125 71.0042525h314.9985825v63.0042525H417.49362125z m-283.49645625 125.997165h881.991495a63.08363152 63.08363152 0 0 1 63.0042525 63.0042525v188.9900775H71.0042525V260.00567a63.08363152 63.08363152 0 0 1 62.9929125-63.0042525z m529.68477909 314.9985825C650.64110652 548.58238227 616.05453964 575.0042525 574.9929125 575.0042525s-75.64819402-26.42186925-88.68903159-63.0042525z m352.30671591 440.9957475H133.997165a63.08363152 63.08363152 0 0 1-63.0042525-63.0042525V512h349.68720938c14.63975691 71.79264225 78.24502153 125.997165 154.31279062 125.997165s139.67303372-54.20452275 154.31279161-125.997165h349.67586839v377.991495a63.08363152 63.08363152 0 0 1-62.9929125 63.0042525z" 
-                                      Foreground="#FF8EBE" Width="24" Height="24"/>
-                            <TextBlock Text="{Binding [Str_413], Source={x:Static i18n:I18nService.Instance}}" 
-                                       FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
-                        </StackPanel>
+                        <TextBlock Grid.Column="0" Grid.ColumnSpan="3"
+                                   Text="{Binding [Str_413], Source={x:Static i18n:I18nService.Instance}}" 
+                                   FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" 
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                        <Button Grid.Column="2" Command="{Binding MinimizeToolboxCommand}" Theme="{StaticResource RobustPlainIconBtn}" ToolTip.Tip="{Binding [Str_Cancel], Source={x:Static i18n:I18nService.Instance}}">
-                            <PathIcon Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" 
-                                      Foreground="{DynamicResource ThemeTextSubBrush}" Width="20" Height="20"/>
-                        </Button>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center" ZIndex="1">
+                            <Button Command="{Binding MinimizeToolboxCommand}" Theme="{StaticResource RobustPlainIconBtn}" ToolTip.Tip="{Binding [Str_440], Source={x:Static i18n:I18nService.Instance}}">
+                                <PathIcon Data="M19 13H5v-2h14z" 
+                                          Foreground="{DynamicResource ThemeTextSubBrush}" Width="20" Height="20"/>
+                            </Button>
+                            <Button Command="{Binding CloseToolboxCommand}" Theme="{StaticResource RobustPlainIconBtn}" ToolTip.Tip="{Binding [Str_441], Source={x:Static i18n:I18nService.Instance}}">
+                                <PathIcon Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" 
+                                          Foreground="{DynamicResource ThemeTextSubBrush}" Width="20" Height="20"/>
+                            </Button>
+                        </StackPanel>
                     </Grid>
 
                     <!-- 中间区域 -->
