@@ -40,7 +40,7 @@ public sealed class TelemetryService : ITelemetryService
         _authService = authService;
         _authState = authState;
         _httpClient = new HttpClient { BaseAddress = new Uri(BaseUrl) };
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.6");
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.7");
     }
 
     // 发送应用会话遥测请求
@@ -56,7 +56,7 @@ public sealed class TelemetryService : ITelemetryService
                 Architecture.Arm64 => "arm64",
                 _ => "unknown"
             };
-            var version = typeof(TelemetryService).Assembly.GetName().Version?.ToString(3) ?? "1.4.6";
+            var version = typeof(TelemetryService).Assembly.GetName().Version?.ToString(3) ?? "1.4.7";
 
             var payload = new TelemetrySessionPayload(
                 country,
