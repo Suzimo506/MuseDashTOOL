@@ -50,9 +50,6 @@ public interface IAuthService
     // 强制请求刷新会话令牌
     Task<string> RenewAccessTokenAsync();
 
-    // 接收授权码并完成登录
-    Task CompleteLoginAsync(string code);
-
     // 启动时自动恢复本地有效会话
     Task<bool> RestoreSessionAsync();
 }

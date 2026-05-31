@@ -913,21 +913,31 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         var state = Ioc.Default.GetRequiredService<AuthState>();
-        if (state.CurrentUser != null)
-        {
-            CleanupCurrentPage();
-            IsChartDownloadMenuExpanded = true;
-
-            var vm = Ioc.Default.GetRequiredService<EuterpeViewModel>();
-            CurrentPage = vm;
-            await vm.InitializeAsync(_currentPageCts!.Token);
-        }
-        else
+        if (state.CurrentUser == null)
         {
             if (_authService == null) return;
             _notificationService?.ShowInfo("正在拉起浏览器登录 Euterpe...");
-            await _authService.LoginAsync();
+            try
+            {
+                await _authService.LoginAsync();
+            }
+            catch (Exception ex)
+            {
+                RuntimeLog.Write("MainWindowViewModel", "登录授权失败 " + ex.Message);
+                _notificationService?.ShowFailure("登录失败", $"无法完成 Euterpe 登录 {ex.Message}");
+                return;
+            }
+
+            if (state.CurrentUser == null) return;
+            _notificationService?.ShowSuccess($"Euterpe 登录成功\n欢迎回来，{state.CurrentUser.Nickname}");
         }
+
+        CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = true;
+
+        var vm = Ioc.Default.GetRequiredService<EuterpeViewModel>();
+        CurrentPage = vm;
+        await vm.InitializeAsync(_currentPageCts!.Token);
     }
 
     [RelayCommand]
