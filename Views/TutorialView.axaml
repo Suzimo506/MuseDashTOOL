@@ -77,17 +77,11 @@
                     <!-- Developer Card -->
                     <Border Grid.Column="0" CornerRadius="16" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource ShellOutlineBrush}" BorderThickness="1" Padding="24">
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
-                            <!-- Left: Avatar placeholder -->
-                            <Border Grid.Column="0" Width="80" Height="80" CornerRadius="40" BorderBrush="{DynamicResource ThemeAccentBrush}" BorderThickness="2" ClipToBounds="True" VerticalAlignment="Top">
+                            <!-- Left: Avatar image -->
+                            <Border Grid.Column="0" Width="80" Height="80" CornerRadius="40" BorderBrush="{DynamicResource ThemeAccentBrush}" BorderThickness="2" VerticalAlignment="Top">
                                 <Border.Background>
-                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                                        <GradientStop Color="#4A154B" Offset="0"/>
-                                        <GradientStop Color="#2C1B4D" Offset="1"/>
-                                    </LinearGradientBrush>
+                                    <ImageBrush Source="avares://MuseDashTOOL/Assets/Suzimo.jpg" Stretch="UniformToFill"/>
                                 </Border.Background>
-                                <Grid>
-                                    <TextBlock Text="SZ" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ThemeAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Grid>
                             </Border>
                             
                             <!-- Right: Details -->
@@ -137,17 +131,11 @@
                     <!-- Artist Card -->
                     <Border Grid.Column="1" CornerRadius="16" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource ShellOutlineBrush}" BorderThickness="1" Padding="24">
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
-                            <!-- Left: Avatar placeholder -->
-                            <Border Grid.Column="0" Width="80" Height="80" CornerRadius="40" BorderBrush="{DynamicResource ThemeAccentBrush}" BorderThickness="2" ClipToBounds="True" VerticalAlignment="Top">
+                            <!-- Left: Avatar image -->
+                            <Border Grid.Column="0" Width="80" Height="80" CornerRadius="40" BorderBrush="{DynamicResource ThemeAccentBrush}" BorderThickness="2" VerticalAlignment="Top">
                                 <Border.Background>
-                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                                        <GradientStop Color="#4A1E2E" Offset="0"/>
-                                        <GradientStop Color="#2C1B2A" Offset="1"/>
-                                    </LinearGradientBrush>
+                                    <ImageBrush Source="avares://MuseDashTOOL/Assets/maomaotou.jpg" Stretch="UniformToFill"/>
                                 </Border.Background>
-                                <Grid>
-                                    <TextBlock Text="MM" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ThemeAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Grid>
                             </Border>
                             
                             <!-- Right: Details -->
@@ -170,7 +158,7 @@
                                             </Style>
                                         </Button.Styles>
                                         <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <PathIcon Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5.67-1.5 1.5-1.5 1.5.67 1.5 1.5zm0-4.5c0 .83-.67 1.5-1.5 1.5S9 12.83 9 12s.67-1.5 1.5-1.5 1.5.67 1.5 1.5zm3.5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5zm0-4.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5z" 
+                                            <PathIcon Data="M885.88671875 434.56835937c-73.828125 0-145.63476563-23.99414063-204.69726563-68.37890624v309.63867187c0 158.11523438-121.81640625 286.171875-272.10937499 286.171875S136.97070313 833.94335938 136.97070313 675.828125c0-158.11523438 121.81640625-286.171875 272.109375-286.17187499 15.02929689 0 29.61914063 1.31835938 43.85742187 3.77929687v164.00390624c-13.62304688-5.36132813-28.125-8.0859375-42.71484375-8.08593749-67.06054688 0-121.46484375 57.12890625-121.46484375 127.70507812 0 70.48828125 54.40429689 127.70507813 121.46484375 127.70507813 66.97265625 0 121.37695313-57.21679689 121.37695313-127.70507813V62H683.38671875c0 118.21289063 91.14257813 214.01367188 203.5546875 214.01367188v158.46679687l-1.0546875 0.08789063" 
                                                       Foreground="#FF6699" Width="14" Height="14" VerticalAlignment="Center"/>
                                             <TextBlock Text="Douyin" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -204,7 +192,7 @@
                                 </StackPanel>
                             </Button>
                             
-                            <Button Command="{Binding CopyTextCommand}" CommandParameter="516968978" Height="34" Padding="16,0" Background="{DynamicResource ControlBgBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" ToolTip.Tip="{Binding [Str_271], Source={x:Static i18n:I18nService.Instance}}">
+                            <Button Command="{Binding CopyTextCommand}" CommandParameter="331568783" Height="34" Padding="16,0" Background="{DynamicResource ControlBgBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" ToolTip.Tip="{Binding [Str_271], Source={x:Static i18n:I18nService.Instance}}">
                                 <Button.Styles>
                                     <Style Selector="Button:pointerover">
                                         <Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/>
@@ -214,7 +202,7 @@
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <PathIcon Data="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 16H5V5h2v2h10V5h2v14z" 
                                               Foreground="#FF6699" Width="14" Height="14" VerticalAlignment="Center"/>
-                                    <TextBlock Text="QQ Group: 516968978" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="QQ Group: 331568783" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>

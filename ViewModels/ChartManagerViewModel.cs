@@ -209,12 +209,27 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private bool _isToolboxPanelOpen;
 
     [ObservableProperty]
-    private bool _isToolboxMinimized = true;
+    private bool _isToolboxMinimized = false;
 
     [ObservableProperty]
     private bool _isDeduplicationRunning;
 
+    [ObservableProperty]
+    private bool _isShowingDeduplication;
+
     public ObservableCollection<DuplicateCheckItem> LocalDuplicatesList { get; } = new();
+
+    public ObservableCollection<DuplicateGroupItem> DuplicateGroups { get; } = new();
+
+    // 工具箱底部状态信息仅显示总数
+    public string ToolboxStatusString
+    {
+        get
+        {
+            bool isEn = Services.I18nService.Instance.CurrentLanguage == "en-US";
+            return isEn ? $"Total {_allCharts.Count} charts" : $"共 {_allCharts.Count} 张谱面";
+        }
+    }
 
     public ChartManagerViewModel(
         IChartService chartService, 
@@ -450,6 +465,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             _chartIndexService.IndexAll(_allCharts);
 
             ApplyFilter();
+            OnPropertyChanged(nameof(ToolboxStatusString));
             IsLoading = false;
         });
     }
@@ -1545,6 +1561,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         if (IsToolboxPanelOpen)
         {
             IsToolboxMinimized = false;
+            IsShowingDeduplication = false;
         }
     }
 
@@ -1556,10 +1573,33 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private void RestoreToolbox()
+    {
+        IsToolboxPanelOpen = true;
+        IsToolboxMinimized = false;
+    }
+
+    [RelayCommand]
+    private void GoBackToToolbox()
+    {
+        IsShowingDeduplication = false;
+    }
+
+    [RelayCommand]
+    private void ClickDuplicateGroup(DuplicateGroupItem item)
+    {
+        if (item == null) return;
+        SearchText = item.Name;
+        IsToolboxPanelOpen = false;
+        IsToolboxMinimized = true;
+    }
+
+    [RelayCommand]
     private async Task RunDeduplicationAsync()
     {
         IsDeduplicationRunning = true;
         StatusMessage = Services.I18nService.Instance["Str_420"] ?? "正在扫描重复谱面...";
+        IsShowingDeduplication = true;
 
         await Task.Run(() =>
         {
@@ -1570,44 +1610,41 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 if (chart == null || string.IsNullOrEmpty(chart.Name)) continue;
 
                 var normTitle = NormalizeText(chart.Name);
-                var normArtist = NormalizeText(chart.MusicAuthor);
-                var normCharter = NormalizeText(chart.ChartAuthor);
-
-                var groupKey = $"{normTitle}_{normArtist}_{normCharter}";
-                if (!groups.TryGetValue(groupKey, out var list))
+                if (!groups.TryGetValue(normTitle, out var list))
                 {
                     list = new List<ChartInfo>();
-                    groups[groupKey] = list;
+                    groups[normTitle] = list;
                 }
                 list.Add(chart);
             }
 
-            var duplicateItems = new List<DuplicateCheckItem>();
-            int groupCount = 0;
+            var duplicateGroupItems = new List<DuplicateGroupItem>();
             foreach (var kvp in groups)
             {
                 if (kvp.Value.Count > 1)
                 {
-                    groupCount++;
-                    foreach (var chart in kvp.Value)
+                    var displayName = kvp.Value[0].Name;
+                    duplicateGroupItems.Add(new DuplicateGroupItem
                     {
-                        duplicateItems.Add(new DuplicateCheckItem(chart, kvp.Key));
-                    }
+                        Name = displayName,
+                        Charts = kvp.Value
+                    });
                 }
             }
 
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
-                LocalDuplicatesList.Clear();
-                foreach (var item in duplicateItems)
+                DuplicateGroups.Clear();
+                foreach (var item in duplicateGroupItems)
                 {
-                    LocalDuplicatesList.Add(item);
+                    DuplicateGroups.Add(item);
                 }
 
                 IsDeduplicationRunning = false;
 
                 string resultPattern = Services.I18nService.Instance["Str_416"] ?? "扫描完成，发现 {0} 组共 {1} 个重复谱面。";
-                StatusMessage = string.Format(resultPattern, groupCount, duplicateItems.Count);
+                int totalDupFiles = duplicateGroupItems.Sum(g => g.Charts.Count);
+                StatusMessage = string.Format(resultPattern, duplicateGroupItems.Count, totalDupFiles);
             });
         });
     }
@@ -1754,4 +1791,14 @@ public class MoveCategoryItem
     public string DisplayName => Name == "新建分类" ? MdModManager.Services.I18nService.Instance["Str_391"] :
                                  (Name == "全部" ? MdModManager.Services.I18nService.Instance["Str_389"] :
                                  (Name == ChartManagerViewModel.RootCategoryKey ? (MdModManager.Services.I18nService.Instance.CurrentLanguage == "zh-CN" ? "未分类" : "Uncategorized") : Name));
+}
+
+// 重复谱面分组包装实体
+public class DuplicateGroupItem
+{
+    // 分组名称歌曲名
+    public string Name { get; set; } = string.Empty;
+
+    // 分组内所包含的谱面列表
+    public List<ChartInfo> Charts { get; set; } = new();
 }

@@ -19,6 +19,8 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 {
     private readonly IConfigService _configService;
     private readonly INotificationService _notificationService;
+    private readonly IChartIndexService _chartIndexService;
+    private readonly IChartService _chartService;
     // 默认客户端用于界面小文件（如封面），超时较短以保证响应速度
     private readonly HttpClient _http = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(4));
     // 下载专用客户端，超时放宽到 15 秒以应对慢速网络
@@ -31,10 +33,16 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     public ObservableCollection<DownloadTaskItem> Tasks { get; } = new();
     public HashSet<string> SessionDownloadedFiles { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    public DownloadManagerService(IConfigService configService, INotificationService notificationService)
+    public DownloadManagerService(
+        IConfigService configService,
+        INotificationService notificationService,
+        IChartIndexService chartIndexService,
+        IChartService chartService)
     {
         _configService = configService;
         _notificationService = notificationService;
+        _chartIndexService = chartIndexService;
+        _chartService = chartService;
     }
 
     public void EnqueueDownload(MdmcChart chart)
@@ -247,6 +255,20 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                     item.Status = DownloadStatus.Completed;
                     item.Progress = 100;
                     _notificationService.ShowSuccess($"《{item.Chart.Title}》下载完成");
+
+                    // 将下载的谱面添加到内存索引以实现即时查重
+                    try
+                    {
+                        var chartInfo = _chartService.LoadSingleChart(item.DestinationPath);
+                        if (chartInfo != null)
+                        {
+                            _chartIndexService.AddToIndex(chartInfo);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[DownloadManager] Failed to add downloaded chart to index: {ex.Message}");
+                    }
 
                     SessionDownloadedFiles.Add(Path.GetFullPath(item.DestinationPath));
                     Dispatcher.UIThread.Post(() => Tasks.Remove(item));

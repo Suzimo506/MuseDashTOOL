@@ -658,16 +658,16 @@
                 </StackPanel>
             </Border>
 
-            <!-- 右侧：清理坏谱面与排序 -->
+            <!-- 右侧：工具箱与排序 -->
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <!-- 清理坏谱面按钮 -->
+                <!-- 工具箱按钮 -->
                 <Button Classes="CategoryControlBtn"
-                        Command="{Binding CleanUpBrokenChartsCommand}"
+                        Command="{Binding ToggleToolboxCommand}"
                         Width="38"
                         Padding="8"
-                        ToolTip.Tip="{Binding [Str_407], Source={x:Static i18n:I18nService.Instance}}">
-                    <PathIcon Data="M453.312 448H248a29.312 29.312 0 0 0-29.312 29.312v58.688c0 16.192 13.12 29.312 29.312 29.312h528a29.312 29.312 0 0 0 29.312-29.312v-58.688A29.312 29.312 0 0 0 776 448H570.688V184a29.312 29.312 0 0 0-29.376-29.312h-58.624a29.312 29.312 0 0 0-29.376 29.312V448z m-58.624-58.688V154.688c0-32.448 26.24-58.688 58.624-58.688h117.376c32.384 0 58.624 26.24 58.624 58.688v234.624h176c32.448 0 58.688 26.24 58.688 58.688v117.312c0 32.448-26.24 58.688-58.688 58.688v234.688c0 32.384-26.24 58.624-58.624 58.624H277.312a58.688 58.688 0 0 1-58.624-58.624V624a58.688 58.688 0 0 1-58.688-58.688V448c0-32.384 26.24-58.688 58.688-58.688h176z m352 234.688H277.312v205.312c0 16.192 13.184 29.376 29.376 29.376h410.624a29.312 29.312 0 0 0 29.376-29.376V624z m-88 58.688c16.192 0 29.312 13.12 29.312 29.312v146.688h-58.688v-146.688c0-16.192 13.184-29.312 29.376-29.312z m-117.376 58.624c16.192 0 29.376 13.184 29.376 29.376v88H512v-88c0-16.192 13.12-29.376 29.312-29.376z m-117.312 58.688c16.192 0 29.312 13.12 29.312 29.312v29.376h-58.624v-29.376c0-16.192 13.12-29.312 29.312-29.312z"
-                              Width="14" Height="14"/>
+                        ToolTip.Tip="{Binding [Str_413], Source={x:Static i18n:I18nService.Instance}}">
+                    <PathIcon Data="M1015.98866 134.008505H795.48511625V71.0042525A63.08363152 63.08363152 0 0 0 732.48086375 8H417.49362125a63.08363152 63.08363152 0 0 0-63.0042525 63.0042525v63.0042525H133.997165A126.12190303 126.12190303 0 0 0 8 260.00567v629.985825a126.12190303 126.12190303 0 0 0 125.997165 125.997165h881.991495A126.12190303 126.12190303 0 0 0 1141.985825 889.991495V260.00567a126.12190303 126.12190303 0 0 0-125.997165-125.997165zM417.49362125 71.0042525h314.9985825v63.0042525H417.49362125z m-283.49645625 125.997165h881.991495a63.08363152 63.08363152 0 0 1 63.0042525 63.0042525v188.9900775H71.0042525V260.00567a63.08363152 63.08363152 0 0 1 62.9929125-63.0042525z m529.68477909 314.9985825C650.64110652 548.58238227 616.05453964 575.0042525 574.9929125 575.0042525s-75.64819402-26.42186925-88.68903159-63.0042525z m352.30671591 440.9957475H133.997165a63.08363152 63.08363152 0 0 1-63.0042525-63.0042525V512h349.68720938c14.63975691 71.79264225 78.24502153 125.997165 154.31279062 125.997165s139.67303372-54.20452275 154.31279161-125.997165h349.67586839v377.991495a63.08363152 63.08363152 0 0 1-62.9929125 63.0042525z"
+                               Width="15" Height="15"/>
                 </Button>
 
                 <ComboBox ItemsSource="{Binding SortOptions}"
@@ -1428,5 +1428,215 @@
                    Foreground="#8A8594"
                    HorizontalAlignment="Center"/>
     </StackPanel>
-</Panel>
+
+        <!-- 工具箱控制面板 Overlay -->
+        <Grid Background="#B0000000" IsVisible="{Binding IsToolboxPanelOpen}">
+            <Border Background="{DynamicResource CardBgBrush}" 
+                    BorderBrush="#FF8EBE" 
+                    BorderThickness="1.5" 
+                    CornerRadius="16" 
+                    Width="600" 
+                    MaxHeight="500"
+                    Padding="24"
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" 
+                    BoxShadow="0 8 32 #80000000">
+                <Grid RowDefinitions="Auto,*,Auto" RowSpacing="16">
+                    <!-- 头部 -->
+                    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
+                        <!-- 返回按钮，状态B可见 -->
+                        <Button Grid.Column="0" Command="{Binding GoBackToToolboxCommand}" IsVisible="{Binding IsShowingDeduplication}" Theme="{StaticResource RobustPlainIconBtn}">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <PathIcon Data="M732.794579 1020.867765a58.608941 58.608941 0 0 1-41.803294-17.558589L247.478814 553.984a60.446118 60.446118 0 0 1 0-84.720941L690.991285 19.847529a58.578824 58.578824 0 0 1 83.606588 0 60.446118 60.446118 0 0 1 0 84.720942L372.979049 511.638588 774.597873 918.588235a60.446118 60.446118 0 0 1 0 84.720941 58.608941 58.608941 0 0 1-41.803294 17.558589z" 
+                                          Foreground="#FF8EBE" Width="14" Height="14" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding [Str_Cancel], Source={x:Static i18n:I18nService.Instance}}" Foreground="#FF8EBE" FontSize="14" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <!-- 标题 -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                            <PathIcon Data="M1015.98866 134.008505H795.48511625V71.0042525A63.08363152 63.08363152 0 0 0 732.48086375 8H417.49362125a63.08363152 63.08363152 0 0 0-63.0042525 63.0042525v63.0042525H133.997165A126.12190303 126.12190303 0 0 0 8 260.00567v629.985825a126.12190303 126.12190303 0 0 0 125.997165 125.997165h881.991495A126.12190303 126.12190303 0 0 0 1141.985825 889.991495V260.00567a126.12190303 126.12190303 0 0 0-125.997165-125.997165zM417.49362125 71.0042525h314.9985825v63.0042525H417.49362125z m-283.49645625 125.997165h881.991495a63.08363152 63.08363152 0 0 1 63.0042525 63.0042525v188.9900775H71.0042525V260.00567a63.08363152 63.08363152 0 0 1 62.9929125-63.0042525z m529.68477909 314.9985825C650.64110652 548.58238227 616.05453964 575.0042525 574.9929125 575.0042525s-75.64819402-26.42186925-88.68903159-63.0042525z m352.30671591 440.9957475H133.997165a63.08363152 63.08363152 0 0 1-63.0042525-63.0042525V512h349.68720938c14.63975691 71.79264225 78.24502153 125.997165 154.31279062 125.997165s139.67303372-54.20452275 154.31279161-125.997165h349.67586839v377.991495a63.08363152 63.08363152 0 0 1-62.9929125 63.0042525z" 
+                                      Foreground="#FF8EBE" Width="24" Height="24"/>
+                            <TextBlock Text="{Binding [Str_413], Source={x:Static i18n:I18nService.Instance}}" 
+                                       FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="2" Command="{Binding MinimizeToolboxCommand}" Theme="{StaticResource RobustPlainIconBtn}" ToolTip.Tip="{Binding [Str_Cancel], Source={x:Static i18n:I18nService.Instance}}">
+                            <PathIcon Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" 
+                                      Foreground="{DynamicResource ThemeTextSubBrush}" Width="20" Height="20"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- 中间区域 -->
+                    <Panel Grid.Row="1">
+                        <!-- 状态 A：工具箱首页 -->
+                        <Grid IsVisible="{Binding !IsShowingDeduplication}" ColumnDefinitions="*,*" ColumnSpacing="20" Margin="10,20">
+                            <!-- 清理损坏谱面 -->
+                            <Button Grid.Column="0" Command="{Binding CleanUpBrokenChartsCommand}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="12" Cursor="Hand">
+                                <Button.Background>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                        <GradientStop Color="#4A2535" Offset="0"/>
+                                        <GradientStop Color="#2A1520" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Button.Background>
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Opacity" Value="0.9"/>
+                                        <Setter Property="RenderTransform" Value="scale(1.02)"/>
+                                    </Style>
+                                </Button.Styles>
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
+                                    <PathIcon Data="M453.312 448H248a29.312 29.312 0 0 0-29.312 29.312v58.688c0 16.192 13.12 29.312 29.312 29.312h528a29.312 29.312 0 0 0 29.312-29.312v-58.688A29.312 29.312 0 0 0 776 448H570.688V184a29.312 29.312 0 0 0-29.376-29.312h-58.624a29.312 29.312 0 0 0-29.376 29.312V448z m-58.624-58.688V154.688c0-32.448 26.24-58.688 58.624-58.688h117.376c32.384 0 58.624 26.24 58.624 58.688v234.624h176c32.448 0 58.688 26.24 58.688 58.688v117.312c0 32.448-26.24 58.688-58.688 58.688v234.688c0 32.384-26.24 58.624-58.624 58.624H277.312a58.688 58.688 0 0 1-58.624-58.624V624a58.688 58.688 0 0 1-58.688-58.688V448c0-32.384 26.24-58.688 58.688-58.688h176z m352 234.688H277.312v205.312c0 16.192 13.184 29.376 29.376 29.376h410.624a29.312 29.312 0 0 0 29.376-29.376V624z m-88 58.688c16.192 0 29.312 13.12 29.312 29.312v146.688h-58.688v-146.688c0-16.192 13.184-29.312 29.376-29.312z m-117.376 58.624c16.192 0 29.376 13.184 29.376 29.376v88H512v-88c0-16.192 13.12-29.376 29.312-29.376z m-117.312 58.688c16.192 0 29.312 13.12 29.312 29.312v29.376h-58.624v-29.376c0-16.192 13.12-29.312 29.312-29.312z" 
+                                              Foreground="#FF8EBE" Width="36" Height="36" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding [Str_407], Source={x:Static i18n:I18nService.Instance}}" FontSize="15" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding [Str_436], Source={x:Static i18n:I18nService.Instance}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- 自制谱面查重 -->
+                            <Button Grid.Column="1" Command="{Binding RunDeduplicationCommand}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="12" Cursor="Hand">
+                                <Button.Background>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                        <GradientStop Color="#4A2535" Offset="0"/>
+                                        <GradientStop Color="#2A1520" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Button.Background>
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Opacity" Value="0.9"/>
+                                        <Setter Property="RenderTransform" Value="scale(1.02)"/>
+                                    </Style>
+                                </Button.Styles>
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
+                                    <PathIcon Data="M597.408 325.744H230.576c-21.496 0-39.288 17.832-39.288 39.288 0 21.504 17.792 39.336 39.288 39.336h366.832c21.504 0 39.248-17.832 39.248-39.336 0-21.456-17.752-39.288-39.248-39.288z m-83.832 162.448H314.408c-21.504 0-39.288 17.792-39.288 39.288 0 21.464 17.792 39.288 39.288 39.288h199.168c21.416 0 39.248-17.832 39.248-39.288a39.248 39.248 0 0 0-39.248-39.288z m491.984 345.832l-137.24-137.248c-12.088-12.088-28.336-18.336-44.584-18.336s-31.912 6.248-44.504 18.336l-10 9.912-30.912-30.912c56.08-71.248 89.664-160.328 89.664-257.784 0-228.496-185.576-413.992-413.992-413.992C185.496 4 0 189.496 0 417.992c0 228.456 185.496 413.952 413.992 413.952 102.664 0 197-37.752 269.328-100.08l29.832 29.832-15.168 15.248c-24.576 24.584-24.576 64.416 0 89.088l137.336 137.24c12 12.088 28.248 18.336 44.496 18.336s32-6.248 44.584-18.336l80.664-80.664c25.16-24.088 25.16-63.92 0.496-88.584zM413.992 753.36c-185 0-335.368-150.416-335.368-335.368 0-185 150.368-335.368 335.368-335.368s335.328 150.368 335.328 335.368c0 184.952-150.328 335.368-335.328 335.368z m466.32 183.408l-115.24-115.328 58.168-58.168 115.248 115.328-58.176 58.168z" 
+                                              Foreground="#FF8EBE" Width="36" Height="36" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding [Str_414], Source={x:Static i18n:I18nService.Instance}}" FontSize="15" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding [Str_437], Source={x:Static i18n:I18nService.Instance}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- 状态 B：查重面板 -->
+                        <Grid IsVisible="{Binding IsShowingDeduplication}" RowDefinitions="Auto,*" RowSpacing="12" Margin="0,10">
+                            <!-- 正在扫描加载中 -->
+                            <StackPanel Grid.Row="1" IsVisible="{Binding IsDeduplicationRunning}" VerticalAlignment="Center" Spacing="12">
+                                <ProgressBar IsIndeterminate="True" Width="150" Height="4" Foreground="#FF8EBE" Background="#26FFFFFF" CornerRadius="2" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding [Str_420], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- 扫描结果内容 -->
+                            <Grid Grid.Row="1" IsVisible="{Binding !IsDeduplicationRunning}" RowDefinitions="*,Auto" RowSpacing="12">
+                                <!-- 结果列表 -->
+                                <Border Grid.Row="0" Background="#1C151B" CornerRadius="10" Padding="12">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <Panel>
+                                            <!-- 空状态 -->
+                                            <TextBlock Text="{Binding [Str_415], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !DuplicateGroups.Count}"/>
+
+                                            <!-- 圆角交互按键列表 -->
+                                            <ItemsControl ItemsSource="{Binding DuplicateGroups}" IsVisible="{Binding DuplicateGroups.Count}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Command="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).ClickDuplicateGroupCommand}"
+                                                                CommandParameter="{Binding}"
+                                                                Margin="6"
+                                                                Padding="12,8"
+                                                                CornerRadius="20"
+                                                                Background="#26F25D9C"
+                                                                BorderBrush="#80F25D9C"
+                                                                BorderThickness="1"
+                                                                Cursor="Hand">
+                                                            <Button.Styles>
+                                                                <Style Selector="Button:pointerover">
+                                                                    <Setter Property="Background" Value="#66F25D9C"/>
+                                                                    <Setter Property="BorderBrush" Value="#FFF25D9C"/>
+                                                                </Style>
+                                                            </Button.Styles>
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="#FF8EBE" MaxWidth="150" TextTrimming="CharacterEllipsis"/>
+                                                                <Border Background="#CCFF8EBE" CornerRadius="8" Padding="6,2">
+                                                                    <TextBlock Text="{Binding Charts.Count}" FontSize="10" FontWeight="Bold" Foreground="#1C151B"/>
+                                                                </Border>
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Panel>
+                                    </ScrollViewer>
+                                </Border>
+
+                                <!-- 底部操作指引 -->
+                                <TextBlock Grid.Row="1" Text="{Binding [Str_438], Source={x:Static i18n:I18nService.Instance}}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" HorizontalAlignment="Center"/>
+                            </Grid>
+                        </Grid>
+                    </Panel>
+
+                    <!-- 底部就绪状态信息 -->
+                    <Border Grid.Row="2" BorderBrush="#20FFFFFF" BorderThickness="0,1,0,0" Padding="0,8,0,0">
+                        <TextBlock Text="{Binding ToolboxStatusString}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 粉色霓虹浮动小按键 -->
+        <!-- 粉色霓虹浮动小按键 -->
+        <Border HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Margin="0,0,-5,0"
+                CornerRadius="20,0,0,20"
+                BoxShadow="0 4 16 #80FF8EBE">
+            <Border.IsVisible>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                    <Binding Path="IsToolboxMinimized"/>
+                    <Binding Path="!IsToolboxPanelOpen"/>
+                </MultiBinding>
+            </Border.IsVisible>
+            <Button Command="{Binding RestoreToolboxCommand}"
+                    Width="42"
+                    Height="72"
+                    Padding="0"
+                    CornerRadius="20,0,0,20"
+                    Cursor="Hand"
+                    ToolTip.Tip="{Binding [Str_439], Source={x:Static i18n:I18nService.Instance}}">
+                <Button.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#FF6EA7" Offset="0"/>
+                        <GradientStop Color="#FF3A78" Offset="1"/>
+                    </LinearGradientBrush>
+                </Button.Background>
+                <Button.Styles>
+                    <Style Selector="Button">
+                        <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                        <Setter Property="Transitions">
+                            <Transitions>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                <BrushTransition Property="Background" Duration="0:0:0.25"/>
+                            </Transitions>
+                        </Setter>
+                    </Style>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="RenderTransform" Value="translate(-4px, 0) scale(1.05)"/>
+                        <Setter Property="Background" Value="#FF8EBE"/>
+                    </Style>
+                    <Style Selector="Button:pressed">
+                        <Setter Property="RenderTransform" Value="translate(-2px, 0) scale(0.96)"/>
+                    </Style>
+                </Button.Styles>
+                <Panel>
+                    <!-- 发光霓虹边框或微小动效 -->
+                    <Border BorderBrush="#AAFFFFFF" BorderThickness="1,1,0,1" CornerRadius="20,0,0,20" Opacity="0.5"/>
+                    <!-- 精美工具箱小图标 -->
+                    <PathIcon Data="M1015.98866 134.008505H795.48511625V71.0042525A63.08363152 63.08363152 0 0 0 732.48086375 8H417.49362125a63.08363152 63.08363152 0 0 0-63.0042525 63.0042525v63.0042525H133.997165A126.12190303 126.12190303 0 0 0 8 260.00567v629.985825a126.12190303 126.12190303 0 0 0 125.997165 125.997165h881.991495A126.12190303 126.12190303 0 0 0 1141.985825 889.991495V260.00567a126.12190303 126.12190303 0 0 0-125.997165-125.997165zM417.49362125 71.0042525h314.9985825v63.0042525H417.49362125z m-283.49645625 125.997165h881.991495a63.08363152 63.08363152 0 0 1 63.0042525 63.0042525v188.9900775H71.0042525V260.00567a63.08363152 63.08363152 0 0 1 62.9929125-63.0042525z m529.68477909 314.9985825C650.64110652 548.58238227 616.05453964 575.0042525 574.9929125 575.0042525s-75.64819402-26.42186925-88.68903159-63.0042525z m352.30671591 440.9957475H133.997165a63.08363152 63.08363152 0 0 1-63.0042525-63.0042525V512h349.68720938c14.63975691 71.79264225 78.24502153 125.997165 154.31279062 125.997165s139.67303372-54.20452275 154.31279161-125.997165h349.67586839v377.991495a63.08363152 63.08363152 0 0 1-62.9929125 63.0042525z" 
+                              Foreground="White" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-3,0,0,0"/>
+                </Panel>
+            </Button>
+        </Border>
+    </Panel>
 </UserControl>

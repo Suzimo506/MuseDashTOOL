@@ -1,7 +1,7 @@
 [
     {
         "id": "1.4.5",
-        "is_enabled": true,
+        "is_enabled": false,
         "title": "v1.4.5 更新内容",
         "title_en": "v1.4.5 Update",
         "content": "1、谱面管理界面支持对谱面进行分类管理了！进行了分类的自制谱在游戏内也会分类展示。如果需要使用这个功能，请先去设置界面点击一键安装自制谱下载支持谱面分类的CustomAlbums！下载过后Cinema也会自动替换为可以在游戏内用C键控制视频播放开关的功能版本。[Red]（旧版CustomAlbums请不要使用分类管理功能！否则会导致谱面读取失败）[/Red]\n2、谱面卡片UI修改，Euterpe谱面卡片新增标签显示\n3、所有搜索框默认开启新增的模糊匹配功能，可以在设置里把它关掉开启精确匹配\n4、Euterpe谱面下载新增按标签分类，方便快速查找\n5、修复了一些已知问题",
@@ -13,7 +13,7 @@
     },
     {
         "id": "1.4.5.1",
-        "is_enabled": true,
+        "is_enabled": false,
         "title": "自制谱MOD更新",
         "title_en": "CustomAlbums Update",
         "content": "1、游戏内选中自定义标签，在游戏内支持按住ctrl+A/D(左方向键/右方向键)快速跳转至上一个/下一个分类，配合喵斯兔谱面管理的分类功能，让谱面管理与游玩变得轻轻松松！\n2、新版MOD修复了游戏内的闪退问题（应该）不会再出现闪退\n3、感兴趣的朋友请前往设置点击一键安装自制谱按键安装新版CustomAlbums，未安装前请不要使用分类功能！[Red]此CustomAlbums为作者自己修改的版本，如果遇到问题，请不要向官方的CustomAlbums提出！[/Red]",
@@ -25,7 +25,7 @@
     },
     {
         "id": "1.4.5.2",
-        "is_enabled": true,
+        "is_enabled": false,
         "title": "补丁更新",
         "title_en": "Patch Update",
         "content": "1、更新了某些地方的错误文本显示\n2、修复了某些地方的UI错位\n3、修复了Mod更新提示的错误，不再提醒之后依然会提醒\n4、增加英文模式，可进入设置切换",
@@ -36,12 +36,24 @@
         "cancel_button_text_en": "Don't Show Again"
     },
     {
-        "id": "1.4.6",
+        "id": "1.4.7",
         "is_enabled": true,
-        "title": "v1.4.6更新内容",
-        "title_en": "v1.4.6 Update",
-        "content": "这次的改动很小，影响不大，因此不强制更新，如果对新功能感兴趣或修复的问题解决了你的燃眉之急，可以前往github手动更新。\n1、优化了英文模式，修复了某些地方依旧显示中文的问题\n2、谱面管理增加了清理损坏谱面文件的功能按键\n3、修复了某些info不规范谱面在谱面管理界面读不出某些信息的问题\n4、群友自制谱面改变排序顺序，新上传的会显示在前面\n5、新增了谱面管理界面的难度排序方式",
-        "content_en": "This is a minor update and is not mandatory. If the new features got you interested or fixes solve your immediate needs, you can manually update from GitHub.\n1. Optimized English mode, fixing untranslated Chinese text in some areas.\n2. Added a button in Chart Manager to clean up corrupted chart files.\n3. Fixed an issue where some charts with non-standard info.json failed to display certain information in Chart Manager.\n4、Changed the Sort Order of the Community charts,the newer ones wiil show up in front \n5、Added new sort order button in Chart Manager,you can sort your charts by difficulty now",
+        "title": "测试版1.4.7更新",
+        "title_en": "Beta v1.4.7 Update",
+        "content": "此次更新优先发行测试版，待测试稳定后会发行正式版。[Blue]加入喵斯兔交流群获取测试版、自制模组、反馈问题！[/Blue]\n1、增加了谱面下载的查重功能，如果本地已经存在重复的谱面会弹窗提醒。可以在设置中关掉此功能。\n2、谱面管理界面新增谱面查重功能，快速查看本地存在的同名谱面并且可以选择删除\n3、更新了更为详细的使用教程。原使用教程现改为【关于】界面\n4、修复了导入图片模式后的UI适配问题\n5、重构了Euterpe界面的oauth认证方式。",
+        "content_en": "This update is initially released as a Beta; the official version will follow once it is stable. [Blue]Join the MuseDashTOOL community group to get beta versions, custom mods, and submit feedback![/Blue]\n1. Added a duplicate detection feature for chart downloads. If the chart already exists locally, a pop-up window will alert you. This can be disabled in Settings.\n2. Added a duplicate chart check in Chart Manager to quickly view local charts with the same name and selectively delete them.\n3. Updated to a more detailed user tutorial. The original tutorial has been renamed to the 'About' panel.\n4. Fixed UI layout adaptation issues after importing custom background images.\n5. Refactored the OAuth authentication flow for the Euterpe interface.",
+        "action_button_text": "进入新版喵斯兔",
+        "action_button_text_en": "Enter New MuseDashTOOL",
+        "cancel_button_text": "不再显示该弹窗",
+        "cancel_button_text_en": "Don't Show Again"
+    },
+    {
+        "id": "1.4.7.1",
+        "is_enabled": true,
+        "title": "加入喵斯兔交流群！",
+        "title_en": "Join the MuseDashTOOL Community Group!",
+        "content": "获取测试版喵斯兔，体验最新功能；体验各种优化改良后的模组以及还在测试中的模组！；进行问题反馈，功能请求！[Blue]群号请点击左侧的【关于】界面查看，点击按键可快速复制。[/Blue]",
+        "content_en": "Get beta versions of MuseDashTOOL to try out the latest features, experience various optimized, improved, and experimental mods, report bugs, and submit feature requests! [Blue]Please check the 'About' panel on the left for the group number, and click the button to copy it quickly.[/Blue]",
         "action_button_text": "进入新版喵斯兔",
         "action_button_text_en": "Enter New MuseDashTOOL",
         "cancel_button_text": "不再显示该弹窗",

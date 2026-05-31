@@ -2,6 +2,7 @@ using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json.Serialization;
 
 namespace MdModManager.Models;
 
@@ -76,7 +77,7 @@ public partial class ChartInfo : ObservableObject
     }
 
     // 衍生谱师文本
-    public string DisplayCharter
+    public string CharterDisplay
     {
         get
         {
@@ -88,6 +89,11 @@ public partial class ChartInfo : ObservableObject
             return string.IsNullOrEmpty(clean) ? string.Empty : (isEn ? $"Charter: {clean}" : $"谱：{clean}");
         }
     }
+
+    // 谱师文本别名以统一视图绑定
+    [JsonIgnore]
+    public string DisplayCharter => CharterDisplay;
+
 
     /// <summary>副标题展示（作曲 + 谱师）</summary>
     public string SubInfo

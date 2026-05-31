@@ -429,7 +429,7 @@
   "Str_OpenSourceDisclaimer": "Open Source & Disclaimer",
   "Str_DisclaimerDesc": "This software is released under the GPL-3.0 license and all source code is open and transparent. This utility only provides convenience for players. All chart and mod assets are obtained from free public internet sources, and all rights belong to their respective authors. Do not use for commercial purposes.",
   "Str_AboutCommunityTitle": "Community & Feedback",
-  "Str_AboutCommunityDesc": "If you encounter any issues or want to share, feel free to join the player exchange group. Note: This group is created by a well-known player, and the author is also in it.",
+  "Str_AboutCommunityDesc": "Join the MuseDashTOOL base camp to provide feedback, try the beta version of MuseDashTOOL, and get the author's latest custom and optimized mods. Special thanks to GreenHub for their help during the early establishment of the MuseDashTOOL repository.",
   "Str_413": "Chart Manager Toolbox",
   "Str_414": "Custom Chart Deduplication",
   "Str_415": "No duplicate custom charts found.",
@@ -452,5 +452,13 @@
   "Str_432": "Overwrite All",
   "Str_433": "Keep Both All",
   "Str_434": "Enable Single Download Duplicate Check",
-  "Str_435": "Enable Batch Download Duplicate Check"
+  "Str_435": "Enable Batch Download Duplicate Check",
+  "Str_434_Desc": "Verify if the same chart title exists locally before single downloads",
+  "Str_435_Desc": "Automatically detect duplicate charts and prompt management dialog before batch downloads",
+  "Str_436": "Clean up unrecognized broken charts with one click",
+  "Str_437": "Scan and clean duplicate local charts by title",
+  "Str_438": "Click a duplicate group to highlight search and collapse toolbox to floating button.",
+  "Str_439": "Restore Toolbox",
+  "Str_ConfirmDownload": "Confirm Download",
+  "Str_Cancel": "Cancel"
 }

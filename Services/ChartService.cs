@@ -14,6 +14,7 @@ public interface IChartService
     IEnumerable<ChartInfo> LoadCharts(string gamePath, IReadOnlySet<string>? sessionDownloadedFiles = null);
     void DeleteChart(ChartInfo chart);
     Stream? OpenDemoStream(ChartInfo chart);
+    ChartInfo? LoadSingleChart(string filePath);
 }
 
 public class ChartService : IChartService
@@ -68,20 +69,96 @@ public class ChartService : IChartService
             }
         }
 
-        foreach (var file in allFiles)
+        // 读取轻量化持久磁盘缓存索引
+        var indexFile = Path.Combine(albumsDir, ".chart_index.json");
+        var cachedEntries = new Dictionary<string, MdModManager.Services.ChartIndexEntry>(StringComparer.OrdinalIgnoreCase);
+        if (File.Exists(indexFile))
         {
-            ChartInfo? info = null;
             try
             {
-                info = ParseMdm(file);
+                var json = File.ReadAllText(indexFile);
+                var entries = JsonSerializer.Deserialize(json, AppJsonContext.Default.ListChartIndexEntry);
+                if (entries != null)
+                {
+                    foreach (var entry in entries)
+                    {
+                        if (entry != null && !string.IsNullOrEmpty(entry.FilePath))
+                        {
+                            cachedEntries[entry.FilePath] = entry;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ChartService] Failed to parse {file}: {ex.Message}");
+                Console.WriteLine($"[ChartService] Failed to load index file: {ex.Message}");
+            }
+        }
+
+        var updatedEntries = new List<MdModManager.Services.ChartIndexEntry>();
+        bool isIndexChanged = false;
+
+        foreach (var file in allFiles)
+        {
+            var fileInfo = new FileInfo(file);
+            long size = fileInfo.Length;
+            DateTime writeTime = fileInfo.LastWriteTime;
+
+            ChartInfo? info = null;
+            MdModManager.Services.ChartIndexEntry? entry = null;
+
+            if (cachedEntries.TryGetValue(file, out var cached) && cached.FileSize == size && cached.LastWriteTime == writeTime)
+            {
+                entry = cached;
+                info = new ChartInfo
+                {
+                    FilePath = entry.FilePath,
+                    Name = entry.Name,
+                    MusicAuthor = entry.MusicAuthor,
+                    ChartAuthor = entry.ChartAuthor,
+                    Difficulties = entry.Difficulties,
+                    Bpm = entry.Bpm,
+                    DemoEntryName = string.IsNullOrEmpty(entry.DemoEntryName) ? null : entry.DemoEntryName
+                };
+                // 缓存命中时，快速提取封面图
+                PopulateCover(file, info);
+            }
+            else
+            {
+                // 缓存未命中，重新完整解析压缩包并更新索引
+                try
+                {
+                    info = ParseMdm(file);
+                    if (info != null)
+                    {
+                        entry = new MdModManager.Services.ChartIndexEntry
+                        {
+                            FilePath = file,
+                            Name = info.Name,
+                            MusicAuthor = info.MusicAuthor,
+                            ChartAuthor = info.ChartAuthor,
+                            Difficulties = info.Difficulties,
+                            Bpm = info.Bpm,
+                            DemoEntryName = info.DemoEntryName ?? string.Empty,
+                            FileSize = size,
+                            LastWriteTime = writeTime
+                        };
+                        isIndexChanged = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ChartService] Failed to parse {file}: {ex.Message}");
+                }
             }
 
             if (info != null)
             {
+                if (entry != null)
+                {
+                    updatedEntries.Add(entry);
+                }
+
                 // Mark as new if it wasn't in the startup snapshot
                 if (!takeSnapshot &&
                     !_snapshotFilenames!.Contains(Path.GetFileName(file)))
@@ -101,6 +178,71 @@ public class ChartService : IChartService
             {
                 _brokenCharts.Add(file);
             }
+        }
+
+        // 保存更新后的持久化缓存索引
+        if (isIndexChanged || cachedEntries.Count != updatedEntries.Count)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(updatedEntries, AppJsonContext.Default.ListChartIndexEntry);
+                File.WriteAllText(indexFile, json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ChartService] Failed to save index: {ex.Message}");
+            }
+        }
+    }
+
+    // 解析单个自制谱文件并返回其元数据
+    public ChartInfo? LoadSingleChart(string filePath)
+    {
+        if (!File.Exists(filePath)) return null;
+        try
+        {
+            return ParseMdm(filePath);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ChartService] Failed to parse single chart {filePath}: {ex.Message}");
+            return null;
+        }
+    }
+
+    // 缓存命中的情况下，辅助快速单独读取压缩包内的封面，不解析其他无关元数据
+    private static void PopulateCover(string filePath, ChartInfo chart)
+    {
+        try
+        {
+            using var zip = ZipFile.OpenRead(filePath);
+            var coverEntry = FindPreferredCoverEntry(zip);
+            if (coverEntry != null)
+            {
+                var coverExtension = Path.GetExtension(coverEntry.Name);
+                if (string.Equals(coverExtension, ".gif", StringComparison.OrdinalIgnoreCase))
+                {
+                    chart.CoverSource = ExtractCoverToTempFile(coverEntry);
+                    chart.HasTemporaryCoverFile = !string.IsNullOrWhiteSpace(chart.CoverSource);
+                }
+                else
+                {
+                    try
+                    {
+                        using var stream = coverEntry.Open();
+                        using var ms = new MemoryStream();
+                        stream.CopyTo(ms);
+                        ms.Position = 0;
+                        chart.CoverImage = new Avalonia.Media.Imaging.Bitmap(ms);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+        catch
+        {
         }
     }
 

@@ -223,4 +223,6 @@ public class NoticeInfo
 [JsonSerializable(typeof(NewsInfo))]
 [JsonSerializable(typeof(SponsorInfo))]
 [JsonSerializable(typeof(System.Collections.Generic.List<SponsorInfo>))]
+[JsonSerializable(typeof(MdModManager.Services.ChartIndexEntry))]
+[JsonSerializable(typeof(System.Collections.Generic.List<MdModManager.Services.ChartIndexEntry>))]
 internal partial class AppJsonContext : JsonSerializerContext { }

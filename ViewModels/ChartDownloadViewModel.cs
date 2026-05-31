@@ -560,7 +560,7 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
 
         if (_configService.Config.EnableDownloadDuplicateCheck)
         {
-            var duplicates = _chartIndexService.FindDuplicatesOf(chart.Title, chart.Artist, chart.Charter);
+            var duplicates = _chartIndexService.FindDuplicatesByTitle(chart.Title);
             if (duplicates.Count > 0)
             {
                 DuplicateDialogTarget = chart;

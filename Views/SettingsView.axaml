@@ -259,6 +259,28 @@
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding SuppressDeleteConfirmation}" VerticalAlignment="Center"/>
                                 </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 启用下载单谱查重提示 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="{Binding [Str_434], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_434_Desc], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding EnableDownloadDuplicateCheck}" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 启用批量下载查重提示 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="{Binding [Str_435], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_435_Desc], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding EnableBatchDownloadDuplicateCheck}" VerticalAlignment="Center"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
                     </StackPanel>

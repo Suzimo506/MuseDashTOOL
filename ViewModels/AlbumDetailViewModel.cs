@@ -169,6 +169,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand<MdmcChart> TogglePreviewCommand => _chartDownloadViewModel.TogglePreviewCommand;
     public IAsyncRelayCommand<MdmcChart> DownloadChartCommand => _chartDownloadViewModel.DownloadChartCommand;
     public bool EnableMarquee => _chartDownloadViewModel.EnableMarquee;
+    public ChartDownloadViewModel ChartDownload => _chartDownloadViewModel;
 
     public void PrepareForNavigation(DesignerCategory category, string searchText = "")
     {
@@ -684,7 +685,7 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             var duplicatesList = new List<BatchDuplicateItem>();
             foreach (var chart in _filteredIndex)
             {
-                var duplicates = _chartIndexService.FindDuplicatesOf(chart.Title, chart.Artist, chart.Charter);
+                var duplicates = _chartIndexService.FindDuplicatesByTitle(chart.Title);
                 if (duplicates.Count > 0)
                 {
                     duplicatesList.Add(new BatchDuplicateItem(chart, duplicates));
@@ -790,6 +791,13 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             Log($"Queued {queued} charts for category '{Category?.Name}'.");
         }
 
+        BatchDuplicateItems.Clear();
+    }
+
+    [RelayCommand]
+    private void CancelBatch()
+    {
+        IsBatchDuplicateDialogOpen = false;
         BatchDuplicateItems.Clear();
     }
 

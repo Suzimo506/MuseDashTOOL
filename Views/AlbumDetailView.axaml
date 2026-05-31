@@ -115,6 +115,7 @@
         </Style>
     </UserControl.Styles>
 
+    <Panel>
     <Grid RowDefinitions="Auto,Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
         <!-- 顶部栏：返回按钮 + 标题 + 工具按钮 -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="10,10,10,14">
@@ -512,4 +513,155 @@
             </ScrollViewer>
         </Grid>
     </Grid>
+
+        <!-- 批量查重对话框 Overlay -->
+        <Grid Background="#B0000000" IsVisible="{Binding IsBatchDuplicateDialogOpen}">
+            <Border Background="{DynamicResource CardBgBrush}" 
+                    BorderBrush="#FF8EBE" 
+                    BorderThickness="1.5" 
+                    CornerRadius="16" 
+                    Width="680" 
+                    MaxHeight="550"
+                    Padding="24"
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" 
+                    BoxShadow="0 8 32 #80000000">
+                <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="16">
+                    <!-- 头部 -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                        <PathIcon Data="M512 80C273.44 80 80 273.44 80 512s193.44 432 432 432 432-193.44 432-432S750.56 80 512 80zm0 80c194.24 0 352 157.76 352 352S706.24 864 512 864 160 706.24 160 512 317.76 160 512 160zm-40 140v300h80V300h-80zm0 380v80h80v-80h-80z" 
+                                  Foreground="#FF8EBE" Width="28" Height="28"/>
+                        <TextBlock Text="{Binding [Str_429], Source={x:Static i18n:I18nService.Instance}}" 
+                                   FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- 描述 -->
+                    <TextBlock Grid.Row="1" Text="{Binding BatchDuplicateItems.Count, StringFormat='检测到以下 \{0\} 个谱面在本地已存在。请选择操作：'}" 
+                               FontSize="14" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    
+                    <!-- 全局快捷操作 -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                        <Button Content="{Binding [Str_431], Source={x:Static i18n:I18nService.Instance}}" 
+                                Command="{Binding BatchActionAllCommand}" CommandParameter="skip"
+                                Padding="12,6" Background="#26FFFFFF" Foreground="{DynamicResource ThemeTextMainBrush}" CornerRadius="6" FontSize="12" Cursor="Hand"/>
+                        <Button Content="{Binding [Str_432], Source={x:Static i18n:I18nService.Instance}}" 
+                                Command="{Binding BatchActionAllCommand}" CommandParameter="overwrite"
+                                Padding="12,6" Background="#26FFFFFF" Foreground="{DynamicResource ThemeTextMainBrush}" CornerRadius="6" FontSize="12" Cursor="Hand"/>
+                        <Button Content="{Binding [Str_433], Source={x:Static i18n:I18nService.Instance}}" 
+                                Command="{Binding BatchActionAllCommand}" CommandParameter="both"
+                                Padding="12,6" Background="#26FFFFFF" Foreground="{DynamicResource ThemeTextMainBrush}" CornerRadius="6" FontSize="12" Cursor="Hand"/>
+                    </StackPanel>
+
+                    <!-- 重复项目冲突列表 -->
+                    <Border Grid.Row="3" Background="#1C151B" CornerRadius="10" Padding="12">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding BatchDuplicateItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#33FFFFFF" BorderThickness="0,0,0,1" Padding="0,8,0,10">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                                <!-- 左侧谱面信息 -->
+                                                <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Chart.Title}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                                    <TextBlock Text="{Binding Chart.DisplayCharter}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                                    <ItemsControl ItemsSource="{Binding Duplicates}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding Name, StringFormat='[本地已存在] \{0\}'}" FontSize="11" Foreground="#FF8EBE" Opacity="0.8"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+
+                                                <!-- 右侧操作选择 -->
+                                                <ComboBox Grid.Column="1" SelectedIndex="{Binding SelectedActionIndex, Mode=TwoWay}" Width="140" VerticalAlignment="Center" CornerRadius="8" FontSize="12">
+                                                    <ComboBoxItem Tag="skip" Content="{Binding [Str_428], Source={x:Static i18n:I18nService.Instance}}"/>
+                                                    <ComboBoxItem Tag="overwrite" Content="{Binding [Str_426], Source={x:Static i18n:I18nService.Instance}}"/>
+                                                    <ComboBoxItem Tag="both" Content="{Binding [Str_427], Source={x:Static i18n:I18nService.Instance}}"/>
+                                                </ComboBox>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- 底部确定/取消按钮 -->
+                    <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="16" Margin="0,8,0,0">
+                        <Button Grid.Column="0" Content="{Binding [Str_ConfirmDownload], Source={x:Static i18n:I18nService.Instance}}" 
+                                Command="{Binding ConfirmBatchDownloadCommand}"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10"
+                                Background="#D04060" Foreground="White" CornerRadius="8" FontWeight="Bold" Cursor="Hand"/>
+                        <Button Grid.Column="1" Content="{Binding [Str_Cancel], Source={x:Static i18n:I18nService.Instance}}" 
+                                Command="{Binding CancelBatchCommand}"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10"
+                                Background="Transparent" BorderBrush="{DynamicResource ThemeTextSubBrush}" BorderThickness="1" Foreground="{DynamicResource ThemeTextSubBrush}" CornerRadius="8" Cursor="Hand"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 单谱面查重对话框 Overlay -->
+        <Grid Background="#B0000000" IsVisible="{Binding ChartDownload.IsDuplicateDialogOpen}">
+            <Border Background="{DynamicResource CardBgBrush}" 
+                    BorderBrush="#FF8EBE" 
+                    BorderThickness="1.5" 
+                    CornerRadius="16" 
+                    Width="450" 
+                    Padding="24"
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" 
+                    BoxShadow="0 8 32 #80000000">
+                <StackPanel Spacing="16">
+                    <!-- 头部 -->
+                    <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                        <PathIcon Data="M512 80C273.44 80 80 273.44 80 512s193.44 432 432 432 432-193.44 432-432S750.56 80 512 80zm0 80c194.24 0 352 157.76 352 352S706.24 864 512 864 160 706.24 160 512 317.76 160 512 160zm-40 140v300h80V300h-80zm0 380v80h80v-80h-80z" 
+                                  Foreground="#FF8EBE" Width="28" Height="28"/>
+                        <TextBlock Text="{Binding [Str_424], Source={x:Static i18n:I18nService.Instance}}" 
+                                   FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- 内容 -->
+                    <TextBlock Text="{Binding ChartDownload.DuplicateDialogTarget.Title, StringFormat='谱面 《{0}》 已存在于本地。'}" 
+                               FontSize="14" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    
+                    <!-- 本地重复文件列表 -->
+                    <Border Background="#1C151B" CornerRadius="8" Padding="12" MaxHeight="150">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding ChartDownload.DuplicateDialogItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4" Spacing="8">
+                                            <TextBlock Text="📁" FontSize="12" VerticalAlignment="Center"/>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                                <TextBlock Text="{Binding DisplayCharter}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- 底部操作按钮 -->
+                    <StackPanel Spacing="10" Margin="0,8,0,0">
+                        <Button Content="{Binding [Str_426], Source={x:Static i18n:I18nService.Instance}}" 
+                                Command="{Binding ChartDownload.ConfirmSingleDownloadActionCommand}" CommandParameter="overwrite"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10"
+                                Background="#D04060" Foreground="White" CornerRadius="8" FontWeight="Bold" Cursor="Hand"/>
+                        <Button Content="{Binding [Str_427], Source={x:Static i18n:I18nService.Instance}}" 
+                                Command="{Binding ChartDownload.ConfirmSingleDownloadActionCommand}" CommandParameter="both"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10"
+                                Background="{DynamicResource ControlBgBrush}" Foreground="{DynamicResource ThemeTextMainBrush}" CornerRadius="8" Cursor="Hand"/>
+                        <Button Content="{Binding [Str_428], Source={x:Static i18n:I18nService.Instance}}" 
+                                Command="{Binding ChartDownload.ConfirmSingleDownloadActionCommand}" CommandParameter="skip"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10"
+                                Background="Transparent" BorderBrush="{DynamicResource ThemeTextSubBrush}" BorderThickness="1" Foreground="{DynamicResource ThemeTextSubBrush}" CornerRadius="8" Cursor="Hand"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Panel>
 </UserControl>

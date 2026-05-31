@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using MdModManager.Models;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MdModManager.Models
 {
@@ -50,7 +51,7 @@ namespace MdModManager.Models
     }
 
     // 批量下载时的重复项比对包装实体
-    public class BatchDuplicateItem
+    public class BatchDuplicateItem : ObservableObject
     {
         // 准备下载的社区谱面
         public MdmcChart Chart { get; }
@@ -58,8 +59,43 @@ namespace MdModManager.Models
         // 本地与之冲突的已存在谱面列表
         public System.Collections.Generic.List<ChartInfo> Duplicates { get; }
 
-        // 当前行所选的操作策略：skip (跳过)，overwrite (覆盖)，both (保留两者)
-        public string SelectedAction { get; set; } = "skip";
+        private int _selectedActionIndex = 0;
+
+        // 当前行所选的操作索引
+        public int SelectedActionIndex
+        {
+            get => _selectedActionIndex;
+            set
+            {
+                if (SetProperty(ref _selectedActionIndex, value))
+                {
+                    OnPropertyChanged(nameof(SelectedAction));
+                }
+            }
+        }
+
+        // 当前行所选的操作策略
+        public string SelectedAction
+        {
+            get => _selectedActionIndex switch
+            {
+                0 => "skip",
+                1 => "overwrite",
+                2 => "both",
+                _ => "skip"
+            };
+            set
+            {
+                int idx = value switch
+                {
+                    "skip" => 0,
+                    "overwrite" => 1,
+                    "both" => 2,
+                    _ => 0
+                };
+                SelectedActionIndex = idx;
+            }
+        }
 
         public BatchDuplicateItem(MdmcChart chart, System.Collections.Generic.List<ChartInfo> duplicates)
         {

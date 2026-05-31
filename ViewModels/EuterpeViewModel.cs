@@ -844,8 +844,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
         if (_configService.Config.EnableDownloadDuplicateCheck)
         {
-            var charter = string.Join(", ", chart.Maps?.SelectMany(m => m.Charters ?? Array.Empty<string>()).Distinct() ?? Array.Empty<string>());
-            var duplicates = _chartIndexService.FindDuplicatesOf(chart.Name, chart.Author, charter);
+            var duplicates = _chartIndexService.FindDuplicatesByTitle(chart.Name);
             if (duplicates.Count > 0)
             {
                 DuplicateDialogTarget = chart;
