@@ -1,9 +1,10 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
@@ -94,15 +95,18 @@ public partial class SponsorViewModel : ViewModelBase
         LetterText = LetterText.Replace("\n", "\n\n");
     }
 
-    // 加载赞助者名单
+    // 按金额降序加载赞助者名单
     private async Task LoadSponsorsAsync()
     {
         if (_sponsorService == null) return;
         var list = await _sponsorService.GetSponsorsAsync();
         if (list != null)
         {
+            var sortedList = list
+                .OrderByDescending(x => double.TryParse(x.Amount, out var amt) ? amt : 0.0)
+                .ToList();
             Sponsors.Clear();
-            foreach (var item in list)
+            foreach (var item in sortedList)
             {
                 Sponsors.Add(item);
             }
