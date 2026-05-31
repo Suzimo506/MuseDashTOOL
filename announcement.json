@@ -1,15 +1,15 @@
 [
     {
-        "id": "1.4.5",
-        "is_enabled": false,
-        "title": "v1.4.5 更新内容",
-        "title_en": "v1.4.5 Update",
-        "content": "1、谱面管理界面支持对谱面进行分类管理了！进行了分类的自制谱在游戏内也会分类展示。如果需要使用这个功能，请先去设置界面点击一键安装自制谱下载支持谱面分类的CustomAlbums！下载过后Cinema也会自动替换为可以在游戏内用C键控制视频播放开关的功能版本。[Red]（旧版CustomAlbums请不要使用分类管理功能！否则会导致谱面读取失败）[/Red]\n2、谱面卡片UI修改，Euterpe谱面卡片新增标签显示\n3、所有搜索框默认开启新增的模糊匹配功能，可以在设置里把它关掉开启精确匹配\n4、Euterpe谱面下载新增按标签分类，方便快速查找\n5、修复了一些已知问题",
-        "content_en": "1. Chart Manager now supports category grouping! Grouped custom charts will also be displayed by categories in-game. To use this feature, please go to Settings and click 'One-Click Install Custom Charts' to download the supported CustomAlbums! Cinema will also be replaced with a version that supports toggling video playback with the 'C' key in-game. [Red](Do NOT use grouping on old CustomAlbums versions! It will cause chart loading failures!)[/Red]\n2. Chart card UI updated. Euterpe chart cards now display tags.\n3. All search boxes now enable fuzzy matching by default. You can disable it in settings for exact matching.\n4. Euterpe chart downloads can now be categorized by tags for quick searching.\n5. Fixed some known issues.",
-        "action_button_text": "进入新版喵斯兔",
-        "action_button_text_en": "Enter New MuseDashTOOL",
-        "cancel_button_text": "不再显示该弹窗",
-        "cancel_button_text_en": "Don't Show Again"
+        "id": "Emergency_20260601",
+        "is_enabled": true,
+        "title": "Euterpe紧急通知",
+        "title_en": "Euterpe Emergency Notice",
+        "content": "由于Euterpe修改了OAuth认证方式，1.4.5与1.4.6可能会出现无法登录的情况。可以加入喵斯兔交流群获取测试版使用（331568783）或前往Euterpe官网下载谱面。正式版喵斯兔正在打磨中，预计在6月10日左右完成更新。感谢您的支持与理解。",
+        "content_en": "Due to Euterpe changing its OAuth authentication method, login failures may occur in versions 1.4.5 and 1.4.6. You can join the MuseDashTOOL QQ Group (331568783) to obtain the beta version, or download charts directly from the Euterpe official website. The official version of MuseDashTOOL is currently being polished and the update is expected to be released around June 10. Thank you for your support and understanding.",
+        "action_button_text": "OK",
+        "action_button_text_en": "OK",
+        "cancel_button_text": "不再提醒",
+        "cancel_button_text_en": "Don't Remind Again"
     },
     {
         "id": "1.4.5.1",
@@ -61,7 +61,7 @@
     },
     {
         "id": "Emergency_20260526",
-        "is_enabled": true,
+        "is_enabled": false,
         "title": "紧急修复",
         "title_en": "Emergency Fix",
         "content": "请在北京时间5月26日23：30以前使用了一键安装自制谱的用户，重新点击一键安装自制谱按键，否则会导致：\n[Red]在自定义分组内打出成绩的谱面移出分组后成绩会消失[/Red]\n如无影响或在这个时间之后一键安装的用户可忽视这条公告。",
