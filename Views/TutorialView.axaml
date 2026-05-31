@@ -66,207 +66,168 @@
                     </TextBlock.Foreground>
                 </TextBlock>
 
-                <Separator Background="{DynamicResource SvgIconBrush}" Opacity="0.3" Height="1"/>
+                     <!-- Introduction -->
+                <TextBlock Text="{Binding [Str_AboutIntro], Source={x:Static i18n:I18nService.Instance}}"
+                           FontSize="15" Foreground="{DynamicResource ThemeTextMainBrush}"
+                           TextWrapping="Wrap" LineHeight="24" TextAlignment="Center"
+                           Margin="0,0,0,10"/>
 
-                <!-- 第一部分：自我介绍与社交链接 -->
-                <StackPanel Spacing="10" HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding [Str_268], Source={x:Static i18n:I18nService.Instance}}" 
-                               HorizontalAlignment="Center" FontSize="15" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                <!-- Cards Container -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="20" RowDefinitions="Auto">
+                    <!-- Developer Card -->
+                    <Border Grid.Column="0" CornerRadius="16" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource ShellOutlineBrush}" BorderThickness="1" Padding="24">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
+                            <!-- Left: Avatar placeholder -->
+                            <Border Grid.Column="0" Width="80" Height="80" CornerRadius="40" BorderBrush="{DynamicResource ThemeAccentBrush}" BorderThickness="2" ClipToBounds="True" VerticalAlignment="Top">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                        <GradientStop Color="#4A154B" Offset="0"/>
+                                        <GradientStop Color="#2C1B4D" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid>
+                                    <TextBlock Text="SZ" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ThemeAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            
+                            <!-- Right: Details -->
+                            <StackPanel Grid.Column="1" Spacing="8">
+                                <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="6" HorizontalAlignment="Left" Padding="6,2">
+                                    <TextBlock Text="{Binding [Str_LeadDeveloper], Source={x:Static i18n:I18nService.Instance}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccentBrush}"/>
+                                </Border>
+                                
+                                <TextBlock Text="{Binding [Str_DevName], Source={x:Static i18n:I18nService.Instance}}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                
+                                <TextBlock Text="{Binding [Str_DevDesc], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="Wrap" LineHeight="18"/>
+                                
+                                <!-- Buttons row -->
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+                                    <Button Command="{Binding OpenUrlCommand}" CommandParameter="https://space.bilibili.com/289883561?spm_id_from=333.1007.0.0" Height="32" Padding="12,0" Background="{DynamicResource ControlBgBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1">
+                                        <Button.Styles>
+                                            <Style Selector="Button:pointerover">
+                                                <Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}"/>
+                                            </Style>
+                                        </Button.Styles>
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <PathIcon Data="M306.005333 117.632L444.330667 256h135.296l138.368-138.325333a42.666667 42.666667 0 1 1 60.373333 60.373333l-78.037333 77.952L789.333333 256A149.333333 149.333333 0 0 1 938.666667 405.333333v341.333334a149.333333 149.333333 0 0 1-149.333334 149.333333h-554.666666A149.333333 149.333333 0 0 1 85.333333 746.666667v-341.333334A149.333333 149.333333 0 0 1 234.666667 256h88.96L245.632 177.962667a42.666667 42.666667 0 0 1 60.373333-60.373334zM789.333333 341.333333h-554.666666a64 64 0 0 0-63.701334 57.856L170.666667 405.333333v341.333334a64 64 0 0 0 57.856 63.701333L234.666667 810.666667h554.666666a64 64 0 0 0 63.701334-57.813334L853.333333 746.666667v-341.333334A64 64 0 0 0 789.333333 341.333333zM341.333333 469.333333a42.666667 42.666667 0 0 1 42.666667 42.666667v85.333333a42.666667 42.666667 0 1 1-85.333333 0v-85.333333a42.666667 42.666667 0 0 1 42.666666-42.666667z m341.333334 0a42.666667 42.666667 0 0 1 42.666666 42.666667v85.333333a42.666667 42.666667 0 1 1-85.333333 0v-85.333333a42.666667 42.666667 0 0 1 42.666667-42.666667z"
+                                                     Foreground="#FF6699" Width="14" Height="14" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Bilibili" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    
+                                    <Button Command="{Binding OpenUrlCommand}" CommandParameter="https://github.com/Suzimo506/MuseDashTOOL" Height="32" Padding="12,0" Background="{DynamicResource ControlBgBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1">
+                                        <Button.Styles>
+                                            <Style Selector="Button:pointerover">
+                                                <Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}"/>
+                                            </Style>
+                                        </Button.Styles>
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <PathIcon Data="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.577.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z" 
+                                                      Foreground="#FF6699" Width="14" Height="14" VerticalAlignment="Center"/>
+                                            <TextBlock Text="GitHub" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                     
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="25">
-                        <!-- B站入口 (再次更新图标) -->
-                        <Button Theme="{StaticResource RobustPlainIconBtn}" 
-                                Command="{Binding OpenUrlCommand}" 
-                                CommandParameter="https://space.bilibili.com/289883561?spm_id_from=333.1007.0.0">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <!-- 访客提供的简约小电视图标 -->
-                                <PathIcon Data="M306.005333 117.632L444.330667 256h135.296l138.368-138.325333a42.666667 42.666667 0 1 1 60.373333 60.373333l-78.037333 77.952L789.333333 256A149.333333 149.333333 0 0 1 938.666667 405.333333v341.333334a149.333333 149.333333 0 0 1-149.333334 149.333333h-554.666666A149.333333 149.333333 0 0 1 85.333333 746.666667v-341.333334A149.333333 149.333333 0 0 1 234.666667 256h88.96L245.632 177.962667a42.666667 42.666667 0 0 1 60.373333-60.373334zM789.333333 341.333333h-554.666666a64 64 0 0 0-63.701334 57.856L170.666667 405.333333v341.333334a64 64 0 0 0 57.856 63.701333L234.666667 810.666667h554.666666a64 64 0 0 0 63.701334-57.813334L853.333333 746.666667v-341.333334A64 64 0 0 0 789.333333 341.333333zM341.333333 469.333333a42.666667 42.666667 0 0 1 42.666667 42.666667v85.333333a42.666667 42.666667 0 1 1-85.333333 0v-85.333333a42.666667 42.666667 0 0 1 42.666666-42.666667z m341.333334 0a42.666667 42.666667 0 0 1 42.666666 42.666667v85.333333a42.666667 42.666667 0 1 1-85.333333 0v-85.333333a42.666667 42.666667 0 0 1 42.666667-42.666667z"
-                                          Foreground="#FF6699" Width="22" Height="22" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding [Str_264], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" FontWeight="ExtraBold" FontFamily="Inter, Arial">
-                                    <TextBlock.Foreground>
-                                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
-                                            <GradientStop Color="#FF00FF" Offset="0"/>
-                                            <GradientStop Color="#FF69B4" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </TextBlock.Foreground>
-                                </TextBlock>
+                    <!-- Artist Card -->
+                    <Border Grid.Column="1" CornerRadius="16" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource ShellOutlineBrush}" BorderThickness="1" Padding="24">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
+                            <!-- Left: Avatar placeholder -->
+                            <Border Grid.Column="0" Width="80" Height="80" CornerRadius="40" BorderBrush="{DynamicResource ThemeAccentBrush}" BorderThickness="2" ClipToBounds="True" VerticalAlignment="Top">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                        <GradientStop Color="#4A1E2E" Offset="0"/>
+                                        <GradientStop Color="#2C1B2A" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid>
+                                    <TextBlock Text="MM" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ThemeAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            
+                            <!-- Right: Details -->
+                            <StackPanel Grid.Column="1" Spacing="8">
+                                <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="6" HorizontalAlignment="Left" Padding="6,2">
+                                    <TextBlock Text="{Binding [Str_VisualDesign], Source={x:Static i18n:I18nService.Instance}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccentBrush}"/>
+                                </Border>
+                                
+                                <TextBlock Text="{Binding [Str_ArtistName], Source={x:Static i18n:I18nService.Instance}}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                
+                                <TextBlock Text="{Binding [Str_ArtistDesc], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="Wrap" LineHeight="18"/>
+                                
+                                <!-- Buttons row -->
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+                                    <Button Command="{Binding OpenUrlCommand}" CommandParameter="https://v.douyin.com/EsV7a27lsdI/" Height="32" Padding="12,0" Background="{DynamicResource ControlBgBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1">
+                                        <Button.Styles>
+                                            <Style Selector="Button:pointerover">
+                                                <Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}"/>
+                                            </Style>
+                                        </Button.Styles>
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <PathIcon Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5.67-1.5 1.5-1.5 1.5.67 1.5 1.5zm0-4.5c0 .83-.67 1.5-1.5 1.5S9 12.83 9 12s.67-1.5 1.5-1.5 1.5.67 1.5 1.5zm3.5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5zm0-4.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5z" 
+                                                      Foreground="#FF6699" Width="14" Height="14" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Douyin" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
                             </StackPanel>
-                        </Button>
+                        </Grid>
+                    </Border>
+                </Grid>
 
-                        <!-- GitHub 入口 -->
-                        <Button Theme="{StaticResource RobustPlainIconBtn}" 
-                                Command="{Binding OpenUrlCommand}" 
-                                CommandParameter="https://github.com/Suzimo506/MuseDashTOOL">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <PathIcon Data="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.577.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z" 
-                                          Foreground="#FF6699" Width="20" Height="20" VerticalAlignment="Center"/>
-                                <TextBlock Text="Suzimo506" FontSize="16" FontWeight="ExtraBold" FontFamily="Inter, Arial">
-                                    <TextBlock.Foreground>
-                                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
-                                            <GradientStop Color="#FF00FF" Offset="0"/>
-                                            <GradientStop Color="#FF69B4" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </TextBlock.Foreground>
-                                </TextBlock>
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- 第二部分：联系与群组 (添加点击复制功能) -->
-                <Border Background="{DynamicResource CardBgBrush}" CornerRadius="12" Padding="20">
-                    <StackPanel Spacing="10">
-                        <WrapPanel Orientation="Horizontal">
-                            <TextBlock FontSize="15" Foreground="{DynamicResource ThemeTextMainBrush}" Text="{Binding [Str_269], Source={x:Static i18n:I18nService.Instance}}"/>
-                            <Button Theme="{StaticResource LinkTextBtn}" 
-                                    Command="{Binding OpenUrlCommand}" 
-                                    CommandParameter="https://space.bilibili.com/130793282?spm_id_from=333.1387.follow.user_card.click">
-                                <TextBlock FontSize="15" FontWeight="Bold" Foreground="#FF6699" Text="GreenHub" TextDecorations="Underline"/>
+                <!-- Community Card -->
+                <Border CornerRadius="16" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource ShellOutlineBrush}" BorderThickness="1" Padding="24">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="{Binding [Str_AboutCommunityTitle], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                        
+                        <TextBlock Text="{Binding [Str_AboutCommunityDesc], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="Wrap" LineHeight="20"/>
+                        
+                        <!-- Community Buttons -->
+                        <StackPanel Orientation="Horizontal" Spacing="15" Margin="0,6,0,0">
+                            <Button Command="{Binding OpenUrlCommand}" CommandParameter="https://space.bilibili.com/130793282" Height="34" Padding="16,0" Background="{DynamicResource ControlBgBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}"/>
+                                    </Style>
+                                </Button.Styles>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="M306.005333 117.632L444.330667 256h135.296l138.368-138.325333a42.666667 42.666667 0 1 1 60.373333 60.373333l-78.037333 77.952L789.333333 256A149.333333 149.333333 0 0 1 938.666667 405.333333v341.333334a149.333333 149.333333 0 0 1-149.333334 149.333333h-554.666666A149.333333 149.333333 0 0 1 85.333333 746.666667v-341.333334A149.333333 149.333333 0 0 1 234.666667 256h88.96L245.632 177.962667a42.666667 42.666667 0 0 1 60.373333-60.373334zM789.333333 341.333333h-554.666666a64 64 0 0 0-63.701334 57.856L170.666667 405.333333v341.333334a64 64 0 0 0 57.856 63.701333L234.666667 810.666667h554.666666a64 64 0 0 0 63.701334-57.813334L853.333333 746.666667v-341.333334A64 64 0 0 0 789.333333 341.333333zM341.333333 469.333333a42.666667 42.666667 0 0 1 42.666667 42.666667v85.333333a42.666667 42.666667 0 1 1-85.333333 0v-85.333333a42.666667 42.666667 0 0 1 42.666666-42.666667z m341.333334 0a42.666667 42.666667 0 0 1 42.666666 42.666667v85.333333a42.666667 42.666667 0 1 1-85.333333 0v-85.333333a42.666667 42.666667 0 0 1 42.666667-42.666667z"
+                                             Foreground="#FF6699" Width="14" Height="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="GreenHub (Bilibili)" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
                             </Button>
-                            <TextBlock FontSize="15" Foreground="{DynamicResource ThemeTextMainBrush}" Text="{Binding [Str_270], Source={x:Static i18n:I18nService.Instance}}"/>
-                            <Button Theme="{StaticResource LinkTextBtn}" 
-                                    Command="{Binding CopyTextCommand}" 
-                                    CommandParameter="516968978"
-                                    ToolTip.Tip="{Binding [Str_271], Source={x:Static i18n:I18nService.Instance}}">
-                                <TextBlock FontSize="15" FontWeight="Bold" Foreground="#FF6699" Text="516968978" TextDecorations="Underline"/>
+                            
+                            <Button Command="{Binding CopyTextCommand}" CommandParameter="516968978" Height="34" Padding="16,0" Background="{DynamicResource ControlBgBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" ToolTip.Tip="{Binding [Str_271], Source={x:Static i18n:I18nService.Instance}}">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}"/>
+                                    </Style>
+                                </Button.Styles>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 16H5V5h2v2h10V5h2v14z" 
+                                              Foreground="#FF6699" Width="14" Height="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="QQ Group: 516968978" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
                             </Button>
-                            <TextBlock FontSize="15" Foreground="{DynamicResource ThemeTextMainBrush}" Text="{Binding [Str_272], Source={x:Static i18n:I18nService.Instance}}"/>
-                        </WrapPanel>
-                        <TextBlock FontSize="15" Foreground="{DynamicResource ThemeTextMainBrush}" TextWrapping="Wrap"
-                                   Text="{Binding [Str_273], Source={x:Static i18n:I18nService.Instance}}"/>
-                        <WrapPanel Orientation="Horizontal">
-                            <TextBlock FontSize="15" Foreground="{DynamicResource ThemeTextMainBrush}" Text="{Binding [Str_274], Source={x:Static i18n:I18nService.Instance}}"/>
-                            <Button Theme="{StaticResource LinkTextBtn}"
-                                    Command="{Binding OpenUrlCommand}"
-                                    CommandParameter="https://v.douyin.com/EsV7a27lsdI/">
-                                <TextBlock FontSize="15" FontWeight="Bold" Foreground="#FF6699" Text="{Binding [Str_275], Source={x:Static i18n:I18nService.Instance}}" TextDecorations="Underline"/>
-                            </Button>
-                            <TextBlock FontSize="15" Foreground="#a404a7ff" Text="{Binding [Str_276], Source={x:Static i18n:I18nService.Instance}}"/>
-                        </WrapPanel>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
-
-                <!-- 正文小节 -->
-                <StackPanel Spacing="25">
-
-                    <!-- 游玩前准备 (添加粉色跳转链接) -->
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="{Binding [Str_277], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
-                        <TextBlock Text="{Binding [Str_278], Source={x:Static i18n:I18nService.Instance}}" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <WrapPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding [Str_279], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <Button Theme="{StaticResource LinkTextBtn}" 
-                                    Command="{Binding OpenUrlCommand}" 
-                                    CommandParameter="https://wwatr.lanzout.com/iBtPf3jv3vtc">
-                                <TextBlock Text="{Binding [Str_280], Source={x:Static i18n:I18nService.Instance}}" Foreground="#FF6699" TextDecorations="Underline"/>
-                            </Button>
-                            <TextBlock Text="{Binding [Str_281], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        </WrapPanel>
-                        <TextBlock TextWrapping="Wrap" LineHeight="22" Foreground="{DynamicResource ThemeTextMainBrush}"
-                                   Text="{Binding [Str_282], Source={x:Static i18n:I18nService.Instance}}"/>
-                        <WrapPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding [Str_283], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <Button Theme="{StaticResource LinkTextBtn}" 
-                                    Command="{Binding OpenUrlCommand}" 
-                                    CommandParameter="https://wwatr.lanzout.com/irEqR3jv3ppc">
-                                <TextBlock Text="{Binding [Str_284], Source={x:Static i18n:I18nService.Instance}}" Foreground="#FF6699" TextDecorations="Underline"/>
-                            </Button>
-                            <TextBlock Text=" | " Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <Button Theme="{StaticResource LinkTextBtn}" 
-                                    Command="{Binding OpenUrlCommand}" 
-                                    CommandParameter="https://wwatr.lanzout.com/izYMS3jn73ja">
-                                <TextBlock Text="{Binding [Str_285], Source={x:Static i18n:I18nService.Instance}}" Foreground="#FF6699" TextDecorations="Underline"/>
-                            </Button>
-                        </WrapPanel>
-                        <TextBlock Text="{Binding [Str_286], Source={x:Static i18n:I18nService.Instance}}" FontWeight="Bold" Foreground="#FF4444" HorizontalAlignment="Center" Margin="0,10,0,0"/>
-                        <TextBlock Text="{Binding [Str_287], Source={x:Static i18n:I18nService.Instance}}" HorizontalAlignment="Center" Foreground="{DynamicResource ThemeTextSubBrush}"/>
-                        <TextBlock Text="{Binding [Str_288], Source={x:Static i18n:I18nService.Instance}}" FontWeight="Bold" Foreground="#FF6699" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                <!-- Disclaimer Card -->
+                <Border CornerRadius="16" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource SoftSuccessBrush}" BorderThickness="4,0,0,0" Padding="24">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="{Binding [Str_OpenSourceDisclaimer], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SoftSuccessBrush}"/>
+                        
+                        <TextBlock Text="{Binding [Str_DisclaimerDesc], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="Wrap" LineHeight="20"/>
                     </StackPanel>
-
-                    <!-- 高级设置 -->
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="{Binding [Str_289], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
-                        <TextBlock Text="{Binding [Str_290], Source={x:Static i18n:I18nService.Instance}}" TextWrapping="Wrap" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                    </StackPanel>
-
-                    <!-- Mod管理 -->
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="{Binding [Str_291], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
-                        <TextBlock Text="{Binding [Str_292], Source={x:Static i18n:I18nService.Instance}}" TextWrapping="Wrap" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_293], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" Foreground="#FF6699" Margin="24,0,0,0"/>
-                        <TextBlock Text="{Binding [Str_294], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_295], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_296], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                    </StackPanel>
-
-                    <!-- 谱面管理 -->
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="{Binding [Str_297], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
-                        <TextBlock Text="{Binding [Str_298], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_295], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_299], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_396], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                    </StackPanel>
-
-                    <!-- 谱面下载 -->
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="{Binding [Str_300], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
-                        <TextBlock Text="{Binding [Str_301], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_302], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                    </StackPanel>
-
-                    <!-- 配置文件 -->
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="{Binding [Str_303], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
-                        <TextBlock Text="{Binding [Str_304], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_305], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_306], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_307], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                    </StackPanel>
-
-                    <!-- 其他 -->
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="{Binding [Str_308], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
-                        <TextBlock Text="{Binding [Str_309], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_310], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        <TextBlock Text="{Binding [Str_311], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                    </StackPanel>
-
-                    <!-- 友情链接 -->
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="{Binding [Str_312], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
-                        <WrapPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding [Str_313], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                            <Button Theme="{StaticResource LinkTextBtn}" 
-                                    Command="{Binding OpenUrlCommand}" 
-                                    CommandParameter="https://euterpe-org.com">
-                                <TextBlock Text="Euterpe-org.com" Foreground="#FF6699" TextDecorations="Underline"/>
-                            </Button>
-                            <TextBlock Text="{Binding [Str_314], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                        </WrapPanel>
-                        <TextBlock TextWrapping="Wrap" LineHeight="22" Foreground="{DynamicResource ThemeTextMainBrush}"
-                                   Text="{Binding [Str_315], Source={x:Static i18n:I18nService.Instance}}"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <Separator Background="{DynamicResource SvgIconBrush}" Opacity="0.3" Height="1"/>
-
-                <!-- 结束语 -->
-                <StackPanel Spacing="15" HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding [Str_316], Source={x:Static i18n:I18nService.Instance}}" 
-                               Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding [Str_317], Source={x:Static i18n:I18nService.Instance}}" 
-                               Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center"/>
-                               
-                    <TextBlock Text="{Binding [Str_318], Source={x:Static i18n:I18nService.Instance}}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,15,0,30">
-                        <TextBlock.Foreground>
-                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
-                                <GradientStop Color="#FF00FF" Offset="0"/>
-                                <GradientStop Color="#FF69B4" Offset="1"/>
-                            </LinearGradientBrush>
-                        </TextBlock.Foreground>
-                    </TextBlock>
-                </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
     </Grid>

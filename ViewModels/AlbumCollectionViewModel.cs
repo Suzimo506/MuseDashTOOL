@@ -355,6 +355,7 @@ public partial class AlbumCollectionViewModel : ObservableObject
             .Select((name, index) => (name, index))
             .ToDictionary(x => AlbumCollectionService.NormalizeTEdgeoolName(x.name), x => x.index, StringComparer.OrdinalIgnoreCase);
     private bool _isInitialized;
+    private bool _hasShownTutorial;
     private bool _isSyncing;
     private bool _isDownloadViewModelSubscribed;
     private CancellationTokenSource? _gifPlaybackCts;
@@ -1083,6 +1084,24 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
     public async Task InitializeAsync()
     {
+        // 检测并弹出QQ群谱面教程
+        if (!_hasShownTutorial && !_configService.Config.SuppressAlbumCollectionTutorial)
+        {
+            _hasShownTutorial = true;
+            var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+            if (mainWindow != null)
+            {
+                var title = I18nService.Instance["Tutorial_Title"] ?? "教程提示";
+                var message = I18nService.Instance["Tutorial_AlbumCollection"];
+                bool dontRemind = await Views.TutorialDialog.ShowDialogAsync(mainWindow, title, message);
+                if (dontRemind)
+                {
+                    _configService.Config.SuppressAlbumCollectionTutorial = true;
+                    await _configService.SaveAsync();
+                }
+            }
+        }
+
         if (_isInitialized && (Categories.Count > 0 || PersonalRepositoryCategories.Count > 0 || CommunityCategories.Count > 0))
         {
             EnsureDownloadViewModelSubscription();

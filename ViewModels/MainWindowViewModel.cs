@@ -161,6 +161,15 @@ public partial class MainWindowViewModel : ObservableObject
                 OnPropertyChanged(nameof(HasStagedMods));
         };
 
+        // 订阅语言变更以重新触发游戏路径通知（更新语言）
+        Services.I18nService.Instance.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == "Item")
+            {
+                CheckAndShowNotification();
+            }
+        };
+
         // 监听登录状态变化以刷新界面
         var authState = Ioc.Default.GetRequiredService<AuthState>();
         authState.PropertyChanged += (_, e) =>
@@ -229,6 +238,23 @@ public partial class MainWindowViewModel : ObservableObject
         // 从配置中初始化特效值
         NavButtonLetterSpacing = _configService.Config.NavButtonLetterSpacing;
         BackgroundBlurRadius = _configService.Config.BackgroundBlurRadius;
+
+        // 检测并弹出欢迎教程，需在公告获取前运行
+        if (!_configService.Config.SuppressWelcomeTutorial)
+        {
+            var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+            if (mainWindow != null)
+            {
+                var title = Services.I18nService.Instance["Tutorial_Title"] ?? "教程提示";
+                var message = Services.I18nService.Instance["Tutorial_Welcome"];
+                bool dontRemind = await Views.TutorialDialog.ShowDialogAsync(mainWindow, title, message);
+                if (dontRemind)
+                {
+                    _configService.Config.SuppressWelcomeTutorial = true;
+                    await _configService.SaveAsync();
+                }
+            }
+        }
 
         // 异步尝试获取公告，但不阻塞主进程
         _ = TryShowAnnouncementAsync();
@@ -456,6 +482,11 @@ public partial class MainWindowViewModel : ObservableObject
                     isLightTheme ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFFDFE")) 
                                  : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2D232C")));
             }
+            // 弹窗背景色始终是不透明的实色，不受 IsNormalTheme 透明化影响，保障文字易读性
+            Avalonia.Application.Current.Resources["DialogBgBrush"] = isLightTheme 
+                ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFFFFF"))
+                : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2D1E28"));
+
             Avalonia.Application.Current.Resources["ThemeTextMainBrush"] = ThemeTextMainBrush;
             Avalonia.Application.Current.Resources["ThemeTextSubBrush"]  = ThemeTextSubBrush;
             Avalonia.Application.Current.Resources["ThemeTextTertiaryBrush"] = ThemeTextTertiaryBrush;
@@ -913,21 +944,31 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         var state = Ioc.Default.GetRequiredService<AuthState>();
-        if (state.CurrentUser != null)
-        {
-            CleanupCurrentPage();
-            IsChartDownloadMenuExpanded = true;
-
-            var vm = Ioc.Default.GetRequiredService<EuterpeViewModel>();
-            CurrentPage = vm;
-            await vm.InitializeAsync(_currentPageCts!.Token);
-        }
-        else
+        if (state.CurrentUser == null)
         {
             if (_authService == null) return;
             _notificationService?.ShowInfo("正在拉起浏览器登录 Euterpe...");
-            await _authService.LoginAsync();
+            try
+            {
+                await _authService.LoginAsync();
+            }
+            catch (Exception ex)
+            {
+                RuntimeLog.Write("MainWindowViewModel", "登录授权失败 " + ex.Message);
+                _notificationService?.ShowFailure("登录失败", $"无法完成 Euterpe 登录 {ex.Message}");
+                return;
+            }
+
+            if (state.CurrentUser == null) return;
+            _notificationService?.ShowSuccess($"Euterpe 登录成功\n欢迎回来，{state.CurrentUser.Nickname}");
         }
+
+        CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = true;
+
+        var vm = Ioc.Default.GetRequiredService<EuterpeViewModel>();
+        CurrentPage = vm;
+        await vm.InitializeAsync(_currentPageCts!.Token);
     }
 
     [RelayCommand]

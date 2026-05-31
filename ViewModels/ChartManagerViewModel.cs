@@ -21,6 +21,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private readonly IChartService _chartService;
     private readonly IConfigService _configService;
     private readonly IDownloadManagerService _downloadManagerService;
+    private bool _hasShownTutorial;
     private const int PageSize = 16;
     public const string RootCategoryKey = "Root_Uncategorized";
 
@@ -202,24 +203,69 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private ChartInfo? _playingChart;
     private CancellationTokenSource? _stopCts;
 
-    public ChartManagerViewModel(IChartService chartService, IConfigService configService, IDownloadManagerService downloadManagerService)
+    private readonly IChartIndexService _chartIndexService;
+
+    [ObservableProperty]
+    private bool _isToolboxPanelOpen;
+
+    [ObservableProperty]
+    private bool _isToolboxMinimized = true;
+
+    [ObservableProperty]
+    private bool _isDeduplicationRunning;
+
+    public ObservableCollection<DuplicateCheckItem> LocalDuplicatesList { get; } = new();
+
+    public ChartManagerViewModel(
+        IChartService chartService, 
+        IConfigService configService, 
+        IDownloadManagerService downloadManagerService,
+        IChartIndexService chartIndexService)
     {
         _chartService = chartService;
         _configService = configService;
         _downloadManagerService = downloadManagerService;
+        _chartIndexService = chartIndexService;
 
-        // 订阅语言变更更新排序选项
+        // 订阅语言变更更新排序选项与重新加载文字
         Services.I18nService.Instance.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == "Item")
             {
                 UpdateSortOptions();
+                _ = Task.Run(() => Reload());
             }
         };
     }
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
+        // 获取主窗口实例
+        var mainWindow = Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+
+        // 1. 检测并弹出谱面管理界面教程
+        if (!_hasShownTutorial && !_configService.Config.SuppressChartManagerTutorial)
+        {
+            _hasShownTutorial = true;
+            if (mainWindow != null)
+            {
+                var title = Services.I18nService.Instance["Tutorial_Title"] ?? "教程提示";
+                var message = Services.I18nService.Instance["Tutorial_ChartManager"];
+                bool dontRemind = await Views.TutorialDialog.ShowDialogAsync(mainWindow, title, message);
+                if (dontRemind)
+                {
+                    _configService.Config.SuppressChartManagerTutorial = true;
+                    await _configService.SaveAsync();
+                }
+            }
+        }
+
+        // 2. 教程关闭或跳过后，检测并串行弹出谱面分类提示弹窗
+        if (mainWindow != null && !_configService.Config.SuppressCustomAlbumsWarning)
+        {
+            await Views.CustomAlbumsWarningDialog.ShowDialogAsync(mainWindow, _configService);
+        }
+
         await Task.Run(() => Reload(), ct);
     }
 
@@ -320,7 +366,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             SelectedCount = 0;
             IsAllSelected = false;
             IsLoading = true;
-            StatusMessage = "正在加载...";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Loading..." : "正在加载...";
         });
 
         var gamePath = _configService.Config.GamePath;
@@ -329,7 +375,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
                 IsLoading = false;
-                StatusMessage = "游戏路径未设置，请先在设置中配置游戏目录";
+                StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US"
+                    ? "Game path not set, please configure the game directory in settings first"
+                    : "游戏路径未设置，请先在设置中配置游戏目录";
             });
             return;
         }
@@ -397,6 +445,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
             foreach (var chart in charts)
                 _allCharts.Add(chart);
+
+            // 构建自制谱内存快速哈希索引结构
+            _chartIndexService.IndexAll(_allCharts);
 
             ApplyFilter();
             IsLoading = false;
@@ -656,7 +707,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法导入";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot import" : "游戏路径未设置，无法导入";
             return;
         }
 
@@ -779,7 +830,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "打开失败: 游戏路径未设置";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Open failed: Game path not set" : "打开失败: 游戏路径未设置";
             return;
         }
 
@@ -912,7 +963,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法重命名";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot rename" : "游戏路径未设置，无法重命名";
             return;
         }
 
@@ -982,7 +1033,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法删除";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot delete" : "游戏路径未设置，无法删除";
             return;
         }
 
@@ -990,7 +1041,10 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
-        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, $"确定要删除分类《{oldName}》吗？\n删除分类将把其中的所有谱面文件移动回“未分类”。", true);
+        var confirmMsg = Services.I18nService.Instance.CurrentLanguage == "en-US"
+            ? $"Are you sure you want to delete the category \"{oldName}\"?\nDeleting this category will move all of its charts back to \"Uncategorized\"."
+            : $"确定要删除分类《{oldName}》吗？\n删除分类将把其中的所有谱面文件移动回“未分类”。";
+        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, confirmMsg, true);
         if (!confirmed) return;
 
         StopCurrentPlayback();
@@ -1088,7 +1142,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法删除";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot delete" : "游戏路径未设置，无法删除";
             return;
         }
 
@@ -1096,7 +1150,10 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
-        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, $"确定要删除选中的 {toDelete.Count} 个分类吗？\n删除分类将把其中的所有谱面文件移动回“未分类”。", true);
+        var confirmMsg = Services.I18nService.Instance.CurrentLanguage == "en-US"
+            ? $"Are you sure you want to delete these {toDelete.Count} selected categories?\nDeleting categories will move all of their charts back to \"Uncategorized\"."
+            : $"确定要删除选中的 {toDelete.Count} 个分类吗？\n删除分类将把其中的所有谱面文件移动回“未分类”。";
+        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, confirmMsg, true);
         if (!confirmed) return;
 
         StopCurrentPlayback();
@@ -1203,7 +1260,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法创建分类";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot create category" : "游戏路径未设置，无法创建分类";
             return;
         }
 
@@ -1211,7 +1268,11 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
-        var catName = await InputDialog.ShowDialogAsync(mainWindow, "新建分类", "请输入新建分类的名称（将创建对应的合集文件夹）：");
+        var dialogTitle = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Create Category" : "新建分类";
+        var dialogPrompt = Services.I18nService.Instance.CurrentLanguage == "en-US"
+            ? "Please enter the name of the new category (a matching folder will be created):"
+            : "请输入新建分类的名称（将创建对应的合集文件夹）：";
+        var catName = await InputDialog.ShowDialogAsync(mainWindow, dialogTitle, dialogPrompt);
         if (string.IsNullOrWhiteSpace(catName))
             return;
 
@@ -1356,7 +1417,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
-            StatusMessage = "游戏路径未设置，无法创建分类";
+            StatusMessage = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Game path not set, cannot create category" : "游戏路径未设置，无法创建分类";
             return;
         }
 
@@ -1364,7 +1425,11 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
-        var catName = await InputDialog.ShowDialogAsync(mainWindow, "新建分类", "请输入新建分类的名称（将创建对应的合集文件夹）：");
+        var dialogTitle = Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Create Category" : "新建分类";
+        var dialogPrompt = Services.I18nService.Instance.CurrentLanguage == "en-US"
+            ? "Please enter the name of the new category (a matching folder will be created):"
+            : "请输入新建分类的名称（将创建对应的合集文件夹）：";
+        var catName = await InputDialog.ShowDialogAsync(mainWindow, dialogTitle, dialogPrompt);
         if (string.IsNullOrWhiteSpace(catName))
             return;
 
@@ -1471,6 +1536,182 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             }
         }
         return maxLevel;
+    }
+
+    [RelayCommand]
+    private void ToggleToolbox()
+    {
+        IsToolboxPanelOpen = !IsToolboxPanelOpen;
+        if (IsToolboxPanelOpen)
+        {
+            IsToolboxMinimized = false;
+        }
+    }
+
+    [RelayCommand]
+    private void MinimizeToolbox()
+    {
+        IsToolboxPanelOpen = false;
+        IsToolboxMinimized = true;
+    }
+
+    [RelayCommand]
+    private async Task RunDeduplicationAsync()
+    {
+        IsDeduplicationRunning = true;
+        StatusMessage = Services.I18nService.Instance["Str_420"] ?? "正在扫描重复谱面...";
+
+        await Task.Run(() =>
+        {
+            var groups = new Dictionary<string, List<ChartInfo>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var chart in _allCharts)
+            {
+                if (chart == null || string.IsNullOrEmpty(chart.Name)) continue;
+
+                var normTitle = NormalizeText(chart.Name);
+                var normArtist = NormalizeText(chart.MusicAuthor);
+                var normCharter = NormalizeText(chart.ChartAuthor);
+
+                var groupKey = $"{normTitle}_{normArtist}_{normCharter}";
+                if (!groups.TryGetValue(groupKey, out var list))
+                {
+                    list = new List<ChartInfo>();
+                    groups[groupKey] = list;
+                }
+                list.Add(chart);
+            }
+
+            var duplicateItems = new List<DuplicateCheckItem>();
+            int groupCount = 0;
+            foreach (var kvp in groups)
+            {
+                if (kvp.Value.Count > 1)
+                {
+                    groupCount++;
+                    foreach (var chart in kvp.Value)
+                    {
+                        duplicateItems.Add(new DuplicateCheckItem(chart, kvp.Key));
+                    }
+                }
+            }
+
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                LocalDuplicatesList.Clear();
+                foreach (var item in duplicateItems)
+                {
+                    LocalDuplicatesList.Add(item);
+                }
+
+                IsDeduplicationRunning = false;
+
+                string resultPattern = Services.I18nService.Instance["Str_416"] ?? "扫描完成，发现 {0} 组共 {1} 个重复谱面。";
+                StatusMessage = string.Format(resultPattern, groupCount, duplicateItems.Count);
+            });
+        });
+    }
+
+    private string NormalizeText(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+        var chars = s.ToLowerInvariant()
+                     .Where(c => char.IsLetterOrDigit(c))
+                     .ToArray();
+        return new string(chars);
+    }
+
+    [RelayCommand]
+    private void AutoSelectDuplicates(string strategy)
+    {
+        if (LocalDuplicatesList.Count == 0) return;
+
+        var groups = LocalDuplicatesList.GroupBy(item => item.GroupKey);
+
+        foreach (var grp in groups)
+        {
+            var itemsList = grp.ToList();
+            if (itemsList.Count <= 1) continue;
+
+            DuplicateCheckItem keepItem = itemsList[0];
+
+            if (strategy == "keep_newest")
+            {
+                keepItem = itemsList.OrderByDescending(i => i.LastWriteTime).First();
+            }
+            else if (strategy == "keep_smallest")
+            {
+                keepItem = itemsList.OrderBy(i => i.FileSize).First();
+            }
+            else if (strategy == "keep_largest")
+            {
+                keepItem = itemsList.OrderByDescending(i => i.FileSize).First();
+            }
+
+            foreach (var item in itemsList)
+            {
+                item.IsRedundant = (item != keepItem);
+            }
+        }
+
+        var temp = LocalDuplicatesList.ToList();
+        LocalDuplicatesList.Clear();
+        foreach (var item in temp)
+        {
+            LocalDuplicatesList.Add(item);
+        }
+    }
+
+    [RelayCommand]
+    private void ClickDuplicateChart(DuplicateCheckItem item)
+    {
+        if (item == null) return;
+
+        SearchText = item.Name;
+        IsToolboxPanelOpen = false;
+        IsToolboxMinimized = true;
+    }
+
+    [RelayCommand]
+    private async Task DeleteSelectedDuplicatesAsync()
+    {
+        var toDelete = LocalDuplicatesList.Where(i => i.IsRedundant).ToList();
+        if (toDelete.Count == 0) return;
+
+        var app = Avalonia.Application.Current;
+        var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (mainWindow == null) return;
+
+        string confirmTemplate = Services.I18nService.Instance["Str_421"] ?? "是否确认删除选中的 {0} 个重复谱面？\n此操作不可撤销！";
+        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, string.Format(confirmTemplate, toDelete.Count), true);
+        if (!confirmed) return;
+
+        int deletedCount = 0;
+        foreach (var item in toDelete)
+        {
+            try
+            {
+                if (System.IO.File.Exists(item.FilePath))
+                {
+                    System.IO.File.Delete(item.FilePath);
+                    deletedCount++;
+                }
+
+                _chartIndexService.RemoveFromIndex(item.FilePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Toolbox] Failed to delete duplicate file {item.FilePath}: {ex.Message}");
+            }
+        }
+
+        string successTemplate = Services.I18nService.Instance["Str_422"] ?? "成功删除了 {0} 个重复的谱面文件。";
+        StatusMessage = string.Format(successTemplate, deletedCount);
+
+        Reload();
+
+        LocalDuplicatesList.Clear();
+        await RunDeduplicationAsync();
     }
 }
 

@@ -25,7 +25,7 @@ sealed class Program
         if (!createdNew)
         {
             // 如果有参数则发送参数否则发送激活指令以唤醒主窗口
-            var sendArgs = (args != null && args.Length > 0) ? args : new[] { "euterpe://activate" };
+            var sendArgs = (args != null && args.Length > 0) ? args : new[] { "musedashtool://activate" };
             Bootstrapper.SendArgsToPrimaryInstance(sendArgs);
             return;
         }

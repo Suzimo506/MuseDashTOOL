@@ -157,6 +157,7 @@ public partial class App : Application
         services.AddSingleton<INotificationService, NotificationService>();
         services.AddSingleton<IConfigFileService, ConfigFileService>();
         services.AddSingleton<IChartService, ChartService>();
+        services.AddSingleton<IChartIndexService, ChartIndexService>();
         services.AddSingleton<IChartPackageProcessor, ChartPackageProcessor>();
         services.AddSingleton<IChartDownloadService, ChartDownloadService>();
         services.AddSingleton<IChartUploadConfigService, ChartUploadConfigService>();

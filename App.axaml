@@ -24,6 +24,7 @@
         <SolidColorBrush x:Key="NavButtonMainBrush" Color="#F2E1E8"/>
         <SolidColorBrush x:Key="NavButtonSubBrush" Color="#C9B4BF"/>
         <SolidColorBrush x:Key="CardBgBrush" Color="#241B23"/>
+        <SolidColorBrush x:Key="DialogBgBrush" Color="#241B23"/>
         <SolidColorBrush x:Key="CardHoverBgBrush" Color="#2C212A"/>
         <SolidColorBrush x:Key="ModCardBgBrush" Color="#2A2029"/>
         <SolidColorBrush x:Key="ControlBgBrush" Color="#1E171E"/>

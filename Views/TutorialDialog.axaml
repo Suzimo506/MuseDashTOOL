@@ -1,0 +1,77 @@
+<Window xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MdModManager.Views.TutorialDialog"
+        Title="{Binding [Tutorial_Title], Source={x:Static i18n:I18nService.Instance}}"
+        Width="500" Height="340"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource DialogBgBrush}"
+        Foreground="{DynamicResource ThemeTextMainBrush}"
+        SystemDecorations="Full">
+
+    <!-- 使用 Grid 分成内容和底部按钮两部分 -->
+    <Grid RowDefinitions="*, Auto" Margin="24">
+        
+        <!-- 教程正文展示区，使用带左边框的精致卡片包装，内嵌隐藏滚动条的 ScrollViewer -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource ControlBgBrush}"
+                BorderBrush="{DynamicResource ThemeAccentBrush}"
+                BorderThickness="3,0,0,0"
+                CornerRadius="8"
+                Padding="18,14">
+            <Panel>
+                <ScrollViewer x:Name="MessageScrollViewer"
+                              VerticalScrollBarVisibility="Hidden"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <TextBlock x:Name="MessageText"
+                               TextWrapping="Wrap"
+                               LineHeight="24"
+                               FontSize="14.5"
+                               Foreground="{DynamicResource ThemeTextMainBrush}"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Stretch"/>
+                </ScrollViewer>
+                
+                <!-- 底部右下角指示有更多内容的小箭头 -->
+                <Path x:Name="DownArrowIcon"
+                      Data="M 0 0 L 5 5 L 10 0"
+                      Stroke="{DynamicResource ThemeAccentBrush}"
+                      StrokeThickness="2.5"
+                      Width="12" Height="8"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Bottom"
+                      Margin="0,0,4,4"
+                      IsVisible="False"/>
+            </Panel>
+        </Border>
+
+        <!-- 底部按钮操作区 -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto, *, Auto" Margin="0,18,0,0">
+            <!-- 左侧：不再显示此提示复选框 -->
+            <CheckBox Grid.Column="0"
+                      x:Name="DontShowAgainCheckBox"
+                      Content="{Binding [Str_140], Source={x:Static i18n:I18nService.Instance}}"
+                      Foreground="{DynamicResource ThemeTextSubBrush}"
+                      CornerRadius="6"
+                      FontSize="13"/>
+
+            <!-- 右侧：确定 -->
+            <Button Grid.Column="2"
+                    Content="{Binding [Str_141], Source={x:Static i18n:I18nService.Instance}}"
+                    Width="90"
+                    Height="34"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ThemeAccentBrush}"
+                    Foreground="White"
+                    CornerRadius="10"
+                    Click="OnConfirmClick">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="{DynamicResource ThemeAccentBrushPointerOver}"/>
+                    </Style>
+                </Button.Styles>
+            </Button>
+        </Grid>
+    </Grid>
+</Window>

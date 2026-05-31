@@ -1,27 +1,23 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
-using System.Web;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Microsoft.Win32;
-using CommunityToolkit.Mvvm.DependencyInjection;
-using MdModManager.Models;
-using MdModManager.ViewModels;
 
 namespace MdModManager.Services;
 
 public sealed class DeepLinkService
 {
-    private const string DeepLinkScheme = "euterpe";
-    private readonly IAuthService _authService;
+    // 旧版本曾把 "euterpe://" 注册为系统协议处理器用于 OAuth 回调；新登录流程
+    // 改用 RFC 8252 loopback，不再需要任何系统 URL scheme。这里仅用于在启动时
+    // 把遗留的 "euterpe://" 注册还给其正主。
+    private const string LegacyScheme = "euterpe";
 
-    public DeepLinkService(IAuthService authService)
-    {
-        _authService = authService;
-    }
+    // 单实例激活哨兵：第二个实例通过命名管道把该串发给主实例以唤醒窗口。
+    // 走管道而非系统 scheme，因此无需注册到注册表。
+    private const string ActivationScheme = "musedashtool";
 
     public Task SetupAsync()
     {
@@ -33,15 +29,13 @@ public sealed class DeepLinkService
                 return Task.CompletedTask;
             }
 
-            using var schemeKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{DeepLinkScheme}");
-            schemeKey.SetValue(string.Empty, "URL:Euterpe Protocol", RegistryValueKind.String);
-            schemeKey.SetValue("URL Protocol", string.Empty, RegistryValueKind.String);
-
-            using var commandKey = schemeKey.CreateSubKey(@"shell\open\command");
-            commandKey.SetValue(string.Empty, $"\"{processPath}\" \"%1\"", RegistryValueKind.String);
-
-            using var iconKey = schemeKey.CreateSubKey("DefaultIcon");
-            iconKey.SetValue(string.Empty, $"\"{processPath}\",0", RegistryValueKind.String);
+            // 仅当遗留的 "euterpe://" 处理器指向本程序时才删除，避免误删他人注册。
+            using var commandKey = Registry.CurrentUser.OpenSubKey($@"Software\Classes\{LegacyScheme}\shell\open\command");
+            if (commandKey?.GetValue(string.Empty) is string command &&
+                command.Contains(processPath, StringComparison.OrdinalIgnoreCase))
+            {
+                Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{LegacyScheme}", throwOnMissingSubKey: false);
+            }
         }
         catch (Exception ex)
         {
@@ -62,64 +56,12 @@ public sealed class DeepLinkService
 
     public void HandleUri(string uri)
     {
-        if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsed) || parsed.Scheme != DeepLinkScheme)
+        if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsed) || parsed.Scheme != ActivationScheme)
         {
             return;
         }
 
         ActivateMainWindow(true);
-
-        var action = parsed.Host;
-        var query = Uri.UnescapeDataString(parsed.Query.TrimStart('?'));
-
-        if (action == "auth")
-        {
-            _ = HandleAuthCallbackAsync(query);
-        }
-    }
-
-    private async Task HandleAuthCallbackAsync(string query)
-    {
-        var queryParams = HttpUtility.ParseQueryString(query);
-        var code = queryParams["code"];
-
-        if (string.IsNullOrEmpty(code))
-        {
-            await _authService.LoginAsync();
-            return;
-        }
-
-        try
-        {
-            await _authService.CompleteLoginAsync(code);
-
-            // 登录成功后弹窗提示用户
-            var authState = Ioc.Default.GetRequiredService<AuthState>();
-            if (authState.CurrentUser != null)
-            {
-                var notificationService = Ioc.Default.GetService<INotificationService>();
-                notificationService?.ShowSuccess($"Euterpe 登录成功\n欢迎回来，{authState.CurrentUser.Nickname}");
-
-                // 登录成功后导航到 Euterpe 界面
-                Dispatcher.UIThread.Post(async () =>
-                {
-                    if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
-                        desktop.MainWindow?.DataContext is MainWindowViewModel mainVm)
-                    {
-                        await mainVm.NavigateToEuterpeDownloadAsync();
-                    }
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            RuntimeLog.Write("DeepLinkService", "登录授权失败 " + ex.Message);
-
-            // 登录失败后弹窗提示详细错误
-            var notificationService = Ioc.Default.GetService<INotificationService>();
-            notificationService?.ShowFailure("登录失败", $"无法完成 Euterpe 登录 {ex.Message}");
-        }
     }
 
     private void ActivateMainWindow(bool force)

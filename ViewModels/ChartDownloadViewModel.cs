@@ -158,17 +158,30 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
     private CancellationTokenSource? _loadCts;  // 用于取消正在下载的音频
     private CancellationTokenSource? _listCts;  // 用于取消正在搜索/加载的列表
 
+    private readonly IChartIndexService _chartIndexService;
+
+    [ObservableProperty]
+    private bool _isDuplicateDialogOpen;
+
+    [ObservableProperty]
+    private MdmcChart? _duplicateDialogTarget;
+
+    [ObservableProperty]
+    private List<ChartInfo> _duplicateDialogItems = new();
+
     // ─────────────────────────────────────────────────────────────────────────
     public ChartDownloadViewModel(
         IChartDownloadService downloadService,
         IConfigService configService,
         INotificationService notificationService,
-        IDownloadManagerService downloadManagerService)
+        IDownloadManagerService downloadManagerService,
+        IChartIndexService chartIndexService)
     {
         _downloadService = downloadService;
         _configService = configService;
         _notificationService = notificationService;
         _downloadManagerService = downloadManagerService;
+        _chartIndexService = chartIndexService;
     }
 
     // 页面缓存: Key 为 "sort|order|query|page"
@@ -545,18 +558,72 @@ public partial class ChartDownloadViewModel : ObservableObject, IDisposable
             }
         }
 
+        if (_configService.Config.EnableDownloadDuplicateCheck)
+        {
+            var duplicates = _chartIndexService.FindDuplicatesOf(chart.Title, chart.Artist, chart.Charter);
+            if (duplicates.Count > 0)
+            {
+                DuplicateDialogTarget = chart;
+                DuplicateDialogItems = duplicates;
+                IsDuplicateDialogOpen = true;
+                return;
+            }
+        }
+
+        ExecuteEnqueueDownload(chart);
+    }
+
+    private void ExecuteEnqueueDownload(MdmcChart chart)
+    {
         var url = chart.DownloadUrl;
-        // 特例修正：调色盘等特殊路径下载直连
         if (!string.IsNullOrEmpty(url) && (url.Contains("~%23FFFFFF~") || url.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true)))
         {
             var manualUrl = url.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
             url = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
-            // 顺便同步给界面引用的 CustomDownloadUrl
             chart.CustomDownloadUrl = url;
         }
 
         _downloadManagerService.EnqueueDownload(chart);
-        _notificationService.ShowSuccess($"已添加到下载列表: 《{chart.Title}》");
+        string successMsg = MdModManager.Services.I18nService.Instance.CurrentLanguage == "zh-CN" 
+            ? $"已添加到下载列表: 《{chart.Title}》" 
+            : $"Added to download list: \"{chart.Title}\"";
+        _notificationService.ShowSuccess(successMsg);
+    }
+
+    /// <summary>确认单谱面查重拦截后的操作</summary>
+    [RelayCommand]
+    private void ConfirmSingleDownloadAction(string action)
+    {
+        IsDuplicateDialogOpen = false;
+        var chart = DuplicateDialogTarget;
+        if (chart == null) return;
+
+        if (action == "overwrite")
+        {
+            foreach (var local in DuplicateDialogItems)
+            {
+                try
+                {
+                    if (System.IO.File.Exists(local.FilePath))
+                    {
+                        System.IO.File.Delete(local.FilePath);
+                    }
+                    _chartIndexService.RemoveFromIndex(local.FilePath);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ChartDownload] Failed to delete duplicate local chart {local.FilePath}: {ex.Message}");
+                }
+            }
+            ExecuteEnqueueDownload(chart);
+        }
+        else if (action == "both")
+        {
+            ExecuteEnqueueDownload(chart);
+        }
+
+        DuplicateDialogTarget = null;
+        DuplicateDialogItems.Clear();
     }
 
     // ── 私有辅助方法 ──────────────────────────────────────────────────────────

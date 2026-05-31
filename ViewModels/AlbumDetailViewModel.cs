@@ -210,18 +210,28 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
         SearchText = searchText;
     }
 
+    private readonly IChartIndexService _chartIndexService;
+
+    [ObservableProperty]
+    private bool _isBatchDuplicateDialogOpen;
+
+    [ObservableProperty]
+    private List<BatchDuplicateItem> _batchDuplicateItems = new();
+
     public AlbumDetailViewModel(
         ChartDownloadViewModel chartDownloadViewModel,
         IAlbumCollectionService collectionService,
         IConfigService configService,
         IDownloadManagerService downloadManagerService,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IChartIndexService chartIndexService)
     {
         _chartDownloadViewModel = chartDownloadViewModel;
         _collectionService = collectionService;
         _configService = configService;
         _downloadManagerService = downloadManagerService;
         _notificationService = notificationService;
+        _chartIndexService = chartIndexService;
         _isListMode = _configService.Config.AlbumCollectionListMode;
 
         _chartDownloadViewModel.PropertyChanged += OnChartDownloadViewModelPropertyChanged;
@@ -668,6 +678,32 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             return;
         }
 
+        // 检查配置，如果启用了批量去重拦截
+        if (_configService.Config.EnableBatchDownloadDuplicateCheck)
+        {
+            var duplicatesList = new List<BatchDuplicateItem>();
+            foreach (var chart in _filteredIndex)
+            {
+                var duplicates = _chartIndexService.FindDuplicatesOf(chart.Title, chart.Artist, chart.Charter);
+                if (duplicates.Count > 0)
+                {
+                    duplicatesList.Add(new BatchDuplicateItem(chart, duplicates));
+                }
+            }
+
+            if (duplicatesList.Count > 0)
+            {
+                BatchDuplicateItems = duplicatesList;
+                IsBatchDuplicateDialogOpen = true;
+                return;
+            }
+        }
+
+        ExecuteBatchDownload();
+    }
+
+    private void ExecuteBatchDownload()
+    {
         var queued = 0;
         foreach (var chart in _filteredIndex)
         {
@@ -675,7 +711,6 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
             if (string.IsNullOrWhiteSpace(url))
                 continue;
 
-            // 特例：修复调色盘等特殊路径在批量下载时的镜像识别问题
             if (url.Contains("~%23FFFFFF~") || url.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true))
             {
                 var manualUrl = url.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
@@ -689,9 +724,87 @@ public partial class AlbumDetailViewModel : ObservableObject, IDisposable
 
         if (queued > 0)
         {
-            _notificationService.ShowSuccess($"已添加 {queued} 张谱面到下载列表");
+            string successMsg = MdModManager.Services.I18nService.Instance.CurrentLanguage == "zh-CN"
+                ? $"已添加 {queued} 张谱面到下载列表"
+                : $"Added {queued} charts to download list";
+            _notificationService.ShowSuccess(successMsg);
             Log($"Queued {queued} charts for category '{Category?.Name}'.");
         }
+    }
+
+    /// <summary>确认批量去重拦截后的操作并开始分流下载</summary>
+    [RelayCommand]
+    private void ConfirmBatchDownload()
+    {
+        IsBatchDuplicateDialogOpen = false;
+        var queued = 0;
+
+        foreach (var chart in _filteredIndex)
+        {
+            var dupItem = BatchDuplicateItems.FirstOrDefault(b => b.Chart == chart);
+            if (dupItem != null)
+            {
+                if (dupItem.SelectedAction == "skip")
+                {
+                    continue;
+                }
+                else if (dupItem.SelectedAction == "overwrite")
+                {
+                    foreach (var local in dupItem.Duplicates)
+                    {
+                        try
+                        {
+                            if (System.IO.File.Exists(local.FilePath))
+                                System.IO.File.Delete(local.FilePath);
+                            _chartIndexService.RemoveFromIndex(local.FilePath);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[AlbumBatch] Overwrite failed to delete {local.FilePath}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+
+            var url = chart.CustomDownloadUrl;
+            if (string.IsNullOrWhiteSpace(url))
+                continue;
+
+            if (url.Contains("~%23FFFFFF~") || url.Contains("~#FFFFFF~") || (chart.Title?.Contains("调色盘") == true))
+            {
+                var manualUrl = url.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");
+                url = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
+                chart.CustomDownloadUrl = url;
+            }
+
+            _downloadManagerService.EnqueueDownload(chart);
+            queued++;
+        }
+
+        if (queued > 0)
+        {
+            string successMsg = MdModManager.Services.I18nService.Instance.CurrentLanguage == "zh-CN"
+                ? $"已添加 {queued} 张谱面到下载列表"
+                : $"Added {queued} charts to download list";
+            _notificationService.ShowSuccess(successMsg);
+            Log($"Queued {queued} charts for category '{Category?.Name}'.");
+        }
+
+        BatchDuplicateItems.Clear();
+    }
+
+    /// <summary>一键将批量冲突项的处理行为全局统一设置</summary>
+    [RelayCommand]
+    private void BatchActionAll(string action)
+    {
+        if (BatchDuplicateItems == null) return;
+        foreach (var item in BatchDuplicateItems)
+        {
+            item.SelectedAction = action;
+        }
+        var temp = BatchDuplicateItems;
+        BatchDuplicateItems = null!;
+        BatchDuplicateItems = temp;
     }
 
     private bool IsDotNet6Installed()
