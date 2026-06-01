@@ -1075,6 +1075,8 @@ public partial class AlbumCollectionViewModel : ObservableObject
 
 
     // ── 试听与下载命令 (转发自 ChartDownloadViewModel) ───────────────────
+    public ChartDownloadViewModel ChartDownload => _chartDownloadViewModel;
+
     public IAsyncRelayCommand<MdmcChart> TogglePreviewCommand => 
         Ioc.Default.GetRequiredService<ChartDownloadViewModel>().TogglePreviewCommand;
     
