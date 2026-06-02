@@ -25,6 +25,12 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private const int PageSize = 16;
     public const string RootCategoryKey = "Root_Uncategorized";
 
+    // 检查游戏是否运行
+    private static bool IsGameRunning()
+    {
+        return System.Diagnostics.Process.GetProcessesByName("MuseDash").Length > 0;
+    }
+
     /// <summary>全量谱面列表（原始数据）</summary>
     private ObservableCollection<ChartInfo> _allCharts = new();
     private readonly List<ChartInfo> _filteredCharts = new();
@@ -317,10 +323,22 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void DeleteSelectedCharts()
+    private async Task DeleteSelectedCharts()
     {
         var toDelete = _allCharts.Where(c => c.IsSelected).ToList();
         if (toDelete.Count == 0) return;
+
+        // 游戏运行时限制非未分类谱面删除
+        if (IsGameRunning() && toDelete.Any(c => System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(c.FilePath)) != "Custom_Albums"))
+        {
+            var app = Avalonia.Application.Current;
+            var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (mainWindow != null)
+            {
+                await MessageBox.ShowDialogAsync(mainWindow, Services.I18nService.Instance["Str_442"]);
+            }
+            return;
+        }
 
         StopCurrentPlayback();
         foreach (var chart in toDelete)
@@ -700,8 +718,24 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void DeleteChart(ChartInfo chart)
+    private async Task DeleteChart(ChartInfo chart)
     {
+        // 游戏运行时限制非未分类谱面删除
+        if (IsGameRunning())
+        {
+            var parentName = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(chart.FilePath));
+            if (parentName != "Custom_Albums")
+            {
+                var app = Avalonia.Application.Current;
+                var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+                if (mainWindow != null)
+                {
+                    await MessageBox.ShowDialogAsync(mainWindow, Services.I18nService.Instance["Str_442"]);
+                }
+                return;
+            }
+        }
+
         if (_playingChart == chart)
             StopCurrentPlayback();
 
@@ -976,6 +1010,18 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     {
         if (string.IsNullOrEmpty(oldName) || oldName == "全部" || oldName == "未分类" || oldName == "Uncategorized" || oldName == RootCategoryKey) return;
 
+        // 游戏运行时限制分类重命名
+        if (IsGameRunning())
+        {
+            var curApp = Avalonia.Application.Current;
+            var curWindow = (curApp?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (curWindow != null)
+            {
+                await MessageBox.ShowDialogAsync(curWindow, Services.I18nService.Instance["Str_442"]);
+            }
+            return;
+        }
+
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
@@ -1045,6 +1091,18 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private async Task DeleteSpecificCategoryAsync(string oldName)
     {
         if (string.IsNullOrEmpty(oldName) || oldName == "全部" || oldName == "未分类" || oldName == "Uncategorized" || oldName == RootCategoryKey) return;
+
+        // 游戏运行时限制分类删除
+        if (IsGameRunning())
+        {
+            var curApp = Avalonia.Application.Current;
+            var curWindow = (curApp?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (curWindow != null)
+            {
+                await MessageBox.ShowDialogAsync(curWindow, Services.I18nService.Instance["Str_442"]);
+            }
+            return;
+        }
 
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
@@ -1155,6 +1213,18 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var toDelete = CategoryItems.Where(c => c.IsSelectedForDeletion && c.IsCustom).Select(c => c.Name).ToList();
         if (toDelete.Count == 0) return;
 
+        // 游戏运行时限制批量删除分类
+        if (IsGameRunning())
+        {
+            var curApp = Avalonia.Application.Current;
+            var curWindow = (curApp?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (curWindow != null)
+            {
+                await MessageBox.ShowDialogAsync(curWindow, Services.I18nService.Instance["Str_442"]);
+            }
+            return;
+        }
+
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath))
         {
@@ -1248,6 +1318,19 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     {
         if (item == null) return;
 
+        // 游戏运行时限制谱面移动
+        if (IsGameRunning())
+        {
+            IsMovePanelOpen = false;
+            var app = Avalonia.Application.Current;
+            var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (mainWindow != null)
+            {
+                await MessageBox.ShowDialogAsync(mainWindow, Services.I18nService.Instance["Str_442"]);
+            }
+            return;
+        }
+
         IsMovePanelOpen = false;
 
         if (item.IsCreateNew)
@@ -1339,6 +1422,18 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     {
         if (chart == null || string.IsNullOrEmpty(targetCategory) || targetCategory == "全部") return;
 
+        // 游戏运行时限制谱面移动
+        if (IsGameRunning())
+        {
+            var app = Avalonia.Application.Current;
+            var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (mainWindow != null)
+            {
+                await MessageBox.ShowDialogAsync(mainWindow, Services.I18nService.Instance["Str_442"]);
+            }
+            return;
+        }
+
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath)) return;
 
@@ -1381,6 +1476,18 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private async Task MoveSelectedToCategoryAsync(string targetCategory)
     {
         if (string.IsNullOrEmpty(targetCategory) || targetCategory == "全部") return;
+
+        // 游戏运行时限制谱面移动
+        if (IsGameRunning())
+        {
+            var app = Avalonia.Application.Current;
+            var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (mainWindow != null)
+            {
+                await MessageBox.ShowDialogAsync(mainWindow, Services.I18nService.Instance["Str_442"]);
+            }
+            return;
+        }
 
         var toMove = _allCharts.Where(c => c.IsSelected).ToList();
         if (toMove.Count == 0) return;
@@ -1721,6 +1828,18 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     {
         var toDelete = LocalDuplicatesList.Where(i => i.IsRedundant).ToList();
         if (toDelete.Count == 0) return;
+
+        // 游戏运行时限制非未分类的重复谱面删除
+        if (IsGameRunning() && toDelete.Any(i => System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(i.FilePath)) != "Custom_Albums"))
+        {
+            var curApp = Avalonia.Application.Current;
+            var curWindow = (curApp?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (curWindow != null)
+            {
+                await MessageBox.ShowDialogAsync(curWindow, Services.I18nService.Instance["Str_442"]);
+            }
+            return;
+        }
 
         var app = Avalonia.Application.Current;
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;

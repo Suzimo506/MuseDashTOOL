@@ -313,7 +313,7 @@
 
         <!-- 批量查重对话框 Overlay -->
         <Grid Background="#B0000000" IsVisible="{Binding IsBatchDuplicateDialogOpen}">
-            <Border Background="{DynamicResource CardBgBrush}" 
+            <Border Background="{DynamicResource DialogBgBrush}" 
                     BorderBrush="#FF8EBE" 
                     BorderThickness="1.5" 
                     CornerRadius="16" 
@@ -401,7 +401,7 @@
 
         <!-- 单谱面查重对话框 Overlay -->
         <Grid Background="#B0000000" IsVisible="{Binding ChartDownload.IsDuplicateDialogOpen}">
-            <Border Background="{DynamicResource CardBgBrush}" 
+            <Border Background="{DynamicResource DialogBgBrush}" 
                     BorderBrush="#FF8EBE" 
                     BorderThickness="1.5" 
                     CornerRadius="16" 

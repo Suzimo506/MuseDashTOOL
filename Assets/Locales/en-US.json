@@ -462,5 +462,6 @@
   "Str_ConfirmDownload": "Confirm Download",
   "Str_Cancel": "Cancel",
   "Str_440": "Minimize to Float Button",
-  "Str_441": "Close Toolbox"
+  "Str_441": "Close Toolbox",
+  "Str_442": "While the game is running, only deleting charts in 'Uncategorized' is allowed. Moving any charts or deleting charts in other categories is not allowed."
 }
