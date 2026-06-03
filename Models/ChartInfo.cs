@@ -27,10 +27,19 @@ public partial class ChartInfo : ObservableObject
     public string? Bpm { get; set; }
 
     /// <summary>从 ZIP 内 PNG 加载的封面图</summary>
-    public Bitmap? CoverImage { get; set; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCoverBitmap))]
+    [NotifyPropertyChangedFor(nameof(HasAnyCover))]
+    private Bitmap? _coverImage;
 
     /// <summary>封面资源路径（支持本地临时文件与 GIF 动图）</summary>
-    public string? CoverSource { get; set; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCoverSource))]
+    [NotifyPropertyChangedFor(nameof(HasAnimatedCoverSource))]
+    [NotifyPropertyChangedFor(nameof(HasStaticCoverSource))]
+    [NotifyPropertyChangedFor(nameof(AnimatedCoverSource))]
+    [NotifyPropertyChangedFor(nameof(HasAnyCover))]
+    private string? _coverSource;
 
     public bool HasCoverSource => !string.IsNullOrWhiteSpace(CoverSource);
 

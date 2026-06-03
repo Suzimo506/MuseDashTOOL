@@ -25,6 +25,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private const int PageSize = 16;
     public const string RootCategoryKey = "Root_Uncategorized";
 
+    private static readonly SemaphoreSlim _coverSemaphore = new(7);
+    private int _currentLoadId = 0;
+
     // 检查游戏是否运行
     private static bool IsGameRunning()
     {
@@ -345,6 +348,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         {
             try
             {
+                _chartIndexService.RemoveFromIndex(chart.FilePath);
                 _chartService.DeleteChart(chart);
                 chart.CleanupCoverResources();
                 _allCharts.Remove(chart);
@@ -357,6 +361,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         IsBatchMode = false;
         ApplyFilter();
+        RefreshDuplicateGroupsIfNecessary();
     }
 
     private void ClearAllSelections()
@@ -565,11 +570,22 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
     private void RefreshPagedCharts()
     {
+        var nextCharts = _filteredCharts
+                     .Skip((CurrentPage - 1) * PageSize)
+                     .Take(PageSize)
+                     .ToList();
+
+        foreach (var chart in Charts.ToList())
+        {
+            if (!nextCharts.Contains(chart))
+            {
+                chart.CleanupCoverResources();
+            }
+        }
+
         Charts.Clear();
 
-        foreach (var chart in _filteredCharts
-                     .Skip((CurrentPage - 1) * PageSize)
-                     .Take(PageSize))
+        foreach (var chart in nextCharts)
         {
             Charts.Add(chart);
         }
@@ -578,6 +594,34 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         RequestedScrollY = 0;
         // 数据刷新后更新全选状态
         UpdateIsAllSelected();
+
+        _ = EnsureCurrentPageCoversLoadedAsync();
+    }
+
+    private async Task EnsureCurrentPageCoversLoadedAsync()
+    {
+        int myId = System.Threading.Interlocked.Increment(ref _currentLoadId);
+        var snapshot = Charts.ToList();
+
+        foreach (var chart in snapshot)
+        {
+            if (myId != _currentLoadId) break;
+            if (chart.HasAnyCover) continue;
+
+            await _coverSemaphore.WaitAsync();
+            try
+            {
+                if (myId != _currentLoadId) break;
+                if (!chart.HasAnyCover)
+                {
+                    await _chartService.LoadCoverAsync(chart);
+                }
+            }
+            finally
+            {
+                _coverSemaphore.Release();
+            }
+        }
     }
 
     private void UpdateStateAndStatus()
@@ -741,10 +785,12 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         try
         {
+            _chartIndexService.RemoveFromIndex(chart.FilePath);
             _chartService.DeleteChart(chart);
             chart.CleanupCoverResources();
             _allCharts.Remove(chart);
             ApplyFilter();
+            RefreshDuplicateGroupsIfNecessary();
         }
         catch (Exception ex)
         {
@@ -1759,6 +1805,61 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 string resultPattern = Services.I18nService.Instance["Str_416"] ?? "扫描完成，发现 {0} 组共 {1} 个重复谱面。";
                 int totalDupFiles = duplicateGroupItems.Sum(g => g.Charts.Count);
                 StatusMessage = string.Format(resultPattern, duplicateGroupItems.Count, totalDupFiles);
+            });
+        });
+    }
+
+    private void RefreshDuplicateGroupsIfNecessary()
+    {
+        if (DuplicateGroups.Count == 0 && !IsShowingDeduplication) return;
+
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            var groups = new Dictionary<string, List<ChartInfo>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var chart in _allCharts)
+            {
+                if (chart == null || string.IsNullOrEmpty(chart.Name)) continue;
+
+                var normTitle = NormalizeText(chart.Name);
+                if (!groups.TryGetValue(normTitle, out var list))
+                {
+                    list = new List<ChartInfo>();
+                    groups[normTitle] = list;
+                }
+                list.Add(chart);
+            }
+
+            var duplicateGroupItems = new List<DuplicateGroupItem>();
+            foreach (var kvp in groups)
+            {
+                if (kvp.Value.Count > 1)
+                {
+                    var displayName = kvp.Value[0].Name;
+                    duplicateGroupItems.Add(new DuplicateGroupItem
+                    {
+                        Name = displayName,
+                        Charts = kvp.Value
+                    });
+                }
+            }
+
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                DuplicateGroups.Clear();
+                foreach (var item in duplicateGroupItems)
+                {
+                    DuplicateGroups.Add(item);
+                }
+
+                if (IsShowingDeduplication)
+                {
+                    string resultPattern = Services.I18nService.Instance["Str_416"] ?? "扫描完成，发现 {0} 组共 {1} 个重复谱面。";
+                    int totalDupFiles = duplicateGroupItems.Sum(g => g.Charts.Count);
+                    StatusMessage = string.Format(resultPattern, duplicateGroupItems.Count, totalDupFiles);
+                }
+                
+                OnPropertyChanged(nameof(ToolboxStatusString));
             });
         });
     }

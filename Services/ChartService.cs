@@ -15,6 +15,7 @@ public interface IChartService
     void DeleteChart(ChartInfo chart);
     Stream? OpenDemoStream(ChartInfo chart);
     ChartInfo? LoadSingleChart(string filePath);
+    System.Threading.Tasks.Task LoadCoverAsync(ChartInfo chart);
 }
 
 public class ChartService : IChartService
@@ -120,8 +121,6 @@ public class ChartService : IChartService
                     Bpm = entry.Bpm,
                     DemoEntryName = string.IsNullOrEmpty(entry.DemoEntryName) ? null : entry.DemoEntryName
                 };
-                // 缓存命中时，快速提取封面图
-                PopulateCover(file, info);
             }
             else
             {
@@ -244,6 +243,14 @@ public class ChartService : IChartService
         catch
         {
         }
+    }
+
+    public System.Threading.Tasks.Task LoadCoverAsync(ChartInfo chart)
+    {
+        if (chart.HasAnyCover || string.IsNullOrEmpty(chart.FilePath) || !File.Exists(chart.FilePath))
+            return System.Threading.Tasks.Task.CompletedTask;
+
+        return System.Threading.Tasks.Task.Run(() => PopulateCover(chart.FilePath, chart));
     }
 
     public static void ConvertEpkToInfoJsonInPlace(string filePath)
@@ -375,31 +382,6 @@ public class ChartService : IChartService
         };
 
         using var zip = ZipFile.OpenRead(filePath);
-        var coverEntry = FindPreferredCoverEntry(zip);
-        if (coverEntry != null)
-        {
-            var coverExtension = Path.GetExtension(coverEntry.Name);
-            if (string.Equals(coverExtension, ".gif", StringComparison.OrdinalIgnoreCase))
-            {
-                chart.CoverSource = ExtractCoverToTempFile(coverEntry);
-                chart.HasTemporaryCoverFile = !string.IsNullOrWhiteSpace(chart.CoverSource);
-            }
-            else
-            {
-                try
-                {
-                    using var stream = coverEntry.Open();
-                    using var ms = new MemoryStream();
-                    stream.CopyTo(ms);
-                    ms.Position = 0;
-                    chart.CoverImage = new Avalonia.Media.Imaging.Bitmap(ms);
-                }
-                catch
-                {
-                }
-            }
-        }
-
         foreach (var entry in zip.Entries)
         {
             var ext = Path.GetExtension(entry.Name);
