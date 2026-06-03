@@ -463,5 +463,9 @@
   "Str_Cancel": "Cancel",
   "Str_440": "Minimize to Float Button",
   "Str_441": "Close Toolbox",
-  "Str_442": "While the game is running, only deleting charts in 'Uncategorized' is allowed. Moving any charts or deleting charts in other categories is not allowed."
+  "Str_442": "While the game is running, only deleting charts in 'Uncategorized' is allowed. Moving any charts or deleting charts in other categories is not allowed.",
+  "Str_443": "Clean up exact duplicates by charter",
+  "Str_444": "No exact duplicate charts (same author and name) found.",
+  "Str_445": "Are you sure you want to automatically delete {0} exact duplicate charts (same author and name)?\nThis action cannot be undone!",
+  "Str_446": "Successfully deleted {0} exact duplicate chart files."
 }

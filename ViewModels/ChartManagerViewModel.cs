@@ -1864,6 +1864,85 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         });
     }
 
+    [RelayCommand]
+    private async Task AutoDeleteExactDuplicatesAsync()
+    {
+        if (DuplicateGroups.Count == 0 && !IsShowingDeduplication) return;
+
+        var toDelete = new List<ChartInfo>();
+
+        foreach (var group in DuplicateGroups)
+        {
+            var authorGroups = group.Charts.GroupBy(c => NormalizeText(c.ChartAuthor));
+            
+            foreach (var authorGroup in authorGroups)
+            {
+                var list = authorGroup.ToList();
+                if (list.Count > 1)
+                {
+                    for (int i = 1; i < list.Count; i++)
+                    {
+                        toDelete.Add(list[i]);
+                    }
+                }
+            }
+        }
+
+        if (toDelete.Count == 0)
+        {
+            StatusMessage = Services.I18nService.Instance["Str_444"] ?? "没有发现谱师和谱名完全相同的重复谱面。";
+            return;
+        }
+
+        // 游戏运行时限制非未分类的重复谱面删除
+        if (IsGameRunning() && toDelete.Any(c => System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(c.FilePath)) != "Custom_Albums"))
+        {
+            var curApp = Avalonia.Application.Current;
+            var curWindow = (curApp?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (curWindow != null)
+            {
+                await MessageBox.ShowDialogAsync(curWindow, Services.I18nService.Instance["Str_442"]);
+            }
+            return;
+        }
+
+        var app = Avalonia.Application.Current;
+        var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (mainWindow == null) return;
+
+        string confirmMsg = string.Format(Services.I18nService.Instance["Str_445"] ?? "是否确认自动删除 {0} 个谱名和谱师完全相同的重复谱面？\n此操作不可撤销！", toDelete.Count);
+            
+        var confirmed = await MessageBox.ShowDialogAsync(mainWindow, confirmMsg, true);
+        if (!confirmed) return;
+
+        int deletedCount = 0;
+        foreach (var chart in toDelete)
+        {
+            try
+            {
+                if (System.IO.File.Exists(chart.FilePath))
+                {
+                    System.IO.File.Delete(chart.FilePath);
+                    deletedCount++;
+                }
+
+                _chartIndexService.RemoveFromIndex(chart.FilePath);
+                _allCharts.Remove(chart);
+                _filteredCharts.Remove(chart);
+                Charts.Remove(chart);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Toolbox] Failed to delete exact duplicate file {chart.FilePath}: {ex.Message}");
+            }
+        }
+
+        string successMsg = string.Format(Services.I18nService.Instance["Str_446"] ?? "成功删除了 {0} 个完全重复的谱面文件。", deletedCount);
+        StatusMessage = successMsg;
+
+        await RunDeduplicationAsync();
+    }
+
     private string NormalizeText(string? s)
     {
         if (string.IsNullOrWhiteSpace(s)) return string.Empty;
@@ -1962,6 +2041,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 }
 
                 _chartIndexService.RemoveFromIndex(item.FilePath);
+                _allCharts.Remove(item.Chart);
+                _filteredCharts.Remove(item.Chart);
+                Charts.Remove(item.Chart);
             }
             catch (Exception ex)
             {
@@ -1971,8 +2053,6 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         string successTemplate = Services.I18nService.Instance["Str_422"] ?? "成功删除了 {0} 个重复的谱面文件。";
         StatusMessage = string.Format(successTemplate, deletedCount);
-
-        Reload();
 
         LocalDuplicatesList.Clear();
         await RunDeduplicationAsync();
