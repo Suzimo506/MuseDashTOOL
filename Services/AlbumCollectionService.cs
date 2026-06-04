@@ -92,6 +92,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         "Dunno的谱面小库",
         "石井圣人的谱面仓库",
         "布布西里的谱面",
+        "努斯的谱面仓库",
         "独家特供抽象谱面（宋Jerry）",
         "MC谱面（虚无）",
         "MC谱面（鱼，好大的鱼）",
