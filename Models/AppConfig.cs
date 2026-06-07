@@ -129,6 +129,9 @@ public class AppConfig
 
     // 是否不再提醒配置文件界面教程
     public bool SuppressConfigManagerTutorial { get; set; } = false;
+
+    // 上次运行的版本号
+    public string LastRunVersion { get; set; } = "";
 }
 
 

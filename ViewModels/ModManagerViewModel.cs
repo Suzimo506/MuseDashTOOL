@@ -96,8 +96,18 @@ public partial class ModManagerViewModel : ObservableObject
     }
 
     // ─── 游戏进程检测 ────────────────────────────────────────────────────────────
-    private static bool IsGameRunning() =>
-        Process.GetProcessesByName("MuseDash").Length > 0;
+    private static bool IsGameRunning()
+    {
+        try
+        {
+            return Process.GetProcessesByName("MuseDash")
+                .Any(p => !p.HasExited && p.Id != Environment.ProcessId);
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     // ─── 后台定时器：每 2 秒检测游戏是否结束，结束后自动迁移暂存文件 ───────────
     private void StartStagingWatcher()

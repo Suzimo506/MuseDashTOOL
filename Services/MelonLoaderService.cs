@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
@@ -96,7 +97,7 @@ public class MelonLoaderService : IMelonLoaderService
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath)) throw new Exception("游戏目录未设置");
 
-        if (Process.GetProcessesByName("MuseDash").Length > 0)
+        if (Process.GetProcessesByName("MuseDash").Any(p => !p.HasExited && p.Id != Environment.ProcessId))
         {
             throw new Exception("检测到游戏正在运行，请先关闭游戏后再安装或更新 MelonLoader！");
         }
@@ -205,7 +206,7 @@ public class MelonLoaderService : IMelonLoaderService
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath)) return;
 
-        if (Process.GetProcessesByName("MuseDash").Length > 0)
+        if (Process.GetProcessesByName("MuseDash").Any(p => !p.HasExited && p.Id != Environment.ProcessId))
         {
             throw new Exception("检测到游戏正在运行，请先关闭游戏后再卸载 MelonLoader！");
         }

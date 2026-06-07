@@ -31,7 +31,15 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     // 检查游戏是否运行
     private static bool IsGameRunning()
     {
-        return System.Diagnostics.Process.GetProcessesByName("MuseDash").Length > 0;
+        try
+        {
+            return System.Diagnostics.Process.GetProcessesByName("MuseDash")
+                .Any(p => !p.HasExited && p.Id != Environment.ProcessId);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>全量谱面列表（原始数据）</summary>
