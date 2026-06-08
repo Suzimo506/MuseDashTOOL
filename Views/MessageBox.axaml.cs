@@ -18,10 +18,10 @@ public partial class MessageBox : Window
     public static async Task<bool> ShowDialogAsync(Window owner, string message, bool showCancel = false)
     {
         var dialog = new MessageBox();
+        dialog.SizeToContent = SizeToContent.Height;
         if (message.Length > 70)
         {
             dialog.Width = 520;
-            dialog.Height = 240;
         }
         dialog.FindControl<TextBlock>("MessageText")!.Text = message;
         

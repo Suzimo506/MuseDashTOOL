@@ -3,6 +3,7 @@
         x:Class="MdModManager.Views.MessageBox"
         Title="{Binding [Str_167], Source={x:Static i18n:I18nService.Instance}}"
         Width="400" Height="180"
+        MinWidth="400" MinHeight="180"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource DialogBgBrush}"
@@ -11,15 +12,19 @@
 
     <Grid RowDefinitions="Auto, Auto, Auto" Margin="24" VerticalAlignment="Center">
         <!-- 提示文本 -->
-        <TextBlock x:Name="MessageText"
-                   Grid.Row="0"
-                   Text="{Binding [Str_168], Source={x:Static i18n:I18nService.Instance}}"
-                   TextWrapping="Wrap"
-                   FontSize="15"
-                   Foreground="{DynamicResource ThemeTextMainBrush}"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   TextAlignment="Center"/>
+        <ScrollViewer Grid.Row="0"
+                      MaxHeight="260"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <TextBlock x:Name="MessageText"
+                       Text="{Binding [Str_168], Source={x:Static i18n:I18nService.Instance}}"
+                       TextWrapping="Wrap"
+                       FontSize="15"
+                       Foreground="{DynamicResource ThemeTextMainBrush}"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"/>
+        </ScrollViewer>
 
         <Border x:Name="MessageImageHost"
                 Grid.Row="1"
