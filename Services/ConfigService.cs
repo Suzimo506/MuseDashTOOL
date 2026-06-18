@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using MdModManager.Helpers;
 using MdModManager.Models;
@@ -28,7 +29,7 @@ public class ConfigService : IConfigService
         _configFolderPath = Path.Combine(appData, "MdModManager");
         _configFilePath = Path.Combine(_configFolderPath, "config.json");
         // 初始化默认配置的版本号
-        Config.LastRunVersion = typeof(AppConfig).Assembly.GetName().Version?.ToString() ?? "1.4.8.1";
+        Config.LastRunVersion = typeof(AppConfig).Assembly.GetName().Version?.ToString() ?? "1.4.8.3";
     }
 
     public void Load()
@@ -38,9 +39,12 @@ public class ConfigService : IConfigService
             if (File.Exists(_configFilePath))
             {
                 var json = File.ReadAllText(_configFilePath);
+                var hasNewUserGuideState = HasConfigProperty(json, nameof(AppConfig.HasHandledNewUserRequiredModsGuide));
                 var config = JsonSerializer.Deserialize(json, AppJsonContext.Default.AppConfig);
                 if (config != null)
                 {
+                    if (!hasNewUserGuideState)
+                        config.HasHandledNewUserRequiredModsGuide = true;
                     NormalizeLegacyConfig(config);
                     Config = config;
                 }
@@ -59,9 +63,12 @@ public class ConfigService : IConfigService
             if (File.Exists(_configFilePath))
             {
                 var json = await File.ReadAllTextAsync(_configFilePath);
+                var hasNewUserGuideState = HasConfigProperty(json, nameof(AppConfig.HasHandledNewUserRequiredModsGuide));
                 var config = JsonSerializer.Deserialize(json, AppJsonContext.Default.AppConfig);
                 if (config != null)
                 {
+                    if (!hasNewUserGuideState)
+                        config.HasHandledNewUserRequiredModsGuide = true;
                     NormalizeLegacyConfig(config);
                     Config = config;
                 }
@@ -110,7 +117,7 @@ public class ConfigService : IConfigService
         }
 
         // 版本更新时重置教程弹窗
-        var currentVersion = typeof(AppConfig).Assembly.GetName().Version?.ToString() ?? "1.4.8.1";
+        var currentVersion = typeof(AppConfig).Assembly.GetName().Version?.ToString() ?? "1.4.8.3";
         if (config.LastRunVersion != currentVersion)
         {
             config.SuppressWelcomeTutorial = false;
@@ -119,6 +126,19 @@ public class ConfigService : IConfigService
             config.SuppressAlbumCollectionTutorial = false;
             config.SuppressConfigManagerTutorial = false;
             config.LastRunVersion = currentVersion;
+        }
+    }
+
+    private static bool HasConfigProperty(string json, string propertyName)
+    {
+        try
+        {
+            var node = JsonNode.Parse(json) as JsonObject;
+            return node?.ContainsKey(propertyName) == true;
+        }
+        catch
+        {
+            return false;
         }
     }
 }

@@ -79,6 +79,9 @@ public class AppConfig
     /// <summary>是否为第一次启动 (显示新手教程)</summary>
     public bool IsFirstLaunch { get; set; } = true;
 
+    /// <summary>是否已处理新用户必备模组安装指引</summary>
+    public bool HasHandledNewUserRequiredModsGuide { get; set; } = false;
+
     /// <summary>已屏蔽（不再显示）的公告 ID 列表</summary>
     public System.Collections.Generic.List<string> SuppressedAnnouncements { get; set; } = new();
 

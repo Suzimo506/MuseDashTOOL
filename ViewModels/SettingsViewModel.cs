@@ -759,6 +759,11 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async System.Threading.Tasks.Task InstallCustomChartsAsync()
     {
+        await InstallCustomChartsFromGuideAsync(confirmBeforeInstall: true);
+    }
+
+    public async System.Threading.Tasks.Task InstallCustomChartsFromGuideAsync(bool confirmBeforeInstall = false)
+    {
         if (string.IsNullOrWhiteSpace(_configService.Config.GamePath) || !Directory.Exists(_configService.Config.GamePath))
         {
             _notificationService?.ShowFailure("一键安装自制谱", "游戏路径未设置");
@@ -771,7 +776,7 @@ public partial class SettingsViewModel : ObservableObject
             return;
         }
 
-        if (!await ConfirmCustomChartInstallerAsync())
+        if (confirmBeforeInstall && !await ConfirmCustomChartInstallerAsync())
             return;
 
         await DownloadAndExtractCustomChartInstallerAsync();

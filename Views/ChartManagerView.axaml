@@ -1465,7 +1465,7 @@
                     </Grid>
 
                     <!-- 中间区域 -->
-                    <Panel Grid.Row="1">
+                    <Grid Grid.Row="1" MinHeight="0">
                         <!-- 状态 A：工具箱首页 -->
                         <Grid IsVisible="{Binding !IsShowingDeduplication}" ColumnDefinitions="*,*" ColumnSpacing="20" Margin="10,20">
                             <!-- 清理损坏谱面 -->
@@ -1514,17 +1514,17 @@
                         </Grid>
 
                         <!-- 状态 B：查重面板 -->
-                        <Grid IsVisible="{Binding IsShowingDeduplication}" RowDefinitions="Auto,*" RowSpacing="12" Margin="0,10">
+                        <Grid IsVisible="{Binding IsShowingDeduplication}" RowDefinitions="*" RowSpacing="12" Margin="0,10" MinHeight="0">
                             <!-- 正在扫描加载中 -->
-                            <StackPanel Grid.Row="1" IsVisible="{Binding IsDeduplicationRunning}" VerticalAlignment="Center" Spacing="12">
+                            <StackPanel IsVisible="{Binding IsDeduplicationRunning}" VerticalAlignment="Center" Spacing="12">
                                 <ProgressBar IsIndeterminate="True" Width="150" Height="4" Foreground="#FF8EBE" Background="#26FFFFFF" CornerRadius="2" HorizontalAlignment="Center"/>
                                 <TextBlock Text="{Binding [Str_420], Source={x:Static i18n:I18nService.Instance}}" FontSize="13" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center"/>
                             </StackPanel>
 
                             <!-- 扫描结果内容 -->
-                            <Grid Grid.Row="1" IsVisible="{Binding !IsDeduplicationRunning}" RowDefinitions="*,Auto" RowSpacing="12">
+                            <Grid IsVisible="{Binding !IsDeduplicationRunning}" RowDefinitions="*,Auto" RowSpacing="12" MinHeight="0">
                                 <!-- 结果列表 -->
-                                <Border Grid.Row="0" Background="#1C151B" CornerRadius="10" Padding="12">
+                                <Border Grid.Row="0" Background="#1C151B" CornerRadius="10" Padding="12" MinHeight="0">
                                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                                         <Panel>
                                             <!-- 空状态 -->
@@ -1597,7 +1597,7 @@
                                 </StackPanel>
                             </Grid>
                         </Grid>
-                    </Panel>
+                    </Grid>
 
                     <!-- 底部就绪状态信息 -->
                     <Border Grid.Row="2" BorderBrush="#20FFFFFF" BorderThickness="0,1,0,0" Padding="0,8,0,0">

@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="MdModManager.Views.MessageBox"
         Title="{Binding [Str_167], Source={x:Static i18n:I18nService.Instance}}"
-        Width="400" Height="180"
+        Width="400" Height="220"
         MinWidth="400" MinHeight="180"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
@@ -10,10 +10,9 @@
         Foreground="{DynamicResource ThemeTextMainBrush}"
         SystemDecorations="Full">
 
-    <Grid RowDefinitions="Auto, Auto, Auto" Margin="24" VerticalAlignment="Center">
+    <Grid RowDefinitions="*, Auto, Auto, Auto" Margin="24">
         <!-- 提示文本 -->
         <ScrollViewer Grid.Row="0"
-                      MaxHeight="260"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
             <TextBlock x:Name="MessageText"
@@ -26,8 +25,17 @@
                        TextAlignment="Center"/>
         </ScrollViewer>
 
+        <TextBlock x:Name="MessageFooterText"
+                   Grid.Row="1"
+                   IsVisible="False"
+                   TextWrapping="Wrap"
+                   FontSize="14"
+                   TextAlignment="Center"
+                   HorizontalAlignment="Center"
+                   Margin="0,12,0,0"/>
+
         <Border x:Name="MessageImageHost"
-                Grid.Row="1"
+                Grid.Row="2"
                 IsVisible="False"
                 Margin="0,16,0,0"
                 CornerRadius="12"
@@ -41,7 +49,7 @@
         </Border>
 
         <!-- 底部按钮区 -->
-        <StackPanel Grid.Row="2"
+        <StackPanel Grid.Row="3"
                     Orientation="Horizontal"
                     Spacing="16"
                     HorizontalAlignment="Center"
