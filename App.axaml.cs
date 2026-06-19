@@ -147,6 +147,7 @@ public partial class App : Application
         services.AddTransient<AlbumDetailViewModel>();
         services.AddTransient<CommunityCategoryDetailViewModel>();
         services.AddTransient<EuterpeViewModel>();
+        services.AddTransient<OnlineLobbyViewModel>();
 
         // Services
         services.AddSingleton<IConfigService, ConfigService>();
@@ -171,6 +172,7 @@ public partial class App : Application
         services.AddSingleton<ISponsorService, SponsorService>();
         services.AddSingleton<IAlbumCollectionService, AlbumCollectionService>();
         services.AddSingleton<IMirrorDomainService, MirrorDomainService>();
+        services.AddSingleton<IEnsembleLobbyService, EnsembleLobbyService>();
 
         services.AddSingleton<AuthState>();
         services.AddSingleton<IAuthService, AuthService>();

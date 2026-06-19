@@ -285,6 +285,8 @@ public partial class MainWindowViewModel : ObservableObject
             await cuvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is EuterpeViewModel etvm)
             await etvm.InitializeAsync(_currentPageCts.Token);
+        else if (CurrentPage is OnlineLobbyViewModel olvm)
+            await olvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is WelcomeViewModel wvm)
             await wvm.InitializeAsync();
         else if (CurrentPage is SponsorViewModel spvm)
@@ -958,6 +960,8 @@ public partial class MainWindowViewModel : ObservableObject
             chartVm.Dispose();
         else if (CurrentPage is EuterpeViewModel etVm)
             etVm.Dispose();
+        else if (CurrentPage is OnlineLobbyViewModel onlineLobbyVm)
+            onlineLobbyVm.Dispose();
         else if (CurrentPage is AccountViewModel accountVm)
             accountVm.Cleanup(); // 离开账号页时释放多余记录，节省内存
         else if (CurrentPage is SponsorViewModel sponsorVm)
@@ -1061,6 +1065,17 @@ public partial class MainWindowViewModel : ObservableObject
         IsChartDownloadMenuExpanded = true;
 
         var vm = Ioc.Default.GetRequiredService<EuterpeViewModel>();
+        CurrentPage = vm;
+        await vm.InitializeAsync(_currentPageCts!.Token);
+    }
+
+    [RelayCommand]
+    private async Task NavigateToOnlineLobbyAsync()
+    {
+        CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false;
+
+        var vm = Ioc.Default.GetRequiredService<OnlineLobbyViewModel>();
         CurrentPage = vm;
         await vm.InitializeAsync(_currentPageCts!.Token);
     }

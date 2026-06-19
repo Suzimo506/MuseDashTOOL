@@ -133,8 +133,21 @@ public class AppConfig
     // 是否不再提醒配置文件界面教程
     public bool SuppressConfigManagerTutorial { get; set; } = false;
 
+    // 喵斯兔联机大厅显示名
+    public string OnlineLobbyDisplayName { get; set; } = "喵斯兔玩家";
+
+    // Ensemble 联机节点备用列表
+    public System.Collections.Generic.List<EnsembleLobbyNodeConfig> EnsembleLobbyNodes { get; set; } = new();
+
     // 上次运行的版本号
     public string LastRunVersion { get; set; } = "";
+}
+
+public class EnsembleLobbyNodeConfig
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Address { get; set; } = "";
 }
 
 
@@ -231,4 +244,6 @@ public class NoticeInfo
 [JsonSerializable(typeof(System.Collections.Generic.List<SponsorInfo>))]
 [JsonSerializable(typeof(MdModManager.Services.ChartIndexEntry))]
 [JsonSerializable(typeof(System.Collections.Generic.List<MdModManager.Services.ChartIndexEntry>))]
+[JsonSerializable(typeof(EnsembleLobbyNodeConfig))]
+[JsonSerializable(typeof(System.Collections.Generic.List<EnsembleLobbyNodeConfig>))]
 internal partial class AppJsonContext : JsonSerializerContext { }

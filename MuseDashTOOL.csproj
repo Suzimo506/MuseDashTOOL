@@ -62,6 +62,10 @@
     <PackageReference Include="System.Reactive" Version="6.1.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MuseDashEnsemble\MDEN\MDEN.Protocol\MDEN.Protocol.csproj" />
+  </ItemGroup>
 </Project>
 
 <!-- v1.4.8.3 -->

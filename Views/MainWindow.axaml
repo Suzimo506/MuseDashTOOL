@@ -211,7 +211,6 @@
                                         <TextBlock Text="{Binding [Str_064], Source={x:Static i18n:I18nService.Instance}}" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
                                     </StackPanel>
                                 </Button>
-                                
                                 <!-- 展开状态下的“谱面下载”二级悬浮卡片 -->
                                 <Grid Name="ChartDownloadContainerExpanded" Height="40" ClipToBounds="False" ZIndex="10" IsVisible="{Binding IsSidebarExpanded}">
                                     <Border Background="{Binding FloatingPanelBackground}"
@@ -306,6 +305,15 @@
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
+
+                                <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToOnlineLobbyCommand}" IsVisible="{Binding !IsChartDownloadMenuExpanded}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <PathIcon Data="M512 128a128 128 0 0 1 128 128 128 128 0 0 1-96 123.947V448h160a96 96 0 0 1 96 96v100.053A128 128 0 1 1 704 768a128 128 0 0 1 32-84.907V544a32 32 0 0 0-32-32H544v172.053A128 128 0 1 1 448 684.053V512H288a32 32 0 0 0-32 32v139.093A128 128 0 1 1 160 644.053V544a96 96 0 0 1 96-96h192v-68.053A128 128 0 0 1 384 256a128 128 0 0 1 128-128z"
+                                                  Width="18" Height="18"
+                                                  Foreground="{DynamicResource NavButtonMainBrush}"/>
+                                        <TextBlock Text="联机大厅" LetterSpacing="{Binding NavButtonLetterSpacing}" IsVisible="{Binding IsSidebarExpanded}"/>
+                                    </StackPanel>
+                                </Button>
 
                                 <Button Classes="NavBtn" Classes.collapsed="{Binding !IsSidebarExpanded}" Command="{Binding NavigateToConfigManagerCommand}" IsVisible="{Binding !IsChartDownloadMenuExpanded}">
                                     <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">

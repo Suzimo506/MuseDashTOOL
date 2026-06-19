@@ -1,0 +1,334 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:models="using:MdModManager.Models"
+             xmlns:conv="using:MdModManager.Converters"
+             x:Class="MdModManager.Views.OnlineLobbyView"
+             x:DataType="vm:OnlineLobbyViewModel">
+
+    <UserControl.Resources>
+        <conv:AccuracyColorConverter x:Key="AccuracyColorConverter"/>
+
+        <ControlTheme x:Key="LobbyCardButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder"
+                            Background="{DynamicResource CardBgBrush}"
+                            BorderBrush="{DynamicResource FloatingPanelBorder}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="14,12">
+                        <ContentPresenter Content="{TemplateBinding Content}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBorder">
+                <Setter Property="Background" Value="{DynamicResource CardHoverBgBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBorder">
+                <Setter Property="RenderTransform" Value="scale(0.99)"/>
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*" RowSpacing="18">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="16">
+            <StackPanel Spacing="4">
+                <TextBlock Text="联机大厅"
+                           FontSize="28"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                <TextBlock Text="{Binding StatusText}"
+                           FontSize="13"
+                           Foreground="{DynamicResource ThemeTextSubBrush}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBox Width="180"
+                         MaxLength="5"
+                         Watermark="喵斯兔名字"
+                         Text="{Binding DisplayName, Mode=TwoWay}"/>
+                <Button Command="{Binding SaveDisplayNameCommand}"
+                        Height="36"
+                        Padding="14,0"
+                        Background="{DynamicResource ThemeAccentBrush}"
+                        Foreground="White">
+                    <TextBlock Text="保存"/>
+                </Button>
+                <Button Command="{Binding RefreshCommand}"
+                        Height="36"
+                        Padding="14,0"
+                        Background="{DynamicResource ControlBgBrush}"
+                        BorderBrush="{DynamicResource ControlBorderBrush}">
+                    <TextBlock Text="刷新"/>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1" ColumnDefinitions="360,*" ColumnSpacing="18">
+            <Border Background="{DynamicResource FloatingPanelBackground}"
+                    BorderBrush="{DynamicResource FloatingPanelBorder}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Nodes}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:EnsembleLobbyNode">
+                                <Border BorderBrush="{DynamicResource FloatingPanelBorder}"
+                                        BorderThickness="0,0,0,1"
+                                        Padding="0,0,0,14"
+                                        Margin="0,0,0,14">
+                                    <Grid RowDefinitions="Auto,*" RowSpacing="8">
+                                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="16"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                                <TextBlock Text="{Binding Address}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+
+                                            <Border Grid.Column="1"
+                                                    CornerRadius="8"
+                                                    Padding="8,3"
+                                                    Background="#12000000"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding RoomCountText}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                            </Border>
+
+                                            <Border Grid.Column="2"
+                                                    CornerRadius="8"
+                                                    Padding="8,3"
+                                                    Background="{DynamicResource ControlBgBrush}"
+                                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                                    BorderThickness="1"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding StatusText}"
+                                                           FontSize="11"
+                                                           Foreground="{Binding StatusBrush}"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <TextBlock Grid.Row="1"
+                                                   Text="暂无房间"
+                                                   IsVisible="{Binding !HasRooms}"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                                   Margin="0,4,0,0"/>
+
+                                        <ScrollViewer Grid.Row="1"
+                                                      MaxHeight="340"
+                                                      IsVisible="{Binding HasRooms}"
+                                                      VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl ItemsSource="{Binding Rooms}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:EnsembleLobbyRoom">
+                                                        <Button Theme="{StaticResource LobbyCardButton}"
+                                                                Command="{Binding $parent[UserControl].DataContext.SelectRoomCommand}"
+                                                                CommandParameter="{Binding}"
+                                                                Margin="0,0,0,6">
+                                                            <StackPanel Spacing="6">
+                                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                                                    <TextBlock Text="{Binding Name}"
+                                                                               FontSize="14"
+                                                                               FontWeight="SemiBold"
+                                                                               Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                                               TextTrimming="CharacterEllipsis"/>
+                                                                    <TextBlock Grid.Column="1"
+                                                                               Text="{Binding StatusText}"
+                                                                               FontSize="12"
+                                                                               Foreground="{Binding StatusBrush}"/>
+                                                                </Grid>
+                                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                                                    <TextBlock Text="{Binding HostName, StringFormat=房主 {0}}"
+                                                                               FontSize="12"
+                                                                               Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                                               TextTrimming="CharacterEllipsis"/>
+                                                                    <TextBlock Grid.Column="1"
+                                                                               Text="{Binding PlayerCountText}"
+                                                                               FontSize="12"
+                                                                               Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                                                </Grid>
+                                                                <WrapPanel>
+                                                                    <Border CornerRadius="6" Padding="7,3" Margin="0,0,6,0" Background="#18F25D9C">
+                                                                        <TextBlock Text="{Binding PlaylistText, StringFormat=歌单 {0}}" FontSize="11" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                                                    </Border>
+                                                                    <Border CornerRadius="6" Padding="7,3" Margin="0,0,6,0" Background="#12000000">
+                                                                        <TextBlock Text="{Binding PrivacyText}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                                                    </Border>
+                                                                </WrapPanel>
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Background="{DynamicResource FloatingPanelBackground}"
+                    BorderBrush="{DynamicResource FloatingPanelBorder}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="18">
+                <Grid RowDefinitions="Auto,*">
+                    <Grid IsVisible="{Binding !HasSelectedRoom}"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center">
+                        <TextBlock Text="选择一个房间查看详情"
+                                   FontSize="18"
+                                   Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                    </Grid>
+
+                    <Grid IsVisible="{Binding HasSelectedRoom}"
+                          RowDefinitions="Auto,*"
+                          RowSpacing="14">
+                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="{Binding SelectedRoom.Name}"
+                                           FontSize="22"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                <TextBlock Text="{Binding SelectedRoom.CurrentBattleEntry}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="4" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding SelectedRoom.StatusText}"
+                                           FontSize="14"
+                                           Foreground="{Binding SelectedRoom.StatusBrush}"
+                                           HorizontalAlignment="Right"/>
+                                 <TextBlock Text="{Binding SelectedRoom.PlaylistText, StringFormat=歌单 {0}}"
+                                            FontSize="12"
+                                            Foreground="{DynamicResource ThemeTextSubBrush}"
+                                            HorizontalAlignment="Right"/>
+                                 <TextBlock Text="{Binding SelectedRoom.WatcherText}"
+                                            FontSize="11"
+                                            Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                            HorizontalAlignment="Right"/>
+                             </StackPanel>
+                         </Grid>
+
+                        <Grid Grid.Row="1" ColumnDefinitions="1.2*,0.8*" ColumnSpacing="16">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding SelectedRoom.Players}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="models:EnsembleLobbyPlayer">
+                                            <Border Background="{DynamicResource CardBgBrush}"
+                                                    BorderBrush="{DynamicResource FloatingPanelBorder}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="14,12"
+                                                    Margin="0,0,0,10">
+                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                                                    <StackPanel Spacing="5">
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   FontSize="15"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource ThemeTextMainBrush}"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding CharacterText}"
+                                                                   FontSize="12"
+                                                                   Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                                        <TextBlock Text="{Binding JudgeText}"
+                                                                   FontSize="11"
+                                                                   Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="4">
+                                                        <TextBlock Text="{Binding AccuracyText}"
+                                                                   FontSize="18"
+                                                                   FontWeight="Bold"
+                                                                   HorizontalAlignment="Right"
+                                                                   Foreground="{Binding AccuracyText, Converter={StaticResource AccuracyColorConverter}}"/>
+                                                        <TextBlock Text="{Binding ScoreText}"
+                                                                   FontSize="12"
+                                                                   Foreground="{DynamicResource ThemeTextSubBrush}"
+                                                                   HorizontalAlignment="Right"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <Grid Grid.Column="1" RowDefinitions="*,Auto" RowSpacing="12">
+                                <Border Background="{DynamicResource CardBgBrush}"
+                                        BorderBrush="{DynamicResource FloatingPanelBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="12">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding SelectedRoom.Chats}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="models:EnsembleLobbyChat">
+                                                    <Border Background="#10000000"
+                                                            CornerRadius="8"
+                                                            Padding="10,8"
+                                                            Margin="0,0,0,8">
+                                                        <TextBlock Text="{Binding DisplayText}"
+                                                                   FontSize="12"
+                                                                   TextWrapping="Wrap"
+                                                                   Foreground="{Binding MessageBrush}"/>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+ 
+                                 <StackPanel Grid.Row="1" Spacing="8">
+                                     <TextBlock Text="将信息发送至游戏内聊天框"
+                                                FontSize="11"
+                                                Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                                     <ItemsControl ItemsSource="{Binding Phrases}">
+                                         <ItemsControl.ItemTemplate>
+                                             <DataTemplate>
+                                                <Button Command="{Binding $parent[UserControl].DataContext.SendPhraseCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        IsEnabled="{Binding $parent[UserControl].DataContext.CanSendPhrase}"
+                                                        HorizontalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Left"
+                                                        Padding="12,8"
+                                                        CornerRadius="8"
+                                                        Background="{DynamicResource ControlBgBrush}"
+                                                        BorderBrush="{DynamicResource ControlBorderBrush}">
+                                                    <TextBlock Text="{Binding}"
+                                                               TextWrapping="Wrap"
+                                                               FontSize="12"
+                                                               Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="{Binding CooldownText}"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
