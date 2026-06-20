@@ -84,6 +84,28 @@ public static class MuseDashAccountService
         return $"精灵#{uid}";
     }
 
+    private static string GetDifficultyName(int difficulty)
+    {
+        return difficulty switch
+        {
+            0 => "Easy",
+            1 => "Hard",
+            2 => "Master",
+            3 => "Hidden",
+            4 => "Extra",
+            _ => "?"
+        };
+    }
+
+    private static string FormatLevel(string? level)
+    {
+        var value = level?.Trim();
+        if (string.IsNullOrWhiteSpace(value)) return "Lv.?";
+        return value.StartsWith("Lv.", StringComparison.OrdinalIgnoreCase)
+            ? value
+            : $"Lv.{value}";
+    }
+
     private static System.Collections.Generic.Dictionary<string, (string Name, string Author, string CoverUrl, string[] Levels)>? _songInfoCache = null;
 
     private static async Task EnsureSongCacheAsync()
@@ -319,10 +341,9 @@ public static class MuseDashAccountService
                     string charName = GetCharacterName(p.CharacterUid);
                     string elfinName = GetElfinName(p.ElfinUid);
 
-                    string difficultyStr = p.Difficulty switch {
-                        1 => "Easy", 2 => "Hard", 3 => "Master", 4 => "Hidden", _ => "?"
-                    };
-                    string lvl = p.Level != null ? $"Lv.{p.Level}" : "Lv.?";
+                    var difficultyIndex = p.Difficulty ?? -1;
+                    string difficultyStr = GetDifficultyName(difficultyIndex);
+                    string lvl = FormatLevel(p.Level);
 
                     string songName = "";
                     string songAuthor = "";
@@ -334,10 +355,12 @@ public static class MuseDashAccountService
                         songAuthor = songInfo.Author;
                         songCover = songInfo.CoverUrl;
 
-                        int diffIdx = p.Difficulty ?? 0;
-                        if (diffIdx > 0) diffIdx--;
-                        if (songInfo.Levels.Length > diffIdx)
-                            lvl = $"Lv.{songInfo.Levels[diffIdx]}";
+                        if (string.IsNullOrWhiteSpace(p.Level) &&
+                            difficultyIndex >= 0 &&
+                            songInfo.Levels.Length > difficultyIndex)
+                        {
+                            lvl = FormatLevel(songInfo.Levels[difficultyIndex]);
+                        }
                     }
                     else if (!string.IsNullOrEmpty(p.SongName))
                     {
@@ -351,7 +374,7 @@ public static class MuseDashAccountService
                     // 解析难度等级数值用于排序
                     int rawDiff = 0;
                     if (lvl.StartsWith("Lv.") && int.TryParse(lvl[3..], out var parsedLvl))
-                        rawDiff = (p.Difficulty ?? 0) * 100 + parsedLvl;
+                        rawDiff = Math.Max(difficultyIndex, 0) * 100 + parsedLvl;
 
                     data.RecentPlays.Add(new PlayerSongRecord
                     {

@@ -766,13 +766,14 @@ public partial class MainWindowViewModel : ObservableObject
         if (_configService == null || _gamePathService == null)
             return;
 
-        if (_configService.Config.HasHandledNewUserRequiredModsGuide)
+        if (_configService.Config.HasShownOneClickCustomChartsGuide)
             return;
 
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrWhiteSpace(gamePath) || !_gamePathService.IsValidGamePath(gamePath))
             return;
 
+        _configService.Config.HasShownOneClickCustomChartsGuide = true;
         _configService.Config.HasHandledNewUserRequiredModsGuide = true;
         await _configService.SaveAsync();
 
@@ -1271,7 +1272,7 @@ public partial class MainWindowViewModel : ObservableObject
     // ──────────────────────────────────────────────────────────
 
     /// <summary>当前程序版本号（与 UpdateService.CurrentVersion 保持一致）</summary>
-    private const string CurrentAppVersion = "1.4.8.3";
+    private const string CurrentAppVersion = "1.4.9";
 
     /// <summary>初始化所有红点提示状态</summary>
     private void InitializeBadges()

@@ -195,25 +195,55 @@ public partial class WelcomeViewModel : ViewModelBase
             // 统计谱面数量
             try
             {
-                var chartsDir = Path.Combine(gamePath, "Custom_Albums");
-                if (Directory.Exists(chartsDir))
-                {
-                    var count = Directory.GetFiles(chartsDir, "*.mdm").Length;
-                    foreach (var subDir in Directory.GetDirectories(chartsDir))
-                    {
-                        if (File.Exists(Path.Combine(subDir, "pack.json")))
-                        {
-                            count += Directory.GetFiles(subDir, "*.mdm").Length;
-                        }
-                    }
-                    TotalCharts = count;
-                }
+                var customAlbumsDir = Path.Combine(gamePath, "Custom_Albums");
+                var libraryDir = Path.Combine(gamePath, "CustomAlbums_Library");
+                TotalCharts = CountMdmFilesRecursively(customAlbumsDir) + CountMdmFilesRecursively(libraryDir);
             }
             catch
             {
                 // 目录访问失败时保持默认值
             }
         });
+    }
+
+    private static int CountMdmFilesRecursively(string rootDir)
+    {
+        if (string.IsNullOrWhiteSpace(rootDir) || !Directory.Exists(rootDir))
+        {
+            return 0;
+        }
+
+        var count = 0;
+        var pendingDirs = new System.Collections.Generic.Stack<string>();
+        pendingDirs.Push(rootDir);
+
+        while (pendingDirs.Count > 0)
+        {
+            var currentDir = pendingDirs.Pop();
+
+            try
+            {
+                count += Directory.EnumerateFiles(currentDir, "*.mdm", SearchOption.TopDirectoryOnly).Count();
+            }
+            catch
+            {
+                // 单个目录读不到时跳过，不影响其它目录统计
+            }
+
+            try
+            {
+                foreach (var subDir in Directory.EnumerateDirectories(currentDir))
+                {
+                    pendingDirs.Push(subDir);
+                }
+            }
+            catch
+            {
+                // 单个目录枚举失败时跳过
+            }
+        }
+
+        return count;
     }
 
     // 快捷导航命令

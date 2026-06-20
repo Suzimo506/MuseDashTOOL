@@ -14,10 +14,12 @@ public interface IEnsembleLobbyService : IDisposable
 {
     event Action<string, MdtLobbySnapshot>? SnapshotReceived;
     event Action<string, int, MdtChatMessageEntry>? ChatReceived;
+    event Action<string, int, MdtViewerChatMessageEntry>? ViewerChatReceived;
     event Action<string, string, bool>? NodeStatusChanged;
     Task<IReadOnlyList<EnsembleLobbyNodeConfig>> GetNodesAsync(CancellationToken ct);
     Task ConnectAsync(EnsembleLobbyNodeConfig node, string displayName, CancellationToken ct);
     Task<MdtChatResponse> SendPhraseAsync(string nodeId, int lobbyId, string senderName, int phraseIndex, CancellationToken ct);
+    Task<MdtViewerChatResponse> SendViewerChatAsync(string nodeId, int lobbyId, string senderName, string message, CancellationToken ct);
     Task WatchLobbyAsync(string nodeId, int? lobbyId, CancellationToken ct);
     Task DisconnectAllAsync();
 }
@@ -31,6 +33,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
 
     public event Action<string, MdtLobbySnapshot>? SnapshotReceived;
     public event Action<string, int, MdtChatMessageEntry>? ChatReceived;
+    public event Action<string, int, MdtViewerChatMessageEntry>? ViewerChatReceived;
     public event Action<string, string, bool>? NodeStatusChanged;
 
     public EnsembleLobbyService(IConfigService configService)
@@ -116,6 +119,24 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
             ct).ConfigureAwait(false) ?? throw new InvalidOperationException("服务端响应为空");
     }
 
+    public async Task<MdtViewerChatResponse> SendViewerChatAsync(string nodeId, int lobbyId, string senderName, string message, CancellationToken ct)
+    {
+        if (!_connections.TryGetValue(nodeId, out var connection) || !connection.IsConnected)
+        {
+            throw new InvalidOperationException("节点未连接");
+        }
+
+        return await connection.SendRequestAsync<MdtViewerChatRequest, MdtViewerChatResponse>(
+            OpCodes.MdtViewerChatReq,
+            new MdtViewerChatRequest
+            {
+                LobbyId = lobbyId,
+                SenderName = senderName,
+                Message = message
+            },
+            ct).ConfigureAwait(false) ?? throw new InvalidOperationException("服务端响应为空");
+    }
+
     public async Task WatchLobbyAsync(string nodeId, int? lobbyId, CancellationToken ct)
     {
         if (!_connections.TryGetValue(nodeId, out var connection) || !connection.IsConnected)
@@ -192,6 +213,14 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
                 if (push?.Message != null)
                 {
                     ChatReceived?.Invoke(nodeId, push.LobbyId, push.Message);
+                }
+            }
+            else if (opCode == OpCodes.MdtViewerChatPush)
+            {
+                var push = payload.Deserialize(EnsembleProtocolJsonContext.Default.MdtViewerChatPush);
+                if (push?.Message != null)
+                {
+                    ViewerChatReceived?.Invoke(nodeId, push.LobbyId, push.Message);
                 }
             }
         }
@@ -505,6 +534,9 @@ internal partial class EnsembleServerListJsonContext : JsonSerializerContext { }
 [JsonSerializable(typeof(ServerEnvelope))]
 [JsonSerializable(typeof(MdtLobbySnapshotPush))]
 [JsonSerializable(typeof(MdtChatPush))]
+[JsonSerializable(typeof(MdtViewerChatPush))]
 [JsonSerializable(typeof(MdtWatchLobbyRequest))]
 [JsonSerializable(typeof(MdtWatchLobbyResponse))]
+[JsonSerializable(typeof(MdtViewerChatRequest))]
+[JsonSerializable(typeof(MdtViewerChatResponse))]
 internal partial class EnsembleProtocolJsonContext : JsonSerializerContext { }

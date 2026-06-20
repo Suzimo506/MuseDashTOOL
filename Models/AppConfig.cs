@@ -82,6 +82,9 @@ public class AppConfig
     /// <summary>是否已处理新用户必备模组安装指引</summary>
     public bool HasHandledNewUserRequiredModsGuide { get; set; } = false;
 
+    /// <summary>是否已展示过一键安装自制谱必备模组指引</summary>
+    public bool HasShownOneClickCustomChartsGuide { get; set; } = false;
+
     /// <summary>已屏蔽（不再显示）的公告 ID 列表</summary>
     public System.Collections.Generic.List<string> SuppressedAnnouncements { get; set; } = new();
 
@@ -126,6 +129,9 @@ public class AppConfig
 
     // 是否不再提醒谱面管理界面教程
     public bool SuppressChartManagerTutorial { get; set; } = false;
+
+    // 是否不再提醒谱面迁移教程
+    public bool SuppressChartMigrationTutorial { get; set; } = false;
 
     // 是否不再提醒QQ群谱面界面教程
     public bool SuppressAlbumCollectionTutorial { get; set; } = false;

@@ -783,10 +783,10 @@
                                                     <TextBlock Text="New" FontSize="10" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                                                 </Border>
                                                 <!-- 分类标签叠加 (长度自适应，超过4个字自动滚动) -->
-                                                <Border IsVisible="{Binding CategoryName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" 
+                                                <Border IsVisible="{Binding CandidateDisplayCategory, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" 
                                                         Background="#281423" BorderBrush="#FF8EBE" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="0,0,6,6" 
                                                         HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="20">
-                                                    <controls:MarqueeText Text="{Binding CategoryName}"
+                                                    <controls:MarqueeText Text="{Binding CandidateDisplayCategory}"
                                                                           FontSize="10" FontWeight="Bold"
                                                                           Foreground="#FFE0EF"
                                                                           MaxWidth="52"
@@ -1428,7 +1428,7 @@
                     BorderBrush="#FF8EBE" 
                     BorderThickness="1.5" 
                     CornerRadius="16" 
-                    Width="600" 
+                    Width="760" 
                     MaxHeight="500"
                     Padding="24"
                     HorizontalAlignment="Center" 
@@ -1467,7 +1467,7 @@
                     <!-- 中间区域 -->
                     <Grid Grid.Row="1" MinHeight="0">
                         <!-- 状态 A：工具箱首页 -->
-                        <Grid IsVisible="{Binding !IsShowingDeduplication}" ColumnDefinitions="*,*" ColumnSpacing="20" Margin="10,20">
+                        <Grid IsVisible="{Binding !IsShowingDeduplication}" ColumnDefinitions="*,*,*" ColumnSpacing="18" Margin="10,20">
                             <!-- 清理损坏谱面 -->
                             <Button Grid.Column="0" Command="{Binding CleanUpBrokenChartsCommand}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="12" Cursor="Hand">
                                 <Button.Background>
@@ -1509,6 +1509,28 @@
                                               Foreground="#FF8EBE" Width="36" Height="36" HorizontalAlignment="Center"/>
                                     <TextBlock Text="{Binding [Str_414], Source={x:Static i18n:I18nService.Instance}}" FontSize="15" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
                                     <TextBlock Text="{Binding [Str_437], Source={x:Static i18n:I18nService.Instance}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- 一键转移到候选区 -->
+                            <Button Grid.Column="2" Command="{Binding MoveCustomAlbumsToLibraryCommand}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="12" Cursor="Hand">
+                                <Button.Background>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                        <GradientStop Color="#4A2535" Offset="0"/>
+                                        <GradientStop Color="#2A1520" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Button.Background>
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Opacity" Value="0.9"/>
+                                        <Setter Property="RenderTransform" Value="scale(1.02)"/>
+                                    </Style>
+                                </Button.Styles>
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
+                                    <PathIcon Data="M512 96l192 192H576v224H448V288H320L512 96zM192 576h128v96h384v-96h128v224H192V576z" 
+                                              Foreground="#FF8EBE" Width="36" Height="36" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="转移到候选区" FontSize="15" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="保留分类并移动 Custom_Albums 谱面" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="180"/>
                                 </StackPanel>
                             </Button>
                         </Grid>
@@ -1662,3 +1684,5 @@
         </Border>
     </Panel>
 </UserControl>
+
+

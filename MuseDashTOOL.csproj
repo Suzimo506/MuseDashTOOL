@@ -10,9 +10,9 @@
     <RootNamespace>MdModManager</RootNamespace>
     <AssemblyName>MuseDashTOOL</AssemblyName>
     <ApplicationIcon>Assets\MuseDashTOOL.ico</ApplicationIcon>
-    <Version>1.4.8.3</Version>
-    <AssemblyVersion>1.4.8.3</AssemblyVersion>
-    <FileVersion>1.4.8.3</FileVersion>
+    <Version>1.4.9</Version>
+    <AssemblyVersion>1.4.9</AssemblyVersion>
+    <FileVersion>1.4.9</FileVersion>
     <PublishSingleFile>true</PublishSingleFile>
     <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>true</SelfContained>
@@ -25,6 +25,7 @@
     <PublishDir>publish_output\</PublishDir>
     <OptimizationPreference>Size</OptimizationPreference>
     <StripSymbols>true</StripSymbols>
+    <NoWarn>$(NoWarn);NU1900</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -68,4 +69,4 @@
   </ItemGroup>
 </Project>
 
-<!-- v1.4.8.3 -->
+<!-- v1.4.9 -->

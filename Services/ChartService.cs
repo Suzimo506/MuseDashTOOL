@@ -41,21 +41,36 @@ public class ChartService : IChartService
     {
         _brokenCharts.Clear();
         var albumsDir = Path.Combine(gamePath, "Custom_Albums");
-        if (!Directory.Exists(albumsDir))
-            yield break;
-
+        var libraryDir = Path.Combine(gamePath, "CustomAlbums_Library");
         var allFiles = new List<string>();
-        // 1. Root .mdm files (Unclassified)
-        allFiles.AddRange(Directory.GetFiles(albumsDir, "*.mdm"));
+        var candidateFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // 2. Subdirectories with pack.json (Classifications)
-        foreach (var subDir in Directory.GetDirectories(albumsDir))
+        if (Directory.Exists(albumsDir))
         {
-            if (File.Exists(Path.Combine(subDir, "pack.json")))
+            // 1. Root .mdm files (Unclassified)
+            allFiles.AddRange(Directory.GetFiles(albumsDir, "*.mdm"));
+
+            // 2. Subdirectories with pack.json (Classifications)
+            foreach (var subDir in Directory.GetDirectories(albumsDir))
             {
-                allFiles.AddRange(Directory.GetFiles(subDir, "*.mdm"));
+                if (File.Exists(Path.Combine(subDir, "pack.json")))
+                {
+                    allFiles.AddRange(Directory.GetFiles(subDir, "*.mdm"));
+                }
             }
         }
+
+        if (Directory.Exists(libraryDir))
+        {
+            foreach (var file in Directory.GetFiles(libraryDir, "*.mdm", SearchOption.AllDirectories))
+            {
+                allFiles.Add(file);
+                candidateFiles.Add(file);
+            }
+        }
+
+        if (allFiles.Count == 0)
+            yield break;
 
         // Take the startup snapshot on the very first call, then keep it forever
         bool takeSnapshot = false;
@@ -71,7 +86,7 @@ public class ChartService : IChartService
         }
 
         // 读取轻量化持久磁盘缓存索引
-        var indexFile = Path.Combine(albumsDir, ".chart_index.json");
+        var indexFile = Path.Combine(gamePath, ".chart_manager_index.json");
         var cachedEntries = new Dictionary<string, MdModManager.Services.ChartIndexEntry>(StringComparer.OrdinalIgnoreCase);
         if (File.Exists(indexFile))
         {
@@ -158,6 +173,9 @@ public class ChartService : IChartService
                     updatedEntries.Add(entry);
                 }
 
+                info.IsLibraryCandidate = candidateFiles.Contains(file);
+                info.CandidateSubCategory = info.IsLibraryCandidate ? GetLibrarySubCategory(libraryDir, file) : string.Empty;
+
                 // Mark as new if it wasn't in the startup snapshot
                 if (!takeSnapshot &&
                     !_snapshotFilenames!.Contains(Path.GetFileName(file)))
@@ -194,6 +212,21 @@ public class ChartService : IChartService
         }
     }
 
+
+    private static string GetLibrarySubCategory(string libraryDir, string filePath)
+    {
+        try
+        {
+            var parent = Path.GetDirectoryName(filePath);
+            if (string.IsNullOrEmpty(parent)) return string.Empty;
+            var relative = Path.GetRelativePath(libraryDir, parent);
+            return relative == "." ? string.Empty : relative.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
     // 解析单个自制谱文件并返回其元数据
     public ChartInfo? LoadSingleChart(string filePath)
     {
@@ -648,3 +681,5 @@ internal sealed class DeleteOnCloseStream : Stream
         base.Dispose(disposing);
     }
 }
+
+

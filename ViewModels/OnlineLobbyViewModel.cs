@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MDEN.Protocol.Enums;
 using MDEN.Protocol.Messages.Mdt;
 using MdModManager.Models;
 using MdModManager.Services;
@@ -10,11 +12,14 @@ namespace MdModManager.ViewModels;
 
 public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 {
+    private const int MaxViewerChatLength = 80;
+
     private static readonly string[] FixedPhrases =
     {
         "龙币们放我进去好吗",
         "我也想进房间玩~",
-        "敢不敢让我进来，直接点里水里火里蛇..."
+        "敢不敢让我进来，直接点里水里火里蛇...",
+        "敢不敢让我进去把你们全超了？"
     };
 
     private readonly IEnsembleLobbyService _lobbyService;
@@ -22,20 +27,34 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     private readonly INotificationService _notificationService;
     private CancellationTokenSource? _cts;
     private DispatcherTimer? _cooldownTimer;
+    private DispatcherTimer? _viewerChatCooldownTimer;
     private string? _watchingNodeId;
     private int? _watchingLobbyId;
     private DateTimeOffset _nextAllowedSendTime = DateTimeOffset.MinValue;
+    private DateTimeOffset _nextAllowedViewerChatTime = DateTimeOffset.MinValue;
 
     [ObservableProperty] private ObservableCollection<EnsembleLobbyNode> _nodes = new();
+    [ObservableProperty] private EnsembleLobbyNode? _selectedNode;
     [ObservableProperty] private EnsembleLobbyRoom? _selectedRoom;
     [ObservableProperty] private string _displayName = "喵斯兔玩家";
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string _statusText = "未连接";
     [ObservableProperty] private string _cooldownText = "";
+    [ObservableProperty] private string _viewerChatText = "";
+    [ObservableProperty] private string _viewerChatCooldownText = "";
 
     public IReadOnlyList<string> Phrases => FixedPhrases;
+    public bool HasSelectedNode => SelectedNode != null;
+    public bool SelectedNodeHasRooms => SelectedNode?.HasRooms == true;
     public bool HasSelectedRoom => SelectedRoom != null;
     public bool CanSendPhrase => SelectedRoom?.CanSendChat == true && DateTimeOffset.Now >= _nextAllowedSendTime;
+    public bool CanSendViewerChat =>
+        SelectedRoom?.Node != null &&
+        !string.IsNullOrWhiteSpace(NormalizeViewerChatText(ViewerChatText)) &&
+        NormalizeViewerChatText(ViewerChatText).Length <= MaxViewerChatLength &&
+        DateTimeOffset.Now >= _nextAllowedViewerChatTime;
+    public string ViewerChatLengthText => $"{NormalizeViewerChatText(ViewerChatText).Length}/{MaxViewerChatLength}";
+    public bool HasViewerChatCooldownText => !string.IsNullOrWhiteSpace(ViewerChatCooldownText);
 
     public OnlineLobbyViewModel(
         IEnsembleLobbyService lobbyService,
@@ -49,6 +68,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
         _lobbyService.SnapshotReceived += OnSnapshotReceived;
         _lobbyService.ChatReceived += OnChatReceived;
+        _lobbyService.ViewerChatReceived += OnViewerChatReceived;
         _lobbyService.NodeStatusChanged += OnNodeStatusChanged;
     }
 
@@ -66,6 +86,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 SelectedRoom = null;
+                SelectedNode = null;
                 _watchingNodeId = null;
                 _watchingLobbyId = null;
                 Nodes.Clear();
@@ -80,7 +101,8 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
                     });
                 }
 
-                StatusText = Nodes.Count == 0 ? "没有可用节点" : $"发现 {Nodes.Count} 个节点";
+                SelectedNode = Nodes.FirstOrDefault();
+                UpdateLobbyStatusText();
             });
 
             foreach (var node in nodes)
@@ -110,6 +132,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     {
         _cts?.Cancel();
         SelectedRoom = null;
+        SelectedNode = null;
         _watchingNodeId = null;
         _watchingLobbyId = null;
         await _lobbyService.DisconnectAllAsync();
@@ -117,8 +140,24 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
+    private void SelectNode(EnsembleLobbyNode node)
+    {
+        if (node == null) return;
+        SelectedNode = node;
+        if (SelectedRoom?.Node != node)
+        {
+            SelectedRoom = null;
+        }
+    }
+
+    [RelayCommand]
     private void SelectRoom(EnsembleLobbyRoom room)
     {
+        if (room?.Node != null && SelectedNode != room.Node)
+        {
+            SelectedNode = room.Node;
+        }
+
         SelectedRoom = room;
     }
 
@@ -132,11 +171,28 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
+    private void OpenOnlineModDownload()
+    {
+        const string url = "https://fcnjy3gfu0iz.feishu.cn/wiki/FJm5wvF0SiWoftkOZ07cBCJKn5g";
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            _notificationService.ShowInfo("正在打开联机模组下载页");
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowFailure("打开下载页失败", ex.Message);
+        }
+    }
+
+    [RelayCommand]
     private async Task SendPhraseAsync(string phrase)
     {
-        if (SelectedRoom?.Node == null || string.IsNullOrWhiteSpace(phrase)) return;
+        var room = SelectedRoom;
+        var node = room?.Node;
+        if (room == null || node == null || string.IsNullOrWhiteSpace(phrase)) return;
 
-        if (!SelectedRoom.CanSendChat)
+        if (!room.CanSendChat)
         {
             _notificationService.ShowFailure("发送失败", "房间游戏中无法发送");
             return;
@@ -154,9 +210,14 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
         try
         {
+            await _lobbyService.WatchLobbyAsync(
+                node.Id,
+                room.Id,
+                _cts?.Token ?? CancellationToken.None).ConfigureAwait(false);
+
             var response = await _lobbyService.SendPhraseAsync(
-                SelectedRoom.Node.Id,
-                SelectedRoom.Id,
+                node.Id,
+                room.Id,
                 NormalizeDisplayName(DisplayName),
                 phraseIndex,
                 _cts?.Token ?? CancellationToken.None).ConfigureAwait(false);
@@ -176,11 +237,90 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         }
     }
 
+    [RelayCommand]
+    private async Task SendViewerChatAsync()
+    {
+        var room = SelectedRoom;
+        var node = room?.Node;
+        if (room == null || node == null) return;
+
+        var message = NormalizeViewerChatText(ViewerChatText);
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            _notificationService.ShowFailure("发送失败", "消息不能为空");
+            return;
+        }
+
+        if (message.Length > MaxViewerChatLength)
+        {
+            _notificationService.ShowFailure("发送失败", $"消息最多 {MaxViewerChatLength} 个字");
+            return;
+        }
+
+        if (DateTimeOffset.Now < _nextAllowedViewerChatTime)
+        {
+            UpdateViewerChatCooldownText();
+            _notificationService.ShowFailure("发送失败", ViewerChatCooldownText);
+            return;
+        }
+
+        try
+        {
+            await _lobbyService.WatchLobbyAsync(
+                node.Id,
+                room.Id,
+                _cts?.Token ?? CancellationToken.None).ConfigureAwait(false);
+
+            var response = await _lobbyService.SendViewerChatAsync(
+                node.Id,
+                room.Id,
+                NormalizeDisplayName(DisplayName),
+                message,
+                _cts?.Token ?? CancellationToken.None).ConfigureAwait(false);
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                _nextAllowedViewerChatTime = DateTimeOffset.FromUnixTimeMilliseconds(response.NextAllowedUnixMs);
+                ViewerChatText = "";
+                UpdateViewerChatCooldownText();
+                StartViewerChatCooldownTimer();
+            });
+        }
+        catch (Exception ex)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+                _notificationService.ShowFailure("发送失败", ex.Message));
+        }
+    }
+
+    partial void OnSelectedNodeChanged(EnsembleLobbyNode? value)
+    {
+        foreach (var node in Nodes)
+        {
+            node.IsSelected = node == value;
+        }
+
+        OnPropertyChanged(nameof(HasSelectedNode));
+        OnPropertyChanged(nameof(SelectedNodeHasRooms));
+    }
+
     partial void OnSelectedRoomChanged(EnsembleLobbyRoom? value)
     {
         OnPropertyChanged(nameof(HasSelectedRoom));
         OnPropertyChanged(nameof(CanSendPhrase));
+        OnPropertyChanged(nameof(CanSendViewerChat));
         _ = ReportWatchingRoomAsync(value);
+    }
+
+    partial void OnViewerChatTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(CanSendViewerChat));
+        OnPropertyChanged(nameof(ViewerChatLengthText));
+    }
+
+    partial void OnViewerChatCooldownTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasViewerChatCooldownText));
     }
 
     private async Task ReportWatchingRoomAsync(EnsembleLobbyRoom? room)
@@ -234,6 +374,17 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         });
     }
 
+    private void OnViewerChatReceived(string nodeId, int lobbyId, MdtViewerChatMessageEntry message)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var room = FindRoom(nodeId, lobbyId);
+            if (room == null) return;
+
+            AppendViewerChat(room, message);
+        });
+    }
+
     private void OnNodeStatusChanged(string nodeId, string status, bool isConnected)
     {
         Dispatcher.UIThread.Post(() =>
@@ -243,7 +394,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
             node.StatusText = status;
             node.IsConnected = isConnected;
-            StatusText = $"{node.Name}：{status}";
+            UpdateLobbyStatusText();
         });
     }
 
@@ -279,8 +430,62 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
             ApplyRoom(room, lobby);
         }
 
-        StatusText = $"已同步 {Nodes.Sum(item => item.Rooms.Count)} 个房间";
+        if (SelectedNode == null || !Nodes.Contains(SelectedNode))
+        {
+            SelectedNode = Nodes.FirstOrDefault();
+        }
+
+        UpdateLobbyStatusText();
+        OnPropertyChanged(nameof(SelectedNodeHasRooms));
         OnPropertyChanged(nameof(CanSendPhrase));
+        OnPropertyChanged(nameof(CanSendViewerChat));
+    }
+
+    private void UpdateLobbyStatusText()
+    {
+        var nodeCount = Nodes.Count;
+        if (nodeCount == 0)
+        {
+            StatusText = "没有可用节点";
+            return;
+        }
+
+        var roomCount = Nodes.Sum(item => item.Rooms.Count);
+        if (roomCount > 0)
+        {
+            StatusText = $"已同步 {roomCount} 个房间";
+            return;
+        }
+
+        var connectedCount = Nodes.Count(item => item.IsConnected);
+        if (connectedCount > 0)
+        {
+            StatusText = $"已连接 {connectedCount}/{nodeCount} 个节点，暂无房间";
+            return;
+        }
+
+        var connectingCount = Nodes.Count(IsConnectingNode);
+        if (connectingCount > 0)
+        {
+            StatusText = $"正在连接节点 {connectingCount}/{nodeCount}";
+            return;
+        }
+
+        var failedCount = Nodes.Count(IsFailedNode);
+        StatusText = failedCount > 0
+            ? $"暂无可用节点，{failedCount}/{nodeCount} 个连接失败"
+            : $"发现 {nodeCount} 个节点";
+    }
+
+    private static bool IsConnectingNode(EnsembleLobbyNode node)
+    {
+        var status = node.StatusText ?? "";
+        return status.Contains("连接中") || status.Contains("等待");
+    }
+
+    private static bool IsFailedNode(EnsembleLobbyNode node)
+    {
+        return (node.StatusText ?? "").Contains("连接失败");
     }
 
     private static void ApplyRoom(EnsembleLobbyRoom room, MdtLobbyEntry lobby)
@@ -297,15 +502,20 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         room.JoinLocked = lobby.JoinLocked;
         room.Locked = lobby.Locked;
         room.IsPlaying = lobby.IsPlaying;
+        room.Goal = lobby.Goal;
         room.WatcherCount = lobby.WatcherCount;
         room.CurrentBattleEntry = FormatEntry(lobby.CurrentBattleEntry);
         MergePlayers(room, lobby.Players ?? Array.Empty<MdtLobbyPlayerEntry>());
         MergeChats(room, lobby.Chats ?? Array.Empty<MdtChatMessageEntry>());
+        MergeViewerChats(room, lobby.ViewerChats ?? Array.Empty<MdtViewerChatMessageEntry>());
     }
 
     private static void MergePlayers(EnsembleLobbyRoom room, MdtLobbyPlayerEntry[] players)
     {
-        var incomingUids = players.Select(player => player.Uid).ToHashSet();
+        var incoming = players
+            .Where(player => player != null && !string.IsNullOrWhiteSpace(player.Uid))
+            .ToArray();
+        var incomingUids = incoming.Select(player => player.Uid).ToHashSet();
         for (var i = room.Players.Count - 1; i >= 0; i--)
         {
             if (!incomingUids.Contains(room.Players[i].Uid))
@@ -314,7 +524,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
             }
         }
 
-        foreach (var player in players)
+        foreach (var player in incoming)
         {
             var target = room.Players.FirstOrDefault(item => item.Uid == player.Uid);
             if (target == null)
@@ -331,6 +541,55 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
             target.ElfinIndex = player.ElfinIndex;
             target.Battle = player.Battle;
         }
+
+        ReorderPlayers(room, GetOrderedPlayerUids(room, incoming));
+    }
+
+    private static string[] GetOrderedPlayerUids(EnsembleLobbyRoom room, MdtLobbyPlayerEntry[] players)
+    {
+        IEnumerable<MdtLobbyPlayerEntry> ordered = players;
+        if (room.IsPlaying)
+        {
+            ordered = (LobbyGoal)room.Goal == LobbyGoal.Score
+                ? players
+                    .OrderBy(player => player.Battle == null)
+                    .ThenByDescending(player => player.Battle?.Alive ?? true)
+                    .ThenByDescending(player => player.Battle?.Score ?? 0u)
+                    .ThenByDescending(player => player.Battle?.Accuracy ?? 0f)
+                    .ThenBy(player => player.Name ?? player.Uid ?? "")
+                : players
+                    .OrderBy(player => player.Battle == null)
+                    .ThenByDescending(player => player.Battle?.Alive ?? true)
+                    .ThenByDescending(player => player.Battle?.Accuracy ?? 0f)
+                    .ThenByDescending(player => player.Battle?.Score ?? 0u)
+                    .ThenBy(player => player.Name ?? player.Uid ?? "");
+        }
+
+        return ordered
+            .Select(player => player.Uid ?? "")
+            .Where(uid => !string.IsNullOrWhiteSpace(uid))
+            .ToArray();
+    }
+
+    private static void ReorderPlayers(EnsembleLobbyRoom room, string[] orderedUids)
+    {
+        for (var targetIndex = 0; targetIndex < orderedUids.Length; targetIndex++)
+        {
+            var currentIndex = -1;
+            for (var i = targetIndex; i < room.Players.Count; i++)
+            {
+                if (room.Players[i].Uid == orderedUids[targetIndex])
+                {
+                    currentIndex = i;
+                    break;
+                }
+            }
+
+            if (currentIndex >= 0 && currentIndex != targetIndex)
+            {
+                room.Players.Move(currentIndex, targetIndex);
+            }
+        }
     }
 
     private static void MergeChats(EnsembleLobbyRoom room, IEnumerable<MdtChatMessageEntry> chats)
@@ -345,6 +604,21 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         foreach (var chat in next)
         {
             room.Chats.Add(chat);
+        }
+    }
+
+    private static void MergeViewerChats(EnsembleLobbyRoom room, IEnumerable<MdtViewerChatMessageEntry> chats)
+    {
+        var next = chats
+            .Where(chat => chat != null)
+            .OrderBy(chat => chat.TimestampUnixMs)
+            .Select(EnsembleLobbyChat.FromViewerProtocol)
+            .ToArray();
+
+        room.ViewerChats.Clear();
+        foreach (var chat in next)
+        {
+            room.ViewerChats.Add(chat);
         }
     }
 
@@ -365,6 +639,25 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         while (room.Chats.Count > 30)
         {
             room.Chats.RemoveAt(0);
+        }
+    }
+
+    private static void AppendViewerChat(EnsembleLobbyRoom room, MdtViewerChatMessageEntry message)
+    {
+        if (message == null) return;
+
+        var chat = EnsembleLobbyChat.FromViewerProtocol(message);
+        var exists = room.ViewerChats.Any(item =>
+            item.Time == chat.Time &&
+            item.SenderName == chat.SenderName &&
+            item.Message == chat.Message);
+
+        if (exists) return;
+
+        room.ViewerChats.Add(chat);
+        while (room.ViewerChats.Count > 50)
+        {
+            room.ViewerChats.RemoveAt(0);
         }
     }
 
@@ -404,12 +697,46 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private void UpdateViewerChatCooldownText()
+    {
+        var remain = _nextAllowedViewerChatTime - DateTimeOffset.Now;
+        ViewerChatCooldownText = remain.TotalMilliseconds <= 0
+            ? ""
+            : $"还需要等待 {Math.Ceiling(remain.TotalSeconds)} 秒";
+        OnPropertyChanged(nameof(CanSendViewerChat));
+    }
+
+    private void StartViewerChatCooldownTimer()
+    {
+        _viewerChatCooldownTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _viewerChatCooldownTimer.Tick -= OnViewerChatCooldownTimerTick;
+        _viewerChatCooldownTimer.Tick += OnViewerChatCooldownTimerTick;
+        _viewerChatCooldownTimer.Start();
+    }
+
+    private void OnViewerChatCooldownTimerTick(object? sender, EventArgs e)
+    {
+        UpdateViewerChatCooldownText();
+        if (DateTimeOffset.Now >= _nextAllowedViewerChatTime)
+        {
+            _viewerChatCooldownTimer?.Stop();
+        }
+    }
+
     private static string NormalizeDisplayName(string value)
     {
         var text = (value ?? "").Trim();
         if (string.IsNullOrWhiteSpace(text)) text = "喵斯兔玩家";
         text = text.Replace("\r", "").Replace("\n", "");
         return text.Length > 5 ? text[..5] : text;
+    }
+
+    private static string NormalizeViewerChatText(string value)
+    {
+        return (value ?? "")
+            .Trim()
+            .Replace("\r", "")
+            .Replace("\n", "");
     }
 
     private static string FormatEntry(string? entry)
@@ -426,6 +753,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     {
         _lobbyService.SnapshotReceived -= OnSnapshotReceived;
         _lobbyService.ChatReceived -= OnChatReceived;
+        _lobbyService.ViewerChatReceived -= OnViewerChatReceived;
         _lobbyService.NodeStatusChanged -= OnNodeStatusChanged;
         _cts?.Cancel();
         _cts?.Dispose();
@@ -433,6 +761,12 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         {
             _cooldownTimer.Stop();
             _cooldownTimer.Tick -= OnCooldownTimerTick;
+        }
+
+        if (_viewerChatCooldownTimer != null)
+        {
+            _viewerChatCooldownTimer.Stop();
+            _viewerChatCooldownTimer.Tick -= OnViewerChatCooldownTimerTick;
         }
 
         _ = _lobbyService.DisconnectAllAsync();

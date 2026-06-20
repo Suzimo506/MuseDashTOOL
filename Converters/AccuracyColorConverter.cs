@@ -14,6 +14,8 @@ public class AccuracyColorConverter : IValueConverter
     private static readonly IBrush GoldBrush = new SolidColorBrush(Color.Parse("#FFD86B"));
     private static readonly IBrush SilverBrush = new SolidColorBrush(Color.Parse("#D7DEE8"));
     private static readonly IBrush PinkBrush = new SolidColorBrush(Color.Parse("#FF6B9A"));
+    private static readonly IBrush PurpleBrush = new SolidColorBrush(Color.Parse("#B889FF"));
+    private static readonly IBrush BlueBrush = new SolidColorBrush(Color.Parse("#78A8FF"));
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
@@ -30,8 +32,10 @@ public class AccuracyColorConverter : IValueConverter
             return SilverBrush;
         if (accuracy >= 90m)
             return PinkBrush;
+        if (accuracy >= 80m)
+            return PurpleBrush;
 
-        return AvaloniaProperty.UnsetValue;
+        return BlueBrush;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

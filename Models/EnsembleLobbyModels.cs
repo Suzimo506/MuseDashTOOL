@@ -12,12 +12,19 @@ public partial class EnsembleLobbyNode : ObservableObject
     private static readonly IBrush NodeConnectedBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#66E38E"));
     private static readonly IBrush NodeConnectingBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#FFD166"));
     private static readonly IBrush NodeDisconnectedBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#FF6B8A"));
+    private static readonly IBrush NodeSelectedBackgroundBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#28F25D9C"));
+    private static readonly IBrush NodeDefaultBackgroundBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#12000000"));
+    private static readonly IBrush NodeSelectedBorderBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#F25D9C"));
+    private static readonly IBrush NodeDefaultBorderBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#3A2635"));
+    private static readonly IBrush NodeSelectedTextBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#FFFFFFFF"));
+    private static readonly IBrush NodeDefaultTextBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#F8D7EA"));
 
     [ObservableProperty] private string _id = "";
     [ObservableProperty] private string _name = "";
     [ObservableProperty] private string _address = "";
     [ObservableProperty] private string _statusText = "未连接";
     [ObservableProperty] private bool _isConnected;
+    [ObservableProperty] private bool _isSelected;
     [ObservableProperty] private ObservableCollection<EnsembleLobbyRoom> _rooms = new();
 
     public EnsembleLobbyNode()
@@ -37,9 +44,18 @@ public partial class EnsembleLobbyNode : ObservableObject
 
     public bool HasRooms => Rooms.Count > 0;
     public string RoomCountText => $"{Rooms.Count} 房间";
+    public IBrush TabBackgroundBrush => IsSelected ? NodeSelectedBackgroundBrush : NodeDefaultBackgroundBrush;
+    public IBrush TabBorderBrush => IsSelected ? NodeSelectedBorderBrush : NodeDefaultBorderBrush;
+    public IBrush TabTextBrush => IsSelected ? NodeSelectedTextBrush : NodeDefaultTextBrush;
 
     partial void OnStatusTextChanged(string value) => OnPropertyChanged(nameof(StatusBrush));
     partial void OnIsConnectedChanged(bool value) => OnPropertyChanged(nameof(StatusBrush));
+    partial void OnIsSelectedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(TabBackgroundBrush));
+        OnPropertyChanged(nameof(TabBorderBrush));
+        OnPropertyChanged(nameof(TabTextBrush));
+    }
 
     partial void OnRoomsChanging(ObservableCollection<EnsembleLobbyRoom> value)
     {
@@ -92,10 +108,12 @@ public partial class EnsembleLobbyRoom : ObservableObject
     [ObservableProperty] private bool _joinLocked;
     [ObservableProperty] private bool _locked;
     [ObservableProperty] private bool _isPlaying;
+    [ObservableProperty] private byte _goal;
     [ObservableProperty] private int _watcherCount;
     [ObservableProperty] private string _currentBattleEntry = "";
     [ObservableProperty] private ObservableCollection<EnsembleLobbyPlayer> _players = new();
     [ObservableProperty] private ObservableCollection<EnsembleLobbyChat> _chats = new();
+    [ObservableProperty] private ObservableCollection<EnsembleLobbyChat> _viewerChats = new();
 
     public string StatusText
     {
@@ -152,6 +170,11 @@ public partial class EnsembleLobbyRoom : ObservableObject
 
 public partial class EnsembleLobbyPlayer : ObservableObject
 {
+    private static readonly IBrush ReadyTextBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#66E38E"));
+    private static readonly IBrush NotReadyTextBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#A894A4"));
+    private static readonly IBrush ReadyBackgroundBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#1F66E38E"));
+    private static readonly IBrush NotReadyBackgroundBrush = new SolidColorBrush(Avalonia.Media.Color.Parse("#1CA894A4"));
+
     private static readonly string[] GirlNames =
     {
         "贝斯手凛",
@@ -217,8 +240,11 @@ public partial class EnsembleLobbyPlayer : ObservableObject
     [ObservableProperty] private BattlePlayerEntry? _battle;
 
     public string CharacterText => $"{ResolveGirlName(GirlIndex)} / {ResolveElfinName(ElfinIndex)}";
-    public string ScoreText => Battle == null ? "-" : Battle.Score.ToString("N0");
+    public string ScoreText => Battle == null ? "-" : (Battle.Alive ? Battle.Score.ToString("N0") : "DOWN");
     public string AccuracyText => Battle == null ? "-" : $"{Battle.Accuracy:0.00}%";
+    public string ReadyText => Ready ? "已准备" : "未准备";
+    public IBrush ReadyBrush => Ready ? ReadyTextBrush : NotReadyTextBrush;
+    public IBrush ReadyBadgeBrush => Ready ? ReadyBackgroundBrush : NotReadyBackgroundBrush;
     public bool IsAp => Battle != null && Battle.FC && Math.Abs(Battle.Accuracy - 100f) < 0.005f;
     public bool IsFc => Battle?.FC == true;
     public string JudgeText => Battle == null
@@ -227,6 +253,12 @@ public partial class EnsembleLobbyPlayer : ObservableObject
 
     partial void OnGirlIndexChanged(int value) => OnPropertyChanged(nameof(CharacterText));
     partial void OnElfinIndexChanged(int value) => OnPropertyChanged(nameof(CharacterText));
+    partial void OnReadyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ReadyText));
+        OnPropertyChanged(nameof(ReadyBrush));
+        OnPropertyChanged(nameof(ReadyBadgeBrush));
+    }
 
     partial void OnBattleChanged(BattlePlayerEntry? value)
     {
@@ -280,6 +312,19 @@ public partial class EnsembleLobbyChat : ObservableObject
             Message = entry?.Message ?? "",
             Color = entry?.Color ?? "",
             IsHostReply = entry?.IsHostReply ?? false,
+            Time = DateTimeOffset.FromUnixTimeMilliseconds(entry?.TimestampUnixMs ?? 0)
+        };
+    }
+
+    public static EnsembleLobbyChat FromViewerProtocol(MdtViewerChatMessageEntry entry)
+    {
+        return new EnsembleLobbyChat
+        {
+            Source = "viewer",
+            SenderName = entry?.SenderName ?? "",
+            Message = entry?.Message ?? "",
+            Color = entry?.Color ?? "",
+            IsHostReply = false,
             Time = DateTimeOffset.FromUnixTimeMilliseconds(entry?.TimestampUnixMs ?? 0)
         };
     }

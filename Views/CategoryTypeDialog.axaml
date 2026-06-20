@@ -1,0 +1,65 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MdModManager.Views.CategoryTypeDialog"
+        Title="选择分类类型"
+        Width="430" Height="230"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource DialogBgBrush}"
+        Foreground="{DynamicResource ThemeTextMainBrush}"
+        SystemDecorations="Full">
+
+    <Grid RowDefinitions="Auto, *, Auto" Margin="24">
+        <TextBlock Grid.Row="0"
+                   Text="要创建哪一种分类？"
+                   FontSize="17"
+                   FontWeight="SemiBold"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"
+                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
+
+        <TextBlock Grid.Row="1"
+                   Margin="0,18,0,0"
+                   Text="普通分类会创建到 Custom_Albums，并在游戏内常驻显示。&#x0a;候选区分类会创建到 CustomAlbums_Library，只用于候选区管理。"
+                   TextWrapping="Wrap"
+                   FontSize="14"
+                   LineHeight="22"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"
+                   Foreground="{DynamicResource ThemeTextSecondaryBrush}"/>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    Spacing="14"
+                    HorizontalAlignment="Center"
+                    Margin="0,18,0,0">
+            <Button Content="普通分类"
+                    Width="116"
+                    Height="34"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ThemeAccentBrush}"
+                    Foreground="White"
+                    CornerRadius="10"
+                    Click="OnNormalClick"/>
+            <Button Content="候选区分类"
+                    Width="128"
+                    Height="34"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ControlBgBrush}"
+                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                    CornerRadius="10"
+                    Click="OnCandidateClick"/>
+            <Button Content="取消"
+                    Width="86"
+                    Height="34"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ControlBgBrush}"
+                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                    CornerRadius="10"
+                    Click="OnCancelClick"/>
+        </StackPanel>
+    </Grid>
+</Window>
