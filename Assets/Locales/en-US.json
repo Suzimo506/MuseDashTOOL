@@ -468,5 +468,7 @@
   "Str_443": "Clean up exact duplicates by charter",
   "Str_444": "No exact duplicate charts (same charter and name) found.",
   "Str_445": "Are you sure you want to automatically delete {0} exact duplicate charts (same author and name)?\nThis action cannot be undone!",
-  "Str_446": "Successfully deleted {0} exact duplicate chart files."
+  "Str_446": "Successfully deleted {0} exact duplicate chart files.",
+  "Str_447": "Download charts to Library by default",
+  "Str_448": "Enable this to greatly speed up game startup"
 }

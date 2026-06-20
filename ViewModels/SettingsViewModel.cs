@@ -198,6 +198,21 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
+    // 下载谱面时默认保存到候选区
+    public bool DownloadChartsToLibraryByDefault
+    {
+        get => _configService.Config.DownloadChartsToLibraryByDefault;
+        set
+        {
+            if (_configService.Config.DownloadChartsToLibraryByDefault != value)
+            {
+                _configService.Config.DownloadChartsToLibraryByDefault = value;
+                OnPropertyChanged();
+                _ = _configService.SaveAsync();
+            }
+        }
+    }
+
     /// <summary>自动翻译 Mod 详情信息的开关</summary>
     public bool AutoTranslateDescriptions
     {

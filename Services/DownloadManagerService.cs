@@ -72,21 +72,18 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
     private string GetUniqueDestinationPath(MdmcChart chart)
     {
-        var gamePath = _configService.Config.GamePath;
-        if (string.IsNullOrEmpty(gamePath)) return string.Empty;
-
-        var albumsDir = Path.Combine(gamePath, "Custom_Albums");
-        if (!Directory.Exists(albumsDir)) Directory.CreateDirectory(albumsDir);
+        var targetDir = ChartDownloadPathHelper.GetDefaultDownloadDirectory(_configService.Config);
+        if (string.IsNullOrEmpty(targetDir)) return string.Empty;
 
         static string Safe(string s) => string.Join("_", (s ?? "Unknown").Split(Path.GetInvalidFileNameChars()));
         var baseName = $"{Safe(chart.Title)} - {Safe(chart.Artist)}";
-        var finalPath = Path.Combine(albumsDir, $"{baseName}.mdm");
+        var finalPath = Path.Combine(targetDir, $"{baseName}.mdm");
 
         int count = 1;
         // 避让队列冲突或会话已下载路径
         while (Tasks.Any(t => t.DestinationPath == finalPath) || SessionDownloadedFiles.Contains(Path.GetFullPath(finalPath)))
         {
-            finalPath = Path.Combine(albumsDir, $"{baseName} ({count++}).mdm");
+            finalPath = Path.Combine(targetDir, $"{baseName} ({count++}).mdm");
         }
         return finalPath;
     }

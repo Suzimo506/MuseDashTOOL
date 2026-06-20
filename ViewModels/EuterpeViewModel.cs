@@ -352,7 +352,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         _chartIndexService = chartIndexService;
 
         _httpClient = new HttpClient(authHeaderHandler) { BaseAddress = new Uri("https://euterpe-org.com/api/") };
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.9");
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.4.9.1");
     }
 
     // 初始化加载
@@ -616,7 +616,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     {
         var snapshot = Charts.ToList();
         var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.9");
+        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.9.1");
 
         foreach (var chart in snapshot)
         {
@@ -705,7 +705,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             // 请求音频文件字节数据
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.9");
+            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.4.9.1");
             using var req = new HttpRequestMessage(HttpMethod.Get, previewUrl);
             using var response = await client.SendAsync(req, ct);
             response.EnsureSuccessStatusCode();

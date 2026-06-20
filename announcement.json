@@ -12,11 +12,11 @@
         "cancel_button_text_en": "Don't Remind Again"
     },
     {
-        "id": "1.4.9",
+        "id": "1.4.9.1",
         "is_enabled": true,
         "title": "喵斯兔补丁更新",
         "title_en": "",
-        "content": "1、新增联机大厅，可以实时观看游戏内的房间状态，与房间内玩家进行互动，一键安装联机模组！\n2、修复了损坏谱面检测时删除按键不出现的问题\n3、新用户增加了一键安装自制谱的提醒\n4、修复了我的账号界面歌曲难度显示错误的问题",
+        "content": "1、新增联机大厅，可以实时观看游戏内的房间状态，与房间内玩家进行互动，一键安装联机模组！\n2、修复了损坏谱面检测时删除按键不出现的问题\n3、新用户增加了一键安装自制谱的提醒\n4、修复了我的账号界面歌曲难度显示错误的问题\n5、谱面管理工具箱新增一键迁移工具，使用后可以极大的提升游戏进入的速度",
         "content_en": "1. Added a duplicate check feature for chart downloads. A pop-up will notify you if a duplicate chart already exists locally. This can be disabled in Settings.\n2. Added a duplicate chart checking feature in Chart Manager to quickly view local charts with the same name and choose to delete or quickly delete them.\n3. Updated to a more detailed tutorial. The original tutorial has been renamed to the 'About' panel.\n4. Fixed UI layout adaptation issues after importing background images.\n5. Refactored the OAuth authentication for the Euterpe interface.\n6. Significantly optimized the opening speed of the Chart Manager interface.",
         "action_button_text": "进入新版喵斯兔",
         "action_button_text_en": "Enter New MuseDashTOOL",

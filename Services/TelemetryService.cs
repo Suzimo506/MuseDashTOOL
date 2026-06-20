@@ -31,6 +31,7 @@ internal partial class TelemetryJsonContext : JsonSerializerContext;
 public sealed class TelemetryService : ITelemetryService
 {
     private const string BaseUrl = "https://euterpe-org.com/api/";
+    private const string TelemetryAppVersion = "1.4.9";
     private readonly HttpClient _httpClient;
     private readonly IAuthService _authService;
     private readonly AuthState _authState;
@@ -56,13 +57,11 @@ public sealed class TelemetryService : ITelemetryService
                 Architecture.Arm64 => "arm64",
                 _ => "unknown"
             };
-            var version = typeof(TelemetryService).Assembly.GetName().Version?.ToString() ?? "1.4.9";
-
             var payload = new TelemetrySessionPayload(
                 country,
                 "win",
                 arch,
-                $"MDT/{version}");
+                $"MDT/{TelemetryAppVersion}");
 
             var json = JsonSerializer.Serialize(payload, TelemetryJsonContext.Default.TelemetrySessionPayload);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");

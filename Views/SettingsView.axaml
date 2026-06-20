@@ -281,6 +281,17 @@
                                     </StackPanel>
                                     <CheckBox Grid.Column="1" IsChecked="{Binding EnableBatchDownloadDuplicateCheck}" VerticalAlignment="Center"/>
                                 </Grid>
+
+                                <Border Height="1" Background="{DynamicResource ThemeTextSubBrush}" Opacity="0.08"/>
+
+                                <!-- 默认下载到候选区 -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
+                                        <TextBlock Text="{Binding [Str_447], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                        <TextBlock Text="{Binding [Str_448], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" Opacity="0.6"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding DownloadChartsToLibraryByDefault}" VerticalAlignment="Center"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
                     </StackPanel>
