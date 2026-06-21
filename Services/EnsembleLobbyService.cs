@@ -17,9 +17,9 @@ public interface IEnsembleLobbyService : IDisposable
     event Action<string, int, MdtViewerChatMessageEntry>? ViewerChatReceived;
     event Action<string, string, bool>? NodeStatusChanged;
     Task<IReadOnlyList<EnsembleLobbyNodeConfig>> GetNodesAsync(CancellationToken ct);
-    Task ConnectAsync(EnsembleLobbyNodeConfig node, string displayName, CancellationToken ct);
-    Task<MdtChatResponse> SendPhraseAsync(string nodeId, int lobbyId, string senderName, int phraseIndex, CancellationToken ct);
-    Task<MdtViewerChatResponse> SendViewerChatAsync(string nodeId, int lobbyId, string senderName, string message, CancellationToken ct);
+    Task ConnectAsync(EnsembleLobbyNodeConfig node, string uid, CancellationToken ct);
+    Task<MdtChatResponse> SendPhraseAsync(string nodeId, int lobbyId, int phraseIndex, CancellationToken ct);
+    Task<MdtViewerChatResponse> SendViewerChatAsync(string nodeId, int lobbyId, string message, CancellationToken ct);
     Task WatchLobbyAsync(string nodeId, int? lobbyId, CancellationToken ct);
     Task DisconnectAllAsync();
 }
@@ -55,7 +55,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
             .ToArray();
     }
 
-    public async Task ConnectAsync(EnsembleLobbyNodeConfig node, string displayName, CancellationToken ct)
+    public async Task ConnectAsync(EnsembleLobbyNodeConfig node, string uid, CancellationToken ct)
     {
         if (node == null || string.IsNullOrWhiteSpace(node.Address)) return;
 
@@ -69,7 +69,9 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
         NodeStatusChanged?.Invoke(key, "连接中", false);
 
         var endpoint = ParseEndpoint(node.Address);
-        var connection = new NodeConnection(key, node, DispatchPush, OnConnectionClosed);
+        var normalizedUid = MdtIdentity.NormalizeUid(uid);
+        var senderName = MdtIdentity.GenerateNameFromUid(normalizedUid);
+        var connection = new NodeConnection(key, node, senderName, DispatchPush, OnConnectionClosed);
         _connections[key] = connection;
 
         try
@@ -78,7 +80,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
             connection.StartReceiveLoop();
             await connection.SendRequestAsync<MdtObserveRequest, MdtObserveResponse>(
                 OpCodes.MdtObserveReq,
-                new MdtObserveRequest { ClientName = NormalizeDisplayName(displayName) },
+                new MdtObserveRequest { Uid = normalizedUid, ClientName = senderName },
                 ct).ConfigureAwait(false);
 
             NodeStatusChanged?.Invoke(key, "已连接", true);
@@ -101,7 +103,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
         }
     }
 
-    public async Task<MdtChatResponse> SendPhraseAsync(string nodeId, int lobbyId, string senderName, int phraseIndex, CancellationToken ct)
+    public async Task<MdtChatResponse> SendPhraseAsync(string nodeId, int lobbyId, int phraseIndex, CancellationToken ct)
     {
         if (!_connections.TryGetValue(nodeId, out var connection) || !connection.IsConnected)
         {
@@ -113,13 +115,13 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
             new MdtChatRequest
             {
                 LobbyId = lobbyId,
-                SenderName = senderName,
+                SenderName = connection.SenderName,
                 PhraseIndex = phraseIndex
             },
             ct).ConfigureAwait(false) ?? throw new InvalidOperationException("服务端响应为空");
     }
 
-    public async Task<MdtViewerChatResponse> SendViewerChatAsync(string nodeId, int lobbyId, string senderName, string message, CancellationToken ct)
+    public async Task<MdtViewerChatResponse> SendViewerChatAsync(string nodeId, int lobbyId, string message, CancellationToken ct)
     {
         if (!_connections.TryGetValue(nodeId, out var connection) || !connection.IsConnected)
         {
@@ -131,7 +133,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
             new MdtViewerChatRequest
             {
                 LobbyId = lobbyId,
-                SenderName = senderName,
+                SenderName = connection.SenderName,
                 Message = message
             },
             ct).ConfigureAwait(false) ?? throw new InvalidOperationException("服务端响应为空");
@@ -260,15 +262,9 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
         return (host, port);
     }
 
-    private static string NormalizeDisplayName(string value)
-    {
-        var text = (value ?? "").Trim();
-        if (string.IsNullOrWhiteSpace(text)) text = "MuseDashTOOL";
-        return text.Length > 16 ? text[..16] : text;
-    }
-
     private sealed class NodeConnection : IAsyncDisposable
     {
+        private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(15);
         private readonly string _nodeId;
         private readonly EnsembleLobbyNodeConfig _node;
         private readonly Action<string, ushort, JsonElement> _pushHandler;
@@ -278,21 +274,25 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
         private TcpClient? _client;
         private NetworkStream? _stream;
         private CancellationTokenSource? _receiveCts;
+        private CancellationTokenSource? _heartbeatCts;
         private uint _nextReqId;
         private bool _disposed;
 
         public NodeConnection(
             string nodeId,
             EnsembleLobbyNodeConfig node,
+            string senderName,
             Action<string, ushort, JsonElement> pushHandler,
             Action<string, string> closedHandler)
         {
             _nodeId = nodeId;
             _node = node;
+            SenderName = senderName;
             _pushHandler = pushHandler;
             _closedHandler = closedHandler;
         }
 
+        public string SenderName { get; }
         public bool IsConnected => _client?.Connected == true && _stream != null && !_disposed;
 
         public async Task ConnectAsync(string host, int port, CancellationToken ct)
@@ -305,8 +305,11 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
         public void StartReceiveLoop()
         {
             _receiveCts?.Cancel();
+            _heartbeatCts?.Cancel();
             _receiveCts = new CancellationTokenSource();
+            _heartbeatCts = new CancellationTokenSource();
             _ = ReceiveLoopAsync(_receiveCts.Token);
+            _ = HeartbeatLoopAsync(_heartbeatCts.Token);
         }
 
         public async Task<TResp?> SendRequestAsync<TReq, TResp>(ushort opCode, TReq request, CancellationToken ct)
@@ -395,8 +398,41 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
             }
             finally
             {
+                var shouldNotify = !_disposed;
                 await DisposeAsync().ConfigureAwait(false);
-                _closedHandler(_nodeId, "已断开");
+                if (shouldNotify)
+                {
+                    _closedHandler(_nodeId, "已断开");
+                }
+            }
+        }
+
+        private async Task HeartbeatLoopAsync(CancellationToken ct)
+        {
+            while (!ct.IsCancellationRequested && !_disposed)
+            {
+                try
+                {
+                    await Task.Delay(HeartbeatInterval, ct).ConfigureAwait(false);
+                    if (ct.IsCancellationRequested || _disposed || _stream == null) return;
+
+                    await SendAsync(new ClientEnvelope { Op = OpCodes.Ping }, ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    RuntimeLog.Write("EnsembleLobbyService", $"{_node.Name} 心跳失败 {ex.Message}");
+                    var shouldNotify = !_disposed;
+                    await DisposeAsync().ConfigureAwait(false);
+                    if (shouldNotify)
+                    {
+                        _closedHandler(_nodeId, "已断开");
+                    }
+                    return;
+                }
             }
         }
 
@@ -478,10 +514,12 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
             if (_disposed) return;
             _disposed = true;
             try { _receiveCts?.Cancel(); } catch { }
+            try { _heartbeatCts?.Cancel(); } catch { }
             try { _stream?.Close(); } catch { }
             try { _client?.Close(); } catch { }
             _sendLock.Dispose();
             _receiveCts?.Dispose();
+            _heartbeatCts?.Dispose();
 
             foreach (var pending in _pendingRequests.Values)
             {

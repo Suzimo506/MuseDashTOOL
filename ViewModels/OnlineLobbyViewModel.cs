@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MDEN.Protocol;
 using MDEN.Protocol.Enums;
 using MDEN.Protocol.Messages.Mdt;
 using MdModManager.Models;
@@ -13,6 +14,12 @@ namespace MdModManager.ViewModels;
 public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 {
     private const int MaxViewerChatLength = 80;
+    private const int MaxMdtChatCount = 30;
+    private const int MaxViewerChatCount = 50;
+    private const string ChatHistoryClearWarning = "聊天记录即将清除...";
+    private static readonly TimeSpan ChatHistoryLifetime = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan ChatHistoryWarningLeadTime = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan ChatHistoryCleanupTick = TimeSpan.FromSeconds(1);
 
     private static readonly string[] FixedPhrases =
     {
@@ -23,13 +30,15 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     };
 
     private readonly IEnsembleLobbyService _lobbyService;
-    private readonly IConfigService _configService;
     private readonly INotificationService _notificationService;
     private CancellationTokenSource? _cts;
     private DispatcherTimer? _cooldownTimer;
     private DispatcherTimer? _viewerChatCooldownTimer;
+    private DispatcherTimer? _chatHistoryCleanupTimer;
+    private readonly Dictionary<string, ChatHistoryState> _chatHistoryStates = new();
     private string? _watchingNodeId;
     private int? _watchingLobbyId;
+    private string _museDashUid = string.Empty;
     private DateTimeOffset _nextAllowedSendTime = DateTimeOffset.MinValue;
     private DateTimeOffset _nextAllowedViewerChatTime = DateTimeOffset.MinValue;
 
@@ -47,8 +56,10 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     public bool HasSelectedNode => SelectedNode != null;
     public bool SelectedNodeHasRooms => SelectedNode?.HasRooms == true;
     public bool HasSelectedRoom => SelectedRoom != null;
-    public bool CanSendPhrase => SelectedRoom?.CanSendChat == true && DateTimeOffset.Now >= _nextAllowedSendTime;
+    public bool HasMdtIdentity => !string.IsNullOrWhiteSpace(_museDashUid);
+    public bool CanSendPhrase => HasMdtIdentity && SelectedRoom?.CanSendChat == true && DateTimeOffset.Now >= _nextAllowedSendTime;
     public bool CanSendViewerChat =>
+        HasMdtIdentity &&
         SelectedRoom?.Node != null &&
         !string.IsNullOrWhiteSpace(NormalizeViewerChatText(ViewerChatText)) &&
         NormalizeViewerChatText(ViewerChatText).Length <= MaxViewerChatLength &&
@@ -58,18 +69,17 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
     public OnlineLobbyViewModel(
         IEnsembleLobbyService lobbyService,
-        IConfigService configService,
         INotificationService notificationService)
     {
         _lobbyService = lobbyService;
-        _configService = configService;
         _notificationService = notificationService;
-        DisplayName = NormalizeDisplayName(_configService.Config.OnlineLobbyDisplayName);
+        RefreshMdtIdentity();
 
         _lobbyService.SnapshotReceived += OnSnapshotReceived;
         _lobbyService.ChatReceived += OnChatReceived;
         _lobbyService.ViewerChatReceived += OnViewerChatReceived;
         _lobbyService.NodeStatusChanged += OnNodeStatusChanged;
+        StartChatHistoryCleanupTimer();
     }
 
     public async Task InitializeAsync(CancellationToken externalToken)
@@ -79,6 +89,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         _cts = CancellationTokenSource.CreateLinkedTokenSource(externalToken);
         IsLoading = true;
         StatusText = "正在连接节点";
+        RefreshMdtIdentity();
 
         try
         {
@@ -89,6 +100,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
                 SelectedNode = null;
                 _watchingNodeId = null;
                 _watchingLobbyId = null;
+                _chatHistoryStates.Clear();
                 Nodes.Clear();
                 foreach (var node in nodes)
                 {
@@ -107,7 +119,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
             foreach (var node in nodes)
             {
-                _ = _lobbyService.ConnectAsync(node, DisplayName, _cts.Token);
+                _ = _lobbyService.ConnectAsync(node, _museDashUid, _cts.Token);
             }
         }
         catch (OperationCanceledException)
@@ -162,15 +174,6 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
-    private async Task SaveDisplayNameAsync()
-    {
-        DisplayName = NormalizeDisplayName(DisplayName);
-        _configService.Config.OnlineLobbyDisplayName = DisplayName;
-        await _configService.SaveAsync();
-        _notificationService.ShowSuccess("联机大厅名字已保存");
-    }
-
-    [RelayCommand]
     private void OpenOnlineModDownload()
     {
         const string url = "https://fcnjy3gfu0iz.feishu.cn/wiki/FJm5wvF0SiWoftkOZ07cBCJKn5g";
@@ -218,7 +221,6 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
             var response = await _lobbyService.SendPhraseAsync(
                 node.Id,
                 room.Id,
-                NormalizeDisplayName(DisplayName),
                 phraseIndex,
                 _cts?.Token ?? CancellationToken.None).ConfigureAwait(false);
 
@@ -274,7 +276,6 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
             var response = await _lobbyService.SendViewerChatAsync(
                 node.Id,
                 room.Id,
-                NormalizeDisplayName(DisplayName),
                 message,
                 _cts?.Token ?? CancellationToken.None).ConfigureAwait(false);
 
@@ -413,7 +414,9 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         {
             if (!incomingIds.Contains(node.Rooms[i].Id))
             {
-                if (SelectedRoom == node.Rooms[i]) SelectedRoom = null;
+                var removedRoom = node.Rooms[i];
+                if (SelectedRoom == removedRoom) SelectedRoom = null;
+                RemoveChatHistoryState(removedRoom);
                 node.Rooms.RemoveAt(i);
             }
         }
@@ -488,7 +491,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         return (node.StatusText ?? "").Contains("连接失败");
     }
 
-    private static void ApplyRoom(EnsembleLobbyRoom room, MdtLobbyEntry lobby)
+    private void ApplyRoom(EnsembleLobbyRoom room, MdtLobbyEntry lobby)
     {
         room.Revision = lobby.Revision;
         room.Name = lobby.Name ?? "";
@@ -592,39 +595,58 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private static void MergeChats(EnsembleLobbyRoom room, IEnumerable<MdtChatMessageEntry> chats)
+    private void MergeChats(EnsembleLobbyRoom room, IEnumerable<MdtChatMessageEntry> chats)
     {
+        var state = GetChatHistoryState(room, ChatHistoryKind.Mdt);
         var next = chats
             .Where(chat => chat != null)
+            .Where(chat => DateTimeOffset.FromUnixTimeMilliseconds(chat.TimestampUnixMs) > state.ClearedAt)
             .OrderBy(chat => chat.TimestampUnixMs)
             .Select(EnsembleLobbyChat.FromProtocol)
             .ToArray();
 
+        var shouldResetTimer = room.Chats.Count == 0 && next.Length > 0;
         room.Chats.Clear();
+        if (shouldResetTimer)
+        {
+            ResetChatHistoryState(room, ChatHistoryKind.Mdt);
+        }
+
         foreach (var chat in next)
         {
             room.Chats.Add(chat);
         }
     }
 
-    private static void MergeViewerChats(EnsembleLobbyRoom room, IEnumerable<MdtViewerChatMessageEntry> chats)
+    private void MergeViewerChats(EnsembleLobbyRoom room, IEnumerable<MdtViewerChatMessageEntry> chats)
     {
+        var state = GetChatHistoryState(room, ChatHistoryKind.Viewer);
         var next = chats
             .Where(chat => chat != null)
+            .Where(chat => DateTimeOffset.FromUnixTimeMilliseconds(chat.TimestampUnixMs) > state.ClearedAt)
             .OrderBy(chat => chat.TimestampUnixMs)
             .Select(EnsembleLobbyChat.FromViewerProtocol)
             .ToArray();
 
+        var shouldResetTimer = room.ViewerChats.Count == 0 && next.Length > 0;
         room.ViewerChats.Clear();
+        if (shouldResetTimer)
+        {
+            ResetChatHistoryState(room, ChatHistoryKind.Viewer);
+        }
+
         foreach (var chat in next)
         {
             room.ViewerChats.Add(chat);
         }
     }
 
-    private static void AppendChat(EnsembleLobbyRoom room, MdtChatMessageEntry message)
+    private void AppendChat(EnsembleLobbyRoom room, MdtChatMessageEntry message)
     {
         if (message == null) return;
+
+        var state = GetChatHistoryState(room, ChatHistoryKind.Mdt);
+        if (DateTimeOffset.FromUnixTimeMilliseconds(message.TimestampUnixMs) <= state.ClearedAt) return;
 
         var chat = EnsembleLobbyChat.FromProtocol(message);
         var exists = room.Chats.Any(item =>
@@ -635,16 +657,20 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
         if (exists) return;
 
+        ResetChatHistoryStateIfNeeded(room, ChatHistoryKind.Mdt, room.Chats);
         room.Chats.Add(chat);
-        while (room.Chats.Count > 30)
+        while (room.Chats.Count > MaxMdtChatCount)
         {
             room.Chats.RemoveAt(0);
         }
     }
 
-    private static void AppendViewerChat(EnsembleLobbyRoom room, MdtViewerChatMessageEntry message)
+    private void AppendViewerChat(EnsembleLobbyRoom room, MdtViewerChatMessageEntry message)
     {
         if (message == null) return;
+
+        var state = GetChatHistoryState(room, ChatHistoryKind.Viewer);
+        if (DateTimeOffset.FromUnixTimeMilliseconds(message.TimestampUnixMs) <= state.ClearedAt) return;
 
         var chat = EnsembleLobbyChat.FromViewerProtocol(message);
         var exists = room.ViewerChats.Any(item =>
@@ -654,8 +680,9 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
         if (exists) return;
 
+        ResetChatHistoryStateIfNeeded(room, ChatHistoryKind.Viewer, room.ViewerChats);
         room.ViewerChats.Add(chat);
-        while (room.ViewerChats.Count > 50)
+        while (room.ViewerChats.Count > MaxViewerChatCount)
         {
             room.ViewerChats.RemoveAt(0);
         }
@@ -669,6 +696,107 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     private EnsembleLobbyRoom? FindRoom(string nodeId, int lobbyId)
     {
         return FindNode(nodeId)?.Rooms.FirstOrDefault(room => room.Id == lobbyId);
+    }
+
+    private void StartChatHistoryCleanupTimer()
+    {
+        _chatHistoryCleanupTimer ??= new DispatcherTimer { Interval = ChatHistoryCleanupTick };
+        _chatHistoryCleanupTimer.Tick -= OnChatHistoryCleanupTimerTick;
+        _chatHistoryCleanupTimer.Tick += OnChatHistoryCleanupTimerTick;
+        _chatHistoryCleanupTimer.Start();
+    }
+
+    private void OnChatHistoryCleanupTimerTick(object? sender, EventArgs e)
+    {
+        foreach (var node in Nodes)
+        {
+            foreach (var room in node.Rooms)
+            {
+                UpdateChatHistory(room, ChatHistoryKind.Mdt, room.Chats);
+                UpdateChatHistory(room, ChatHistoryKind.Viewer, room.ViewerChats);
+            }
+        }
+    }
+
+    private void UpdateChatHistory(
+        EnsembleLobbyRoom room,
+        ChatHistoryKind kind,
+        ObservableCollection<EnsembleLobbyChat> chats)
+    {
+        if (room == null || chats.Count == 0) return;
+
+        var state = GetChatHistoryState(room, kind);
+        var now = DateTimeOffset.Now;
+        if (now >= state.ClearAt)
+        {
+            chats.Clear();
+            state.ClearedAt = now;
+            state.ClearAt = now + ChatHistoryLifetime;
+            state.WarningShown = false;
+            return;
+        }
+
+        if (!state.WarningShown && now >= state.ClearAt - ChatHistoryWarningLeadTime)
+        {
+            state.WarningShown = true;
+            chats.Add(CreateSystemChat(ChatHistoryClearWarning));
+        }
+    }
+
+    private void ResetChatHistoryStateIfNeeded(
+        EnsembleLobbyRoom room,
+        ChatHistoryKind kind,
+        ObservableCollection<EnsembleLobbyChat> chats)
+    {
+        if (chats.Count > 0) return;
+
+        ResetChatHistoryState(room, kind);
+    }
+
+    private void ResetChatHistoryState(EnsembleLobbyRoom room, ChatHistoryKind kind)
+    {
+        var state = GetChatHistoryState(room, kind);
+        state.ClearAt = DateTimeOffset.Now + ChatHistoryLifetime;
+        state.WarningShown = false;
+    }
+
+    private ChatHistoryState GetChatHistoryState(EnsembleLobbyRoom room, ChatHistoryKind kind)
+    {
+        var key = GetChatHistoryKey(room, kind);
+        if (!_chatHistoryStates.TryGetValue(key, out var state))
+        {
+            state = new ChatHistoryState
+            {
+                ClearAt = DateTimeOffset.Now + ChatHistoryLifetime,
+                ClearedAt = DateTimeOffset.MinValue
+            };
+            _chatHistoryStates[key] = state;
+        }
+
+        return state;
+    }
+
+    private static string GetChatHistoryKey(EnsembleLobbyRoom room, ChatHistoryKind kind)
+    {
+        return $"{room.Node?.Id ?? room.Node?.Address ?? "unknown"}:{room.Id}:{kind}";
+    }
+
+    private void RemoveChatHistoryState(EnsembleLobbyRoom room)
+    {
+        _chatHistoryStates.Remove(GetChatHistoryKey(room, ChatHistoryKind.Mdt));
+        _chatHistoryStates.Remove(GetChatHistoryKey(room, ChatHistoryKind.Viewer));
+    }
+
+    private static EnsembleLobbyChat CreateSystemChat(string message)
+    {
+        return new EnsembleLobbyChat
+        {
+            Source = "system",
+            SenderName = "",
+            Message = message,
+            Color = "FFD166",
+            Time = DateTimeOffset.Now
+        };
     }
 
     private void UpdateCooldownText()
@@ -723,12 +851,27 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private static string NormalizeDisplayName(string value)
+    private void RefreshMdtIdentity()
     {
-        var text = (value ?? "").Trim();
-        if (string.IsNullOrWhiteSpace(text)) text = "喵斯兔玩家";
-        text = text.Replace("\r", "").Replace("\n", "");
-        return text.Length > 5 ? text[..5] : text;
+        _museDashUid = ResolveMuseDashUid();
+        DisplayName = string.IsNullOrWhiteSpace(_museDashUid)
+            ? "未登录"
+            : MdtIdentity.GenerateNameFromUid(_museDashUid);
+        OnPropertyChanged(nameof(HasMdtIdentity));
+        OnPropertyChanged(nameof(CanSendPhrase));
+        OnPropertyChanged(nameof(CanSendViewerChat));
+    }
+
+    private static string ResolveMuseDashUid()
+    {
+        var uid = MuseDashAccountService.CachedAccountInfo?.Uid;
+        if (string.IsNullOrWhiteSpace(uid))
+        {
+            uid = MuseDashAccountService.ReadAccountInfo()?.Uid;
+        }
+
+        var normalizedUid = MdtIdentity.NormalizeUid(uid);
+        return normalizedUid.Length > MdtIdentity.MaxUidLength ? string.Empty : normalizedUid;
     }
 
     private static string NormalizeViewerChatText(string value)
@@ -769,6 +912,25 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
             _viewerChatCooldownTimer.Tick -= OnViewerChatCooldownTimerTick;
         }
 
+        if (_chatHistoryCleanupTimer != null)
+        {
+            _chatHistoryCleanupTimer.Stop();
+            _chatHistoryCleanupTimer.Tick -= OnChatHistoryCleanupTimerTick;
+        }
+
         _ = _lobbyService.DisconnectAllAsync();
+    }
+
+    private enum ChatHistoryKind
+    {
+        Mdt,
+        Viewer
+    }
+
+    private sealed class ChatHistoryState
+    {
+        public DateTimeOffset ClearAt { get; set; }
+        public DateTimeOffset ClearedAt { get; set; }
+        public bool WarningShown { get; set; }
     }
 }

@@ -68,17 +68,21 @@
                                    Foreground="{DynamicResource ThemeTextMainBrush}"/>
                     </StackPanel>
                 </Button>
-                <TextBox Width="180"
-                         MaxLength="5"
-                         Watermark="喵斯兔名字"
-                         Text="{Binding DisplayName, Mode=TwoWay}"/>
-                <Button Command="{Binding SaveDisplayNameCommand}"
-                        Height="36"
-                        Padding="14,0"
-                        Background="{DynamicResource ThemeAccentBrush}"
-                        Foreground="White">
-                    <TextBlock Text="保存"/>
-                </Button>
+                <Border Height="36"
+                        MinWidth="118"
+                        Padding="12,0"
+                        CornerRadius="8"
+                        Background="{DynamicResource ControlBgBrush}"
+                        BorderBrush="{DynamicResource ControlBorderBrush}"
+                        BorderThickness="1">
+                    <TextBlock Text="{Binding DisplayName}"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTextMainBrush}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+                </Border>
                 <Button Command="{Binding RefreshCommand}"
                         Height="36"
                         Padding="14,0"
