@@ -285,6 +285,8 @@ public partial class MainWindowViewModel : ObservableObject
             await cuvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is EuterpeViewModel etvm)
             await etvm.InitializeAsync(_currentPageCts.Token);
+        else if (CurrentPage is GlobalChartSearchViewModel gsvm)
+            await gsvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is OnlineLobbyViewModel olvm)
             await olvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is WelcomeViewModel wvm)
@@ -961,6 +963,8 @@ public partial class MainWindowViewModel : ObservableObject
             chartVm.Dispose();
         else if (CurrentPage is EuterpeViewModel etVm)
             etVm.Dispose();
+        else if (CurrentPage is GlobalChartSearchViewModel globalSearchVm)
+            globalSearchVm.Dispose();
         else if (CurrentPage is OnlineLobbyViewModel onlineLobbyVm)
             onlineLobbyVm.Dispose();
         else if (CurrentPage is AccountViewModel accountVm)
@@ -1071,6 +1075,17 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public async Task NavigateToGlobalChartSearchAsync()
+    {
+        CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = true;
+
+        var vm = Ioc.Default.GetRequiredService<GlobalChartSearchViewModel>();
+        CurrentPage = vm;
+        await vm.InitializeAsync(_currentPageCts!.Token);
+    }
+
+    [RelayCommand]
     private async Task NavigateToOnlineLobbyAsync()
     {
         CleanupCurrentPage();
@@ -1128,6 +1143,9 @@ public partial class MainWindowViewModel : ObservableObject
                     break;
                 case nameof(ChartDownloadViewModel):
                     _ = NavigateToChartDownloadAsync();
+                    break;
+                case nameof(GlobalChartSearchViewModel):
+                    _ = NavigateToGlobalChartSearchAsync();
                     break;
                 default:
                     // 兜底：回到谱面下载
@@ -1272,7 +1290,7 @@ public partial class MainWindowViewModel : ObservableObject
     // ──────────────────────────────────────────────────────────
 
     /// <summary>当前程序版本号（与 UpdateService.CurrentVersion 保持一致）</summary>
-    private const string CurrentAppVersion = "1.4.9.1";
+    private const string CurrentAppVersion = "1.5.1";
 
     /// <summary>初始化所有红点提示状态</summary>
     private void InitializeBadges()

@@ -1,0 +1,377 @@
+<UserControl xmlns:i18n="using:MdModManager.Services"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:models="using:MdModManager.Models"
+             xmlns:helpers="using:MdModManager.Helpers"
+             xmlns:controls="using:MdModManager.Views.Controls"
+             xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             xmlns:animated="clr-namespace:AnimatedImage.Avalonia;assembly=AnimatedImage.Avalonia"
+             x:Class="MdModManager.Views.GlobalChartSearchView"
+             x:DataType="vm:GlobalChartSearchViewModel">
+
+    <UserControl.Resources>
+        <ControlTheme x:Key="RobustIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBorder">
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed">
+                <Setter Property="RenderTransform" Value="scale(0.92)"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBorder">
+                <Setter Property="Opacity" Value="0.6"/>
+            </Style>
+        </ControlTheme>
+
+        <ControlTheme x:Key="RobustPlainIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder" Background="Transparent">
+                        <ContentPresenter Content="{TemplateBinding Content}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBorder">
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBorder">
+                <Setter Property="Opacity" Value="0.6"/>
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="Border.Card">
+            <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
+            <Setter Property="BorderBrush" Value="#15FF8EBE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RenderTransform" Value="scale(1.0)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.Card:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.015)"/>
+            <Setter Property="BorderBrush" Value="#CCFF8EBE"/>
+        </Style>
+        <Style Selector="Button.SourceChip">
+            <Setter Property="Background" Value="#1E1624"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextMainBrush}"/>
+            <Setter Property="BorderBrush" Value="#2D2136"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="SourceChipBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.SourceChip:pointerover /template/ Border#SourceChipBorder">
+            <Setter Property="BorderBrush" Value="#AAFF8EBE"/>
+            <Setter Property="Background" Value="#241827"/>
+        </Style>
+        <Style Selector="Button.SourceChip.selected">
+            <Setter Property="Background" Value="#2A162A"/>
+            <Setter Property="BorderBrush" Value="#D4237A"/>
+        </Style>
+        <Style Selector="Button.SourceChip.selected /template/ Border#SourceChipBorder">
+            <Setter Property="BoxShadow" Value="0 0 12 1 #44D4237A"/>
+        </Style>
+        <Style Selector="Button.SourceChip.warn">
+            <Setter Property="BorderBrush" Value="#BBFF8EBE"/>
+            <Setter Property="Background" Value="#2A1622"/>
+        </Style>
+        <Style Selector="Button.SourceChip.selected.warn">
+            <Setter Property="BorderBrush" Value="#D4237A"/>
+            <Setter Property="Background" Value="#2F162A"/>
+        </Style>
+        <Style Selector="Button.SourceChip.compact">
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Border.SourceChip">
+            <Setter Property="Background" Value="#1E1624"/>
+            <Setter Property="BorderBrush" Value="#2D2136"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="12,8"/>
+        </Style>
+        <Style Selector="Border.SourceChip.warn">
+            <Setter Property="BorderBrush" Value="#BBFF8EBE"/>
+            <Setter Property="Background" Value="#2A1622"/>
+        </Style>
+        <Style Selector="Button.SearchBtn">
+            <Setter Property="Background" Value="#D4237A"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.SearchBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#E23B8B"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Panel>
+        <Grid RowDefinitions="Auto,Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" Margin="0,0,0,14">
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Text="全局搜索" FontSize="22" FontWeight="Bold">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                <GradientStop Color="#FF00FF" Offset="0"/>
+                                <GradientStop Color="#FF69B4" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                </StackPanel>
+
+                <ItemsControl Grid.Column="1" ItemsSource="{Binding SourceStates}" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="6"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:GlobalChartSearchSourceState">
+                            <Button Classes="SourceChip compact" Classes.selected="{Binding IsSelected}" Classes.warn="{Binding HasNotice}" Command="{Binding $parent[UserControl].((vm:GlobalChartSearchViewModel)DataContext).ToggleSourceFilterCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding Message}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{Binding DisplayName}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding ResultCount}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
+                                    <TextBlock Text="!" IsVisible="{Binding HasNotice}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource SvgIconBrush}"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Border Grid.Column="2" Background="{DynamicResource CardBgBrush}" Padding="8,4" CornerRadius="12" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Command="{Binding LoadFirstPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_022], Source={x:Static i18n:I18nService.Instance}}">
+                            <PathIcon Data="M321.53 929m-41.47 0l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47Z M787.26 170L411.44 514.25l375.82 344.21a39.32 39.32 0 0 1 13.11 29c0 36.51-48.2 54.79-76.38 29L348.17 572.2c-34.95-32-34.95-83.9 0-115.9L724 112.08c28.18-25.81 76.38-7.53 76.38 29A39.33 39.33 0 0 1 787.26 170z" Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
+                        </Button>
+                        <Button Command="{Binding LoadPrevPageCommand}" IsEnabled="{Binding CanLoadPrev}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_023], Source={x:Static i18n:I18nService.Instance}}">
+                            <PathIcon Data="M704 944c-10.88 0-22.4-3.84-31.36-11.52l-448-384c-10.88-8.96-16.64-22.4-16.64-36.48s6.4-27.52 16.64-36.48l448-384c19.84-17.28 50.56-14.72 67.84 5.12s14.72 50.56-5.12 67.84L329.6 512l405.76 347.52c19.84 17.28 22.4 47.36 5.12 67.84-9.6 10.88-23.04 16.64-36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                        </Button>
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding [Str_024], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
+                            <Panel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding CurrentPage}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="ExtraBold" FontSize="12" Cursor="Hand" PointerPressed="OnPageNumberClick" IsVisible="{Binding !IsEditingPageNumber}"/>
+                                <TextBox Name="PageJumpTextBox" Text="{Binding JumpPageText}" Foreground="{DynamicResource SvgIconBrush}" FontWeight="Bold" FontSize="12" Width="42" Height="22" Padding="2,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" BorderThickness="1" LostFocus="OnPageJumpLostFocus" IsVisible="{Binding IsEditingPageNumber}" Background="{DynamicResource ControlBgBrush}">
+                                    <TextBox.KeyBindings>
+                                        <KeyBinding Command="{Binding JumpPageCommand}" Gesture="Enter"/>
+                                        <KeyBinding Command="{Binding CancelEditPageCommand}" Gesture="Escape"/>
+                                    </TextBox.KeyBindings>
+                                </TextBox>
+                            </Panel>
+                            <TextBlock Text="/" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
+                            <TextBlock Text="{Binding TotalPages}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
+                            <TextBlock Text="{Binding [Str_025], Source={x:Static i18n:I18nService.Instance}}" Foreground="{DynamicResource ThemeTextSubBrush}" VerticalAlignment="Center" FontSize="11"/>
+                        </StackPanel>
+                        <Button Command="{Binding LoadNextPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_026], Source={x:Static i18n:I18nService.Instance}}">
+                            <PathIcon Data="M288 944c10.88 0 22.4-3.84 31.36-11.52l448-384c10.88-8.96 16.64-22.4 16.64-36.48s-6.4-27.52-16.64-36.48l-448-384c-19.84-17.28-50.56-14.72-67.84 5.12s-14.72 50.56 5.12 67.84L662.4 512l-405.76 347.52c-19.84 17.28-22.4 47.36-5.12 67.84 9.6 10.88 23.04 16.64 36.48 16.64z" Foreground="{DynamicResource SvgIconBrush}" Width="16" Height="16"/>
+                        </Button>
+                        <Button Command="{Binding LoadLastPageCommand}" IsEnabled="{Binding CanLoadNext}" Theme="{StaticResource RobustIconBtn}" ToolTip.Tip="{Binding [Str_027], Source={x:Static i18n:I18nService.Instance}}">
+                            <PathIcon Data="M706.19 106m41.47 0l0 0q41.47 0 41.47 41.47l0 747.06q0 41.47-41.47 41.47l0 0q-41.47 0-41.47-41.47l0-747.06q0-41.47 41.47-41.47Z M240.46 865l375.81-344.25-375.81-344.21a39.32 39.32 0 0 1-13.11-29c0-36.51 48.2-54.79 76.38-29L679.55 462.8c35 32 35 83.9 0 115.9L303.73 922.92c-28.18 25.81-76.38 7.53-76.38-29A39.33 39.33 0 0 1 240.46 865z" Foreground="{DynamicResource SvgIconBrush}" Width="14" Height="14"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" Margin="0,0,0,12">
+                <TextBox Grid.Column="0"
+                         Name="SearchTextBox"
+                         Text="{Binding SearchDraftText}"
+                         Watermark="搜索歌曲名、曲师或谱师"
+                         Padding="10,8"
+                         IsReadOnly="{Binding IsLoading}"
+                         KeyDown="OnSearchBoxKeyDown">
+                    <TextBox.InnerLeftContent>
+                        <PathIcon Data="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1C567.2 143.9 492.3 112 413 112s-154.2 31.9-211.1 88.9C145.5 257.5 114 332.7 114 412c0 79.3 31.3 154.5 88 211.4C259.3 680.3 334.4 712 413 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0 0 11.6 0l42.6-42.6a8.2 8.2 0 0 0 0-11.5zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z" Foreground="#888888" Width="16" Height="16" Margin="4,0,0,0"/>
+                    </TextBox.InnerLeftContent>
+                    <TextBox.InnerRightContent>
+                        <Button Command="{Binding ClearSearchCommand}" IsVisible="{Binding SearchDraftText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Theme="{StaticResource RobustPlainIconBtn}" Margin="0,0,10,0">
+                            <TextBlock Text="{Binding [Str_021], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource SvgIconBrush}"/>
+                        </Button>
+                    </TextBox.InnerRightContent>
+                </TextBox>
+                <Button Grid.Column="1" Classes="SearchBtn" Command="{Binding SearchCommand}" IsEnabled="{Binding !IsLoading}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <PathIcon Data="M415.59889935 818.40673751c-103.69194019 0-207.38388041-39.48836529-286.31642412-118.42090898-157.86508737-157.87981634-157.86508737-414.78248979 0-572.66230613 157.85035841-157.85035841 414.76776082-157.90927428 572.64757719 0 157.86508737 157.87981634 157.86508737 414.78248979 0 572.66230613-78.93254368 78.93254368-182.63921287 118.42090898-286.33115307 118.42090898z m0-725.22496474c-82.09927197 0-164.21327292 31.25487175-226.70828746 93.74988629-125.00475803 125.00475803-125.00475803 328.44127481 0 453.44603281 125.01948701 124.9753001 328.41181686 125.03421596 453.43130386 0 125.00475803-125.00475803 125.00475803-328.44127481 0-453.44603281-62.5097435-62.49501453-144.60901547-93.74988627-226.7230164-93.74988629zM973.48804978 1013.69813456c-10.78160515 0-21.57793927-4.10938229-29.79670383-12.34287584L658.31757585 715.95203069c-16.46698708-16.46698708-16.46698708-43.14114955 0-59.60813666s43.14114955-16.46698708 59.60813665 0l285.37377009 285.38849908c16.46698708 16.46698708 16.46698708 43.14114955 0 59.60813663a42.07329932 42.07329932 0 0 1-29.81143281 12.35760482z" Width="15" Height="15" Foreground="White"/>
+                        <TextBlock Text="搜索"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <Grid Grid.Row="2">
+                <StackPanel IsVisible="{Binding IsLoading}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
+                    <ProgressBar Width="240" Height="5" IsIndeterminate="True" Foreground="{DynamicResource SvgIconBrush}"/>
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="14" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                    <TextBlock Text="没有可显示的谱面" FontSize="18" Foreground="{DynamicResource ThemeTextSubBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="输入关键词后按 Enter 或点击搜索" FontSize="12" Foreground="{DynamicResource ThemeTextTertiaryBrush}" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <ScrollViewer x:Name="ResultScrollViewer" IsVisible="{Binding !IsEmpty}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Results}" Margin="0,8,0,30">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ChartGridColumns}" HorizontalAlignment="Stretch"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:GlobalChartSearchResult">
+                                <StackPanel Margin="8,4,8,12">
+                                    <Border Classes="Card" CornerRadius="10" VerticalAlignment="Top" ClipToBounds="True">
+                                        <Grid RowDefinitions="Auto,*">
+                                            <Border Grid.Row="0" Height="170" ClipToBounds="True" CornerRadius="10,10,0,0">
+                                                <Panel>
+                                                    <Border Background="#333333" CornerRadius="10,10,0,0" IsVisible="{Binding !HasDisplayCoverSource}">
+                                                        <PathIcon Data="M512 128a96 96 0 0 1 96 96v355.2A121.6 121.6 0 1 1 544 472.96V288h256v96H608v195.2A121.6 121.6 0 1 1 512 128z" Width="58" Height="58" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#555555"/>
+                                                    </Border>
+                                                    <Image IsVisible="{Binding ShouldShowAnimatedCover}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" animated:ImageBehavior.AnimatedSource="{Binding AnimatedDisplayCoverSource}"/>
+                                                    <asyncImageLoader:AdvancedImage Source="{Binding StaticDisplayCoverSource}" IsVisible="{Binding ShouldShowStaticCover}" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Border Background="#CC000000" CornerRadius="8" Padding="6,2" Margin="6" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                                        <TextBlock Text="{Binding SourceName}" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                                    </Border>
+                                                    <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0">
+                                                        <TextBlock Text="{Binding [Str_030], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border Background="#CC000000" CornerRadius="8" Padding="6,2" Margin="0,0,6,6" HorizontalAlignment="Right" VerticalAlignment="Bottom" MaxWidth="160" IsVisible="{Binding HasRepositoryBadge}">
+                                                        <TextBlock Text="{Binding RepositoryName}" FontSize="11" Foreground="White" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding RepositoryName}"/>
+                                                    </Border>
+                                                    <Border Background="#CC000000" CornerRadius="8" Padding="6,2" Margin="0,0,6,6" HorizontalAlignment="Right" VerticalAlignment="Bottom" IsVisible="{Binding ShowLikesBadge}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <TextBlock Text="♥" FontSize="11" Foreground="{DynamicResource SvgIconBrush}" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding LikesCount}" FontSize="11" Foreground="White" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </Panel>
+                                            </Border>
+                                            <StackPanel Grid.Row="1" Margin="12,10,12,10" Spacing="4">
+                                                <controls:MarqueeText Text="{Binding Title}" HighlightText="{Binding Title}" SearchText="{Binding $parent[UserControl].((vm:GlobalChartSearchViewModel)DataContext).SearchText}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" Height="20" IsScrollingEnabled="{Binding $parent[UserControl].((vm:GlobalChartSearchViewModel)DataContext).EnableMarquee}" ToolTip.Tip="{Binding Title}"/>
+                                                <TextBlock Text="{Binding DisplayArtist}" helpers:TextBlockHelper.HighlightText="{Binding DisplayArtist}" helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:GlobalChartSearchViewModel)DataContext).SearchText}" IsVisible="{Binding DisplayArtist, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayArtist}"/>
+                                                <TextBlock Text="{Binding DisplayCharter}" helpers:TextBlockHelper.HighlightText="{Binding DisplayCharter}" helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:GlobalChartSearchViewModel)DataContext).SearchText}" IsVisible="{Binding DisplayCharter, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayCharter}"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0" Spacing="8" MinHeight="16">
+                                                    <TextBlock Text="{Binding Bpm, StringFormat='BPM: \{0\}'}" IsVisible="{Binding Bpm, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" FontSize="11" Foreground="{DynamicResource ThemeTextTertiaryBrush}" VerticalAlignment="Center"/>
+                                                    <ItemsControl ItemsSource="{Binding DifficultyLabels}" VerticalAlignment="Center">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <StackPanel Orientation="Horizontal" Spacing="3"/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Background="#26F25D9C" BorderBrush="#80F25D9C" BorderThickness="1" CornerRadius="4" Padding="5,1">
+                                                                    <TextBlock Text="{Binding}" FontSize="10" Foreground="#FF8EBE" FontWeight="SemiBold"/>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                                <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+                                                    <Button Grid.Column="0" Theme="{StaticResource RobustIconBtn}" Command="{Binding $parent[UserControl].((vm:GlobalChartSearchViewModel)DataContext).TogglePreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding [Str_031], Source={x:Static i18n:I18nService.Instance}}">
+                                                        <Panel>
+                                                            <PathIcon IsVisible="{Binding !IsPlaying}" Data="M896 512L128 1024V0z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                                                            <PathIcon IsVisible="{Binding IsPlaying}" Data="M722.9375 933.875H301.0625a210.9375 210.9375 0 0 1-210.9375-210.9375V301.0625a210.9375 210.9375 0 0 1 210.9375-210.9375h421.875a210.9375 210.9375 0 0 1 210.9375 210.9375v421.875a210.9375 210.9375 0 0 1-210.9375 210.9375z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                                                        </Panel>
+                                                    </Button>
+                                                    <Button Grid.Column="1" Theme="{StaticResource RobustIconBtn}" Command="{Binding $parent[UserControl].((vm:GlobalChartSearchViewModel)DataContext).DownloadChartCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding [Str_033], Source={x:Static i18n:I18nService.Instance}}">
+                                                        <PathIcon Data="M498.347 824.32l-296.96-296.96c-11.947-11.947-3.414-34.133 13.653-34.133h160.427c11.946 0 20.48-8.534 20.48-20.48V54.613c0-11.946 8.533-20.48 20.48-20.48h189.44c11.946 0 20.48 8.534 20.48 20.48v418.134c0 11.946 8.533 20.48 20.48 20.48h160.426c18.774 0 27.307 22.186 13.654 34.133L525.653 824.32c-6.826 6.827-20.48 6.827-27.306 0zM916.48 989.867H107.52c-18.773 0-35.84-15.36-35.84-35.84 0-18.774 15.36-35.84 35.84-35.84h810.667c18.773 0 35.84 15.36 35.84 35.84-1.707 20.48-17.067 35.84-37.547 35.84z" Foreground="{DynamicResource SvgIconBrush}" Width="20" Height="20"/>
+                                                    </Button>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+
+        <Grid Background="#B0000000" IsVisible="{Binding IsDuplicateDialogOpen}">
+            <Border Background="{DynamicResource DialogBgBrush}"
+                    BorderBrush="#FF8EBE"
+                    BorderThickness="1.5"
+                    CornerRadius="16"
+                    Width="450"
+                    Padding="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    BoxShadow="0 8 32 #80000000">
+                <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                        <PathIcon Data="M512 80C273.44 80 80 273.44 80 512s193.44 432 432 432 432-193.44 432-432S750.56 80 512 80zm0 80c194.24 0 352 157.76 352 352S706.24 864 512 864 160 706.24 160 512 317.76 160 512 160zm-40 140v300h80V300h-80zm0 380v80h80v-80h-80z" Foreground="#FF8EBE" Width="28" Height="28"/>
+                        <TextBlock Text="{Binding [Str_424], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding DuplicateDialogTarget.Title, StringFormat='谱面 《{0}》 已存在于本地。'}" FontSize="14" Foreground="{DynamicResource ThemeTextMainBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    <Border Background="#1C151B" CornerRadius="8" Padding="12" MaxHeight="150">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding DuplicateDialogItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4" Spacing="8">
+                                            <PathIcon Data="M928 352v-48c0-35.3-28.7-64-64-64H485.2c-21 0-40.7-10.3-52.6-27.6l-61.5-88.9c-12-17.3-31.6-27.6-52.6-27.6H64c-35.3 0-64 28.7-64 64v656c0 70.7 57.3 128 128 128h638c57.8 0 108.5-38.8 123.6-94.6L928 707.2l74.2-274.5c11-40.7-19.6-80.7-61.8-80.7H928z" Width="12" Height="12" Foreground="{DynamicResource SvgIconBrush}" VerticalAlignment="Center"/>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                                <TextBlock Text="{Binding DisplayCharter}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                    <StackPanel Spacing="10" Margin="0,8,0,0">
+                        <Button Content="{Binding [Str_426], Source={x:Static i18n:I18nService.Instance}}" Command="{Binding ConfirmSingleDownloadActionCommand}" CommandParameter="overwrite" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10" Background="#D04060" Foreground="White" CornerRadius="8" FontWeight="Bold" Cursor="Hand"/>
+                        <Button Content="{Binding [Str_427], Source={x:Static i18n:I18nService.Instance}}" Command="{Binding ConfirmSingleDownloadActionCommand}" CommandParameter="both" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10" Background="{DynamicResource ControlBgBrush}" Foreground="{DynamicResource ThemeTextMainBrush}" CornerRadius="8" Cursor="Hand"/>
+                        <Button Content="{Binding [Str_428], Source={x:Static i18n:I18nService.Instance}}" Command="{Binding ConfirmSingleDownloadActionCommand}" CommandParameter="skip" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10" Background="Transparent" BorderBrush="{DynamicResource ThemeTextSubBrush}" BorderThickness="1" Foreground="{DynamicResource ThemeTextSubBrush}" CornerRadius="8" Cursor="Hand"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Panel>
+</UserControl>

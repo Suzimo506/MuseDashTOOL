@@ -24,6 +24,7 @@ public interface IAlbumCollectionService
     Task<List<DesignerChart>> GetChartsAsync(string categoryName);
     Task<List<MdmcChart>> GetLocalCommunityChartsAsync(string name);
     Task<List<MdmcChart>> GetCommunityChartsAsync(string name, string repoUrl);
+    bool HasLocalCommunityIndex(string name);
     Task<List<(DesignerCategory Category, DesignerChart Chart)>> SearchChartsAsync(string query);
     Task<List<(string CategoryName, MdmcChart Chart)>> SearchCommunityChartsAsync(string query);
     void ReleaseCollectionChartsCache(string categoryName);
@@ -601,6 +602,18 @@ public class AlbumCollectionService : IAlbumCollectionService
             return ParseCommunityCharts(json, name, repoUrl);
         }
         catch { return new List<MdmcChart>(); }
+    }
+
+    public bool HasLocalCommunityIndex(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+
+        if (_communityChartsCache.ContainsKey(name))
+            return true;
+
+        var localPath = FindLocalCommunityIndexPath(name);
+        return !string.IsNullOrEmpty(localPath) && File.Exists(localPath);
     }
 
     public async Task<List<MdmcChart>> GetCommunityChartsAsync(string name, string repoUrl)

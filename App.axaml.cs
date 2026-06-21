@@ -141,6 +141,7 @@ public partial class App : Application
         services.AddTransient<ChartManagerViewModel>();
         services.AddTransient<ChartUploadViewModel>();
         services.AddSingleton<ChartDownloadViewModel>();
+        services.AddTransient<GlobalChartSearchViewModel>();
         services.AddTransient<DownloadManagerViewModel>();
         services.AddTransient<AccountViewModel>();
         services.AddSingleton<AlbumCollectionViewModel>();
@@ -171,6 +172,7 @@ public partial class App : Application
         services.AddSingleton<INewsService, NewsService>();
         services.AddSingleton<ISponsorService, SponsorService>();
         services.AddSingleton<IAlbumCollectionService, AlbumCollectionService>();
+        services.AddTransient<IGlobalChartSearchService, GlobalChartSearchService>();
         services.AddSingleton<IMirrorDomainService, MirrorDomainService>();
         services.AddSingleton<IEnsembleLobbyService, EnsembleLobbyService>();
 

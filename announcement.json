@@ -12,12 +12,12 @@
         "cancel_button_text_en": "Don't Remind Again"
     },
     {
-        "id": "1.4.9.1",
+        "id": "1.5.1",
         "is_enabled": true,
-        "title": "喵斯兔补丁更新",
-        "title_en": "",
-        "content": "1、新增 Library 候选区支持：新下载的自制谱会默认进入候选区，不参与游戏启动加载，需要游玩时可在游戏内导入，大幅提升进游戏速度。\n2、谱面管理设置新增“默认下载到候选区”开关，可自由选择新谱面下载到候选区或 Custom_Albums 正式区。\n3、谱面管理工具箱新增“一键转移自制谱”，可以将 Custom_Albums 内的谱面转移到候选区，并尽量保留原有分类。\n4、优化谱面查重功能：查重前可选择扫描 Custom_Albums 正式区或 Library 候选区，避免两个区域互相误判重复。\n5、优化欢迎页与谱面管理对 Library 候选区的统计与展示兼容。",
-        "content_en": "1. Added Library candidate support: newly downloaded custom charts are saved to the candidate library by default, skipped during game startup, and can be imported in-game when needed. This greatly improves startup speed.\n2. Added a Settings toggle for downloading charts to the candidate library by default. You can choose between Library and the active Custom_Albums folder.\n3. Added a one-click transfer tool in Chart Manager Toolbox to move charts from Custom_Albums to the candidate library while preserving categories where possible.\n4. Improved duplicate scanning: choose whether to scan active Custom_Albums or the Library candidate area first, preventing false duplicates between the two areas.\n5. Improved Welcome page and Chart Manager compatibility for Library candidate chart counts and display.",
+        "title": "喵斯兔v1.5.1更新!",
+        "title_en": "MuseDashTOOL 1.5.1 Update",
+        "content": "新增“全局搜索”：可在一个界面同时搜索 MDMC、Euterpe 与 QQ群谱面，并统一展示结果。",
+        "content_en": "Added Global Search: search MDMC, Euterpe, and QQ group charts from one page, with results shown together in a unified view.",
         "action_button_text": "进入新版喵斯兔",
         "action_button_text_en": "Enter New MuseDashTOOL",
         "cancel_button_text": "不再显示该弹窗",

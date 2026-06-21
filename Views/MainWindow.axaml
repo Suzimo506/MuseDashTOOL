@@ -217,7 +217,7 @@
                                             BorderBrush="{Binding FloatingPanelBorder}"
                                             BorderThickness="1"
                                             CornerRadius="16"
-                                            Margin="-6,-6,-6,-180"
+                                            Margin="-6,-6,-6,-226"
                                             BoxShadow="0 8 24 0 #60000000"
                                             IsVisible="{Binding IsChartDownloadMenuExpanded}"
                                             IsHitTestVisible="True"/>
@@ -250,6 +250,9 @@
                                         <StackPanel Spacing="4"
                                                      Margin="18,0,0,0"
                                                      IsVisible="{Binding IsChartDownloadMenuExpanded}">
+                                            <Button Classes="NavBtn" Command="{Binding NavigateToGlobalChartSearchCommand}">
+                                                <TextBlock Text="全局搜索" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
+                                            </Button>
                                             <Button Classes="NavBtn" Command="{Binding NavigateToChartDownloadCommand}">
                                                 <TextBlock Text="{Binding [Str_048], Source={x:Static i18n:I18nService.Instance}}" LetterSpacing="{Binding NavButtonLetterSpacing}"/>
                                             </Button>
@@ -274,7 +277,7 @@
                                             BorderBrush="{Binding FloatingPanelBorder}"
                                             BorderThickness="1"
                                             CornerRadius="16"
-                                            Margin="-6,-6,-6,-180"
+                                            Margin="-6,-6,-6,-226"
                                             BoxShadow="0 8 24 0 #60000000"
                                             IsVisible="{Binding IsChartDownloadMenuExpanded}"
                                             IsHitTestVisible="True"/>
@@ -288,6 +291,11 @@
                                         
                                         <!-- 向下展示的三个小图标按钮 -->
                                         <StackPanel Spacing="6" IsVisible="{Binding IsChartDownloadMenuExpanded}" ClipToBounds="False">
+                                            <Button Classes="NavBtn" Classes.collapsed="True" Command="{Binding NavigateToGlobalChartSearchCommand}" Height="36" MinHeight="36" ToolTip.Tip="全局搜索">
+                                                <PathIcon Data="M415.59889935 818.40673751c-103.69194019 0-207.38388041-39.48836529-286.31642412-118.42090898-157.86508737-157.87981634-157.86508737-414.78248979 0-572.66230613 157.85035841-157.85035841 414.76776082-157.90927428 572.64757719 0 157.86508737 157.87981634 157.86508737 414.78248979 0 572.66230613-78.93254368 78.93254368-182.63921287 118.42090898-286.33115307 118.42090898z m0-725.22496474c-82.09927197 0-164.21327292 31.25487175-226.70828746 93.74988629-125.00475803 125.00475803-125.00475803 328.44127481 0 453.44603281 125.01948701 124.9753001 328.41181686 125.03421596 453.43130386 0 125.00475803-125.00475803 125.00475803-328.44127481 0-453.44603281-62.5097435-62.49501453-144.60901547-93.74988627-226.7230164-93.74988629zM973.48804978 1013.69813456c-10.78160515 0-21.57793927-4.10938229-29.79670383-12.34287584L658.31757585 715.95203069c-16.46698708-16.46698708-16.46698708-43.14114955 0-59.60813666s43.14114955-16.46698708 59.60813665 0l285.37377009 285.38849908c16.46698708 16.46698708 16.46698708 43.14114955 0 59.60813663a42.07329932 42.07329932 0 0 1-29.81143281 12.35760482z"
+                                                          Width="16" Height="16"
+                                                          Foreground="{DynamicResource NavButtonMainBrush}"/>
+                                            </Button>
                                             <Button Classes="NavBtn" Classes.collapsed="True" Command="{Binding NavigateToChartDownloadCommand}" Height="36" MinHeight="36">
                                                 <TextBlock Text="M" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource NavButtonMainBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Button>
@@ -508,7 +516,7 @@
                                     </StackPanel>
                                 </Button>
                                 <!-- 版本号精准对齐并在折叠时隐去 -->
-                                <TextBlock Text="v1.4.9" 
+                                <TextBlock Text="v1.5.1"
                                            FontSize="11" 
                                            Foreground="{DynamicResource ThemeTextSubBrush}" 
                                            Opacity="0.6" 
