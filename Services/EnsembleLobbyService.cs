@@ -78,9 +78,25 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
         {
             await connection.ConnectAsync(endpoint.Host, endpoint.Port, ct).ConfigureAwait(false);
             connection.StartReceiveLoop();
+            var observeTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var observeNonce = Guid.NewGuid().ToString("N");
+            var observeSignature = MdtObserverAuth.CreateSignature(
+                normalizedUid,
+                senderName,
+                observeTimestamp,
+                observeNonce,
+                MdtObserverAuth.DefaultSharedSecret);
+
             await connection.SendRequestAsync<MdtObserveRequest, MdtObserveResponse>(
                 OpCodes.MdtObserveReq,
-                new MdtObserveRequest { Uid = normalizedUid, ClientName = senderName },
+                new MdtObserveRequest
+                {
+                    Uid = normalizedUid,
+                    ClientName = senderName,
+                    TimestampUnixMs = observeTimestamp,
+                    Nonce = observeNonce,
+                    Signature = observeSignature
+                },
                 ct).ConfigureAwait(false);
 
             NodeStatusChanged?.Invoke(key, "已连接", true);
