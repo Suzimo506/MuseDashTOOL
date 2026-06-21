@@ -240,6 +240,8 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<DuplicateGroupItem> DuplicateGroups { get; } = new();
 
+    private DeduplicationScanScope _currentDuplicateScanScope = DeduplicationScanScope.CustomAlbums;
+
     // 工具箱底部状态信息仅显示总数
     public string ToolboxStatusString
     {
@@ -1937,15 +1939,29 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task RunDeduplicationAsync()
     {
+        var app = Avalonia.Application.Current;
+        var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (mainWindow == null) return;
+
+        var scope = await DeduplicationScopeDialog.ShowDialogAsync(mainWindow);
+        if (scope == null) return;
+
+        await RunDeduplicationForScopeAsync(scope.Value);
+    }
+
+    private async Task RunDeduplicationForScopeAsync(DeduplicationScanScope scope)
+    {
+        _currentDuplicateScanScope = scope;
         IsDeduplicationRunning = true;
-        StatusMessage = Services.I18nService.Instance["Str_420"] ?? "正在扫描重复谱面...";
+        StatusMessage = $"{Services.I18nService.Instance["Str_420"] ?? "正在扫描重复谱面..."} ({GetDuplicateScanScopeLabel(scope)})";
         IsShowingDeduplication = true;
 
+        var scanCharts = GetDuplicateScopeCharts(scope).ToList();
         await Task.Run(() =>
         {
             var groups = new Dictionary<string, List<ChartInfo>>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var chart in _allCharts)
+            foreach (var chart in scanCharts)
             {
                 if (chart == null || string.IsNullOrEmpty(chart.Name)) continue;
 
@@ -1984,7 +2000,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
                 string resultPattern = Services.I18nService.Instance["Str_416"] ?? "扫描完成，发现 {0} 组共 {1} 个重复谱面。";
                 int totalDupFiles = duplicateGroupItems.Sum(g => g.Charts.Count);
-                StatusMessage = string.Format(resultPattern, duplicateGroupItems.Count, totalDupFiles);
+                StatusMessage = $"{GetDuplicateScanScopeLabel(scope)}：{string.Format(resultPattern, duplicateGroupItems.Count, totalDupFiles)}";
             });
         });
     }
@@ -1993,11 +2009,13 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     {
         if (DuplicateGroups.Count == 0 && !IsShowingDeduplication) return;
 
+        var scope = _currentDuplicateScanScope;
+        var scanCharts = GetDuplicateScopeCharts(scope).ToList();
         System.Threading.Tasks.Task.Run(() =>
         {
             var groups = new Dictionary<string, List<ChartInfo>>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var chart in _allCharts)
+            foreach (var chart in scanCharts)
             {
                 if (chart == null || string.IsNullOrEmpty(chart.Name)) continue;
 
@@ -2036,7 +2054,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 {
                     string resultPattern = Services.I18nService.Instance["Str_416"] ?? "扫描完成，发现 {0} 组共 {1} 个重复谱面。";
                     int totalDupFiles = duplicateGroupItems.Sum(g => g.Charts.Count);
-                    StatusMessage = string.Format(resultPattern, duplicateGroupItems.Count, totalDupFiles);
+                    StatusMessage = $"{GetDuplicateScanScopeLabel(scope)}：{string.Format(resultPattern, duplicateGroupItems.Count, totalDupFiles)}";
                 }
                 
                 OnPropertyChanged(nameof(ToolboxStatusString));
@@ -2120,7 +2138,22 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         string successMsg = string.Format(Services.I18nService.Instance["Str_446"] ?? "成功删除了 {0} 个完全重复的谱面文件。", deletedCount);
         StatusMessage = successMsg;
 
-        await RunDeduplicationAsync();
+        await RunDeduplicationForScopeAsync(_currentDuplicateScanScope);
+    }
+
+    private IEnumerable<ChartInfo> GetDuplicateScopeCharts(DeduplicationScanScope scope)
+    {
+        return scope == DeduplicationScanScope.Library
+            ? _allCharts.Where(chart => chart.IsLibraryCandidate)
+            : _allCharts.Where(chart => !chart.IsLibraryCandidate);
+    }
+
+    private static string GetDuplicateScanScopeLabel(DeduplicationScanScope scope)
+    {
+        var isEn = Services.I18nService.Instance.CurrentLanguage == "en-US";
+        return scope == DeduplicationScanScope.Library
+            ? isEn ? "Candidate Library" : "候选区 Library"
+            : isEn ? "Active Custom_Albums" : "正式区 Custom_Albums";
     }
 
     private string NormalizeText(string? s)
@@ -2235,7 +2268,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         StatusMessage = string.Format(successTemplate, deletedCount);
 
         LocalDuplicatesList.Clear();
-        await RunDeduplicationAsync();
+        await RunDeduplicationForScopeAsync(_currentDuplicateScanScope);
     }
 }
 

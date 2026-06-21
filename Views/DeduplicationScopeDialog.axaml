@@ -1,0 +1,79 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MdModManager.Views.DeduplicationScopeDialog"
+        Title="选择查重范围"
+        Width="520" Height="300"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource DialogBgBrush}"
+        Foreground="{DynamicResource ThemeTextMainBrush}"
+        SystemDecorations="Full">
+
+    <Grid RowDefinitions="Auto, *, Auto" Margin="24">
+        <TextBlock Grid.Row="0"
+                   Text="选择要扫描的文件夹"
+                   FontSize="18"
+                   FontWeight="SemiBold"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"
+                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="14"
+              Margin="0,22,0,0">
+            <Button Grid.Column="0"
+                    Padding="18"
+                    CornerRadius="12"
+                    Background="{DynamicResource ControlBgBrush}"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    Click="OnCustomAlbumsClick">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="正式区 Custom_Albums"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                    <TextBlock Text="游戏启动时会直接加载这里的谱面，适合常驻游玩的自制谱。查重只会在正式区内部比较。"
+                               FontSize="12"
+                               LineHeight="18"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Column="1"
+                    Padding="18"
+                    CornerRadius="12"
+                    Background="{DynamicResource ThemeAccentBrush}"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    Click="OnLibraryClick">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="候选区 Library"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Foreground="White"/>
+                    <TextBlock Text="游戏不会在启动时加载这里的谱面，适合大量收藏、搜索和按需导入。查重只会在候选区内部比较。"
+                               FontSize="12"
+                               LineHeight="18"
+                               TextWrapping="Wrap"
+                               Foreground="#E8D7EA"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <Button Grid.Row="2"
+                Content="取消"
+                Width="92"
+                Height="34"
+                Margin="0,18,0,0"
+                HorizontalAlignment="Center"
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Center"
+                Background="{DynamicResource ControlBgBrush}"
+                Foreground="{DynamicResource ThemeTextMainBrush}"
+                CornerRadius="10"
+                Click="OnCancelClick"/>
+    </Grid>
+</Window>

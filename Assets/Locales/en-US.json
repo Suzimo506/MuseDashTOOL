@@ -457,7 +457,7 @@
   "Str_434_Desc": "Verify if the same chart title exists locally before single downloads",
   "Str_435_Desc": "Automatically detect duplicate charts and prompt management dialog before batch downloads",
   "Str_436": "Clean up unrecognized broken charts with one click",
-  "Str_437": "Scan and clean duplicate local charts by title",
+  "Str_437": "Choose Active or Library first, then scan duplicate local charts by title",
   "Str_438": "Click a duplicate group to highlight search and collapse toolbox to floating button.",
   "Str_439": "Restore Toolbox",
   "Str_ConfirmDownload": "Confirm Download",
@@ -469,6 +469,6 @@
   "Str_444": "No exact duplicate charts (same charter and name) found.",
   "Str_445": "Are you sure you want to automatically delete {0} exact duplicate charts (same author and name)?\nThis action cannot be undone!",
   "Str_446": "Successfully deleted {0} exact duplicate chart files.",
-  "Str_447": "Download charts to Library by default",
-  "Str_448": "Enable this to greatly speed up game startup"
+  "Str_447": "Download to Candidate Library by default",
+  "Str_448": "New downloads go to CustomAlbums_Library first, so they are not loaded on game startup. Import them in-game when needed to greatly speed up startup."
 }
