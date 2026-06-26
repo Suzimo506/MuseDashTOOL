@@ -886,10 +886,27 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     {
         if (string.IsNullOrWhiteSpace(entry)) return "未选择歌曲";
 
-        var parts = entry.Split('#');
+        var parts = entry.Split('#', 4);
         if (parts.Length < 4) return entry;
 
-        return $"{parts[3]} #{parts[1]}";
+        return $"{DecodeEntryPart(parts[3])} #{parts[1]}";
+    }
+
+    private static string DecodeEntryPart(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+
+        const string prefix = "__mden_uri__";
+        if (!value.StartsWith(prefix, StringComparison.Ordinal)) return value;
+
+        try
+        {
+            return Uri.UnescapeDataString(value[prefix.Length..]);
+        }
+        catch
+        {
+            return value;
+        }
     }
 
     public void Dispose()
