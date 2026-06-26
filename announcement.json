@@ -12,12 +12,12 @@
         "cancel_button_text_en": "Don't Remind Again"
     },
     {
-        "id": "1.5.1",
+        "id": "1.5.2",
         "is_enabled": true,
-        "title": "喵斯兔v1.5.1更新!",
-        "title_en": "MuseDashTOOL 1.5.1 Update",
-        "content": "新增“全局搜索”：可在一个界面同时搜索 MDMC、Euterpe 与 QQ群谱面，并统一展示结果。",
-        "content_en": "Added Global Search: search MDMC, Euterpe, and QQ group charts from one page, with results shown together in a unified view.",
+        "title": "喵斯兔v1.5.2更新!",
+        "title_en": "MuseDashTOOL 1.5.2 Update",
+        "content": "1. 优化候选区分类管理，空分类现在也会显示，并可直接导入谱面。\n2. 选择分类和移动分类面板新增正式区 / 候选区切换。\n3. 候选区子分类支持重命名、删除和批量删除。\n4. 新增“仅未归入子分类”筛选，整理候选区谱面更方便。\n5. 查重新增“全部区域”，可同时比较正式区与候选区的重复谱面。\n6. 移动分类后会尽量保留当前页。",
+        "content_en": "1. Improved Candidate Library category management. Empty categories now appear and can receive imports.\n2. Category picker and move-category panels can switch between Custom_Albums and Candidate Library.\n3. Candidate subcategories now support rename, delete, and batch delete.\n4. Added a filter for candidate charts not assigned to subcategories.\n5. Deduplication can now scan all areas together to compare Custom_Albums and Candidate Library.\n6. Moving charts now keeps the current page when possible.",
         "action_button_text": "进入新版喵斯兔",
         "action_button_text_en": "Enter New MuseDashTOOL",
         "cancel_button_text": "不再显示该弹窗",

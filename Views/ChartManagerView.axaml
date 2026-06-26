@@ -583,6 +583,14 @@
                               Width="14" Height="14"/>
                 </Button>
 
+                <CheckBox Content="仅未归入子分类"
+                          IsChecked="{Binding ShowOnlyCandidateRootCharts}"
+                          IsEnabled="{Binding IsCandidateRootFilterAvailable}"
+                          VerticalAlignment="Center"
+                          FontSize="12"
+                          Foreground="{DynamicResource ThemeTextMainBrush}"
+                          ToolTip.Tip="只显示候选区根目录下的谱面"/>
+
                 <!-- 重命名分类按钮 -->
                 <Button Command="{Binding RenameSpecificCategoryCommand}"
                         CommandParameter="{Binding SelectedCategory}"
@@ -940,7 +948,7 @@
         <Grid IsVisible="{Binding IsMovePanelOpen}"
               Background="#E00B060D"
               PointerPressed="OnCloseMovePanelBackgroundPressed">
-            <Border Width="380"
+            <Border Width="460"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     BorderBrush="{DynamicResource ShellOutlineBrush}"
@@ -955,14 +963,35 @@
                     </LinearGradientBrush>
                 </Border.Background>
                 <Grid RowDefinitions="Auto,*,Auto">
-                    <TextBlock Grid.Row="0" Text="{Binding [Str_085], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Heavy" Margin="0,0,0,20" HorizontalAlignment="Center">
-                        <TextBlock.Foreground>
-                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
-                                <GradientStop Color="#FFA7D1" Offset="0"/>
-                                <GradientStop Color="#FF5C9D" Offset="1"/>
-                            </LinearGradientBrush>
-                        </TextBlock.Foreground>
-                    </TextBlock>
+                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+                        <TextBlock Grid.Column="0" Text="{Binding [Str_085], Source={x:Static i18n:I18nService.Instance}}" FontSize="18" FontWeight="Heavy" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock.Foreground>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                    <GradientStop Color="#FFA7D1" Offset="0"/>
+                                    <GradientStop Color="#FF5C9D" Offset="1"/>
+                                </LinearGradientBrush>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+
+                        <Button Grid.Column="1"
+                                Command="{Binding ToggleMovePanelSourceCommand}"
+                                Padding="14,8"
+                                CornerRadius="10"
+                                FontSize="12"
+                                Background="#10FFFFFF"
+                                BorderBrush="#20FFFFFF"
+                                BorderThickness="1"
+                                Foreground="{DynamicResource ThemeTextMainBrush}"
+                                Cursor="Hand"
+                                ToolTip.Tip="{Binding MovePanelSourceToggleTip}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="M170.7 256h512l-85.3-85.3 60.3-60.4L846.6 299.2 657.7 488.1l-60.3-60.4L682.7 342.4h-512V256zM853.3 768h-512l85.3 85.3-60.3 60.4L177.4 724.8l188.9-188.9 60.3 60.4-85.3 85.3h512V768z"
+                                          Width="13" Height="13"
+                                          Foreground="{DynamicResource ThemeAccentBrush}"/>
+                                <TextBlock Text="{Binding MovePanelSourceDisplay}" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
 
                     <ScrollViewer Grid.Row="1" MaxHeight="240" VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding MoveCategories}">
@@ -1092,7 +1121,7 @@
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
                             <!-- 全选 -->
                             <Button Command="{Binding SelectAllCategoriesForDeletionCommand}"
-                                    IsVisible="{Binding IsCategoryDeleteMode}"
+                                    IsVisible="{Binding CanShowCategoryDeleteControls}"
                                     Content="{Binding [Str_087], Source={x:Static i18n:I18nService.Instance}}"
                                     Padding="14,8"
                                     CornerRadius="10"
@@ -1131,7 +1160,7 @@
 
                             <!-- 反选 -->
                             <Button Command="{Binding InvertCategorySelectionForDeletionCommand}"
-                                    IsVisible="{Binding IsCategoryDeleteMode}"
+                                    IsVisible="{Binding CanShowCategoryDeleteControls}"
                                     Content="{Binding [Str_088], Source={x:Static i18n:I18nService.Instance}}"
                                     Padding="14,8"
                                     CornerRadius="10"
@@ -1168,8 +1197,52 @@
                                 </Button.Styles>
                             </Button>
 
-                            <Button Command="{Binding ToggleCategoryDeleteModeCommand}"
+                            <Button Command="{Binding ToggleCategoryPanelSourceCommand}"
                                     IsVisible="{Binding !IsCategoryDeleteMode}"
+                                    Padding="14,8"
+                                    CornerRadius="10"
+                                    FontSize="12"
+                                    Background="#10FFFFFF"
+                                    BorderBrush="#20FFFFFF"
+                                    BorderThickness="1"
+                                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                                    Cursor="Hand"
+                                    ToolTip.Tip="{Binding CategoryPanelSourceToggleTip}">
+                                <Button.Styles>
+                                    <Style Selector="Button">
+                                        <Setter Property="RenderTransform" Value="scale(1.0)"/>
+                                        <Setter Property="Transitions">
+                                            <Transitions>
+                                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+                                                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="Foreground" Duration="0:0:0.2"/>
+                                            </Transitions>
+                                        </Setter>
+                                    </Style>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Background" Value="#1AF25D9C"/>
+                                        <Setter Property="BorderBrush" Value="#80FF8EBE"/>
+                                        <Setter Property="Foreground" Value="#FF8EBE"/>
+                                        <Setter Property="RenderTransform" Value="scale(1.04)"/>
+                                    </Style>
+                                    <Style Selector="Button:pressed">
+                                        <Setter Property="RenderTransform" Value="scale(0.96)"/>
+                                        <Setter Property="Background" Value="#30F25D9C"/>
+                                        <Setter Property="BorderBrush" Value="#FF8EBE"/>
+                                        <Setter Property="Foreground" Value="#FF7DB2"/>
+                                    </Style>
+                                </Button.Styles>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <PathIcon Data="M170.7 256h512l-85.3-85.3 60.3-60.4L846.6 299.2 657.7 488.1l-60.3-60.4L682.7 342.4h-512V256zM853.3 768h-512l85.3 85.3-60.3 60.4L177.4 724.8l188.9-188.9 60.3 60.4-85.3 85.3h512V768z"
+                                              Width="13" Height="13"
+                                              Foreground="{DynamicResource ThemeAccentBrush}"/>
+                                    <TextBlock Text="{Binding CategoryPanelSourceDisplay}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Command="{Binding ToggleCategoryDeleteModeCommand}"
+                                    IsVisible="{Binding CanShowCategoryDeleteEntry}"
                                     Content="{Binding [Str_089], Source={x:Static i18n:I18nService.Instance}}"
                                     Padding="14,8"
                                     CornerRadius="10"
@@ -1207,7 +1280,7 @@
                             </Button>
 
                             <Button Command="{Binding ToggleCategoryDeleteModeCommand}"
-                                    IsVisible="{Binding IsCategoryDeleteMode}"
+                                    IsVisible="{Binding CanShowCategoryDeleteControls}"
                                     Content="{Binding [Str_090], Source={x:Static i18n:I18nService.Instance}}"
                                     Padding="14,8"
                                     CornerRadius="10"
@@ -1246,7 +1319,7 @@
                     </Grid>
 
                     <ScrollViewer Grid.Row="1" MaxHeight="350" VerticalScrollBarVisibility="Auto" Margin="0,10">
-                        <ItemsControl ItemsSource="{Binding CategoryItems}">
+                        <ItemsControl ItemsSource="{Binding VisibleCategoryItems}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <UniformGrid Columns="2" HorizontalAlignment="Stretch"/>
@@ -1267,7 +1340,7 @@
                                                     Padding="12,6">
                                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                                     <CheckBox IsVisible="{Binding $parent[UserControl].((vm:ChartManagerViewModel)DataContext).IsCategoryDeleteMode}"
-                                                              IsEnabled="{Binding IsCustom}"
+                                                              IsEnabled="{Binding CanManage}"
                                                               IsChecked="{Binding IsSelectedForDeletion, Mode=OneWay}"
                                                               IsHitTestVisible="False"
                                                               Margin="0,0,4,0"
@@ -1289,7 +1362,7 @@
                                                 <StackPanel.IsVisible>
                                                     <MultiBinding Converter="{x:Static BoolConverters.And}">
                                                         <Binding Path="!$parent[UserControl].DataContext.IsCategoryDeleteMode"/>
-                                                        <Binding Path="IsCustom"/>
+                                                        <Binding Path="CanManage"/>
                                                     </MultiBinding>
                                                 </StackPanel.IsVisible>
                                                 
@@ -1331,7 +1404,7 @@
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,16,0,0">
                         <Button Content="{Binding SelectedCategoriesForDeletionCount, StringFormat='确认删除选中的 \{0\} 个分类'}"
                                 Command="{Binding DeleteSelectedCategoriesCommand}"
-                                IsVisible="{Binding IsCategoryDeleteMode}"
+                                IsVisible="{Binding CanShowCategoryDeleteControls}"
                                 IsEnabled="{Binding HasSelectedCategoriesForDeletion}"
                                 Padding="20,10"
                                 CornerRadius="10"

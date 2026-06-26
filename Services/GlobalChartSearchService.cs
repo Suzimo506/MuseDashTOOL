@@ -39,7 +39,7 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
         _albumCollectionService = albumCollectionService;
         _authState = authState;
         _euterpeClient = new HttpClient(authHeaderHandler) { BaseAddress = new Uri("https://euterpe-org.com/api/") };
-        _euterpeClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.5.1");
+        _euterpeClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.5.2");
     }
 
     public async Task<IReadOnlyList<GlobalChartSearchServiceResult>> SearchAsync(string query, CancellationToken ct = default)

@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="MdModManager.Views.DeduplicationScopeDialog"
         Title="选择查重范围"
-        Width="520" Height="300"
+        Width="760" Height="320"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource DialogBgBrush}"
@@ -19,7 +19,7 @@
                    Foreground="{DynamicResource ThemeTextMainBrush}"/>
 
         <Grid Grid.Row="1"
-              ColumnDefinitions="*,*"
+              ColumnDefinitions="*,*,*"
               ColumnSpacing="14"
               Margin="0,22,0,0">
             <Button Grid.Column="0"
@@ -59,6 +59,26 @@
                                LineHeight="18"
                                TextWrapping="Wrap"
                                Foreground="#E8D7EA"/>
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Column="2"
+                    Padding="18"
+                    CornerRadius="12"
+                    Background="{DynamicResource ControlBgBrush}"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    Click="OnAllClick">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="全部区域"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                    <TextBlock Text="同时扫描正式区与候选区，会比较两个区域之间同名的谱面。适合清理跨区域重复。"
+                               FontSize="12"
+                               LineHeight="18"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource ThemeTextSubBrush}"/>
                 </StackPanel>
             </Button>
         </Grid>

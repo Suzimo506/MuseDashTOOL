@@ -27,6 +27,11 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     public const string RootCategoryKey = "Root_Uncategorized";
     public const string CandidateCategoryKey = "Candidate_Library";
     private const string CandidateCategoryName = "候选区";
+    private enum CategoryPanelSource
+    {
+        CustomAlbums,
+        Candidate
+    }
 
     private static readonly SemaphoreSlim _coverSemaphore = new(7);
     private int _currentLoadId = 0;
@@ -113,13 +118,36 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isMovePanelOpen;
 
+    private CategoryPanelSource _movePanelSource = CategoryPanelSource.CustomAlbums;
+
     // 是否打开分类管理面板
     [ObservableProperty]
     private bool _isCategoryManagerPanelOpen;
 
     // 是否处于分类删除模式
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanShowCategoryDeleteEntry))]
+    [NotifyPropertyChangedFor(nameof(CanShowCategoryDeleteControls))]
     private bool _isCategoryDeleteMode;
+
+    private CategoryPanelSource _categoryPanelSource = CategoryPanelSource.CustomAlbums;
+
+    public string CategoryPanelSourceDisplay => _categoryPanelSource == CategoryPanelSource.Candidate
+        ? "候选区"
+        : "Custom_Albums";
+
+    public string CategoryPanelSourceToggleTip => _categoryPanelSource == CategoryPanelSource.Candidate
+        ? "切换显示 Custom_Albums 分类"
+        : "切换显示候选区分类";
+
+    public bool IsCategoryPanelCustomAlbumsSource => _categoryPanelSource == CategoryPanelSource.CustomAlbums;
+
+    public bool CanShowCategoryDeleteEntry => !IsCategoryDeleteMode;
+
+    public bool CanShowCategoryDeleteControls => IsCategoryDeleteMode;
+
+    [ObservableProperty]
+    private bool _showOnlyCandidateRootCharts;
 
     // 当前准备移动的谱面
     [ObservableProperty]
@@ -137,16 +165,33 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             {
                 new MoveCategoryItem { Name = "新建分类", IsCreateNew = true }
             };
-            list.AddRange(Categories.Where(c => c != "全部").Select(c => new MoveCategoryItem { Name = c, IsCreateNew = false }));
+
+            var targetCategories = _movePanelSource == CategoryPanelSource.Candidate
+                ? Categories.Where(IsCandidateCategory)
+                : Categories.Where(c => c == RootCategoryKey || (!IsCandidateCategory(c) && c != "全部"));
+
+            list.AddRange(targetCategories.Select(c => new MoveCategoryItem { Name = c, IsCreateNew = false }));
             return list;
         }
     }
 
+    public string MovePanelSourceDisplay => _movePanelSource == CategoryPanelSource.Candidate
+        ? "候选区"
+        : "Custom_Albums";
+
+    public string MovePanelSourceToggleTip => _movePanelSource == CategoryPanelSource.Candidate
+        ? "切换显示 Custom_Albums 目标"
+        : "切换显示候选区目标";
+
     // 分类包装项列表用于管理界面展示
     public ObservableCollection<CategoryItem> CategoryItems { get; } = new();
 
+    public IEnumerable<CategoryItem> VisibleCategoryItems => _categoryPanelSource == CategoryPanelSource.Candidate
+        ? CategoryItems.Where(item => item.IsCandidate)
+        : CategoryItems.Where(item => item.IsGlobal || item.IsCustomAlbums);
+
     // 勾选待删除分类的计数
-    public int SelectedCategoriesForDeletionCount => CategoryItems.Count(c => c.IsSelectedForDeletion);
+    public int SelectedCategoriesForDeletionCount => CategoryItems.Count(c => c.IsSelectedForDeletion && c.CanManage);
 
     // 是否有选中的分类准备被删除
     public bool HasSelectedCategoriesForDeletion => SelectedCategoriesForDeletionCount > 0;
@@ -173,10 +218,13 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsCategorySelected))]
     [NotifyPropertyChangedFor(nameof(SelectedCategoryDisplay))]
+    [NotifyPropertyChangedFor(nameof(IsCandidateRootFilterAvailable))]
     private string _selectedCategory = "全部";
 
-    // 选中自定义分类
-    public bool IsCategorySelected => SelectedCategory != "全部" && SelectedCategory != RootCategoryKey && !IsCandidateCategory(SelectedCategory);
+    // 选中可管理分类
+    public bool IsCategorySelected => CanManageCategoryName(SelectedCategory);
+
+    public bool IsCandidateRootFilterAvailable => SelectedCategory == "全部" || SelectedCategory == CandidateCategoryKey;
 
     // 限制分类名显示字数
     public string SelectedCategoryDisplay
@@ -191,6 +239,12 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     partial void OnSelectedCategoryChanged(string value)
     {
         if (string.IsNullOrEmpty(value)) return;
+        if (!IsCandidateRootFilterAvailable && ShowOnlyCandidateRootCharts)
+        {
+            _showOnlyCandidateRootCharts = false;
+            OnPropertyChanged(nameof(ShowOnlyCandidateRootCharts));
+        }
+
         CurrentPage = 1;
         ApplyFilter();
 
@@ -202,6 +256,12 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     }
 
     partial void OnSearchTextChanged(string value)
+    {
+        CurrentPage = 1;
+        ApplyFilter();
+    }
+
+    partial void OnShowOnlyCandidateRootChartsChanged(bool value)
     {
         CurrentPage = 1;
         ApplyFilter();
@@ -411,12 +471,13 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         IsAllSelected = Charts.Count > 0 && Charts.All(c => c.IsSelected);
     }
 
-    private void Reload()
+    private void Reload(int? requestedPage = null)
     {
         StopCurrentPlayback();
         foreach (var existingChart in _allCharts.ToList())
             existingChart.CleanupCoverResources();
 
+        var targetPage = requestedPage.GetValueOrDefault(1);
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             _allCharts.Clear();
@@ -426,7 +487,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             HasNoSearchResults = false;
             HasVisibleCharts = false;
             IsCustomAlbumsMissing = false;
-            CurrentPage = 1;
+            CurrentPage = Math.Max(1, targetPage);
             TotalPages = 1;
             IsEditingPageNumber = false;
             IsBatchMode = false;
@@ -478,6 +539,18 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             }
         }
 
+        if (System.IO.Directory.Exists(libraryDir))
+        {
+            foreach (var subDir in System.IO.Directory.EnumerateDirectories(libraryDir, "*", System.IO.SearchOption.AllDirectories))
+            {
+                var relative = System.IO.Path.GetRelativePath(libraryDir, subDir);
+                if (relative == "." || relative.StartsWith("..", StringComparison.Ordinal))
+                    continue;
+
+                categories.Add(GetCandidateSubCategoryKey(relative.Replace(System.IO.Path.DirectorySeparatorChar, '/').Replace(System.IO.Path.AltDirectorySeparatorChar, '/')));
+            }
+        }
+
         var charts = _chartService.LoadCharts(gamePath, _downloadManagerService.SessionDownloadedFiles)
             .OrderByDescending(chart => chart.IsNewDownload)
             .ThenBy(chart => chart.Name, StringComparer.OrdinalIgnoreCase)
@@ -492,6 +565,10 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         {
             categories.Add(subCategory);
         }
+
+        categories = categories
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
@@ -513,6 +590,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             }
 
             OnPropertyChanged(nameof(MoveCategories));
+            OnPropertyChanged(nameof(VisibleCategoryItems));
             OnPropertyChanged(nameof(SelectedCategoriesForDeletionCount));
             OnPropertyChanged(nameof(HasSelectedCategoriesForDeletion));
 
@@ -542,6 +620,12 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         foreach (var chart in _allCharts)
         {
+            if (ShowOnlyCandidateRootCharts &&
+                (!chart.IsLibraryCandidate || !string.IsNullOrWhiteSpace(chart.CandidateSubCategory)))
+            {
+                continue;
+            }
+
             // 分类过滤
             if (!IsChartInSelectedCategory(chart))
                 continue;
@@ -686,6 +770,16 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private static bool IsCandidateCategory(string category)
     {
         return category == CandidateCategoryKey || category.StartsWith(CandidateCategoryKey + "/", StringComparison.Ordinal);
+    }
+
+    public static bool CanManageCategoryName(string category)
+    {
+        return !string.IsNullOrEmpty(category)
+            && category != "全部"
+            && category != "未分类"
+            && category != "Uncategorized"
+            && category != RootCategoryKey
+            && category != CandidateCategoryKey;
     }
 
     private static string GetCandidateSubCategoryKey(string subCategory)
@@ -873,9 +967,10 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         try
         {
-            var albumsDir = System.IO.Path.Combine(gamePath, "Custom_Albums");
-            if (!System.IO.Directory.Exists(albumsDir))
-                System.IO.Directory.CreateDirectory(albumsDir);
+            var targetCategory = GetImportTargetCategory();
+            var targetDir = GetTargetFolder(gamePath, targetCategory);
+            if (!System.IO.Directory.Exists(targetDir))
+                System.IO.Directory.CreateDirectory(targetDir);
 
             string destFileName = System.IO.Path.GetFileName(sourceFile);
             
@@ -902,7 +997,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 destFileName = System.IO.Path.GetFileNameWithoutExtension(sourceFile) + ".mdm";
             }
 
-            var destFile = System.IO.Path.Combine(albumsDir, destFileName);
+            var destFile = System.IO.Path.Combine(targetDir, destFileName);
             System.IO.File.Copy(sourceFile, destFile, true);
             ChartService.ConvertEpkToInfoJsonInPlace(destFile);
             _downloadManagerService.SessionDownloadedFiles.Add(System.IO.Path.GetFullPath(destFile));
@@ -915,6 +1010,17 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             Console.WriteLine($"[ChartManager] Import error: {ex.Message}");
             StatusMessage = "导入失败: " + ex.Message;
         }
+    }
+
+    private string GetImportTargetCategory()
+    {
+        if (ShowOnlyCandidateRootCharts)
+            return CandidateCategoryKey;
+
+        if (string.IsNullOrWhiteSpace(SelectedCategory) || SelectedCategory == "全部")
+            return RootCategoryKey;
+
+        return SelectedCategory;
     }
 
     public void Dispose()
@@ -1022,6 +1128,11 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void OpenCategoryManagerPanel()
     {
+        _categoryPanelSource = IsCandidateCategory(SelectedCategory)
+            ? CategoryPanelSource.Candidate
+            : CategoryPanelSource.CustomAlbums;
+        NotifyCategoryPanelSourceChanged();
+
         IsCategoryManagerPanelOpen = true;
         IsCategoryDeleteMode = false;
         foreach (var item in CategoryItems)
@@ -1030,6 +1141,34 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         }
         OnPropertyChanged(nameof(SelectedCategoriesForDeletionCount));
         OnPropertyChanged(nameof(HasSelectedCategoriesForDeletion));
+    }
+
+    [RelayCommand]
+    private void ToggleCategoryPanelSource()
+    {
+        _categoryPanelSource = _categoryPanelSource == CategoryPanelSource.Candidate
+            ? CategoryPanelSource.CustomAlbums
+            : CategoryPanelSource.Candidate;
+
+        IsCategoryDeleteMode = false;
+        foreach (var item in CategoryItems)
+        {
+            item.IsSelectedForDeletion = false;
+        }
+
+        NotifyCategoryPanelSourceChanged();
+        OnPropertyChanged(nameof(SelectedCategoriesForDeletionCount));
+        OnPropertyChanged(nameof(HasSelectedCategoriesForDeletion));
+    }
+
+    private void NotifyCategoryPanelSourceChanged()
+    {
+        OnPropertyChanged(nameof(CategoryPanelSourceDisplay));
+        OnPropertyChanged(nameof(CategoryPanelSourceToggleTip));
+        OnPropertyChanged(nameof(IsCategoryPanelCustomAlbumsSource));
+        OnPropertyChanged(nameof(CanShowCategoryDeleteEntry));
+        OnPropertyChanged(nameof(CanShowCategoryDeleteControls));
+        OnPropertyChanged(nameof(VisibleCategoryItems));
     }
 
     // 关闭分类管理面板
@@ -1060,7 +1199,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void ToggleCategorySelectionForDeletion(CategoryItem item)
     {
-        if (item != null && item.IsCustom)
+        if (item != null && item.CanManage)
         {
             item.IsSelectedForDeletion = !item.IsSelectedForDeletion;
             OnPropertyChanged(nameof(SelectedCategoriesForDeletionCount));
@@ -1072,9 +1211,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void SelectAllCategoriesForDeletion()
     {
-        foreach (var item in CategoryItems)
+        foreach (var item in VisibleCategoryItems)
         {
-            if (item.IsCustom)
+            if (item.CanManage)
             {
                 item.IsSelectedForDeletion = true;
             }
@@ -1087,9 +1226,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void InvertCategorySelectionForDeletion()
     {
-        foreach (var item in CategoryItems)
+        foreach (var item in VisibleCategoryItems)
         {
-            if (item.IsCustom)
+            if (item.CanManage)
             {
                 item.IsSelectedForDeletion = !item.IsSelectedForDeletion;
             }
@@ -1118,7 +1257,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task RenameSpecificCategoryAsync(string oldName)
     {
-        if (string.IsNullOrEmpty(oldName) || oldName == "全部" || oldName == "未分类" || oldName == "Uncategorized" || oldName == RootCategoryKey || IsCandidateCategory(oldName)) return;
+        if (!CanManageCategoryName(oldName)) return;
 
         // 游戏运行时限制分类重命名
         if (IsGameRunning())
@@ -1143,16 +1282,20 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
-        var newName = await InputDialog.ShowDialogAsync(mainWindow, "重命名分类", "请输入新的分类名称：", oldName);
+        var isCandidate = IsCandidateCategory(oldName);
+        var oldDisplayName = GetCategoryDisplayName(oldName);
+        var oldInputName = isCandidate ? GetCandidateSubCategoryFromKey(oldName) : oldName;
+        var newName = await InputDialog.ShowDialogAsync(mainWindow, "重命名分类", "请输入新的分类名称：", oldInputName);
         if (string.IsNullOrWhiteSpace(newName) || newName == oldName)
             return;
 
-        foreach (char c in System.IO.Path.GetInvalidFileNameChars())
-            newName = newName.Replace(c, '_');
+        newName = SanitizeCategoryName(newName, isCandidate);
+        if (string.IsNullOrWhiteSpace(newName) || newName == oldInputName)
+            return;
 
-        var albumsDir = System.IO.Path.Combine(gamePath, "Custom_Albums");
-        var sourceDir = System.IO.Path.Combine(albumsDir, oldName);
-        var targetDir = System.IO.Path.Combine(albumsDir, newName);
+        var targetCategory = isCandidate ? GetCandidateSubCategoryKey(newName) : newName;
+        var sourceDir = GetTargetFolder(gamePath, oldName);
+        var targetDir = GetTargetFolder(gamePath, targetCategory);
 
         if (System.IO.Directory.Exists(targetDir))
         {
@@ -1170,23 +1313,26 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         {
             System.IO.Directory.Move(sourceDir, targetDir);
 
-            var packJsonPath = System.IO.Path.Combine(targetDir, "pack.json");
-            if (System.IO.File.Exists(packJsonPath))
+            if (!isCandidate)
             {
-                var packData = new
+                var packJsonPath = System.IO.Path.Combine(targetDir, "pack.json");
+                if (System.IO.File.Exists(packJsonPath))
                 {
-                    Title = newName,
-                    TitleColorHex = "#ffffff",
-                    LongTextScroll = false
-                };
-                var jsonStr = JsonSerializer.Serialize(packData, new JsonSerializerOptions { WriteIndented = true });
-                await System.IO.File.WriteAllTextAsync(packJsonPath, jsonStr, System.Text.Encoding.UTF8);
+                    var packData = new
+                    {
+                        Title = newName,
+                        TitleColorHex = "#ffffff",
+                        LongTextScroll = false
+                    };
+                    var jsonStr = JsonSerializer.Serialize(packData, new JsonSerializerOptions { WriteIndented = true });
+                    await System.IO.File.WriteAllTextAsync(packJsonPath, jsonStr, System.Text.Encoding.UTF8);
+                }
             }
 
-            StatusMessage = $"分类《{oldName}》已重命名为《{newName}》";
+            StatusMessage = $"分类《{oldDisplayName}》已重命名为《{GetCategoryDisplayName(targetCategory)}》";
             if (SelectedCategory == oldName)
             {
-                SelectedCategory = newName;
+                SelectedCategory = targetCategory;
             }
             Reload();
         }
@@ -1200,7 +1346,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task DeleteSpecificCategoryAsync(string oldName)
     {
-        if (string.IsNullOrEmpty(oldName) || oldName == "全部" || oldName == "未分类" || oldName == "Uncategorized" || oldName == RootCategoryKey || IsCandidateCategory(oldName)) return;
+        if (!CanManageCategoryName(oldName)) return;
 
         // 游戏运行时限制分类删除
         if (IsGameRunning())
@@ -1225,9 +1371,11 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
+        var isCandidate = IsCandidateCategory(oldName);
+        var oldDisplayName = GetCategoryDisplayName(oldName);
         var confirmMsg = Services.I18nService.Instance.CurrentLanguage == "en-US"
-            ? $"Are you sure you want to delete the category \"{oldName}\"?\nDeleting this category will move all of its charts back to \"Uncategorized\"."
-            : $"确定要删除分类《{oldName}》吗？\n删除分类将把其中的所有谱面文件移动回“未分类”。";
+            ? $"Are you sure you want to delete the category \"{oldDisplayName}\"?\nDeleting this category will move all of its charts back to \"Uncategorized\"."
+            : $"确定要删除分类《{oldDisplayName}》吗？\n删除分类将把其中的所有谱面文件移回{(isCandidate ? "候选区" : "未分类")}。";
         var confirmed = await MessageBox.ShowDialogAsync(mainWindow, confirmMsg, true);
         if (!confirmed) return;
 
@@ -1239,16 +1387,21 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         try
         {
-            var albumsDir = System.IO.Path.Combine(gamePath, "Custom_Albums");
-            var sourceDir = System.IO.Path.Combine(albumsDir, oldName);
+            var rootDir = System.IO.Path.Combine(gamePath, isCandidate ? "CustomAlbums_Library" : "Custom_Albums");
+            var sourceDir = GetTargetFolder(gamePath, oldName);
 
             if (System.IO.Directory.Exists(sourceDir))
             {
-                foreach (var file in System.IO.Directory.GetFiles(sourceDir, "*.mdm"))
+                var searchOption = isCandidate ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly;
+                foreach (var file in System.IO.Directory.GetFiles(sourceDir, "*.mdm", searchOption))
                 {
-                    var destFile = System.IO.Path.Combine(albumsDir, System.IO.Path.GetFileName(file));
-                    if (System.IO.File.Exists(destFile))
+                    var destFile = isCandidate
+                        ? GetAvailableChartPath(rootDir, System.IO.Path.GetFileName(file))
+                        : System.IO.Path.Combine(rootDir, System.IO.Path.GetFileName(file));
+
+                    if (!isCandidate && System.IO.File.Exists(destFile))
                         System.IO.File.Delete(destFile);
+
                     System.IO.File.Move(file, destFile);
                 }
 
@@ -1256,10 +1409,10 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
             }
 
 
-            StatusMessage = $"分类《{oldName}》删除成功，谱面已移回未分类";
+            StatusMessage = $"分类《{oldDisplayName}》删除成功，谱面已移回{(isCandidate ? "候选区" : "未分类")}";
             if (SelectedCategory == oldName)
             {
-                SelectedCategory = "全部";
+                SelectedCategory = isCandidate ? CandidateCategoryKey : "全部";
             }
             Reload();
         }
@@ -1431,7 +1584,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task DeleteSelectedCategoriesAsync()
     {
-        var toDelete = CategoryItems.Where(c => c.IsSelectedForDeletion && c.IsCustom).Select(c => c.Name).ToList();
+        var toDelete = CategoryItems.Where(c => c.IsSelectedForDeletion && c.CanManage).Select(c => c.Name).ToList();
         if (toDelete.Count == 0) return;
 
         // 游戏运行时限制批量删除分类
@@ -1471,19 +1624,25 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         try
         {
-            var albumsDir = System.IO.Path.Combine(gamePath, "Custom_Albums");
             int deletedCount = 0;
 
             foreach (var oldName in toDelete)
             {
-                var sourceDir = System.IO.Path.Combine(albumsDir, oldName);
+                var isCandidate = IsCandidateCategory(oldName);
+                var rootDir = System.IO.Path.Combine(gamePath, isCandidate ? "CustomAlbums_Library" : "Custom_Albums");
+                var sourceDir = GetTargetFolder(gamePath, oldName);
                 if (System.IO.Directory.Exists(sourceDir))
                 {
-                    foreach (var file in System.IO.Directory.GetFiles(sourceDir, "*.mdm"))
+                    var searchOption = isCandidate ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly;
+                    foreach (var file in System.IO.Directory.GetFiles(sourceDir, "*.mdm", searchOption))
                     {
-                        var destFile = System.IO.Path.Combine(albumsDir, System.IO.Path.GetFileName(file));
-                        if (System.IO.File.Exists(destFile))
+                        var destFile = isCandidate
+                            ? GetAvailableChartPath(rootDir, System.IO.Path.GetFileName(file))
+                            : System.IO.Path.Combine(rootDir, System.IO.Path.GetFileName(file));
+
+                        if (!isCandidate && System.IO.File.Exists(destFile))
                             System.IO.File.Delete(destFile);
+
                         System.IO.File.Move(file, destFile);
                     }
 
@@ -1498,7 +1657,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
             if (toDelete.Contains(SelectedCategory))
             {
-                SelectedCategory = "全部";
+                SelectedCategory = IsCandidateCategory(SelectedCategory) ? CandidateCategoryKey : "全部";
             }
 
             Reload();
@@ -1514,6 +1673,8 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private void OpenSingleMovePanel(ChartInfo chart)
     {
         CurrentMovingChart = chart;
+        _movePanelSource = chart.IsLibraryCandidate ? CategoryPanelSource.Candidate : CategoryPanelSource.CustomAlbums;
+        NotifyMovePanelSourceChanged();
         IsMovePanelOpen = true;
     }
 
@@ -1522,7 +1683,25 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private void OpenBatchMovePanel()
     {
         CurrentMovingChart = null;
+        _movePanelSource = IsCandidateCategory(SelectedCategory) ? CategoryPanelSource.Candidate : CategoryPanelSource.CustomAlbums;
+        NotifyMovePanelSourceChanged();
         IsMovePanelOpen = true;
+    }
+
+    [RelayCommand]
+    private void ToggleMovePanelSource()
+    {
+        _movePanelSource = _movePanelSource == CategoryPanelSource.Candidate
+            ? CategoryPanelSource.CustomAlbums
+            : CategoryPanelSource.Candidate;
+        NotifyMovePanelSourceChanged();
+    }
+
+    private void NotifyMovePanelSourceChanged()
+    {
+        OnPropertyChanged(nameof(MovePanelSourceDisplay));
+        OnPropertyChanged(nameof(MovePanelSourceToggleTip));
+        OnPropertyChanged(nameof(MoveCategories));
     }
 
     // 关闭移动面板
@@ -1556,7 +1735,9 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         if (item.IsCreateNew)
         {
-            await CreateCategoryAndMoveAsync();
+            await CreateCategoryAndMoveAsync(_movePanelSource == CategoryPanelSource.Candidate
+                ? CategoryCreateScope.Candidate
+                : CategoryCreateScope.Normal);
         }
         else
         {
@@ -1658,16 +1839,13 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     }
 
     // 当场新建分类并移动谱面
-    private async Task CreateCategoryAndMoveAsync()
+    private async Task CreateCategoryAndMoveAsync(CategoryCreateScope scope)
     {
         var app = Avalonia.Application.Current;
         var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (mainWindow == null) return;
 
-        var scope = await SelectCategoryCreateScopeAsync(mainWindow);
-        if (scope == null) return;
-
-        var targetCategory = await CreateCategoryCoreAsync(scope.Value, mainWindow);
+        var targetCategory = await CreateCategoryCoreAsync(scope, mainWindow);
         if (string.IsNullOrEmpty(targetCategory)) return;
 
         if (CurrentMovingChart != null)
@@ -1733,7 +1911,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
                 System.IO.File.Move(chart.FilePath, destPath);
     
                 StatusMessage = $"成功移动谱面至分类《{targetCategory}》";
-                Reload();
+                Reload(CurrentPage);
             }
         }
         catch (Exception ex)
@@ -1799,7 +1977,7 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
 
         StatusMessage = $"成功移动 {successCount} 张谱面至分类《{targetCategory}》";
-        Reload();
+        Reload(CurrentPage);
     }
 
     // 新建分类的逻辑
@@ -1815,7 +1993,10 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
         var targetCategory = await CreateCategoryCoreAsync(scope.Value, mainWindow);
         if (!string.IsNullOrEmpty(targetCategory))
+        {
+            SelectedCategory = targetCategory;
             Reload();
+        }
     }
 
     private bool _isUpdatingSortOptions = false;
@@ -2143,17 +2324,23 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
 
     private IEnumerable<ChartInfo> GetDuplicateScopeCharts(DeduplicationScanScope scope)
     {
-        return scope == DeduplicationScanScope.Library
-            ? _allCharts.Where(chart => chart.IsLibraryCandidate)
-            : _allCharts.Where(chart => !chart.IsLibraryCandidate);
+        return scope switch
+        {
+            DeduplicationScanScope.Library => _allCharts.Where(chart => chart.IsLibraryCandidate),
+            DeduplicationScanScope.All => _allCharts,
+            _ => _allCharts.Where(chart => !chart.IsLibraryCandidate)
+        };
     }
 
     private static string GetDuplicateScanScopeLabel(DeduplicationScanScope scope)
     {
         var isEn = Services.I18nService.Instance.CurrentLanguage == "en-US";
-        return scope == DeduplicationScanScope.Library
-            ? isEn ? "Candidate Library" : "候选区 Library"
-            : isEn ? "Active Custom_Albums" : "正式区 Custom_Albums";
+        return scope switch
+        {
+            DeduplicationScanScope.Library => isEn ? "Candidate Library" : "候选区 Library",
+            DeduplicationScanScope.All => isEn ? "All Areas" : "全部区域",
+            _ => isEn ? "Active Custom_Albums" : "正式区 Custom_Albums"
+        };
     }
 
     private string NormalizeText(string? s)
@@ -2286,7 +2473,15 @@ public class CategoryItem : ObservableObject
 
     public string DisplayName => Name == "全部" ? MdModManager.Services.I18nService.Instance["Str_389"] : ChartManagerViewModel.GetCategoryDisplayName(Name);
 
+    public bool IsGlobal => Name == "全部";
+
+    public bool IsCandidate => Name.StartsWith(ChartManagerViewModel.CandidateCategoryKey, StringComparison.Ordinal);
+
+    public bool IsCustomAlbums => Name == ChartManagerViewModel.RootCategoryKey || IsCustom;
+
     public bool IsCustom => Name != "全部" && Name != ChartManagerViewModel.RootCategoryKey && !Name.StartsWith(ChartManagerViewModel.CandidateCategoryKey, StringComparison.Ordinal);
+
+    public bool CanManage => ChartManagerViewModel.CanManageCategoryName(Name);
 
     private bool _isSelectedForDeletion;
     public bool IsSelectedForDeletion

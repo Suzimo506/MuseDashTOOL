@@ -7,7 +7,8 @@ namespace MdModManager.Views;
 public enum DeduplicationScanScope
 {
     CustomAlbums,
-    Library
+    Library,
+    All
 }
 
 public partial class DeduplicationScopeDialog : Window
@@ -35,6 +36,12 @@ public partial class DeduplicationScopeDialog : Window
     private void OnLibraryClick(object? sender, RoutedEventArgs e)
     {
         _result = DeduplicationScanScope.Library;
+        Close();
+    }
+
+    private void OnAllClick(object? sender, RoutedEventArgs e)
+    {
+        _result = DeduplicationScanScope.All;
         Close();
     }
 
