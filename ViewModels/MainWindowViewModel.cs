@@ -187,6 +187,10 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 await NavigateToConfigWithFileAsync(filePath);
             };
+            _navigationService.OnRequestModDownloadNavigation += async (modName) =>
+            {
+                await NavigateToModDownloadWithFocusAsync(modName);
+            };
         }
     }
 
@@ -199,6 +203,17 @@ public partial class MainWindowViewModel : ObservableObject
         vm.PreSelectedFilePath = filePath;
         CurrentPage = vm;
         await vm.InitializeAsync(_currentPageCts!.Token);
+    }
+
+    private async Task NavigateToModDownloadWithFocusAsync(string modName)
+    {
+        CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false;
+
+        var vm = Ioc.Default.GetRequiredService<ModManagerViewModel>();
+        CurrentPage = vm;
+        await vm.InitializeAsync(_currentPageCts!.Token);
+        vm.FocusDownloadMod(modName);
     }
 
     public async Task InitializeAsync()

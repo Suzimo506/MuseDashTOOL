@@ -63,9 +63,16 @@ public class ModCatalogService : IModCatalogService
                 Name = e.Name ?? "",
                 Version = e.CurrentVersion ?? "",
                 Author = e.Author ?? "",
-                FileName = (e.Name ?? "") + ".dll",
+                FileName = !string.IsNullOrWhiteSpace(e.FileName)
+                    ? e.FileName
+                    : !string.IsNullOrWhiteSpace(e.FileNameSnake)
+                        ? e.FileNameSnake
+                        : (e.Name ?? "") + ".dll",
+                DownloadLink = e.DownloadUrl ?? e.DownloadLink ?? "",
                 Description = e.Description ?? "",
                 GameVersion = e.GameVersion ?? "*",
+                DependentMods = e.ModDependencies ?? e.ModDependenciesSnake ?? [],
+                DependentLibs = e.LibDependencies ?? e.LibDependenciesSnake ?? [],
                 Source = "Euterpe"
             }).ToList();
 
@@ -87,7 +94,14 @@ public class ModCatalogService : IModCatalogService
         [JsonPropertyName("game_version")] public string? GameVersion { get; set; }
         [JsonPropertyName("current_version")] public string? CurrentVersion { get; set; }
         [JsonPropertyName("description")] public string? Description { get; set; }
+        [JsonPropertyName("fileName")] public string? FileName { get; set; }
+        [JsonPropertyName("file_name")] public string? FileNameSnake { get; set; }
         [JsonPropertyName("download_url")] public string? DownloadUrl { get; set; }
+        [JsonPropertyName("downloadLink")] public string? DownloadLink { get; set; }
+        [JsonPropertyName("modDependencies")] public string[]? ModDependencies { get; set; }
+        [JsonPropertyName("libDependencies")] public string[]? LibDependencies { get; set; }
+        [JsonPropertyName("mod_dependencies")] public string[]? ModDependenciesSnake { get; set; }
+        [JsonPropertyName("lib_dependencies")] public string[]? LibDependenciesSnake { get; set; }
     }
 
     private static string BuildRemoteCatalogUrl()

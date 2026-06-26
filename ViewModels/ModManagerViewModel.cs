@@ -403,6 +403,34 @@ public partial class ModManagerViewModel : ObservableObject
     public bool IsInstalled(string? fileName) =>
         !string.IsNullOrEmpty(fileName) && _installedByFileName.ContainsKey(fileName);
 
+    public void FocusDownloadMod(string modName)
+    {
+        if (string.IsNullOrWhiteSpace(modName)) return;
+
+        SelectedTabIndex = 2;
+        SearchText = string.Empty;
+
+        foreach (var mod in _allRemoteMods.Concat(_allLocalMods))
+        {
+            mod.IsHighlighted = false;
+        }
+
+        var target = _allRemoteMods.FirstOrDefault(m =>
+            m.Name.Equals(modName, StringComparison.OrdinalIgnoreCase) ||
+            m.FileName.Equals(modName, StringComparison.OrdinalIgnoreCase) ||
+            System.IO.Path.GetFileNameWithoutExtension(m.FileName).Equals(modName, StringComparison.OrdinalIgnoreCase));
+
+        if (target == null)
+        {
+            RefreshList();
+            return;
+        }
+
+        target.IsHighlighted = true;
+        target.Expand();
+        RefreshList();
+    }
+
     /// <summary>
     /// 判断本地 mod 和远端 mod 是否为同一个 mod。
     /// 文件名相同不代表是同一个 mod（可能是 fork 版本覆盖了同名文件）。
@@ -687,9 +715,7 @@ public partial class ModManagerViewModel : ObservableObject
 
     private async Task PerformDownloadAsync(ModInfo remoteInfo, bool isUpdate = false, LocalMod? localMod = null)
     {
-        var fileName = !string.IsNullOrEmpty(remoteInfo.FileName)
-            ? remoteInfo.FileName
-            : remoteInfo.DownloadLink.Replace("Mods/", "");
+        var fileName = ResolveDownloadFileName(remoteInfo, "Mods");
 
         if (string.IsNullOrEmpty(fileName)) return;
 
@@ -728,60 +754,27 @@ public partial class ModManagerViewModel : ObservableObject
             return;
         }
 
-        string downloadUrl;
-        if (remoteInfo.Source == "Euterpe")
-        {
-            var domain = MdModManager.Helpers.MirrorDomainRegistry.GetDownloadDomainOrDefault();
-            var protocol = domain.StartsWith("http") ? "" : "https://";
-            downloadUrl = $"{protocol}{domain}/Mods/{fileName}";
-        }
-        else
-        {
-            // 默认 Gitee 源
-            downloadUrl = $"https://gitee.com/lxymahatma/ModLinks/raw/dev/Mods/{fileName}";
-        }
-
-        // 游戏运行时 → 下载后放入暂存文件夹
         bool gameRunning = IsGameRunning();
-        var targetPath = gameRunning
-            ? System.IO.Path.Combine(_stagingService.GetStagingPath(gamePath), fileName)
-            : System.IO.Path.Combine(gamePath, "Mods", fileName);
 
         if (localMod != null)
         {
             localMod.IsDownloading = true; // 标记下载状态
         }
 
+        int modDependencyCount = 0;
+        int libDependencyCount = 0;
+
         try
         {
             using var client = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(30));
-            var bytes = await client.GetByteArrayAsync(downloadUrl);
-            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetPath)!);
+            var visitedMods = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { fileName };
+            var visitedLibs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // 如果是更新，尝试删除旧文件（游戏未运行时才能直接删除）
-            if (isUpdate && localMod != null && !string.IsNullOrEmpty(localMod.FilePath) && !gameRunning)
-            {
-                if (System.IO.File.Exists(localMod.FilePath))
-                {
-                    try { System.IO.File.Delete(localMod.FilePath); }
-                    catch (Exception deleteEx)
-                    {
-                        Console.WriteLine($"[ModManagerViewModel] 无法删除旧版本 Mod '{localMod.FilePath}': {deleteEx}");
-                    }
-                }
-            }
+            modDependencyCount = await InstallModDependenciesAsync(remoteInfo, gamePath, gameRunning, client, visitedMods, visitedLibs);
+            libDependencyCount = await InstallLibDependenciesAsync(remoteInfo, gamePath, client, visitedLibs);
+            await DownloadModFileAsync(remoteInfo, fileName, gamePath, gameRunning, client, isUpdate, localMod);
 
-            await System.IO.File.WriteAllBytesAsync(targetPath, bytes);
-
-            if (gameRunning)
-            {
-                _stagingService.Refresh(gamePath);
-                _notificationService.ShowSuccess("已暂存，将在游戏关闭后自动安装");
-            }
-            else
-            {
-                _notificationService.ShowSuccess(isUpdate ? "更新成功" : "下载成功");
-            }
+            ShowDownloadSuccess(isUpdate, gameRunning, modDependencyCount, libDependencyCount);
         }
         catch (Exception ex)
         {
@@ -797,6 +790,254 @@ public partial class ModManagerViewModel : ObservableObject
         }
 
         await InitializeAsync();
+    }
+
+    private async Task<int> InstallModDependenciesAsync(
+        ModInfo remoteInfo,
+        string gamePath,
+        bool gameRunning,
+        HttpClient client,
+        HashSet<string> visitedMods,
+        HashSet<string> visitedLibs)
+    {
+        int installedCount = 0;
+
+        foreach (var dependencyName in remoteInfo.DependentMods.Where(d => !string.IsNullOrWhiteSpace(d)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var dependencyInfo = ResolveModDependency(dependencyName);
+            var dependencyFileName = ResolveDownloadFileName(dependencyInfo, "Mods");
+            if (string.IsNullOrEmpty(dependencyFileName)) continue;
+
+            if (!visitedMods.Add(dependencyFileName)) continue;
+
+            installedCount += await InstallModDependenciesAsync(dependencyInfo, gamePath, gameRunning, client, visitedMods, visitedLibs);
+            installedCount += await InstallLibDependenciesAsync(dependencyInfo, gamePath, client, visitedLibs);
+
+            if (IsModDependencySatisfied(dependencyInfo, dependencyFileName)) continue;
+
+            await DownloadModFileAsync(dependencyInfo, dependencyFileName, gamePath, gameRunning, client, isUpdate: false, localMod: null);
+            installedCount++;
+        }
+
+        return installedCount;
+    }
+
+    private async Task<int> InstallLibDependenciesAsync(
+        ModInfo remoteInfo,
+        string gamePath,
+        HttpClient client,
+        HashSet<string> visitedLibs)
+    {
+        int installedCount = 0;
+
+        foreach (var dependency in remoteInfo.DependentLibs.Where(d => !string.IsNullOrWhiteSpace(d)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var fileName = ResolveDependencyFileName(dependency, "UserLibs");
+            if (string.IsNullOrEmpty(fileName)) continue;
+            if (!visitedLibs.Add(fileName)) continue;
+
+            var downloadUrl = ResolveDownloadReference(dependency, "Mods", remoteInfo.Source);
+            var targetPath = System.IO.Path.Combine(gamePath, "UserLibs", fileName);
+            await DownloadFileAsync(client, downloadUrl, targetPath);
+            installedCount++;
+        }
+
+        return installedCount;
+    }
+
+    private async Task DownloadModFileAsync(
+        ModInfo remoteInfo,
+        string fileName,
+        string gamePath,
+        bool gameRunning,
+        HttpClient client,
+        bool isUpdate,
+        LocalMod? localMod)
+    {
+        var downloadUrl = BuildDownloadUrl(remoteInfo, fileName, "Mods");
+        var targetPath = gameRunning
+            ? System.IO.Path.Combine(_stagingService.GetStagingPath(gamePath), fileName)
+            : System.IO.Path.Combine(gamePath, "Mods", fileName);
+
+        if (isUpdate && localMod != null && !string.IsNullOrEmpty(localMod.FilePath) && !gameRunning)
+        {
+            if (System.IO.File.Exists(localMod.FilePath))
+            {
+                try { System.IO.File.Delete(localMod.FilePath); }
+                catch (Exception deleteEx)
+                {
+                    Console.WriteLine($"[ModManagerViewModel] 无法删除旧版本 Mod '{localMod.FilePath}': {deleteEx}");
+                }
+            }
+        }
+
+        await DownloadFileAsync(client, downloadUrl, targetPath);
+        if (gameRunning)
+        {
+            _stagingService.Refresh(gamePath);
+        }
+    }
+
+    private static async Task DownloadFileAsync(HttpClient client, string downloadUrl, string targetPath)
+    {
+        var bytes = await client.GetByteArrayAsync(downloadUrl);
+        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetPath)!);
+        await System.IO.File.WriteAllBytesAsync(targetPath, bytes);
+    }
+
+    private ModInfo ResolveModDependency(string dependency)
+    {
+        var dependencyFileName = EnsureDllFileName(ResolveDependencyFileName(dependency, "Mods"));
+        var dependencyName = System.IO.Path.GetFileNameWithoutExtension(dependencyFileName);
+        var remoteMods = _allRemoteMods
+            .Select(m => m.RemoteInfo)
+            .Where(m => m != null)
+            .Cast<ModInfo>();
+
+        var match = remoteMods.FirstOrDefault(r =>
+            r.Name.Equals(dependency, StringComparison.OrdinalIgnoreCase) ||
+            r.Name.Equals(dependencyName, StringComparison.OrdinalIgnoreCase) ||
+            System.IO.Path.GetFileName(r.FileName).Equals(dependencyFileName, StringComparison.OrdinalIgnoreCase) ||
+            System.IO.Path.GetFileNameWithoutExtension(r.FileName).Equals(dependencyName, StringComparison.OrdinalIgnoreCase));
+
+        return match ?? new ModInfo
+        {
+            Name = dependencyName,
+            FileName = dependencyFileName,
+            GameVersion = "*",
+            Source = "Euterpe"
+        };
+    }
+
+    private bool IsModDependencySatisfied(ModInfo dependencyInfo, string fileName)
+    {
+        var localMod = _allLocalMods.FirstOrDefault(m =>
+            !m.IsPendingDelete &&
+            !m.IsDisabled &&
+            System.IO.Path.GetFileName(m.FilePath).Equals(fileName, StringComparison.OrdinalIgnoreCase));
+
+        if (localMod == null) return false;
+        if (string.IsNullOrWhiteSpace(dependencyInfo.Version)) return true;
+
+        var localVersion = localMod.Version.Replace(" (暂存)", "", StringComparison.OrdinalIgnoreCase).Trim();
+        return localVersion.Equals(dependencyInfo.Version, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolveDownloadFileName(ModInfo remoteInfo, string defaultFolder)
+    {
+        var value = !string.IsNullOrWhiteSpace(remoteInfo.FileName)
+            ? remoteInfo.FileName
+            : remoteInfo.DownloadLink;
+
+        if (string.IsNullOrWhiteSpace(value) && defaultFolder == "Mods" && !string.IsNullOrWhiteSpace(remoteInfo.Name))
+        {
+            value = remoteInfo.Name + ".dll";
+        }
+
+        var fileName = ResolveDependencyFileName(value, defaultFolder);
+        return defaultFolder == "Mods" ? EnsureDllFileName(fileName) : fileName;
+    }
+
+    private static string ResolveDependencyFileName(string? dependency, string defaultFolder)
+    {
+        if (string.IsNullOrWhiteSpace(dependency)) return string.Empty;
+
+        var value = dependency.Trim();
+        if (Uri.TryCreate(value, UriKind.Absolute, out var uri))
+        {
+            value = uri.LocalPath;
+        }
+
+        value = value.Replace('\\', '/');
+        var fileName = System.IO.Path.GetFileName(value);
+        return string.IsNullOrWhiteSpace(fileName) && defaultFolder == "Mods"
+            ? EnsureDllFileName(value)
+            : fileName;
+    }
+
+    private static string EnsureDllFileName(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName)) return string.Empty;
+        return string.IsNullOrWhiteSpace(System.IO.Path.GetExtension(fileName))
+            ? fileName + ".dll"
+            : fileName;
+    }
+
+    private static string BuildDownloadUrl(ModInfo remoteInfo, string fileName, string defaultFolder)
+    {
+        if (!string.IsNullOrWhiteSpace(remoteInfo.DownloadLink))
+        {
+            return ResolveDownloadReference(remoteInfo.DownloadLink, defaultFolder, remoteInfo.Source);
+        }
+
+        return remoteInfo.Source == "Euterpe"
+            ? BuildMirrorDownloadUrl($"{defaultFolder}/{fileName}")
+            : BuildGiteeDownloadUrl($"{defaultFolder}/{fileName}");
+    }
+
+    private static string ResolveDownloadReference(string reference, string defaultFolder, string source)
+    {
+        var trimmed = reference.Trim();
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out _))
+        {
+            return trimmed;
+        }
+
+        var relativePath = trimmed.Replace('\\', '/').TrimStart('/');
+        if (!relativePath.Contains('/'))
+        {
+            relativePath = $"{defaultFolder}/{relativePath}";
+        }
+
+        return source == "Euterpe"
+            ? BuildMirrorDownloadUrl(relativePath)
+            : BuildGiteeDownloadUrl(relativePath);
+    }
+
+    private static string BuildMirrorDownloadUrl(string relativePath)
+    {
+        var domain = MdModManager.Helpers.MirrorDomainRegistry.GetDownloadDomainOrDefault().TrimEnd('/');
+        var protocol = domain.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? "" : "https://";
+        return $"{protocol}{domain}/{EscapeRelativePath(relativePath)}";
+    }
+
+    private static string BuildGiteeDownloadUrl(string relativePath)
+    {
+        return $"https://gitee.com/lxymahatma/ModLinks/raw/dev/{EscapeRelativePath(relativePath)}";
+    }
+
+    private static string EscapeRelativePath(string relativePath)
+    {
+        return string.Join("/",
+            relativePath.Replace('\\', '/')
+                .Split('/', StringSplitOptions.RemoveEmptyEntries)
+                .Select(Uri.EscapeDataString));
+    }
+
+    private void ShowDownloadSuccess(bool isUpdate, bool gameRunning, int modDependencyCount, int libDependencyCount)
+    {
+        var dependencyCount = modDependencyCount + libDependencyCount;
+        if (gameRunning)
+        {
+            if (dependencyCount == 0)
+            {
+                _notificationService.ShowSuccess("已暂存，将在游戏关闭后自动安装");
+                return;
+            }
+
+            var parts = new List<string>();
+            if (modDependencyCount > 0) parts.Add($"{modDependencyCount + 1} 个 Mod 已暂存");
+            else parts.Add("Mod 已暂存");
+            if (libDependencyCount > 0) parts.Add($"{libDependencyCount} 个 UserLibs 库已安装");
+
+            _notificationService.ShowSuccess(string.Join("，", parts) + "，重启游戏后生效");
+            return;
+        }
+
+        var actionText = isUpdate ? "更新成功" : "下载成功";
+        _notificationService.ShowSuccess(dependencyCount > 0
+            ? $"{actionText}，已同时安装 {dependencyCount} 个依赖"
+            : actionText);
     }
 
 

@@ -526,9 +526,13 @@
                                                 <StackPanel Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
                                                     <!-- 普通名字（非待删除） -->
                                                     <TextBlock FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"
-                                                               IsVisible="{Binding !IsPendingDelete}"
+                                                               IsVisible="{Binding ShowNormalName}"
                                                                helpers:TextBlockHelper.HighlightText="{Binding Name}"
                                                                helpers:TextBlockHelper.SearchText="{Binding $parent[UserControl].((vm:ModManagerViewModel)DataContext).SearchText}"/>
+                                                    <!-- 联机模组入口定位时的粉色高亮 -->
+                                                    <TextBlock FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeAccentBrush}"
+                                                               IsVisible="{Binding ShowHighlightedName}"
+                                                               Text="{Binding Name}"/>
                                                     <!-- 待删除：红色加粗 -->
                                                     <TextBlock FontSize="18" FontWeight="Bold" Foreground="Red"
                                                                IsVisible="{Binding IsPendingDelete}"

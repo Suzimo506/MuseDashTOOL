@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -31,6 +30,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
     private readonly IEnsembleLobbyService _lobbyService;
     private readonly INotificationService _notificationService;
+    private readonly INavigationService _navigationService;
     private CancellationTokenSource? _cts;
     private DispatcherTimer? _cooldownTimer;
     private DispatcherTimer? _viewerChatCooldownTimer;
@@ -69,10 +69,12 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
     public OnlineLobbyViewModel(
         IEnsembleLobbyService lobbyService,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        INavigationService navigationService)
     {
         _lobbyService = lobbyService;
         _notificationService = notificationService;
+        _navigationService = navigationService;
         RefreshMdtIdentity();
 
         _lobbyService.SnapshotReceived += OnSnapshotReceived;
@@ -176,16 +178,8 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void OpenOnlineModDownload()
     {
-        const string url = "https://fcnjy3gfu0iz.feishu.cn/wiki/FJm5wvF0SiWoftkOZ07cBCJKn5g";
-        try
-        {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            _notificationService.ShowInfo("正在打开联机模组下载页");
-        }
-        catch (Exception ex)
-        {
-            _notificationService.ShowFailure("打开下载页失败", ex.Message);
-        }
+        _navigationService.RequestNavigateToModDownload("Ensemble");
+        _notificationService.ShowInfo("已打开联机模组下载项");
     }
 
     [RelayCommand]

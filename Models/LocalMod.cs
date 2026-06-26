@@ -29,10 +29,20 @@ public partial class LocalMod : ObservableObject
 
     /// <summary>游戏运行中请求删除、将在游戏关闭后自动删除（UI 显示红色加粗名字）</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowNormalName))]
+    [NotifyPropertyChangedFor(nameof(ShowHighlightedName))]
     private bool _isPendingDelete;
 
     [ObservableProperty]
     private bool _isExpanded;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowNormalName))]
+    [NotifyPropertyChangedFor(nameof(ShowHighlightedName))]
+    private bool _isHighlighted;
+
+    public bool ShowNormalName => !IsPendingDelete && !IsHighlighted;
+    public bool ShowHighlightedName => !IsPendingDelete && IsHighlighted;
 
     /// <summary>展开时显示的 Mod 描述文本。优先用 RemoteInfo.Description，若为空显示"暂无信息"。</summary>
     [ObservableProperty]
@@ -61,6 +71,12 @@ public partial class LocalMod : ObservableObject
         {
             _ = UpdateDescriptionAsync();
         }
+    }
+
+    public void Expand()
+    {
+        IsExpanded = true;
+        _ = UpdateDescriptionAsync();
     }
 
     private async System.Threading.Tasks.Task UpdateDescriptionAsync()

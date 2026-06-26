@@ -211,7 +211,8 @@ public partial class EnsembleLobbyPlayer : ObservableObject
         "夜勤血裔布若",
         "焚海魔盗凛",
         "潜水员布若",
-        "made by Ora 2马莉嘉"
+        "made by Ora 2马莉嘉",
+        "幽灵玛莉嘉"
     };
 
     private static readonly string[] ElfinNames =
