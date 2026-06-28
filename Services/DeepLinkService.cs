@@ -4,6 +4,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
+using CommunityToolkit.Mvvm.DependencyInjection;
+using MdModManager.Models;
 using Microsoft.Win32;
 
 namespace MdModManager.Services;
@@ -62,6 +64,68 @@ public sealed class DeepLinkService
         }
 
         ActivateMainWindow(true);
+        if (TryParseGlobalSearchRequest(parsed, out var request))
+        {
+            Ioc.Default.GetRequiredService<INavigationService>().RequestNavigateToGlobalChartSearch(request);
+        }
+    }
+
+    private static bool TryParseGlobalSearchRequest(Uri uri, out MdenGlobalSearchRequest request)
+    {
+        request = null!;
+
+        var command = string.IsNullOrWhiteSpace(uri.Host)
+            ? uri.AbsolutePath.Trim('/')
+            : uri.Host;
+        if (!string.Equals(command, "global-search", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var query = GetQueryValue(uri.Query, "query");
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return false;
+        }
+
+        _ = int.TryParse(GetQueryValue(uri.Query, "difficulty"), out var difficulty);
+        request = new MdenGlobalSearchRequest(
+            query.Trim(),
+            NormalizeOptional(GetQueryValue(uri.Query, "chartKey")),
+            difficulty,
+            NormalizeOptional(GetQueryValue(uri.Query, "artist")),
+            NormalizeOptional(GetQueryValue(uri.Query, "charter")));
+        return true;
+    }
+
+    private static string? GetQueryValue(string query, string key)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return null;
+        }
+
+        var value = query[0] == '?' ? query[1..] : query;
+        foreach (var part in value.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var pair = part.Split('=', 2);
+            var name = Uri.UnescapeDataString(pair[0].Replace("+", " "));
+            if (!string.Equals(name, key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return pair.Length > 1
+                ? Uri.UnescapeDataString(pair[1].Replace("+", " "))
+                : string.Empty;
+        }
+
+        return null;
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private void ActivateMainWindow(bool force)

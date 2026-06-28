@@ -39,13 +39,14 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     private CancellationTokenSource? _stopCts;
     private WaveOutEvent? _waveOut;
     private GlobalChartSearchResult? _playingResult;
+    private MdenGlobalSearchRequest? _mdenSearchRequest;
 
     public ObservableCollection<GlobalChartSearchResult> Results { get; } = new();
     public ObservableCollection<GlobalChartSearchSourceState> SourceStates { get; } = new()
     {
-        new(GlobalChartSource.Mdmc, "MDMC"),
         new(GlobalChartSource.Euterpe, "Euterpe"),
-        new(GlobalChartSource.QQGroup, "QQ群谱面")
+        new(GlobalChartSource.QQGroup, "QQ群谱面"),
+        new(GlobalChartSource.Mdmc, "MDMC")
     };
 
     [ObservableProperty]
@@ -66,7 +67,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     private string _searchText = string.Empty;
 
     [ObservableProperty]
-    private string _statusMessage = "输入关键词，同时搜索 MDMC、Euterpe 与 QQ群谱面";
+    private string _statusMessage = "输入关键词，同时搜索 Euterpe、QQ群谱面与 MDMC";
 
     [ObservableProperty]
     private string _previewStatusText = string.Empty;
@@ -135,15 +136,29 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         return Task.CompletedTask;
     }
 
+    public async Task OpenMdenSearchAsync(MdenGlobalSearchRequest request)
+    {
+        _mdenSearchRequest = request;
+        SearchDraftText = request.Query;
+        SelectedSource = null;
+        await SearchCommand.ExecuteAsync(null);
+    }
+
     [RelayCommand]
     private async Task SearchAsync()
     {
         var query = SearchDraftText.Trim();
+        if (_mdenSearchRequest != null &&
+            !string.Equals(query, _mdenSearchRequest.Query, StringComparison.OrdinalIgnoreCase))
+        {
+            _mdenSearchRequest = null;
+        }
+
         if (string.IsNullOrWhiteSpace(query))
         {
             ClearResults();
             SearchText = string.Empty;
-            StatusMessage = "输入关键词，同时搜索 MDMC、Euterpe 与 QQ群谱面";
+            StatusMessage = "输入关键词，同时搜索 Euterpe、QQ群谱面与 MDMC";
             return;
         }
 
@@ -219,10 +234,11 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     private void ClearSearch()
     {
         _searchCts?.Cancel();
+        _mdenSearchRequest = null;
         SearchDraftText = string.Empty;
         SearchText = string.Empty;
         ClearResults();
-        StatusMessage = "输入关键词，同时搜索 MDMC、Euterpe 与 QQ群谱面";
+        StatusMessage = "输入关键词，同时搜索 Euterpe、QQ群谱面与 MDMC";
     }
 
     [RelayCommand]
@@ -687,7 +703,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
 
         if (!HasSearched)
         {
-            StatusMessage = "输入关键词，同时搜索 MDMC、Euterpe 与 QQ群谱面";
+            StatusMessage = "输入关键词，同时搜索 Euterpe、QQ群谱面与 MDMC";
             return;
         }
 
@@ -716,7 +732,13 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             .Where(s => s.HasNotice && !string.IsNullOrWhiteSpace(s.Message))
             .Select(s => s.Message));
 
-        return string.IsNullOrWhiteSpace(notice) ? message : $"{message}；{notice}";
+        var result = string.IsNullOrWhiteSpace(notice) ? message : $"{message}；{notice}";
+        if (_mdenSearchRequest != null)
+        {
+            result = "来自 MDEN 缺谱搜索：" + result;
+        }
+
+        return result;
     }
 
     public void StopPlayback()
@@ -757,9 +779,9 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
 
     private static int SourceOrder(GlobalChartSource source) => source switch
     {
-        GlobalChartSource.Mdmc => 0,
-        GlobalChartSource.Euterpe => 1,
-        GlobalChartSource.QQGroup => 2,
+        GlobalChartSource.Euterpe => 0,
+        GlobalChartSource.QQGroup => 1,
+        GlobalChartSource.Mdmc => 2,
         _ => 9
     };
 

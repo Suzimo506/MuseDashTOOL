@@ -28,7 +28,7 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
     private const string EuterpeBrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
     private static readonly TimeSpan OfficialUserChartsQuickWait = TimeSpan.FromMilliseconds(800);
     private static readonly SemaphoreSlim OfficialUserChartsLock = new(1, 1);
-    private static readonly string[] EuterpeSearchSorts = { "recommended", "created_at" };
+    private static readonly string[] EuterpeSearchSorts = { "recommended" };
     private static List<EuterpeChart>? OfficialUserChartsCache;
     private static Task? OfficialUserChartsWarmupTask;
 

@@ -150,6 +150,13 @@ public sealed record GlobalChartSearchServiceResult(
     GlobalChartSourceStatus Status,
     string Message);
 
+public sealed record MdenGlobalSearchRequest(
+    string Query,
+    string? ChartKey,
+    int Difficulty,
+    string? Artist,
+    string? Charter);
+
 public sealed record EuterpeBuildZipResponse(
     [property: JsonPropertyName("path")] string Path,
     [property: JsonPropertyName("filename")] string Filename);

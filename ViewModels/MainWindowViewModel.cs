@@ -18,6 +18,8 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly INavigationService? _navigationService;
     private readonly IAnnouncementService? _announcementService;
     private readonly IAuthService? _authService;
+    private bool _isInitialized;
+    private MdenGlobalSearchRequest? _pendingGlobalSearchRequest;
 
     [ObservableProperty]
     private object? _currentPage;
@@ -191,6 +193,17 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 await NavigateToModDownloadWithFocusAsync(modName);
             };
+            _navigationService.OnRequestGlobalChartSearchNavigation += async (request) =>
+            {
+                if (!_isInitialized)
+                {
+                    _pendingGlobalSearchRequest = request;
+                    return;
+                }
+
+                await NavigateToGlobalChartSearchWithRequestAsync(request);
+            };
+
         }
     }
 
@@ -214,6 +227,17 @@ public partial class MainWindowViewModel : ObservableObject
         CurrentPage = vm;
         await vm.InitializeAsync(forceRefresh: true, _currentPageCts!.Token);
         vm.FocusDownloadMod(modName);
+    }
+
+    private async Task NavigateToGlobalChartSearchWithRequestAsync(MdenGlobalSearchRequest request)
+    {
+        CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = true;
+
+        var vm = Ioc.Default.GetRequiredService<GlobalChartSearchViewModel>();
+        CurrentPage = vm;
+        await vm.InitializeAsync(_currentPageCts!.Token);
+        await vm.OpenMdenSearchAsync(request);
     }
 
     public async Task InitializeAsync()
@@ -316,6 +340,13 @@ public partial class MainWindowViewModel : ObservableObject
         // 后台预加载谱面列表 (三种分类的第一页)
         _ = Ioc.Default.GetRequiredService<ChartDownloadViewModel>().PreloadAllSortsAsync();
 
+        _isInitialized = true;
+        var pendingGlobalSearch = _pendingGlobalSearchRequest ?? _navigationService?.ConsumePendingGlobalChartSearch();
+        _pendingGlobalSearchRequest = null;
+        if (pendingGlobalSearch != null)
+        {
+            await NavigateToGlobalChartSearchWithRequestAsync(pendingGlobalSearch);
+        }
     }
 
     private void UpdateGamePathStatus()
