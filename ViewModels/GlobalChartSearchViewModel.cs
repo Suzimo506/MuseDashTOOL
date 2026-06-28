@@ -441,7 +441,13 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             string url;
             if (result.MdmcChart != null)
             {
-                url = !string.IsNullOrWhiteSpace(result.MdmcChart.DemoUrl) ? result.MdmcChart.DemoUrl : result.MdmcChart.DemoMp3Url;
+                url = !string.IsNullOrWhiteSpace(result.MdmcChart.CustomDemoUrl)
+                    ? result.MdmcChart.CustomDemoUrl
+                    : (!string.IsNullOrWhiteSpace(result.MdmcChart.CustomDemoMp3Url)
+                        ? result.MdmcChart.CustomDemoMp3Url
+                        : (!string.IsNullOrWhiteSpace(result.MdmcChart.DemoUrl)
+                            ? result.MdmcChart.DemoUrl
+                            : result.MdmcChart.DemoMp3Url));
                 if (!string.IsNullOrEmpty(url) && (url.Contains("~%23FFFFFF~") || url.Contains("~#FFFFFF~") || result.Title.Contains("调色盘")))
                 {
                     var manualUrl = url.Replace("/blob/", "/").Replace("github.com", "raw.githubusercontent.com").Replace("~#FFFFFF~", "~%23FFFFFF~");

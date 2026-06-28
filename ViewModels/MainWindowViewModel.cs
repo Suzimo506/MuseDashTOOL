@@ -212,7 +212,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         var vm = Ioc.Default.GetRequiredService<ModManagerViewModel>();
         CurrentPage = vm;
-        await vm.InitializeAsync(_currentPageCts!.Token);
+        await vm.InitializeAsync(forceRefresh: true, _currentPageCts!.Token);
         vm.FocusDownloadMod(modName);
     }
 

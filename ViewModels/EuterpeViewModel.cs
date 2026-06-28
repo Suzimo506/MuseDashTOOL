@@ -90,12 +90,19 @@ public class EuterpeSortOption
 
 public partial class EuterpeViewModel : ObservableObject, IDisposable
 {
+    private const int PageSize = 15;
+    private const int SearchFetchSize = 50;
+    private const long EuterpeOfficialUserUid = 0;
+    private const string EuterpeBrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
     private readonly IAuthService _authService;
     private readonly AuthState _authState;
     private readonly IConfigService _configService;
     private readonly INotificationService _notificationService;
     private readonly IDownloadManagerService _downloadManagerService;
     private readonly HttpClient _httpClient;
+    private readonly SemaphoreSlim _officialUserChartsLock = new(1, 1);
+    private List<EuterpeChart>? _officialUserChartsCache;
 
     // 谱面集合
     public ObservableCollection<EuterpeChart> Charts { get; } = new();
@@ -168,7 +175,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         new EuterpeSortOption(I18nService.Instance["Str_403"] ?? "难度从低到高", "rating_asc")
     };
 
-    private int _selectedSortIndex = 0;
+    private int _selectedSortIndex = 1;
     public int SelectedSortIndex
     {
         get => _selectedSortIndex;
@@ -258,6 +265,13 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                 return;
             }
 
+            if (ShouldUseMergedSearch(SearchText))
+            {
+                CurrentPage = targetPage;
+                await ReloadAsync();
+                return;
+            }
+
             if (targetPage > _cursors.Count)
             {
                 IsLoading = true;
@@ -269,7 +283,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                         var currentFetchCursor = _cursors.Last();
                         var sort = SortOptions[SelectedSortIndex].Value;
                         var query = SearchText.Trim();
-                        var path = $"charts/search?size=15&sort={Uri.EscapeDataString(sort)}";
+                        var path = $"charts/search?size={PageSize}&sort={Uri.EscapeDataString(sort)}";
                         if (!string.IsNullOrEmpty(query))
                         {
                             path += $"&q={Uri.EscapeDataString(query)}";
@@ -352,7 +366,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         _chartIndexService = chartIndexService;
 
         _httpClient = new HttpClient(authHeaderHandler) { BaseAddress = new Uri("https://euterpe-org.com/api/") };
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.5.2");
+        // Euterpe 搜索接口只有浏览器 UA 会返回网页同款谱面集合。
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(EuterpeBrowserUserAgent);
     }
 
     // 初始化加载
@@ -464,6 +479,13 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     private async Task LoadLastPageAsync()
     {
         int targetPage = TotalPages;
+        if (ShouldUseMergedSearch(SearchText))
+        {
+            CurrentPage = targetPage;
+            await ReloadAsync();
+            return;
+        }
+
         if (targetPage > _cursors.Count)
         {
             IsLoading = true;
@@ -475,7 +497,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                     string? currentFetchCursor = _cursors.Last();
                     string sort = SortOptions[SelectedSortIndex].Value;
                     string query = SearchText.Trim();
-                    string path = $"charts/search?size=15&sort={Uri.EscapeDataString(sort)}";
+                    string path = $"charts/search?size={PageSize}&sort={Uri.EscapeDataString(sort)}";
                     if (!string.IsNullOrEmpty(query))
                     {
                         path += $"&q={Uri.EscapeDataString(query)}";
@@ -536,10 +558,18 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         {
             var sort = SortOptions[SelectedSortIndex].Value;
             var query = SearchText.Trim();
+            if (ShouldUseMergedSearch(query))
+            {
+                var mergedSearchCharts = await SearchMergedChartsAsync(query, sort, ct);
+                ApplyChartsPage(mergedSearchCharts, CurrentPage, mergedSearchCharts.Count);
+                RequestedScrollY = 0;
+                return;
+            }
+
             var cursor = _cursors[CurrentPage - 1];
 
             // 构造请求 URL 编码
-            var path = $"charts/search?size=15&sort={Uri.EscapeDataString(sort)}";
+            var path = $"charts/search?size={PageSize}&sort={Uri.EscapeDataString(sort)}";
             if (!string.IsNullOrEmpty(query))
             {
                 path += $"&q={Uri.EscapeDataString(query)}";
@@ -585,7 +615,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                 }
 
                 // 粗略计算总页数
-                TotalPages = Math.Max(1, (int)Math.Ceiling((double)result.Total / 15));
+                TotalPages = Math.Max(1, (int)Math.Ceiling((double)result.Total / PageSize));
                 if (!string.IsNullOrEmpty(result.NextCursor) && TotalPages <= CurrentPage)
                 {
                     TotalPages = CurrentPage + 1;
@@ -609,6 +639,197 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             IsLoading = false;
             UpdateStatusMessage();
         }
+    }
+
+    private bool ShouldUseMergedSearch(string? query)
+        => !string.IsNullOrWhiteSpace(query) &&
+           (SelectedTag == null || string.IsNullOrEmpty(SelectedTag.TagId));
+
+    private async Task<List<EuterpeChart>> SearchMergedChartsAsync(string query, string sort, CancellationToken ct)
+    {
+        var publicSearchTask = SearchPublicChartsAsync(query, sort, ct);
+        var officialChartsTask = GetOfficialUserChartsAsync(ct);
+
+        await Task.WhenAll(publicSearchTask, officialChartsTask);
+
+        var enableFuzzy = _configService.Config.EnableFuzzySearch;
+        var merged = new Dictionary<long, EuterpeChart>();
+
+        foreach (var chart in publicSearchTask.Result)
+        {
+            merged.TryAdd(chart.Cid, chart);
+        }
+
+        foreach (var chart in officialChartsTask.Result.Where(chart => IsEuterpeChartMatch(chart, query, enableFuzzy)))
+        {
+            merged.TryAdd(chart.Cid, chart);
+        }
+
+        if (string.Equals(sort, "recommended", StringComparison.OrdinalIgnoreCase))
+            return merged.Values.ToList();
+
+        return SortChartsForDisplay(merged.Values, sort).ToList();
+    }
+
+    private async Task<List<EuterpeChart>> SearchPublicChartsAsync(string query, string sort, CancellationToken ct)
+    {
+        var merged = new Dictionary<long, EuterpeChart>();
+        foreach (var searchSort in GetPublicSearchSorts(sort))
+        {
+            var charts = await SearchPublicChartsBySortAsync(query, searchSort, ct);
+            foreach (var chart in charts)
+            {
+                merged.TryAdd(chart.Cid, chart);
+            }
+        }
+
+        return merged.Values.ToList();
+    }
+
+    private async Task<List<EuterpeChart>> SearchPublicChartsBySortAsync(string query, string sort, CancellationToken ct)
+    {
+        var allCharts = new List<EuterpeChart>();
+        string? cursor = null;
+
+        do
+        {
+            var path = $"charts/search?size={SearchFetchSize}&sort={Uri.EscapeDataString(sort)}&q={Uri.EscapeDataString(query)}";
+            if (!string.IsNullOrEmpty(cursor))
+            {
+                path += $"&cursor={Uri.EscapeDataString(cursor)}";
+            }
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, path);
+            using var response = await _httpClient.SendAsync(req, ct);
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync(ct);
+            var result = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.EuterpeSearchResponse);
+            if (result == null)
+                break;
+
+            allCharts.AddRange(result.Items);
+            cursor = result.NextCursor;
+        }
+        while (!string.IsNullOrEmpty(cursor));
+
+        return allCharts;
+    }
+
+    private static IEnumerable<string> GetPublicSearchSorts(string sort)
+    {
+        yield return sort;
+
+        if (!string.Equals(sort, "created_at", StringComparison.OrdinalIgnoreCase))
+            yield return "created_at";
+    }
+
+    private async Task<List<EuterpeChart>> GetOfficialUserChartsAsync(CancellationToken ct)
+    {
+        if (_officialUserChartsCache != null)
+            return _officialUserChartsCache;
+
+        await _officialUserChartsLock.WaitAsync(ct);
+        try
+        {
+            if (_officialUserChartsCache != null)
+                return _officialUserChartsCache;
+
+            var charts = new List<EuterpeChart>();
+            string? cursor = null;
+
+            do
+            {
+                var path = $"users/{EuterpeOfficialUserUid}/charts?size={SearchFetchSize}";
+                if (!string.IsNullOrEmpty(cursor))
+                {
+                    path += $"&cursor={Uri.EscapeDataString(cursor)}";
+                }
+
+                using var req = new HttpRequestMessage(HttpMethod.Get, path);
+                using var response = await _httpClient.SendAsync(req, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync(ct);
+                var result = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.EuterpeSearchResponse);
+                if (result == null)
+                    break;
+
+                charts.AddRange(result.Items);
+                cursor = result.NextCursor;
+            }
+            while (!string.IsNullOrEmpty(cursor));
+
+            _officialUserChartsCache = charts;
+            return _officialUserChartsCache;
+        }
+        finally
+        {
+            _officialUserChartsLock.Release();
+        }
+    }
+
+    private void ApplyChartsPage(IReadOnlyList<EuterpeChart> source, int page, int totalCount)
+    {
+        TotalPages = Math.Max(1, (int)Math.Ceiling((double)totalCount / PageSize));
+        CurrentPage = Math.Clamp(page, 1, TotalPages);
+
+        Charts.Clear();
+        foreach (var item in source.Skip((CurrentPage - 1) * PageSize).Take(PageSize))
+        {
+            Charts.Add(item);
+        }
+
+        var likedSet = new HashSet<long>(_configService.Config.EuterpeLikedCids);
+        foreach (var c in Charts)
+        {
+            if (likedSet.Contains(c.Cid))
+                c.IsLiked = true;
+        }
+
+        IsEmpty = Charts.Count == 0;
+        _cursors.Clear();
+        _cursors.Add(null);
+
+        _ = LoadCoversAsync(CancellationToken.None);
+        _ = LoadTagsAsync(CancellationToken.None);
+    }
+
+    private static bool IsEuterpeChartMatch(EuterpeChart chart, string query, bool enableFuzzy)
+    {
+        return SearchHelper.IsMatch(chart.Name, query, enableFuzzy) ||
+               SearchHelper.IsMatch(chart.Author, query, enableFuzzy) ||
+               SearchHelper.IsMatch(chart.OwnerNickname, query, enableFuzzy) ||
+               SearchHelper.IsMatch(chart.CharterInfo, query, enableFuzzy);
+    }
+
+    private static IEnumerable<EuterpeChart> SortChartsForDisplay(IEnumerable<EuterpeChart> charts, string sort)
+    {
+        return sort switch
+        {
+            "likes" => charts.OrderByDescending(c => c.LikeCount).ThenByDescending(c => c.Cid),
+            "downloads" => charts.OrderByDescending(c => c.DownloadCount).ThenByDescending(c => c.Cid),
+            "rating_desc" => charts.OrderByDescending(GetMaxRating).ThenByDescending(c => c.Cid),
+            "rating_asc" => charts.OrderBy(GetMinRating).ThenByDescending(c => c.Cid),
+            "created_at" => charts.OrderByDescending(c => c.Cid),
+            _ => charts.OrderByDescending(c => c.Cid)
+        };
+    }
+
+    private static double GetMaxRating(EuterpeChart chart)
+    {
+        return chart.Maps
+            .Select(m => double.TryParse(m.Rating, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var rating) ? rating : 0)
+            .DefaultIfEmpty(0)
+            .Max();
+    }
+
+    private static double GetMinRating(EuterpeChart chart)
+    {
+        return chart.Maps
+            .Select(m => double.TryParse(m.Rating, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var rating) ? rating : double.MaxValue)
+            .DefaultIfEmpty(double.MaxValue)
+            .Min();
     }
 
     // 异步拉取并缓冲本页所有谱面的封面

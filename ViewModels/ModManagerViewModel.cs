@@ -715,6 +715,7 @@ public partial class ModManagerViewModel : ObservableObject
 
     private async Task PerformDownloadAsync(ModInfo remoteInfo, bool isUpdate = false, LocalMod? localMod = null)
     {
+        remoteInfo = ResolveLatestRemoteInfo(remoteInfo);
         var fileName = ResolveDownloadFileName(remoteInfo, "Mods");
 
         if (string.IsNullOrEmpty(fileName)) return;
@@ -790,6 +791,20 @@ public partial class ModManagerViewModel : ObservableObject
         }
 
         await InitializeAsync();
+    }
+
+    private ModInfo ResolveLatestRemoteInfo(ModInfo remoteInfo)
+    {
+        var fileName = ResolveDownloadFileName(remoteInfo, "Mods");
+        var latest = _allRemoteMods
+            .Select(m => m.RemoteInfo)
+            .Where(m => m != null)
+            .Cast<ModInfo>()
+            .FirstOrDefault(r =>
+                r.Name.Equals(remoteInfo.Name, StringComparison.OrdinalIgnoreCase) ||
+                ResolveDownloadFileName(r, "Mods").Equals(fileName, StringComparison.OrdinalIgnoreCase));
+
+        return latest ?? remoteInfo;
     }
 
     private async Task<int> InstallModDependenciesAsync(

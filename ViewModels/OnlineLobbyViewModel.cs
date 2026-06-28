@@ -24,7 +24,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     {
         "龙币们放我进去好吗",
         "我也想进房间玩~",
-        "敢不敢让我进来，直接点里水里火里蛇...",
+        "可以把密码告诉我吗我在喵斯兔等你",
         "敢不敢让我进去把你们全超了？"
     };
 

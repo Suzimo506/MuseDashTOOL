@@ -82,7 +82,8 @@ public class AlbumCollectionService : IAlbumCollectionService
     {
         ("通过审议", BuildCommunityRepoUrl("通过审议")),
         ("令人生草", BuildCommunityRepoUrl("令人生草")),
-        ("待定或有些小问题", BuildCommunityRepoUrl("待定或有些小问题"))
+        ("待定或有些小问题", BuildCommunityRepoUrl("待定或有些小问题")),
+        ("未经审查", BuildCommunityRepoUrl("未经审查"))
     };
 
     // 新增谱师个人仓库时，只需要把远端文件夹名加入这里，就会从“曲包”移动到“谱师个人仓库”分类。
@@ -184,7 +185,7 @@ public class AlbumCollectionService : IAlbumCollectionService
                 var result = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json, options);
                 if (result != null && result.TryGetValue("collections", out var folders))
                 {
-                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures", "Mods" };
+                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "未经审查", "Pictures", "Mods" };
                     var categories = folders.Where(f => !excludeNames.Contains(f)).OrderBy(f => f)
                         .Select(f => new DesignerCategory { Name = f, Description = "" }).ToList();
                     _categoryCache = categories;
@@ -196,7 +197,7 @@ public class AlbumCollectionService : IAlbumCollectionService
                 if (newResult?.Collections != null && newResult.Collections.Count > 0)
                 {
                     if (_categoryCache == null) _categoryCache = new List<DesignerCategory>();
-                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures", "Mods" };
+                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "未经审查", "Pictures", "Mods" };
                     var categories = newResult.Collections
                         .Where(c => !excludeNames.Contains(c.Name))
                         .OrderBy(c => c.Name)
@@ -242,7 +243,7 @@ public class AlbumCollectionService : IAlbumCollectionService
 
             if (result != null && result.TryGetValue("collections", out var folders))
             {
-                var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures", "Mods" };
+                var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "未经审查", "Pictures", "Mods" };
                 if (_categoryCache == null) _categoryCache = new List<DesignerCategory>();
                 categories = folders.Where(f => !excludeNames.Contains(f)).OrderBy(f => f)
                     .Select(f => 
@@ -258,7 +259,7 @@ public class AlbumCollectionService : IAlbumCollectionService
                 if (newResult?.Collections != null && newResult.Collections.Count > 0)
                 {
                     if (_categoryCache == null) _categoryCache = new List<DesignerCategory>();
-                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "Pictures", "Mods" };
+                    var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "通过审议", "令人生草", "待定或有些小问题", "未经审查", "Pictures", "Mods" };
                     categories = newResult.Collections
                         .Where(c => !excludeNames.Contains(c.Name))
                         .OrderBy(c => c.Name)

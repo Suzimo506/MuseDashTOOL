@@ -24,6 +24,18 @@
         "cancel_button_text_en": "Don't Show Again"
     },
     {
+        "id": "1.5.2.1",
+        "is_enabled": true,
+        "title": "喵斯兔v1.5.2.1补丁更新",
+        "title_en": "MuseDashTOOL 1.5.2.1 Patch Update",
+        "content": "1. 修复全局搜索中 QQ群谱面只搜索群友自制谱面的问题。\n2. 全局搜索现在会同时搜索曲包、谱师个人仓库和群友自制谱面。\n3. 优化曲包与个人仓库谱面的试听链接选择，避免试听跑到错误来源。\n4. 群友自制谱面索引未下载时，不再阻塞曲包与谱师个人仓库的搜索结果。",
+        "content_en": "1. Fixed Global Search only searching the community chart repositories under QQ Group Charts.\n2. Global Search now includes song packs, personal charter repositories, and community chart repositories.\n3. Improved preview URL selection for song pack and personal repository charts to avoid using the wrong source.\n4. Missing community repository indexes no longer block song pack and personal repository search results.",
+        "action_button_text": "进入新版喵斯兔",
+        "action_button_text_en": "Enter New MuseDashTOOL",
+        "cancel_button_text": "不再显示该弹窗",
+        "cancel_button_text_en": "Don't Show Again"
+    },
+    {
         "id": "1.4.7.3",
         "is_enabled": true,
         "title": "热重载自制谱模组更新！",
