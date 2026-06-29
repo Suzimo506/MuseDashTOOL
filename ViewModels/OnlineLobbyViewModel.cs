@@ -56,6 +56,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     public bool HasSelectedNode => SelectedNode != null;
     public bool SelectedNodeHasRooms => SelectedNode?.HasRooms == true;
     public bool HasSelectedRoom => SelectedRoom != null;
+    public bool IsUsingFallbackNodes => Nodes.Any(node => node.IsFallback);
     public bool HasMdtIdentity => !string.IsNullOrWhiteSpace(_museDashUid);
     public bool CanSendPhrase => HasMdtIdentity && SelectedRoom?.CanSendChat == true && DateTimeOffset.Now >= _nextAllowedSendTime;
     public bool CanSendViewerChat =>
@@ -111,6 +112,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
                         Id = string.IsNullOrWhiteSpace(node.Id) ? node.Address : node.Id,
                         Name = string.IsNullOrWhiteSpace(node.Name) ? node.Address : node.Name,
                         Address = node.Address,
+                        IsFallback = node.IsFallback,
                         StatusText = "等待连接"
                     });
                 }
@@ -441,37 +443,39 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     private void UpdateLobbyStatusText()
     {
         var nodeCount = Nodes.Count;
+        OnPropertyChanged(nameof(IsUsingFallbackNodes));
         if (nodeCount == 0)
         {
             StatusText = "没有可用节点";
             return;
         }
 
+        var fallbackPrefix = IsUsingFallbackNodes ? "API 获取失败，正在显示内置兜底节点。" : "";
         var roomCount = Nodes.Sum(item => item.Rooms.Count);
         if (roomCount > 0)
         {
-            StatusText = $"已同步 {roomCount} 个房间";
+            StatusText = $"{fallbackPrefix}已同步 {roomCount} 个房间";
             return;
         }
 
         var connectedCount = Nodes.Count(item => item.IsConnected);
         if (connectedCount > 0)
         {
-            StatusText = $"已连接 {connectedCount}/{nodeCount} 个节点，暂无房间";
+            StatusText = $"{fallbackPrefix}已连接 {connectedCount}/{nodeCount} 个节点，暂无房间";
             return;
         }
 
         var connectingCount = Nodes.Count(IsConnectingNode);
         if (connectingCount > 0)
         {
-            StatusText = $"正在连接节点 {connectingCount}/{nodeCount}";
+            StatusText = $"{fallbackPrefix}正在连接节点 {connectingCount}/{nodeCount}";
             return;
         }
 
         var failedCount = Nodes.Count(IsFailedNode);
         StatusText = failedCount > 0
-            ? $"暂无可用节点，{failedCount}/{nodeCount} 个连接失败"
-            : $"发现 {nodeCount} 个节点";
+            ? $"{fallbackPrefix}暂无可用节点，{failedCount}/{nodeCount} 个连接失败"
+            : $"{fallbackPrefix}发现 {nodeCount} 个节点";
     }
 
     private static bool IsConnectingNode(EnsembleLobbyNode node)

@@ -133,6 +133,12 @@
                                                        FontSize="10"
                                                        Foreground="{DynamicResource ThemeTextTertiaryBrush}"
                                                        HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{Binding SourceText}"
+                                                       IsVisible="{Binding IsFallback}"
+                                                       FontSize="10"
+                                                       Foreground="{DynamicResource ThemeTextTertiaryBrush}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       HorizontalAlignment="Center"/>
                                             <TextBlock Text="{Binding StatusText}"
                                                        FontSize="10"
                                                        Foreground="{Binding StatusBrush}"

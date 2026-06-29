@@ -12,8 +12,20 @@
         "cancel_button_text_en": "Don't Remind Again"
     },
     {
-        "id": "1.5.2",
+        "id": "1.5.3",
         "is_enabled": true,
+        "title": "喵斯兔v1.5.3更新!",
+        "title_en": "MuseDashTOOL 1.5.3 Update",
+        "content": "1. 修复 MDEN 缺谱搜索中，唯一同名候选不会自动下载的问题。现在会自动下载唯一可下载候选，并在下载后使用谱面 MD5 校验。\n2. 联机大厅节点列表改用新的 mden.top 节点接口。\n3. 新增成都联机节点，并在接口异常时显示内置兜底节点列表。\n4. 优化 MDEN 与喵斯兔之间的缺谱下载状态回传，下载进度和失败原因会更清楚。",
+        "content_en": "1. Fixed MDEN missing-chart search not auto-downloading when there is a single same-title candidate. MuseDashTOOL now downloads the only downloadable candidate and verifies it with the chart MD5 afterward.\n2. The online lobby now uses the new mden.top server-list API.\n3. Added the Chengdu online server and built-in fallback servers when the API is unavailable.\n4. Improved missing-chart download status reporting between MDEN and MuseDashTOOL.",
+        "action_button_text": "进入新版喵斯兔",
+        "action_button_text_en": "Enter New MuseDashTOOL",
+        "cancel_button_text": "不再显示该弹窗",
+        "cancel_button_text_en": "Don't Show Again"
+    },
+    {
+        "id": "1.5.2",
+        "is_enabled": false,
         "title": "喵斯兔v1.5.2更新!",
         "title_en": "MuseDashTOOL 1.5.2 Update",
         "content": "1. 优化候选区分类管理，空分类现在也会显示，并可直接导入谱面。\n2. 选择分类和移动分类面板新增正式区 / 候选区切换。\n3. 候选区子分类支持重命名、删除和批量删除。\n4. 新增“仅未归入子分类”筛选，整理候选区谱面更方便。\n5. 查重新增“全部区域”，可同时比较正式区与候选区的重复谱面。\n6. 新增联机模组下载支持，可在联机大厅直接跳转并下载 Ensemble 及依赖。\n7. 移动分类后会尽量保留当前页。",
@@ -25,7 +37,7 @@
     },
     {
         "id": "1.5.2.1",
-        "is_enabled": true,
+        "is_enabled": false,
         "title": "喵斯兔v1.5.2.1补丁更新",
         "title_en": "MuseDashTOOL 1.5.2.1 Patch Update",
         "content": "1. 修复全局搜索中 QQ群谱面只搜索群友自制谱面的问题。\n2. 全局搜索现在会同时搜索曲包、谱师个人仓库和群友自制谱面。\n3. 优化曲包与个人仓库谱面的试听链接选择，避免试听跑到错误来源。\n4. 群友自制谱面索引未下载时，不再阻塞曲包与谱师个人仓库的搜索结果。",
@@ -37,7 +49,7 @@
     },
     {
         "id": "1.4.7.3",
-        "is_enabled": true,
+        "is_enabled": false,
         "title": "热重载自制谱模组更新！",
         "title_en": "HotReload CustomAlbums update!",
         "content": "可以在游戏运行时往游戏添加/删除自制谱了？加入331568783喵斯兔交流群，获取最新测试版热重载自制谱模组！ ",

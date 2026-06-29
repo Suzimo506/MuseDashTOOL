@@ -6,6 +6,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Globalization;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -487,7 +489,22 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             .Select(group => new MdenCandidateGroup(group.Key, group.ToList()))
             .ToList();
 
-        return new MdenCandidateDecision(matches, groups);
+        if (groups.Count > 0)
+        {
+            return new MdenCandidateDecision(matches, groups, MdenCandidateMatchMode.Strong);
+        }
+
+        var titleMatches = _allResults
+            .Where(result => IsTitleMdenCandidate(result, request))
+            .Where(CanAutoDownloadMdenCandidate)
+            .ToList();
+
+        var titleGroups = titleMatches
+            .GroupBy(BuildMdenTitleCandidateGroupKey, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new MdenCandidateGroup(group.Key, group.ToList()))
+            .ToList();
+
+        return new MdenCandidateDecision(titleMatches, titleGroups, MdenCandidateMatchMode.TitleOnly);
     }
 
     private void ApplyMdenCandidateDecision(MdenCandidateDecision? decision)
@@ -506,15 +523,25 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             return;
         }
 
-        var label = decision.Groups.Count == 1 ? "MDEN强候选" : "MDEN候选";
+        var label = decision.Mode == MdenCandidateMatchMode.Strong
+            ? (decision.Groups.Count == 1 ? "MDEN强候选" : "MDEN候选")
+            : "MDEN唯一候选";
         foreach (var result in decision.StrongMatches)
         {
             result.MdenCandidateLabel = label;
         }
 
-        _mdenCandidateStatus = decision.Groups.Count == 1
-            ? "找到唯一强候选"
-            : $"找到 {decision.Groups.Count} 个强候选，请手动选择";
+        if (decision.Groups.Count == 1)
+        {
+            _mdenCandidateStatus = decision.Mode == MdenCandidateMatchMode.Strong
+                ? "找到唯一强候选"
+                : "找到唯一可下载候选，正在自动下载后校验";
+            return;
+        }
+
+        _mdenCandidateStatus = decision.Mode == MdenCandidateMatchMode.Strong
+            ? $"找到 {decision.Groups.Count} 个强候选，请手动选择"
+            : $"找到 {decision.Groups.Count} 个同名可下载候选，请手动选择";
     }
 
     private void StartMdenAutoDownloadIfEligible(MdenCandidateDecision? decision)
@@ -544,10 +571,12 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         try
         {
             _notificationService.ShowInfo($"已找到唯一匹配谱面，正在下载《{target.Title}》");
+            MdenStatusBridge.NotifyMissingChartDownloadStarted(target.Title);
             var chart = await BuildDownloadChartAsync(target);
             if (chart == null)
             {
                 _mdenCandidateStatus = "自动下载准备失败，请手动下载";
+                MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, "自动下载准备失败，请在喵斯兔手动下载。");
                 UpdateStatusMessage();
                 return;
             }
@@ -560,11 +589,13 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             {
                 _mdenCandidateStatus = "谱面已下载并通过 MD5 校验，请回到 MDEN 重新准备";
                 _notificationService.ShowSuccess("MDEN 缺谱已下载并通过校验");
+                MdenStatusBridge.NotifyMissingChartDownloadCompleted(target.Title);
             }
             else
             {
                 _mdenCandidateStatus = "自动下载未通过校验，请手动选择";
                 _notificationService.ShowFailure("MDEN 缺谱下载失败", result.ErrorMessage ?? "请在全局搜索中手动下载正确谱面。");
+                MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, result.ErrorMessage ?? "请在喵斯兔手动下载正确谱面。");
             }
 
             UpdateStatusMessage();
@@ -574,6 +605,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             _mdenCandidateStatus = "自动下载失败，请手动选择";
             RuntimeLog.Write("GlobalSearchVM", $"MDEN auto download failed: {ex}");
             _notificationService.ShowFailure("MDEN 缺谱下载失败", ex.Message);
+            MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, ex.Message);
             UpdateStatusMessage();
         }
     }
@@ -588,10 +620,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
 
     private static bool IsStrongMdenCandidate(GlobalChartSearchResult result, MdenGlobalSearchRequest request)
     {
-        var title = NormalizeMdenText(result.Title);
-        var romanized = NormalizeMdenText(result.TitleRomanized);
-        var query = NormalizeMdenText(request.Query);
-        if (string.IsNullOrWhiteSpace(query) || (title != query && romanized != query))
+        if (!IsTitleMdenCandidate(result, request))
         {
             return false;
         }
@@ -603,14 +632,34 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             return false;
         }
 
-        var requestCharter = NormalizeMdenText(request.Charter);
-        if (string.IsNullOrWhiteSpace(requestCharter) ||
-            !GetCandidateCharters(result).Any(charter => NormalizeMdenText(charter) == requestCharter))
+        if (!IsMdenCharterMatch(result, request.Charter))
         {
             return false;
         }
 
         return true;
+    }
+
+    private static bool IsTitleMdenCandidate(GlobalChartSearchResult result, MdenGlobalSearchRequest request)
+    {
+        var title = NormalizeMdenText(result.Title);
+        var romanized = NormalizeMdenText(result.TitleRomanized);
+        var query = NormalizeMdenText(request.Query);
+        if (string.IsNullOrWhiteSpace(query) || (title != query && romanized != query))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    private bool CanAutoDownloadMdenCandidate(GlobalChartSearchResult result)
+    {
+        if (result.MdmcChart != null)
+        {
+            return true;
+        }
+
+        return result.EuterpeChart != null && _authState.CurrentUser != null;
     }
 
     private static string BuildMdenCandidateGroupKey(GlobalChartSearchResult result, MdenGlobalSearchRequest request)
@@ -621,20 +670,72 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             NormalizeMdenText(request.Charter));
     }
 
-    private static IEnumerable<string> GetCandidateCharters(GlobalChartSearchResult result)
+    private static string BuildMdenTitleCandidateGroupKey(GlobalChartSearchResult result)
+    {
+        return string.Join("|",
+            NormalizeMdenText(result.Title),
+            NormalizeMdenText(result.Artist),
+            NormalizeMdenText(result.Charter));
+    }
+
+    private static bool IsMdenCharterMatch(GlobalChartSearchResult result, string? requestCharter)
+    {
+        if (string.IsNullOrWhiteSpace(requestCharter))
+            return false;
+
+        var requestNames = SplitNormalizedNames(requestCharter).ToHashSet(StringComparer.Ordinal);
+        if (requestNames.Count == 0)
+            return false;
+
+        var candidateNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var candidate in GetCandidateCharterTexts(result))
+        {
+            if (NamesMatch(candidate, requestCharter))
+                return true;
+
+            var names = SplitNormalizedNames(candidate).ToHashSet(StringComparer.Ordinal);
+            if (names.Count > 0 && names.SetEquals(requestNames))
+                return true;
+
+            foreach (var name in names)
+                candidateNames.Add(name);
+        }
+
+        return candidateNames.Count > 0 && candidateNames.SetEquals(requestNames);
+    }
+
+    private static bool NamesMatch(string? left, string? right)
+    {
+        var normalizedLeft = NormalizeMdenText(left);
+        var normalizedRight = NormalizeMdenText(right);
+        return !string.IsNullOrWhiteSpace(normalizedLeft) &&
+               !string.IsNullOrWhiteSpace(normalizedRight) &&
+               normalizedLeft == normalizedRight;
+    }
+
+    private static IEnumerable<string> SplitNormalizedNames(string? value)
+    {
+        foreach (var name in SplitNames(value))
+        {
+            var normalized = NormalizeMdenText(name);
+            if (!string.IsNullOrWhiteSpace(normalized))
+                yield return normalized;
+        }
+    }
+
+    private static IEnumerable<string> GetCandidateCharterTexts(GlobalChartSearchResult result)
     {
         if (!string.IsNullOrWhiteSpace(result.Charter))
         {
-            foreach (var part in SplitNames(result.Charter))
-                yield return part;
+            yield return result.Charter;
         }
 
         if (result.MdmcChart?.Sheets != null)
         {
             foreach (var sheet in result.MdmcChart.Sheets)
             {
-                foreach (var part in SplitNames(sheet.Charter))
-                    yield return part;
+                if (!string.IsNullOrWhiteSpace(sheet.Charter))
+                    yield return sheet.Charter;
             }
         }
 
@@ -645,8 +746,8 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
                 if (map.Charters == null) continue;
                 foreach (var charter in map.Charters)
                 {
-                    foreach (var part in SplitNames(charter))
-                        yield return part;
+                    if (!string.IsNullOrWhiteSpace(charter))
+                        yield return charter;
                 }
             }
         }
@@ -657,7 +758,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         if (string.IsNullOrWhiteSpace(value))
             yield break;
 
-        foreach (var part in value.Split(new[] { ',', '，', '/', '、', ';', '；', '&', '|' }, StringSplitOptions.RemoveEmptyEntries))
+        foreach (var part in value.Split(new[] { ',', '，', '/', '、', ';', '；', '&', '＆', '+', '|' }, StringSplitOptions.RemoveEmptyEntries))
         {
             var clean = part.Trim();
             if (!string.IsNullOrWhiteSpace(clean))
@@ -670,7 +771,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         if (string.IsNullOrWhiteSpace(value))
             return string.Empty;
 
-        value = Regex.Replace(value, "<.*?>", string.Empty);
+        value = RemoveDiacritics(Regex.Replace(value, "<.*?>", string.Empty));
         value = Regex.Replace(value, @"\s+\d+(\.\d+)?\s*(★|\*)\s*$", string.Empty);
         value = value.Trim().ToLowerInvariant()
             .Replace('（', '(')
@@ -685,6 +786,24 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             .Replace("★", string.Empty);
 
         return Regex.Replace(value, @"[\s\-_·・~～'""`.,:;!?()\[\]【】]+", string.Empty);
+    }
+
+    private static string RemoveDiacritics(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var normalized = value.Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(normalized.Length);
+        foreach (var ch in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(ch);
+            }
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
     }
 
     private static async Task<string?> ValidateDownloadedMdenChartAsync(string filePath, string chartKey, CancellationToken ct)
@@ -1072,11 +1191,18 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
 
     private sealed record MdenCandidateDecision(
         IReadOnlyList<GlobalChartSearchResult> StrongMatches,
-        IReadOnlyList<MdenCandidateGroup> Groups);
+        IReadOnlyList<MdenCandidateGroup> Groups,
+        MdenCandidateMatchMode Mode);
 
     private sealed record MdenCandidateGroup(
         string Key,
         IReadOnlyList<GlobalChartSearchResult> Results);
+
+    private enum MdenCandidateMatchMode
+    {
+        Strong,
+        TitleOnly
+    }
 
     private static async Task ShowMessageBoxAsync(string message)
     {

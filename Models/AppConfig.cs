@@ -157,6 +157,7 @@ public class EnsembleLobbyNodeConfig
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Address { get; set; } = "";
+    public bool IsFallback { get; set; } = false;
 }
 
 

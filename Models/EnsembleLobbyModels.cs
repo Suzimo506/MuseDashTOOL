@@ -23,6 +23,7 @@ public partial class EnsembleLobbyNode : ObservableObject
     [ObservableProperty] private string _name = "";
     [ObservableProperty] private string _address = "";
     [ObservableProperty] private string _statusText = "未连接";
+    [ObservableProperty] private bool _isFallback;
     [ObservableProperty] private bool _isConnected;
     [ObservableProperty] private bool _isSelected;
     [ObservableProperty] private ObservableCollection<EnsembleLobbyRoom> _rooms = new();
@@ -43,12 +44,14 @@ public partial class EnsembleLobbyNode : ObservableObject
     }
 
     public bool HasRooms => Rooms.Count > 0;
+    public string SourceText => IsFallback ? "内置兜底节点" : "";
     public string RoomCountText => $"{Rooms.Count} 房间";
     public IBrush TabBackgroundBrush => IsSelected ? NodeSelectedBackgroundBrush : NodeDefaultBackgroundBrush;
     public IBrush TabBorderBrush => IsSelected ? NodeSelectedBorderBrush : NodeDefaultBorderBrush;
     public IBrush TabTextBrush => IsSelected ? NodeSelectedTextBrush : NodeDefaultTextBrush;
 
     partial void OnStatusTextChanged(string value) => OnPropertyChanged(nameof(StatusBrush));
+    partial void OnIsFallbackChanged(bool value) => OnPropertyChanged(nameof(SourceText));
     partial void OnIsConnectedChanged(bool value) => OnPropertyChanged(nameof(StatusBrush));
     partial void OnIsSelectedChanged(bool value)
     {

@@ -31,7 +31,7 @@ internal partial class TelemetryJsonContext : JsonSerializerContext;
 public sealed class TelemetryService : ITelemetryService
 {
     private const string BaseUrl = "https://euterpe-org.com/api/";
-    private const string TelemetryAppVersion = "1.5.2";
+    private const string TelemetryAppVersion = "1.5.3";
     private readonly HttpClient _httpClient;
     private readonly IAuthService _authService;
     private readonly AuthState _authState;
@@ -41,7 +41,7 @@ public sealed class TelemetryService : ITelemetryService
         _authService = authService;
         _authState = authState;
         _httpClient = new HttpClient { BaseAddress = new Uri(BaseUrl) };
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.5.2");
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.5.3");
     }
 
     // 发送应用会话遥测请求

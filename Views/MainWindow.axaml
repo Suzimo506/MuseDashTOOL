@@ -516,7 +516,7 @@
                                     </StackPanel>
                                 </Button>
                                 <!-- 版本号精准对齐并在折叠时隐去 -->
-                                <TextBlock Text="v1.5.2"
+                                <TextBlock Text="v1.5.3"
                                            FontSize="11" 
                                            Foreground="{DynamicResource ThemeTextSubBrush}" 
                                            Opacity="0.6" 

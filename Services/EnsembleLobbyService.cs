@@ -26,7 +26,21 @@ public interface IEnsembleLobbyService : IDisposable
 
 public sealed class EnsembleLobbyService : IEnsembleLobbyService
 {
-    private const string ServerListUrl = "https://api.xmjjs.top/mpmd/serverlist.php";
+    private const string ServerListUrl = "https://mden.top/api/?r=serverlist";
+    private static readonly EnsembleLobbyNodeConfig[] FallbackOfficialNodes =
+    {
+        new() { Id = "fallback-chengdu", Name = "成都", Address = "42.193.20.197:10423", IsFallback = true },
+        new() { Id = "fallback-shanghai", Name = "上海", Address = "md.atri.wor1d:10423", IsFallback = true },
+        new() { Id = "fallback-shandong", Name = "山东", Address = "mdcn.xmjjs.top:50160", IsFallback = true },
+        new() { Id = "fallback-hongkong", Name = "香港", Address = "mdhk.xmjjs.top:10423", IsFallback = true },
+        new() { Id = "fallback-hubei", Name = "湖北", Address = "mdcn2.xmjjs.top:31498", IsFallback = true }
+    };
+
+    private static readonly EnsembleLobbyNodeConfig[] PinnedOfficialNodes =
+    {
+        new() { Id = "pinned-chengdu", Name = "成都", Address = "42.193.20.197:10423" }
+    };
+
     private readonly IConfigService _configService;
     private readonly ConcurrentDictionary<string, NodeConnection> _connections = new();
     private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(6) };
@@ -47,12 +61,10 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
         var nodes = await TryFetchOfficialNodesAsync(ct).ConfigureAwait(false);
         if (nodes.Count > 0)
         {
-            return nodes;
+            return MergeWithPinnedOfficialNodes(nodes);
         }
 
-        return _configService.Config.EnsembleLobbyNodes
-            .Where(node => !string.IsNullOrWhiteSpace(node.Address))
-            .ToArray();
+        return MergeFallbackWithConfiguredNodes(_configService.Config.EnsembleLobbyNodes);
     }
 
     public async Task ConnectAsync(EnsembleLobbyNodeConfig node, string uid, CancellationToken ct)
@@ -195,7 +207,8 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
                 {
                     Id = string.IsNullOrWhiteSpace(server.Id) ? server.Address : server.Id,
                     Name = string.IsNullOrWhiteSpace(server.Name) ? server.Address : server.Name,
-                    Address = server.Address
+                    Address = server.Address,
+                    IsFallback = false
                 })
                 .ToArray() ?? Array.Empty<EnsembleLobbyNodeConfig>();
         }
@@ -276,6 +289,66 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
         }
 
         return (host, port);
+    }
+
+    private static IReadOnlyList<EnsembleLobbyNodeConfig> GetFallbackOfficialNodes()
+    {
+        return FallbackOfficialNodes
+            .Select(CloneNode)
+            .ToArray();
+    }
+
+    private static IReadOnlyList<EnsembleLobbyNodeConfig> MergeFallbackWithConfiguredNodes(
+        IReadOnlyList<EnsembleLobbyNodeConfig>? configuredNodes)
+    {
+        var merged = GetFallbackOfficialNodes().ToList();
+        var addresses = merged
+            .Select(node => node.Address)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var configuredNode in configuredNodes ?? Array.Empty<EnsembleLobbyNodeConfig>())
+        {
+            if (configuredNode == null || string.IsNullOrWhiteSpace(configuredNode.Address)) continue;
+            if (addresses.Add(configuredNode.Address))
+            {
+                merged.Add(CloneNode(configuredNode));
+            }
+        }
+
+        return merged;
+    }
+
+    private static IReadOnlyList<EnsembleLobbyNodeConfig> MergeWithPinnedOfficialNodes(IReadOnlyList<EnsembleLobbyNodeConfig> nodes)
+    {
+        var merged = nodes
+            .Where(node => node != null && !string.IsNullOrWhiteSpace(node.Address))
+            .Select(CloneNode)
+            .ToList();
+
+        var addresses = merged
+            .Select(node => node.Address)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var pinnedNode in PinnedOfficialNodes)
+        {
+            if (addresses.Add(pinnedNode.Address))
+            {
+                merged.Add(CloneNode(pinnedNode));
+            }
+        }
+
+        return merged;
+    }
+
+    private static EnsembleLobbyNodeConfig CloneNode(EnsembleLobbyNodeConfig node)
+    {
+        return new EnsembleLobbyNodeConfig
+        {
+            Id = node.Id,
+            Name = node.Name,
+            Address = node.Address,
+            IsFallback = node.IsFallback
+        };
     }
 
     private sealed class NodeConnection : IAsyncDisposable
