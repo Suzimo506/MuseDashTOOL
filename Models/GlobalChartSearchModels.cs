@@ -63,6 +63,7 @@ public sealed partial class GlobalChartSearchResult : ObservableObject
     public string Title => MdmcChart?.Title ?? EuterpeChart?.Name ?? string.Empty;
     public string Artist => MdmcChart?.Artist ?? EuterpeChart?.Author ?? string.Empty;
     public string Charter => MdmcChart?.Charter ?? EuterpeChart?.CharterInfo ?? string.Empty;
+    public string TitleRomanized => MdmcChart?.TitleRomanized ?? string.Empty;
     public string Bpm => MdmcChart?.Bpm ?? (EuterpeChart?.Bpm > 0 ? EuterpeChart.Bpm.ToString() : string.Empty);
     public int LikesCount => MdmcChart?.LikesCount ?? EuterpeChart?.LikeCount ?? 0;
     public int DownloadCount => EuterpeChart?.DownloadCount ?? 0;
@@ -74,6 +75,11 @@ public sealed partial class GlobalChartSearchResult : ObservableObject
     public bool IsPlaying => MdmcChart?.IsPlaying ?? EuterpeChart?.IsPlaying ?? false;
     public string RepositoryName => Source == GlobalChartSource.QQGroup ? SourceDetail : string.Empty;
     public bool HasRepositoryBadge => !string.IsNullOrWhiteSpace(RepositoryName);
+    public bool HasMdenCandidateLabel => !string.IsNullOrWhiteSpace(MdenCandidateLabel);
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasMdenCandidateLabel))]
+    private string _mdenCandidateLabel = string.Empty;
 
     public string? DisplayCoverSource => MdmcChart?.DisplayCoverSource ?? EuterpeChart?.CoverUrl;
     public bool HasDisplayCoverSource => !string.IsNullOrWhiteSpace(DisplayCoverSource);

@@ -275,6 +275,9 @@
                                                     <Border Background="#CC000000" CornerRadius="8" Padding="6,2" Margin="6" HorizontalAlignment="Left" VerticalAlignment="Top">
                                                         <TextBlock Text="{Binding SourceName}" FontSize="10" FontWeight="Bold" Foreground="White"/>
                                                     </Border>
+                                                    <Border Background="#D4237A" CornerRadius="8" Padding="6,2" Margin="0,6,6,0" HorizontalAlignment="Right" VerticalAlignment="Top" IsVisible="{Binding HasMdenCandidateLabel}">
+                                                        <TextBlock Text="{Binding MdenCandidateLabel}" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                                    </Border>
                                                     <Border IsVisible="{Binding IsPlaying}" Background="#80000000" CornerRadius="10,10,0,0">
                                                         <TextBlock Text="{Binding [Str_030], Source={x:Static i18n:I18nService.Instance}}" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>

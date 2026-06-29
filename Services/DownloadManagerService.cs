@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -29,6 +30,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     private readonly HttpClient _directDownloadHttp = HttpHelper.CreateDirectClient(TimeSpan.FromSeconds(600), TimeSpan.FromSeconds(15));
     // 并发控制器：最多同时下载 10 个谱面
     private readonly SemaphoreSlim _concurrencySemaphore = new(10, 10);
+    private readonly ConcurrentDictionary<DownloadTaskItem, DownloadCompletionRequest> _completionRequests = new();
 
     public ObservableCollection<DownloadTaskItem> Tasks { get; } = new();
     public HashSet<string> SessionDownloadedFiles { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -47,17 +49,36 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
     public void EnqueueDownload(MdmcChart chart)
     {
+        EnqueueDownloadInternal(chart, null);
+    }
+
+    public Task<DownloadCompletionResult> EnqueueDownloadAndWaitAsync(
+        MdmcChart chart,
+        Func<string, CancellationToken, Task<string?>>? completedFileValidator = null)
+    {
+        var request = new DownloadCompletionRequest(completedFileValidator);
+        EnqueueDownloadInternal(chart, request);
+        return request.Task;
+    }
+
+    private void EnqueueDownloadInternal(MdmcChart chart, DownloadCompletionRequest? completion)
+    {
         Dispatcher.UIThread.Post(() =>
         {
             if (Tasks.Any(t => t.Chart.Id == chart.Id &&
                 (t.Status == DownloadStatus.Waiting || t.Status == DownloadStatus.Downloading || t.Status == DownloadStatus.Paused)))
             {
+                completion?.SetResult(new DownloadCompletionResult(false, null, "谱面已在下载队列中"));
                 return;
             }
 
             var item = new DownloadTaskItem(chart);
             item.DestinationPath = GetUniqueDestinationPath(chart);
             item.PartialDownloadPath = GetPartialDownloadPath(item.DestinationPath);
+            if (completion != null)
+            {
+                _completionRequests[item] = completion;
+            }
 
             Tasks.Add(item);
 
@@ -135,6 +156,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     {
         item.Cts?.Cancel();
         item.Status = DownloadStatus.Canceled;
+        CompleteDownloadRequest(item, false, null, "下载已取消");
 
         CleanupCanceledDownload(item);
         Dispatcher.UIThread.Post(() => Tasks.Remove(item));
@@ -249,6 +271,18 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                     }
 
                     MoveCompletedDownload(item.PartialDownloadPath, item.DestinationPath);
+                    var completionValidationError = await ValidateCompletionRequestAsync(item, ct);
+                    if (completionValidationError != null)
+                    {
+                        TryDeleteFile(item.DestinationPath);
+                        item.Status = DownloadStatus.Error;
+                        item.ErrorMessage = completionValidationError;
+                        UpdateDownloadInfo(item);
+                        _notificationService.ShowFailure("下载校验失败", completionValidationError);
+                        CompleteDownloadRequest(item, false, null, completionValidationError);
+                        return;
+                    }
+
                     item.Status = DownloadStatus.Completed;
                     item.Progress = 100;
                     _notificationService.ShowSuccess($"《{item.Chart.Title}》下载完成");
@@ -268,6 +302,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                     }
 
                     SessionDownloadedFiles.Add(Path.GetFullPath(item.DestinationPath));
+                    CompleteDownloadRequest(item, true, item.DestinationPath, null);
                     Dispatcher.UIThread.Post(() => Tasks.Remove(item));
                     return;
                 }
@@ -280,6 +315,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                     {
                         item.Status = DownloadStatus.Paused;
                         UpdateDownloadInfo(item);
+                        CompleteDownloadRequest(item, false, null, "下载已暂停");
                         return;
                     }
 
@@ -320,6 +356,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             {
                 item.Status = DownloadStatus.Paused;
                 UpdateDownloadInfo(item);
+                CompleteDownloadRequest(item, false, null, "下载已暂停");
             }
         }
         catch (Exception ex)
@@ -327,6 +364,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             RuntimeLog.Write("DownloadManager", $"Uncaught download error: {ex.Message}");
             item.Status = DownloadStatus.Error;
             item.ErrorMessage = TranslateDownloadErrorMessage(ex.Message);
+            CompleteDownloadRequest(item, false, null, item.ErrorMessage);
         }
         finally
         {
@@ -535,6 +573,36 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         File.Move(partialPath, destinationPath);
     }
 
+    private async Task<string?> ValidateCompletionRequestAsync(DownloadTaskItem item, CancellationToken ct)
+    {
+        if (!_completionRequests.TryGetValue(item, out var completion) ||
+            completion.CompletedFileValidator == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return await completion.CompletedFileValidator(item.DestinationPath, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
+    }
+
+    private void CompleteDownloadRequest(DownloadTaskItem item, bool success, string? filePath, string? errorMessage)
+    {
+        if (_completionRequests.TryRemove(item, out var completion))
+        {
+            completion.SetResult(new DownloadCompletionResult(success, filePath, errorMessage));
+        }
+    }
+
     private static void CleanupCanceledDownload(DownloadTaskItem item)
     {
         TryDeleteFile(item.PartialDownloadPath);
@@ -603,6 +671,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             : "当前下载源连续失败，请切换下载源或手动下载。";
         UpdateDownloadInfo(item);
         _notificationService.ShowFailure("下载失败", item.ErrorMessage);
+        CompleteDownloadRequest(item, false, null, item.ErrorMessage);
     }
 
     private static string TranslateDownloadErrorMessage(string? reason)
@@ -729,5 +798,23 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         _http.Dispose();
         _downloadHttp.Dispose();
         _directDownloadHttp.Dispose();
+    }
+
+    private sealed class DownloadCompletionRequest
+    {
+        private readonly TaskCompletionSource<DownloadCompletionResult> _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public DownloadCompletionRequest(Func<string, CancellationToken, Task<string?>>? completedFileValidator)
+        {
+            CompletedFileValidator = completedFileValidator;
+        }
+
+        public Func<string, CancellationToken, Task<string?>>? CompletedFileValidator { get; }
+        public Task<DownloadCompletionResult> Task => _completion.Task;
+
+        public void SetResult(DownloadCompletionResult result)
+        {
+            _completion.TrySetResult(result);
+        }
     }
 }

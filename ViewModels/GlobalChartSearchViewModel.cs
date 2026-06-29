@@ -2,19 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MDEN.Protocol.Rules;
 using MdModManager.Helpers;
 using MdModManager.Models;
 using MdModManager.Services;
 using MdModManager.Views;
 using NAudio.Vorbis;
 using NAudio.Wave;
+using System.Text.RegularExpressions;
 
 namespace MdModManager.ViewModels;
 
@@ -40,6 +44,8 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     private WaveOutEvent? _waveOut;
     private GlobalChartSearchResult? _playingResult;
     private MdenGlobalSearchRequest? _mdenSearchRequest;
+    private bool _mdenAutoDownloadStarted;
+    private string _mdenCandidateStatus = string.Empty;
 
     public ObservableCollection<GlobalChartSearchResult> Results { get; } = new();
     public ObservableCollection<GlobalChartSearchSourceState> SourceStates { get; } = new()
@@ -139,6 +145,8 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     public async Task OpenMdenSearchAsync(MdenGlobalSearchRequest request)
     {
         _mdenSearchRequest = request;
+        _mdenAutoDownloadStarted = false;
+        _mdenCandidateStatus = string.Empty;
         SearchDraftText = request.Query;
         SelectedSource = null;
         await SearchCommand.ExecuteAsync(null);
@@ -196,8 +204,11 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
                 .ThenByDescending(r => r.LikesCount)
                 .ThenBy(r => r.Title, StringComparer.OrdinalIgnoreCase));
 
+            var mdenDecision = BuildMdenCandidateDecision();
+            ApplyMdenCandidateDecision(mdenDecision);
             ApplySourceFilter(resetPage: true);
             ApplyCurrentPage();
+            StartMdenAutoDownloadIfEligible(mdenDecision);
         }
         catch (OperationCanceledException)
         {
@@ -235,6 +246,8 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     {
         _searchCts?.Cancel();
         _mdenSearchRequest = null;
+        _mdenAutoDownloadStarted = false;
+        _mdenCandidateStatus = string.Empty;
         SearchDraftText = string.Empty;
         SearchText = string.Empty;
         ClearResults();
@@ -383,6 +396,16 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
 
     private async Task ExecuteDownloadAsync(GlobalChartSearchResult result)
     {
+        var chart = await BuildDownloadChartAsync(result);
+        if (chart == null)
+            return;
+
+        _downloadManagerService.EnqueueDownload(chart);
+        _notificationService.ShowSuccess($"已添加到下载列表: 《{chart.Title}》");
+    }
+
+    private async Task<MdmcChart?> BuildDownloadChartAsync(GlobalChartSearchResult result)
+    {
         if (result.MdmcChart != null)
         {
             var chart = result.MdmcChart;
@@ -393,18 +416,16 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
                 chart.CustomDownloadUrl = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
             }
 
-            _downloadManagerService.EnqueueDownload(chart);
-            _notificationService.ShowSuccess($"已添加到下载列表: 《{chart.Title}》");
-            return;
+            return chart;
         }
 
         if (result.EuterpeChart == null)
-            return;
+            return null;
 
         if (_authState.CurrentUser == null)
         {
             _notificationService.ShowFailure("Euterpe 未登录", "请先登录 Euterpe 后再下载谱面。");
-            return;
+            return null;
         }
 
         try
@@ -436,13 +457,275 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
                     Charter = string.Join(", ", m.Charters)
                 }).ToList()
             };
-
-            _downloadManagerService.EnqueueDownload(chart);
-            _notificationService.ShowSuccess($"已添加到下载队列: 《{result.EuterpeChart.Name}》");
+            return chart;
         }
         catch (Exception ex)
         {
             _notificationService.ShowFailure("Euterpe 下载失败", ex.Message);
+            return null;
+        }
+    }
+
+    private MdenCandidateDecision? BuildMdenCandidateDecision()
+    {
+        var request = _mdenSearchRequest;
+        if (request == null ||
+            string.IsNullOrWhiteSpace(request.ChartKey) ||
+            !ChartSelectionRules.IsCustomChartKey(request.ChartKey))
+        {
+            ClearMdenCandidateLabels();
+            _mdenCandidateStatus = string.Empty;
+            return null;
+        }
+
+        var matches = _allResults
+            .Where(result => IsStrongMdenCandidate(result, request))
+            .ToList();
+
+        var groups = matches
+            .GroupBy(result => BuildMdenCandidateGroupKey(result, request), StringComparer.OrdinalIgnoreCase)
+            .Select(group => new MdenCandidateGroup(group.Key, group.ToList()))
+            .ToList();
+
+        return new MdenCandidateDecision(matches, groups);
+    }
+
+    private void ApplyMdenCandidateDecision(MdenCandidateDecision? decision)
+    {
+        ClearMdenCandidateLabels();
+
+        if (_mdenSearchRequest == null || decision == null)
+        {
+            _mdenCandidateStatus = string.Empty;
+            return;
+        }
+
+        if (decision.Groups.Count == 0)
+        {
+            _mdenCandidateStatus = "没有找到可自动匹配的候选，请手动选择";
+            return;
+        }
+
+        var label = decision.Groups.Count == 1 ? "MDEN强候选" : "MDEN候选";
+        foreach (var result in decision.StrongMatches)
+        {
+            result.MdenCandidateLabel = label;
+        }
+
+        _mdenCandidateStatus = decision.Groups.Count == 1
+            ? "找到唯一强候选"
+            : $"找到 {decision.Groups.Count} 个强候选，请手动选择";
+    }
+
+    private void StartMdenAutoDownloadIfEligible(MdenCandidateDecision? decision)
+    {
+        var request = _mdenSearchRequest;
+        if (request == null ||
+            decision == null ||
+            _mdenAutoDownloadStarted ||
+            decision.Groups.Count != 1 ||
+            string.IsNullOrWhiteSpace(request.ChartKey))
+        {
+            return;
+        }
+
+        var target = SelectPreferredMdenCandidate(decision.Groups[0]);
+        if (target == null)
+        {
+            return;
+        }
+
+        _mdenAutoDownloadStarted = true;
+        _ = AutoDownloadMdenCandidateAsync(target, request);
+    }
+
+    private async Task AutoDownloadMdenCandidateAsync(GlobalChartSearchResult target, MdenGlobalSearchRequest request)
+    {
+        try
+        {
+            _notificationService.ShowInfo($"已找到唯一匹配谱面，正在下载《{target.Title}》");
+            var chart = await BuildDownloadChartAsync(target);
+            if (chart == null)
+            {
+                _mdenCandidateStatus = "自动下载准备失败，请手动下载";
+                UpdateStatusMessage();
+                return;
+            }
+
+            var result = await _downloadManagerService.EnqueueDownloadAndWaitAsync(
+                chart,
+                (path, ct) => ValidateDownloadedMdenChartAsync(path, request.ChartKey!, ct));
+
+            if (result.Success)
+            {
+                _mdenCandidateStatus = "谱面已下载并通过 MD5 校验，请回到 MDEN 重新准备";
+                _notificationService.ShowSuccess("MDEN 缺谱已下载并通过校验");
+            }
+            else
+            {
+                _mdenCandidateStatus = "自动下载未通过校验，请手动选择";
+                _notificationService.ShowFailure("MDEN 缺谱下载失败", result.ErrorMessage ?? "请在全局搜索中手动下载正确谱面。");
+            }
+
+            UpdateStatusMessage();
+        }
+        catch (Exception ex)
+        {
+            _mdenCandidateStatus = "自动下载失败，请手动选择";
+            RuntimeLog.Write("GlobalSearchVM", $"MDEN auto download failed: {ex}");
+            _notificationService.ShowFailure("MDEN 缺谱下载失败", ex.Message);
+            UpdateStatusMessage();
+        }
+    }
+
+    private static GlobalChartSearchResult? SelectPreferredMdenCandidate(MdenCandidateGroup group)
+    {
+        return group.Results
+            .OrderBy(result => SourceOrder(result.Source))
+            .ThenBy(result => result.SourceDetail, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+    }
+
+    private static bool IsStrongMdenCandidate(GlobalChartSearchResult result, MdenGlobalSearchRequest request)
+    {
+        var title = NormalizeMdenText(result.Title);
+        var romanized = NormalizeMdenText(result.TitleRomanized);
+        var query = NormalizeMdenText(request.Query);
+        if (string.IsNullOrWhiteSpace(query) || (title != query && romanized != query))
+        {
+            return false;
+        }
+
+        var requestArtist = NormalizeMdenText(request.Artist);
+        if (string.IsNullOrWhiteSpace(requestArtist) ||
+            NormalizeMdenText(result.Artist) != requestArtist)
+        {
+            return false;
+        }
+
+        var requestCharter = NormalizeMdenText(request.Charter);
+        if (string.IsNullOrWhiteSpace(requestCharter) ||
+            !GetCandidateCharters(result).Any(charter => NormalizeMdenText(charter) == requestCharter))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static string BuildMdenCandidateGroupKey(GlobalChartSearchResult result, MdenGlobalSearchRequest request)
+    {
+        return string.Join("|",
+            NormalizeMdenText(result.Title),
+            NormalizeMdenText(result.Artist),
+            NormalizeMdenText(request.Charter));
+    }
+
+    private static IEnumerable<string> GetCandidateCharters(GlobalChartSearchResult result)
+    {
+        if (!string.IsNullOrWhiteSpace(result.Charter))
+        {
+            foreach (var part in SplitNames(result.Charter))
+                yield return part;
+        }
+
+        if (result.MdmcChart?.Sheets != null)
+        {
+            foreach (var sheet in result.MdmcChart.Sheets)
+            {
+                foreach (var part in SplitNames(sheet.Charter))
+                    yield return part;
+            }
+        }
+
+        if (result.EuterpeChart?.Maps != null)
+        {
+            foreach (var map in result.EuterpeChart.Maps)
+            {
+                if (map.Charters == null) continue;
+                foreach (var charter in map.Charters)
+                {
+                    foreach (var part in SplitNames(charter))
+                        yield return part;
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<string> SplitNames(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            yield break;
+
+        foreach (var part in value.Split(new[] { ',', '，', '/', '、', ';', '；', '&', '|' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var clean = part.Trim();
+            if (!string.IsNullOrWhiteSpace(clean))
+                yield return clean;
+        }
+    }
+
+    private static string NormalizeMdenText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        value = Regex.Replace(value, "<.*?>", string.Empty);
+        value = Regex.Replace(value, @"\s+\d+(\.\d+)?\s*(★|\*)\s*$", string.Empty);
+        value = value.Trim().ToLowerInvariant()
+            .Replace('（', '(')
+            .Replace('）', ')')
+            .Replace('！', '!')
+            .Replace('？', '?')
+            .Replace('：', ':')
+            .Replace('，', ',')
+            .Replace('。', '.')
+            .Replace('　', ' ')
+            .Replace("☆", string.Empty)
+            .Replace("★", string.Empty);
+
+        return Regex.Replace(value, @"[\s\-_·・~～'""`.,:;!?()\[\]【】]+", string.Empty);
+    }
+
+    private static async Task<string?> ValidateDownloadedMdenChartAsync(string filePath, string chartKey, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(chartKey))
+            return "缺少 MDEN 谱面 MD5，无法校验。";
+
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            return "下载文件不存在。";
+
+        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, true);
+        using var zip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
+        foreach (var entry in zip.Entries)
+        {
+            ct.ThrowIfCancellationRequested();
+            var ext = Path.GetExtension(entry.Name);
+            if (!string.Equals(ext, ".bms", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(ext, ".bme", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(ext, ".bml", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            await using var entryStream = entry.Open();
+            using var md5 = MD5.Create();
+            var hash = await md5.ComputeHashAsync(entryStream, ct);
+            var actual = Convert.ToHexString(hash).ToLowerInvariant();
+            if (string.Equals(actual, chartKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+        }
+
+        return "下载到的谱面不是房间里的同一张，请在喵斯兔手动下载。";
+    }
+
+    private void ClearMdenCandidateLabels()
+    {
+        foreach (var result in _allResults)
+        {
+            result.MdenCandidateLabel = string.Empty;
         }
     }
 
@@ -735,7 +1018,9 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         var result = string.IsNullOrWhiteSpace(notice) ? message : $"{message}；{notice}";
         if (_mdenSearchRequest != null)
         {
-            result = "来自 MDEN 缺谱搜索：" + result;
+            result = string.IsNullOrWhiteSpace(_mdenCandidateStatus)
+                ? "来自 MDEN 缺谱搜索：" + result
+                : $"来自 MDEN 缺谱搜索：{_mdenCandidateStatus}；{result}";
         }
 
         return result;
@@ -784,6 +1069,14 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         GlobalChartSource.Mdmc => 2,
         _ => 9
     };
+
+    private sealed record MdenCandidateDecision(
+        IReadOnlyList<GlobalChartSearchResult> StrongMatches,
+        IReadOnlyList<MdenCandidateGroup> Groups);
+
+    private sealed record MdenCandidateGroup(
+        string Key,
+        IReadOnlyList<GlobalChartSearchResult> Results);
 
     private static async Task ShowMessageBoxAsync(string message)
     {
