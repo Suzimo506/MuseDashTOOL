@@ -107,7 +107,45 @@
                                FontSize="28"
                                FontWeight="Bold"
                                Foreground="{DynamicResource ThemeTextMainBrush}"
-                               TextTrimming="CharacterEllipsis"/>
+                               TextTrimming="CharacterEllipsis"
+                               IsVisible="{Binding !IsManualUidInputVisible}"/>
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10"
+                                IsVisible="{Binding IsManualUidInputVisible}">
+                        <TextBox Text="{Binding ManualUidText, Mode=TwoWay}"
+                                 Watermark="{Binding [Account_ManualUidWatermark], Source={x:Static i18n:I18nService.Instance}}"
+                                 Width="330"
+                                 Height="38"
+                                 FontSize="18"
+                                 FontWeight="Bold"
+                                 Padding="12,4"
+                                 VerticalContentAlignment="Center"
+                                 Background="#18000000"
+                                 BorderBrush="{DynamicResource SvgIconBrush}"
+                                 BorderThickness="1"
+                                 CornerRadius="8"
+                                 Foreground="{DynamicResource ThemeTextMainBrush}">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Command="{Binding SaveManualUidCommand}" Gesture="Enter"/>
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                        <Button Command="{Binding SaveManualUidCommand}"
+                                IsEnabled="{Binding CanSaveManualUid}"
+                                Width="76"
+                                Height="38"
+                                Padding="0"
+                                Background="{DynamicResource SvgIconBrush}"
+                                Foreground="White"
+                                BorderThickness="0"
+                                CornerRadius="8"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                Cursor="Hand">
+                            <TextBlock Text="{Binding [Account_SaveManualUid], Source={x:Static i18n:I18nService.Instance}}"
+                                       FontSize="15"
+                                       FontWeight="Bold"/>
+                        </Button>
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <Border Background="#22000000" CornerRadius="4" Padding="8,2">
                             <TextBlock Text="{Binding StatusMessage}"

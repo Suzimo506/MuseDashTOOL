@@ -34,10 +34,25 @@ public partial class AccountViewModel : ObservableObject
     private bool _isLoggedIn = false;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSaveManualUid))]
+    [NotifyCanExecuteChangedFor(nameof(SaveManualUidCommand))]
     private bool _isLoading = true;
 
     [ObservableProperty]
     private string _statusMessage = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Reading Account Info..." : "正在读取账号信息...";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSaveManualUid))]
+    [NotifyCanExecuteChangedFor(nameof(SaveManualUidCommand))]
+    private string _manualUidText = MuseDashAccountService.GetManualMuseDashUid();
+
+    [ObservableProperty]
+    private bool _isManualUidInputVisible;
+
+    [ObservableProperty]
+    private bool _isUsingManualUid;
+
+    public bool CanSaveManualUid => !IsLoading && MuseDashAccountService.IsValidManualUid(ManualUidText);
 
     // 排序方式: 0=默认, 1=排名最高, 2=准确率最高, 3=最难
     [ObservableProperty]
@@ -70,6 +85,11 @@ public partial class AccountViewModel : ObservableObject
         {
             ClearSearchState();
         }
+    }
+
+    partial void OnIsLoadingChanged(bool value)
+    {
+        SaveManualUidCommand.NotifyCanExecuteChanged();
     }
 
     // 存储全部数据，用于分批加载，避免一次性创建过多 UI 元素
@@ -275,10 +295,20 @@ public partial class AccountViewModel : ObservableObject
         {
             IsLoggedIn = false;
             Nickname = isEn ? "Not Logged In" : "未登录";
-            StatusMessage = isEn ? "Login info not found, please open Muse Dash and login first." : "未找到登录信息，请先打开喵斯快跑并登录。";
+            ManualUidText = MuseDashAccountService.GetManualMuseDashUid();
+            IsManualUidInputVisible = true;
+            IsUsingManualUid = false;
+            StatusMessage = isEn
+                ? "Login info not found. Enter your Muse Dash UID manually to use account features."
+                : "未找到登录信息，可手动输入 Muse Dash UID 使用账号功能。";
             IsLoading = false;
             return;
         }
+
+        IsManualUidInputVisible = info.IsManual;
+        IsUsingManualUid = info.IsManual;
+        if (info.IsManual)
+            ManualUidText = info.Uid ?? "";
 
         Uid = info.Uid ?? "-";
         Nickname = isEn ? "Loading..." : "正在加载...";
@@ -296,6 +326,8 @@ public partial class AccountViewModel : ObservableObject
             Nickname = IsLikelyUid(rawNick) ? (isEn ? "(Nickname not set)" : "（未设置昵称）") : rawNick;
             var reason = MuseDashAccountService.LastError ?? (isEn ? "Network unreachable" : "网络不可达");
             StatusMessage = isEn ? $"Connection failed: {reason}" : $"连接失败：{reason}";
+            IsManualUidInputVisible = info.IsManual;
+            IsUsingManualUid = info.IsManual;
         }
     }
 
@@ -303,6 +335,10 @@ public partial class AccountViewModel : ObservableObject
     {
         bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
         IsLoggedIn = true;
+        IsManualUidInputVisible = info.IsManual;
+        IsUsingManualUid = info.IsManual;
+        if (info.IsManual)
+            ManualUidText = info.Uid ?? "";
         Uid = info.Uid ?? "-";
         Nickname = string.IsNullOrWhiteSpace(profile.Nickname)
             ? (info.Nickname ?? (isEn ? "Player" : "玩家"))
@@ -312,7 +348,9 @@ public partial class AccountViewModel : ObservableObject
         PerfectsCount = profile.PerfectsCount;
         AverageAccuracy = $"{profile.AverageAccuracy:0.00} %";
         
-        StatusMessage = isEn ? "Data Synced" : "数据已同步";
+        StatusMessage = info.IsManual
+            ? (isEn ? "Data synced with manual UID" : "已使用手动 UID 同步数据")
+            : (isEn ? "Data Synced" : "数据已同步");
 
         _allRecentPlays.Clear();
         _allRecentPlays.AddRange(profile.RecentPlays);
@@ -336,6 +374,59 @@ public partial class AccountViewModel : ObservableObject
         MuseDashAccountService.InvalidateCache();
         MuseDashAccountService.StartPrefetch();
         await InitializeAsync();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSaveManualUid))]
+    private async Task SaveManualUidAsync()
+    {
+        bool isEn = MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US";
+        var uid = ManualUidText.Trim();
+        if (!MuseDashAccountService.IsValidManualUid(uid))
+        {
+            StatusMessage = isEn ? "Please enter a valid Muse Dash UID." : "请输入有效的 Muse Dash UID。";
+            return;
+        }
+
+        IsLoading = true;
+        StatusMessage = isEn ? "Saving manual UID..." : "正在保存手动 UID...";
+
+        try
+        {
+            await MuseDashAccountService.SaveManualMuseDashUidAsync(uid);
+            MuseDashAccountService.StartPrefetch();
+
+            var info = MuseDashAccountService.ReadManualAccountInfo();
+            if (info == null)
+            {
+                StatusMessage = isEn ? "Manual UID was not saved." : "手动 UID 未保存成功。";
+                return;
+            }
+
+            var profile = await MuseDashAccountService.FetchPlayerProfileAsync(info.Uid ?? "");
+            if (profile != null)
+            {
+                ApplyProfile(info, profile);
+                StatusMessage = isEn ? "Manual UID saved and data synced." : "手动 UID 已保存并同步数据。";
+            }
+            else
+            {
+                IsLoggedIn = false;
+                IsManualUidInputVisible = true;
+                IsUsingManualUid = true;
+                Uid = info.Uid ?? "-";
+                Nickname = isEn ? "(Manual UID)" : "（手动 UID）";
+                var reason = MuseDashAccountService.LastError ?? (isEn ? "Profile not found" : "未找到玩家资料");
+                StatusMessage = isEn ? $"Manual UID saved, but profile fetch failed: {reason}" : $"手动 UID 已保存，但拉取资料失败：{reason}";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = isEn ? $"Failed to save manual UID: {ex.Message}" : $"保存手动 UID 失败：{ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private static bool IsLikelyUid(string s)

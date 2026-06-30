@@ -145,6 +145,9 @@ public class AppConfig
     // 喵斯兔联机大厅显示名
     public string OnlineLobbyDisplayName { get; set; } = "喵斯兔玩家";
 
+    // 手动填写的 Muse Dash UID，注册表读取失败时作为兜底账号
+    public string ManualMuseDashUid { get; set; } = "";
+
     // Ensemble 联机节点备用列表
     public System.Collections.Generic.List<EnsembleLobbyNodeConfig> EnsembleLobbyNodes { get; set; } = new();
 

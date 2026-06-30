@@ -34,6 +34,7 @@ public partial class App : Application
             if (configService != null)
             {
                 configService.Load();
+                MuseDashAccountService.Configure(configService);
                 
                 // 初始化多语言
                 I18nService.Instance.LoadLanguage(configService.Config.Language);

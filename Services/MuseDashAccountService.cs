@@ -15,6 +15,7 @@ public static class MuseDashAccountService
 {
     private const string RegPath = @"Software\PeroPeroGames\MuseDash";
     private const string ApiBase = "https://api.musedash.moe";
+    private static IConfigService? _configService;
 
     // Fast client for player API (Increased to 60s to handle extremely slow server/network)
     private static readonly HttpClient _http = Helpers.HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(60));
@@ -24,6 +25,11 @@ public static class MuseDashAccountService
     // Dynamic character and elfin cache loaded from api.musedash.moe/ce
     private static System.Collections.Generic.List<string>? _characterNames = null;
     private static System.Collections.Generic.List<string>? _elfinNames = null;
+
+    public static void Configure(IConfigService configService)
+    {
+        _configService = configService;
+    }
 
     private static async Task EnsureCharacterCacheAsync()
     {
@@ -148,6 +154,11 @@ public static class MuseDashAccountService
     /// </summary>
     public static MuseDashAccountInfo? ReadAccountInfo()
     {
+        return ReadRegistryAccountInfo() ?? ReadManualAccountInfo();
+    }
+
+    public static MuseDashAccountInfo? ReadRegistryAccountInfo()
+    {
         if (!OperatingSystem.IsWindows())
             return null;
 
@@ -174,6 +185,50 @@ public static class MuseDashAccountService
         }
 
         return null;
+    }
+
+    public static MuseDashAccountInfo? ReadManualAccountInfo()
+    {
+        var uid = NormalizeManualUid(_configService?.Config.ManualMuseDashUid);
+        return string.IsNullOrWhiteSpace(uid)
+            ? null
+            : new MuseDashAccountInfo { Uid = uid, IsManual = true };
+    }
+
+    public static string GetManualMuseDashUid() => NormalizeManualUid(_configService?.Config.ManualMuseDashUid);
+
+    public static bool IsValidManualUid(string? uid)
+    {
+        var normalized = NormalizeManualUid(uid);
+        if (normalized.Length is < 6 or > 64)
+            return false;
+
+        foreach (var c in normalized)
+        {
+            if (!char.IsLetterOrDigit(c) && c != '-' && c != '_')
+                return false;
+        }
+
+        return true;
+    }
+
+    public static async Task SaveManualMuseDashUidAsync(string uid)
+    {
+        if (_configService == null)
+            throw new InvalidOperationException("Config service is not initialized");
+
+        var normalized = NormalizeManualUid(uid);
+        if (!IsValidManualUid(normalized))
+            throw new ArgumentException("Invalid Muse Dash UID", nameof(uid));
+
+        _configService.Config.ManualMuseDashUid = normalized;
+        await _configService.SaveAsync();
+        InvalidateCache();
+    }
+
+    private static string NormalizeManualUid(string? uid)
+    {
+        return (uid ?? "").Trim();
     }
 
     // 检查用户是否在游戏内登录

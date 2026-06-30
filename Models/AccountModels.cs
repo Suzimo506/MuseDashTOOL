@@ -10,6 +10,9 @@ public class MuseDashAccountInfo
     [JsonPropertyName("uid")]
     public string? Uid { get; set; }
 
+    [JsonIgnore]
+    public bool IsManual { get; set; }
+
     [JsonPropertyName("id")]
     public string? Id { get; set; }
 
