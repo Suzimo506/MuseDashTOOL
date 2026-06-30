@@ -4,6 +4,7 @@ using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MDEN.Protocol.Messages.Mdt;
 using MDEN.Protocol.Models;
+using MdModManager.Services;
 
 namespace MdModManager.Models;
 
@@ -22,7 +23,7 @@ public partial class EnsembleLobbyNode : ObservableObject
     [ObservableProperty] private string _id = "";
     [ObservableProperty] private string _name = "";
     [ObservableProperty] private string _address = "";
-    [ObservableProperty] private string _statusText = "未连接";
+    [ObservableProperty] private string _statusText = I18nService.Instance["OnlineLobby_NodeDisconnected"];
     [ObservableProperty] private bool _isFallback;
     [ObservableProperty] private bool _isConnected;
     [ObservableProperty] private bool _isSelected;
@@ -38,14 +39,14 @@ public partial class EnsembleLobbyNode : ObservableObject
         get
         {
             if (IsConnected) return NodeConnectedBrush;
-            if (StatusText.Contains("连接中") || StatusText.Contains("等待")) return NodeConnectingBrush;
+            if (StatusState is EnsembleLobbyNodeStatus.Connecting or EnsembleLobbyNodeStatus.Waiting) return NodeConnectingBrush;
             return NodeDisconnectedBrush;
         }
     }
 
     public bool HasRooms => Rooms.Count > 0;
-    public string SourceText => IsFallback ? "内置兜底节点" : "";
-    public string RoomCountText => $"{Rooms.Count} 房间";
+    public string SourceText => IsFallback ? I18nService.Instance["OnlineLobby_FallbackNode"] : "";
+    public string RoomCountText => string.Format(I18nService.Instance["OnlineLobby_RoomCount"], Rooms.Count);
     public IBrush TabBackgroundBrush => IsSelected ? NodeSelectedBackgroundBrush : NodeDefaultBackgroundBrush;
     public IBrush TabBorderBrush => IsSelected ? NodeSelectedBorderBrush : NodeDefaultBorderBrush;
     public IBrush TabTextBrush => IsSelected ? NodeSelectedTextBrush : NodeDefaultTextBrush;
@@ -88,6 +89,24 @@ public partial class EnsembleLobbyNode : ObservableObject
         OnPropertyChanged(nameof(HasRooms));
         OnPropertyChanged(nameof(RoomCountText));
     }
+
+    public EnsembleLobbyNodeStatus StatusState { get; set; } = EnsembleLobbyNodeStatus.Disconnected;
+
+    public void RefreshLocalizedText()
+    {
+        OnPropertyChanged(nameof(SourceText));
+        OnPropertyChanged(nameof(RoomCountText));
+        OnPropertyChanged(nameof(StatusText));
+    }
+}
+
+public enum EnsembleLobbyNodeStatus
+{
+    Waiting,
+    Connecting,
+    Connected,
+    Disconnected,
+    Failed
 }
 
 public partial class EnsembleLobbyRoom : ObservableObject
@@ -122,17 +141,21 @@ public partial class EnsembleLobbyRoom : ObservableObject
     {
         get
         {
-            if (IsPlaying) return "游戏中";
-            if (Locked) return "准备中";
-            if (JoinLocked) return "已上锁";
-            return "等待中";
+            if (IsPlaying) return I18nService.Instance["OnlineLobby_RoomPlaying"];
+            if (Locked) return I18nService.Instance["OnlineLobby_RoomReady"];
+            if (JoinLocked) return I18nService.Instance["OnlineLobby_RoomLocked"];
+            return I18nService.Instance["OnlineLobby_RoomWaiting"];
         }
     }
 
-    public string PrivacyText => IsPrivate ? "需要密码" : "公开";
+    public string PrivacyText => IsPrivate ? I18nService.Instance["OnlineLobby_Private"] : I18nService.Instance["OnlineLobby_Public"];
+    public string HostText => string.Format(I18nService.Instance["OnlineLobby_HostFormat"], HostName);
     public string PlaylistText => $"{PlaylistCount}/{PlaylistSize}";
+    public string PlaylistLabelText => string.Format(I18nService.Instance["OnlineLobby_PlaylistFormat"], PlaylistText);
     public string PlayerCountText => $"{PlayerCount}/{MaxPlayers}";
-    public string WatcherText => WatcherCount > 0 ? $"{WatcherCount} 人正在观看" : "暂无观看";
+    public string WatcherText => WatcherCount > 0
+        ? string.Format(I18nService.Instance["OnlineLobby_WatcherCount"], WatcherCount)
+        : I18nService.Instance["OnlineLobby_NoWatchers"];
     public bool CanSendChat => !IsPlaying;
     public IBrush StatusBrush
     {
@@ -164,11 +187,33 @@ public partial class EnsembleLobbyRoom : ObservableObject
         OnPropertyChanged(nameof(StatusBrush));
     }
     partial void OnIsPrivateChanged(bool value) => OnPropertyChanged(nameof(PrivacyText));
-    partial void OnPlaylistCountChanged(int value) => OnPropertyChanged(nameof(PlaylistText));
-    partial void OnPlaylistSizeChanged(ushort value) => OnPropertyChanged(nameof(PlaylistText));
+    partial void OnHostNameChanged(string value) => OnPropertyChanged(nameof(HostText));
+    partial void OnPlaylistCountChanged(int value)
+    {
+        OnPropertyChanged(nameof(PlaylistText));
+        OnPropertyChanged(nameof(PlaylistLabelText));
+    }
+    partial void OnPlaylistSizeChanged(ushort value)
+    {
+        OnPropertyChanged(nameof(PlaylistText));
+        OnPropertyChanged(nameof(PlaylistLabelText));
+    }
     partial void OnPlayerCountChanged(int value) => OnPropertyChanged(nameof(PlayerCountText));
     partial void OnMaxPlayersChanged(ushort value) => OnPropertyChanged(nameof(PlayerCountText));
     partial void OnWatcherCountChanged(int value) => OnPropertyChanged(nameof(WatcherText));
+
+    public void RefreshLocalizedText()
+    {
+        OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(PrivacyText));
+        OnPropertyChanged(nameof(HostText));
+        OnPropertyChanged(nameof(PlaylistLabelText));
+        OnPropertyChanged(nameof(WatcherText));
+        foreach (var player in Players)
+        {
+            player.RefreshLocalizedText();
+        }
+    }
 }
 
 public partial class EnsembleLobbyPlayer : ObservableObject
@@ -244,9 +289,9 @@ public partial class EnsembleLobbyPlayer : ObservableObject
     [ObservableProperty] private BattlePlayerEntry? _battle;
 
     public string CharacterText => $"{ResolveGirlName(GirlIndex)} / {ResolveElfinName(ElfinIndex)}";
-    public string ScoreText => Battle == null ? "-" : (Battle.Alive ? Battle.Score.ToString("N0") : "DOWN");
+    public string ScoreText => Battle == null ? "-" : (Battle.Alive ? Battle.Score.ToString("N0") : I18nService.Instance["OnlineLobby_Down"]);
     public string AccuracyText => Battle == null ? "-" : $"{Battle.Accuracy:0.00}%";
-    public string ReadyText => Ready ? "已准备" : "未准备";
+    public string ReadyText => Ready ? I18nService.Instance["OnlineLobby_Ready"] : I18nService.Instance["OnlineLobby_NotReady"];
     public IBrush ReadyBrush => Ready ? ReadyTextBrush : NotReadyTextBrush;
     public IBrush ReadyBadgeBrush => Ready ? ReadyBackgroundBrush : NotReadyBackgroundBrush;
     public bool IsAp => Battle != null && Battle.FC && Math.Abs(Battle.Accuracy - 100f) < 0.005f;
@@ -277,14 +322,21 @@ public partial class EnsembleLobbyPlayer : ObservableObject
     {
         return index >= 0 && index < GirlNames.Length
             ? GirlNames[index]
-            : $"未知角色 {index}";
+            : string.Format(I18nService.Instance["OnlineLobby_UnknownGirl"], index);
     }
 
     private static string ResolveElfinName(int index)
     {
         return index >= 0 && index < ElfinNames.Length
             ? ElfinNames[index]
-            : $"未知精灵 {index}";
+            : string.Format(I18nService.Instance["OnlineLobby_UnknownElfin"], index);
+    }
+
+    public void RefreshLocalizedText()
+    {
+        OnPropertyChanged(nameof(CharacterText));
+        OnPropertyChanged(nameof(ScoreText));
+        OnPropertyChanged(nameof(ReadyText));
     }
 }
 

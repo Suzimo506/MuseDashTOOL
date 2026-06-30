@@ -15,17 +15,17 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     private const int MaxViewerChatLength = 80;
     private const int MaxMdtChatCount = 30;
     private const int MaxViewerChatCount = 50;
-    private const string ChatHistoryClearWarning = "聊天记录即将清除...";
+    private static string ChatHistoryClearWarning => L("OnlineLobby_ChatHistoryClearWarning");
     private static readonly TimeSpan ChatHistoryLifetime = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan ChatHistoryWarningLeadTime = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan ChatHistoryCleanupTick = TimeSpan.FromSeconds(1);
 
-    private static readonly string[] FixedPhrases =
+    private static readonly string[] PhraseKeys =
     {
-        "龙币们放我进去好吗",
-        "我也想进房间玩~",
-        "可以把密码告诉我吗我在喵斯兔等你",
-        "敢不敢让我进去把你们全超了？"
+        "OnlineLobby_Phrase0",
+        "OnlineLobby_Phrase1",
+        "OnlineLobby_Phrase2",
+        "OnlineLobby_Phrase3"
     };
 
     private readonly IEnsembleLobbyService _lobbyService;
@@ -45,14 +45,14 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private ObservableCollection<EnsembleLobbyNode> _nodes = new();
     [ObservableProperty] private EnsembleLobbyNode? _selectedNode;
     [ObservableProperty] private EnsembleLobbyRoom? _selectedRoom;
-    [ObservableProperty] private string _displayName = "喵斯兔玩家";
+    [ObservableProperty] private string _displayName = I18nService.Instance["OnlineLobby_Player"];
     [ObservableProperty] private bool _isLoading;
-    [ObservableProperty] private string _statusText = "未连接";
+    [ObservableProperty] private string _statusText = I18nService.Instance["OnlineLobby_NodeDisconnected"];
     [ObservableProperty] private string _cooldownText = "";
     [ObservableProperty] private string _viewerChatText = "";
     [ObservableProperty] private string _viewerChatCooldownText = "";
 
-    public IReadOnlyList<string> Phrases => FixedPhrases;
+    public IReadOnlyList<string> Phrases => PhraseKeys.Select(L).ToArray();
     public bool HasSelectedNode => SelectedNode != null;
     public bool SelectedNodeHasRooms => SelectedNode?.HasRooms == true;
     public bool HasSelectedRoom => SelectedRoom != null;
@@ -82,6 +82,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         _lobbyService.ChatReceived += OnChatReceived;
         _lobbyService.ViewerChatReceived += OnViewerChatReceived;
         _lobbyService.NodeStatusChanged += OnNodeStatusChanged;
+        I18nService.Instance.PropertyChanged += OnLanguageChanged;
         StartChatHistoryCleanupTimer();
     }
 
@@ -91,7 +92,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         _cts?.Dispose();
         _cts = CancellationTokenSource.CreateLinkedTokenSource(externalToken);
         IsLoading = true;
-        StatusText = "正在连接节点";
+        StatusText = L("OnlineLobby_ConnectingNodes");
         RefreshMdtIdentity();
 
         try
@@ -113,7 +114,8 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
                         Name = string.IsNullOrWhiteSpace(node.Name) ? node.Address : node.Name,
                         Address = node.Address,
                         IsFallback = node.IsFallback,
-                        StatusText = "等待连接"
+                        StatusState = EnsembleLobbyNodeStatus.Waiting,
+                        StatusText = L("OnlineLobby_WaitingConnect")
                     });
                 }
 
@@ -133,8 +135,8 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         {
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                StatusText = "联机大厅加载失败";
-                _notificationService.ShowFailure("联机大厅加载失败", ex.Message);
+                StatusText = L("OnlineLobby_LoadFailed");
+                _notificationService.ShowFailure(L("OnlineLobby_LoadFailed"), ex.Message);
             });
         }
         finally
@@ -181,7 +183,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     private void OpenOnlineModDownload()
     {
         _navigationService.RequestNavigateToModDownload("Ensemble");
-        _notificationService.ShowInfo("已打开联机模组下载项");
+        _notificationService.ShowInfo(L("OnlineLobby_ModDownloadOpened"));
     }
 
     [RelayCommand]
@@ -193,17 +195,17 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
         if (!room.CanSendChat)
         {
-            _notificationService.ShowFailure("发送失败", "房间游戏中无法发送");
+            _notificationService.ShowFailure(L("OnlineLobby_SendFailed"), L("OnlineLobby_CannotSendPlaying"));
             return;
         }
 
-        var phraseIndex = Array.IndexOf(FixedPhrases, phrase);
+        var phraseIndex = Phrases.ToList().IndexOf(phrase);
         if (phraseIndex < 0) return;
 
         if (DateTimeOffset.Now < _nextAllowedSendTime)
         {
             UpdateCooldownText();
-            _notificationService.ShowFailure("发送失败", CooldownText);
+            _notificationService.ShowFailure(L("OnlineLobby_SendFailed"), CooldownText);
             return;
         }
 
@@ -225,13 +227,13 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
                 _nextAllowedSendTime = DateTimeOffset.FromUnixTimeMilliseconds(response.NextAllowedUnixMs);
                 UpdateCooldownText();
                 StartCooldownTimer();
-                _notificationService.ShowSuccess("已发送到游戏内");
+                _notificationService.ShowSuccess(L("OnlineLobby_SentToGame"));
             });
         }
         catch (Exception ex)
         {
             await Dispatcher.UIThread.InvokeAsync(() =>
-                _notificationService.ShowFailure("发送失败", ex.Message));
+                _notificationService.ShowFailure(L("OnlineLobby_SendFailed"), ex.Message));
         }
     }
 
@@ -245,20 +247,20 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         var message = NormalizeViewerChatText(ViewerChatText);
         if (string.IsNullOrWhiteSpace(message))
         {
-            _notificationService.ShowFailure("发送失败", "消息不能为空");
+            _notificationService.ShowFailure(L("OnlineLobby_SendFailed"), L("OnlineLobby_MessageEmpty"));
             return;
         }
 
         if (message.Length > MaxViewerChatLength)
         {
-            _notificationService.ShowFailure("发送失败", $"消息最多 {MaxViewerChatLength} 个字");
+            _notificationService.ShowFailure(L("OnlineLobby_SendFailed"), string.Format(L("OnlineLobby_MessageTooLong"), MaxViewerChatLength));
             return;
         }
 
         if (DateTimeOffset.Now < _nextAllowedViewerChatTime)
         {
             UpdateViewerChatCooldownText();
-            _notificationService.ShowFailure("发送失败", ViewerChatCooldownText);
+            _notificationService.ShowFailure(L("OnlineLobby_SendFailed"), ViewerChatCooldownText);
             return;
         }
 
@@ -286,7 +288,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         catch (Exception ex)
         {
             await Dispatcher.UIThread.InvokeAsync(() =>
-                _notificationService.ShowFailure("发送失败", ex.Message));
+                _notificationService.ShowFailure(L("OnlineLobby_SendFailed"), ex.Message));
         }
     }
 
@@ -389,7 +391,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
             var node = FindNode(nodeId);
             if (node == null) return;
 
-            node.StatusText = status;
+            ApplyNodeStatus(node, status);
             node.IsConnected = isConnected;
             UpdateLobbyStatusText();
         });
@@ -401,7 +403,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         if (node == null) return;
 
         node.IsConnected = true;
-        node.StatusText = "已连接";
+        SetNodeStatus(node, EnsembleLobbyNodeStatus.Connected);
 
         var incoming = snapshot.Lobbies ?? Array.Empty<MdtLobbyEntry>();
         var incomingIds = incoming.Select(lobby => lobby.Id).ToHashSet();
@@ -446,47 +448,46 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(IsUsingFallbackNodes));
         if (nodeCount == 0)
         {
-            StatusText = "没有可用节点";
+            StatusText = L("OnlineLobby_NoNodes");
             return;
         }
 
-        var fallbackPrefix = IsUsingFallbackNodes ? "API 获取失败，正在显示内置兜底节点。" : "";
+        var fallbackPrefix = IsUsingFallbackNodes ? L("OnlineLobby_FallbackPrefix") : "";
         var roomCount = Nodes.Sum(item => item.Rooms.Count);
         if (roomCount > 0)
         {
-            StatusText = $"{fallbackPrefix}已同步 {roomCount} 个房间";
+            StatusText = $"{fallbackPrefix}{string.Format(L("OnlineLobby_SyncedRooms"), roomCount)}";
             return;
         }
 
         var connectedCount = Nodes.Count(item => item.IsConnected);
         if (connectedCount > 0)
         {
-            StatusText = $"{fallbackPrefix}已连接 {connectedCount}/{nodeCount} 个节点，暂无房间";
+            StatusText = $"{fallbackPrefix}{string.Format(L("OnlineLobby_ConnectedNoRooms"), connectedCount, nodeCount)}";
             return;
         }
 
         var connectingCount = Nodes.Count(IsConnectingNode);
         if (connectingCount > 0)
         {
-            StatusText = $"{fallbackPrefix}正在连接节点 {connectingCount}/{nodeCount}";
+            StatusText = $"{fallbackPrefix}{string.Format(L("OnlineLobby_ConnectingNodesCount"), connectingCount, nodeCount)}";
             return;
         }
 
         var failedCount = Nodes.Count(IsFailedNode);
         StatusText = failedCount > 0
-            ? $"{fallbackPrefix}暂无可用节点，{failedCount}/{nodeCount} 个连接失败"
-            : $"{fallbackPrefix}发现 {nodeCount} 个节点";
+            ? $"{fallbackPrefix}{string.Format(L("OnlineLobby_NoAvailableNodes"), failedCount, nodeCount)}"
+            : $"{fallbackPrefix}{string.Format(L("OnlineLobby_FoundNodes"), nodeCount)}";
     }
 
     private static bool IsConnectingNode(EnsembleLobbyNode node)
     {
-        var status = node.StatusText ?? "";
-        return status.Contains("连接中") || status.Contains("等待");
+        return node.StatusState is EnsembleLobbyNodeStatus.Connecting or EnsembleLobbyNodeStatus.Waiting;
     }
 
     private static bool IsFailedNode(EnsembleLobbyNode node)
     {
-        return (node.StatusText ?? "").Contains("连接失败");
+        return node.StatusState == EnsembleLobbyNodeStatus.Failed;
     }
 
     private void ApplyRoom(EnsembleLobbyRoom room, MdtLobbyEntry lobby)
@@ -696,6 +697,48 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         return FindNode(nodeId)?.Rooms.FirstOrDefault(room => room.Id == lobbyId);
     }
 
+    private void ApplyNodeStatus(EnsembleLobbyNode node, string status)
+    {
+        if (status == "连接中")
+        {
+            SetNodeStatus(node, EnsembleLobbyNodeStatus.Connecting);
+        }
+        else if (status == "已连接")
+        {
+            SetNodeStatus(node, EnsembleLobbyNodeStatus.Connected);
+        }
+        else if (status is "未连接" or "已断开")
+        {
+            SetNodeStatus(node, EnsembleLobbyNodeStatus.Disconnected);
+        }
+        else if (status.StartsWith("连接失败", StringComparison.Ordinal))
+        {
+            node.StatusState = EnsembleLobbyNodeStatus.Failed;
+            var message = status.Split('：', 2).Length == 2 ? status.Split('：', 2)[1] : "";
+            node.StatusText = string.IsNullOrWhiteSpace(message)
+                ? L("OnlineLobby_NodeConnectFailed")
+                : string.Format(L("OnlineLobby_NodeConnectFailedReason"), message);
+        }
+        else
+        {
+            node.StatusState = EnsembleLobbyNodeStatus.Disconnected;
+            node.StatusText = status;
+        }
+    }
+
+    private static void SetNodeStatus(EnsembleLobbyNode node, EnsembleLobbyNodeStatus status)
+    {
+        node.StatusState = status;
+        node.StatusText = status switch
+        {
+            EnsembleLobbyNodeStatus.Waiting => L("OnlineLobby_WaitingConnect"),
+            EnsembleLobbyNodeStatus.Connecting => L("OnlineLobby_NodeConnecting"),
+            EnsembleLobbyNodeStatus.Connected => L("OnlineLobby_NodeConnected"),
+            EnsembleLobbyNodeStatus.Failed => L("OnlineLobby_NodeConnectFailed"),
+            _ => L("OnlineLobby_NodeDisconnected")
+        };
+    }
+
     private void StartChatHistoryCleanupTimer()
     {
         _chatHistoryCleanupTimer ??= new DispatcherTimer { Interval = ChatHistoryCleanupTick };
@@ -802,7 +845,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         var remain = _nextAllowedSendTime - DateTimeOffset.Now;
         CooldownText = remain.TotalMilliseconds <= 0
             ? ""
-            : $"还需要等待 {Math.Ceiling(remain.TotalSeconds)} 秒";
+            : string.Format(L("OnlineLobby_CooldownSeconds"), Math.Ceiling(remain.TotalSeconds));
         OnPropertyChanged(nameof(CanSendPhrase));
     }
 
@@ -828,7 +871,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         var remain = _nextAllowedViewerChatTime - DateTimeOffset.Now;
         ViewerChatCooldownText = remain.TotalMilliseconds <= 0
             ? ""
-            : $"还需要等待 {Math.Ceiling(remain.TotalSeconds)} 秒";
+            : string.Format(L("OnlineLobby_CooldownSeconds"), Math.Ceiling(remain.TotalSeconds));
         OnPropertyChanged(nameof(CanSendViewerChat));
     }
 
@@ -853,7 +896,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     {
         _museDashUid = ResolveMuseDashUid();
         DisplayName = string.IsNullOrWhiteSpace(_museDashUid)
-            ? "未登录"
+            ? L("OnlineLobby_NotLoggedIn")
             : MdtIdentity.GenerateNameFromUid(_museDashUid);
         OnPropertyChanged(nameof(HasMdtIdentity));
         OnPropertyChanged(nameof(CanSendPhrase));
@@ -882,13 +925,47 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
     private static string FormatEntry(string? entry)
     {
-        if (string.IsNullOrWhiteSpace(entry)) return "未选择歌曲";
+        if (string.IsNullOrWhiteSpace(entry)) return L("OnlineLobby_NoSongSelected");
 
         var parts = entry.Split('#', 4);
         if (parts.Length < 4) return entry;
 
         return $"{DecodeEntryPart(parts[3])} #{parts[1]}";
     }
+
+    private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            RefreshMdtIdentity();
+            OnPropertyChanged(nameof(Phrases));
+            UpdateCooldownText();
+            UpdateViewerChatCooldownText();
+            foreach (var node in Nodes)
+            {
+                SetNodeStatus(node, node.StatusState);
+                node.RefreshLocalizedText();
+                foreach (var room in node.Rooms)
+                {
+                    room.CurrentBattleEntry = IsNoSongSelectedText(room.CurrentBattleEntry)
+                        ? L("OnlineLobby_NoSongSelected")
+                        : room.CurrentBattleEntry;
+                    room.RefreshLocalizedText();
+                }
+            }
+
+            UpdateLobbyStatusText();
+        });
+    }
+
+    private static bool IsNoSongSelectedText(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ||
+               string.Equals(value, "未选择歌曲", StringComparison.Ordinal) ||
+               string.Equals(value, "No song selected", StringComparison.Ordinal);
+    }
+
+    private static string L(string key) => I18nService.Instance[key];
 
     private static string DecodeEntryPart(string value)
     {
@@ -913,6 +990,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         _lobbyService.ChatReceived -= OnChatReceived;
         _lobbyService.ViewerChatReceived -= OnViewerChatReceived;
         _lobbyService.NodeStatusChanged -= OnNodeStatusChanged;
+        I18nService.Instance.PropertyChanged -= OnLanguageChanged;
         _cts?.Cancel();
         _cts?.Dispose();
         if (_cooldownTimer != null)

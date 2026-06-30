@@ -135,7 +135,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
     {
         if (!_connections.TryGetValue(nodeId, out var connection) || !connection.IsConnected)
         {
-            throw new InvalidOperationException("节点未连接");
+            throw new InvalidOperationException(L("OnlineLobby_NodeNotConnected"));
         }
 
         return await connection.SendRequestAsync<MdtChatRequest, MdtChatResponse>(
@@ -146,14 +146,14 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
                 SenderName = connection.SenderName,
                 PhraseIndex = phraseIndex
             },
-            ct).ConfigureAwait(false) ?? throw new InvalidOperationException("服务端响应为空");
+            ct).ConfigureAwait(false) ?? throw new InvalidOperationException(L("OnlineLobby_EmptyServerResponse"));
     }
 
     public async Task<MdtViewerChatResponse> SendViewerChatAsync(string nodeId, int lobbyId, string message, CancellationToken ct)
     {
         if (!_connections.TryGetValue(nodeId, out var connection) || !connection.IsConnected)
         {
-            throw new InvalidOperationException("节点未连接");
+            throw new InvalidOperationException(L("OnlineLobby_NodeNotConnected"));
         }
 
         return await connection.SendRequestAsync<MdtViewerChatRequest, MdtViewerChatResponse>(
@@ -164,7 +164,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
                 SenderName = connection.SenderName,
                 Message = message
             },
-            ct).ConfigureAwait(false) ?? throw new InvalidOperationException("服务端响应为空");
+            ct).ConfigureAwait(false) ?? throw new InvalidOperationException(L("OnlineLobby_EmptyServerResponse"));
     }
 
     public async Task WatchLobbyAsync(string nodeId, int? lobbyId, CancellationToken ct)
@@ -285,7 +285,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
 
         if (string.IsNullOrWhiteSpace(host))
         {
-            throw new InvalidOperationException("节点地址无效");
+            throw new InvalidOperationException(L("OnlineLobby_InvalidNodeAddress"));
         }
 
         return (host, port);
@@ -403,7 +403,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
 
         public async Task<TResp?> SendRequestAsync<TReq, TResp>(ushort opCode, TReq request, CancellationToken ct)
         {
-            if (_stream == null) throw new InvalidOperationException("节点未连接");
+            if (_stream == null) throw new InvalidOperationException(L("OnlineLobby_NodeNotConnected"));
 
             var reqId = unchecked(++_nextReqId);
             if (reqId == 0) reqId = unchecked(++_nextReqId);
@@ -426,7 +426,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
                 {
                     if (_pendingRequests.TryRemove(reqId, out var removed))
                     {
-                        removed.TrySetException(new TimeoutException("请求超时"));
+                        removed.TrySetException(new TimeoutException(L("OnlineLobby_RequestTimeout")));
                     }
                 });
 
@@ -441,7 +441,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
 
         private async Task SendAsync(ClientEnvelope envelope, CancellationToken ct)
         {
-            if (_stream == null) throw new InvalidOperationException("节点未连接");
+            if (_stream == null) throw new InvalidOperationException(L("OnlineLobby_NodeNotConnected"));
 
             var payload = JsonSerializer.SerializeToUtf8Bytes(envelope, ProtocolJson.Options);
             var header = BitConverter.GetBytes(payload.Length);
@@ -566,7 +566,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
             var length = BitConverter.ToInt32(header, 0);
             if (length <= 0 || length > 4 * 1024 * 1024)
             {
-                throw new InvalidOperationException("协议包长度无效");
+                throw new InvalidOperationException(L("OnlineLobby_InvalidPacketLength"));
             }
 
             var payload = new byte[length];
@@ -592,10 +592,10 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
         {
             if (payload is JsonElement element && element.TryGetProperty("Reason", out var reason))
             {
-                return reason.GetString() ?? "请求失败";
+                return reason.GetString() ?? L("OnlineLobby_RequestFailed");
             }
 
-            return "请求失败";
+            return L("OnlineLobby_RequestFailed");
         }
 
         public async ValueTask DisposeAsync()
@@ -612,7 +612,7 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
 
             foreach (var pending in _pendingRequests.Values)
             {
-                pending.TrySetException(new InvalidOperationException("连接已关闭"));
+                pending.TrySetException(new InvalidOperationException(L("OnlineLobby_ConnectionClosed")));
             }
 
             _pendingRequests.Clear();
@@ -634,6 +634,8 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
             public void TrySetException(Exception ex) => _tcs.TrySetException(ex);
         }
     }
+
+    private static string L(string key) => I18nService.Instance[key];
 }
 
 public sealed class EnsembleServerEntry

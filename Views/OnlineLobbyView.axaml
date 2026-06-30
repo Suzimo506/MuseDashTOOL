@@ -3,6 +3,7 @@
              xmlns:vm="using:MdModManager.ViewModels"
              xmlns:models="using:MdModManager.Models"
              xmlns:conv="using:MdModManager.Converters"
+             xmlns:i18n="using:MdModManager.Services"
              x:Class="MdModManager.Views.OnlineLobbyView"
              x:DataType="vm:OnlineLobbyViewModel">
 
@@ -41,7 +42,7 @@
     <Grid RowDefinitions="Auto,*" RowSpacing="18">
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="16">
             <StackPanel Spacing="4">
-                <TextBlock Text="联机大厅"
+                <TextBlock Text="{Binding [OnlineLobby_Title], Source={x:Static i18n:I18nService.Instance}}"
                            FontSize="28"
                            FontWeight="Bold"
                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
@@ -57,13 +58,13 @@
                         Background="{DynamicResource ControlBgBrush}"
                         BorderBrush="{DynamicResource ControlBorderBrush}"
                         BorderThickness="1"
-                        ToolTip.Tip="下载联机模组">
+                        ToolTip.Tip="{Binding [OnlineLobby_DownloadMod], Source={x:Static i18n:I18nService.Instance}}">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                         <PathIcon Width="14"
                                   Height="14"
                                   Foreground="{DynamicResource ThemeTextMainBrush}"
                                   Data="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7z"/>
-                        <TextBlock Text="下载联机模组"
+                        <TextBlock Text="{Binding [OnlineLobby_DownloadMod], Source={x:Static i18n:I18nService.Instance}}"
                                    FontSize="13"
                                    Foreground="{DynamicResource ThemeTextMainBrush}"/>
                     </StackPanel>
@@ -88,7 +89,7 @@
                         Padding="14,0"
                         Background="{DynamicResource ControlBgBrush}"
                         BorderBrush="{DynamicResource ControlBorderBrush}">
-                    <TextBlock Text="刷新"/>
+                    <TextBlock Text="{Binding [OnlineLobby_Refresh], Source={x:Static i18n:I18nService.Instance}}"/>
                 </Button>
             </StackPanel>
         </Grid>
@@ -167,7 +168,7 @@
                     </Grid>
 
                     <Grid Grid.Row="2">
-                        <TextBlock Text="暂无房间"
+                        <TextBlock Text="{Binding [OnlineLobby_NoRooms], Source={x:Static i18n:I18nService.Instance}}"
                                    IsVisible="{Binding !SelectedNodeHasRooms}"
                                    FontSize="12"
                                    Foreground="{DynamicResource ThemeTextTertiaryBrush}"
@@ -197,7 +198,7 @@
                                                                Foreground="{Binding StatusBrush}"/>
                                                 </Grid>
                                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                                                    <TextBlock Text="{Binding HostName, StringFormat=房主 {0}}"
+                                                    <TextBlock Text="{Binding HostText}"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource ThemeTextSubBrush}"
                                                                TextTrimming="CharacterEllipsis"/>
@@ -208,7 +209,7 @@
                                                 </Grid>
                                                 <WrapPanel>
                                                     <Border CornerRadius="6" Padding="7,3" Margin="0,0,6,0" Background="#18F25D9C">
-                                                        <TextBlock Text="{Binding PlaylistText, StringFormat=歌单 {0}}" FontSize="11" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                                        <TextBlock Text="{Binding PlaylistLabelText}" FontSize="11" Foreground="{DynamicResource ThemeTextMainBrush}"/>
                                                     </Border>
                                                     <Border CornerRadius="6" Padding="7,3" Margin="0,0,6,0" Background="#12000000">
                                                         <TextBlock Text="{Binding PrivacyText}" FontSize="11" Foreground="{DynamicResource ThemeTextSubBrush}"/>
@@ -234,7 +235,7 @@
                     <Grid IsVisible="{Binding !HasSelectedRoom}"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center">
-                        <TextBlock Text="选择一个房间查看详情"
+                        <TextBlock Text="{Binding [OnlineLobby_SelectRoomHint], Source={x:Static i18n:I18nService.Instance}}"
                                    FontSize="18"
                                    Foreground="{DynamicResource ThemeTextSubBrush}"/>
                     </Grid>
@@ -257,7 +258,7 @@
                                            FontSize="14"
                                            Foreground="{Binding SelectedRoom.StatusBrush}"
                                            HorizontalAlignment="Right"/>
-                                 <TextBlock Text="{Binding SelectedRoom.PlaylistText, StringFormat=歌单 {0}}"
+                                 <TextBlock Text="{Binding SelectedRoom.PlaylistLabelText}"
                                             FontSize="12"
                                             Foreground="{DynamicResource ThemeTextSubBrush}"
                                             HorizontalAlignment="Right"/>
@@ -355,7 +356,7 @@
                                             Padding="10">
                                         <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
                                             <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Text="观众聊天"
+                                                <TextBlock Text="{Binding [OnlineLobby_ViewerChat], Source={x:Static i18n:I18nService.Instance}}"
                                                            FontSize="13"
                                                            FontWeight="SemiBold"
                                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
@@ -394,7 +395,7 @@
                                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                                                     <TextBox Text="{Binding ViewerChatText, Mode=TwoWay}"
                                                              MaxLength="80"
-                                                             Watermark="在喵斯兔观众间聊天"
+                                                             Watermark="{Binding [OnlineLobby_ViewerChatWatermark], Source={x:Static i18n:I18nService.Instance}}"
                                                              MinHeight="34">
                                                         <TextBox.KeyBindings>
                                                             <KeyBinding Command="{Binding SendViewerChatCommand}" Gesture="Enter"/>
@@ -408,7 +409,7 @@
                                                             Padding="12,0"
                                                             Background="{DynamicResource ThemeAccentBrush}"
                                                             Foreground="White">
-                                                        <TextBlock Text="发送"/>
+                                                        <TextBlock Text="{Binding [OnlineLobby_Send], Source={x:Static i18n:I18nService.Instance}}"/>
                                                     </Button>
                                                 </Grid>
                                                 <TextBlock Grid.Row="1"
@@ -428,7 +429,7 @@
                                             Padding="10"
                                             Height="110">
                                         <Grid RowDefinitions="Auto,*" RowSpacing="6">
-                                            <TextBlock Text="游戏内回应"
+                                            <TextBlock Text="{Binding [OnlineLobby_GameReplies], Source={x:Static i18n:I18nService.Instance}}"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
                                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -452,7 +453,7 @@
                                     </Border>
 
                                     <StackPanel Grid.Row="2" Spacing="8">
-                                        <TextBlock Text="将信息发送至游戏内聊天框"
+                                        <TextBlock Text="{Binding [OnlineLobby_SendToGameChat], Source={x:Static i18n:I18nService.Instance}}"
                                                    FontSize="11"
                                                    Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
                                         <ItemsControl ItemsSource="{Binding Phrases}">
