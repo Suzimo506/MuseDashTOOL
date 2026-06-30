@@ -519,13 +519,13 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
 
         if (decision.Groups.Count == 0)
         {
-            _mdenCandidateStatus = "没有找到可自动匹配的候选，请手动选择";
+            _mdenCandidateStatus = Tr("Mden_NoAutoCandidate");
             return;
         }
 
         var label = decision.Mode == MdenCandidateMatchMode.Strong
-            ? (decision.Groups.Count == 1 ? "MDEN强候选" : "MDEN候选")
-            : "MDEN唯一候选";
+            ? (decision.Groups.Count == 1 ? Tr("Mden_StrongCandidateLabel") : Tr("Mden_CandidateLabel"))
+            : Tr("Mden_UniqueCandidateLabel");
         foreach (var result in decision.StrongMatches)
         {
             result.MdenCandidateLabel = label;
@@ -534,14 +534,14 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         if (decision.Groups.Count == 1)
         {
             _mdenCandidateStatus = decision.Mode == MdenCandidateMatchMode.Strong
-                ? "找到唯一强候选"
-                : "找到唯一可下载候选，正在自动下载后校验";
+                ? Tr("Mden_UniqueStrongCandidate")
+                : Tr("Mden_UniqueDownloadableCandidate");
             return;
         }
 
         _mdenCandidateStatus = decision.Mode == MdenCandidateMatchMode.Strong
-            ? $"找到 {decision.Groups.Count} 个强候选，请手动选择"
-            : $"找到 {decision.Groups.Count} 个同名可下载候选，请手动选择";
+            ? Tr("Mden_MultipleStrongCandidates", decision.Groups.Count)
+            : Tr("Mden_MultipleDownloadableCandidates", decision.Groups.Count);
     }
 
     private void StartMdenAutoDownloadIfEligible(MdenCandidateDecision? decision)
@@ -570,13 +570,13 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     {
         try
         {
-            _notificationService.ShowInfo($"已找到唯一匹配谱面，正在下载《{target.Title}》");
+            _notificationService.ShowInfo(Tr("Mden_AutoDownloadStarting", target.Title));
             MdenStatusBridge.NotifyMissingChartDownloadStarted(target.Title);
             var chart = await BuildDownloadChartAsync(target);
             if (chart == null)
             {
-                _mdenCandidateStatus = "自动下载准备失败，请手动下载";
-                MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, "自动下载准备失败，请在喵斯兔手动下载。");
+                _mdenCandidateStatus = Tr("Mden_AutoDownloadPrepareFailed");
+                MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, Tr("Mden_AutoDownloadPrepareFailedReason"));
                 UpdateStatusMessage();
                 return;
             }
@@ -587,24 +587,24 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
 
             if (result.Success)
             {
-                _mdenCandidateStatus = "谱面已下载并通过 MD5 校验，请回到 MDEN 重新准备";
-                _notificationService.ShowSuccess("MDEN 缺谱已下载并通过校验");
+                _mdenCandidateStatus = Tr("Mden_AutoDownloadVerified");
+                _notificationService.ShowSuccess(Tr("Mden_AutoDownloadVerifiedNotification"));
                 MdenStatusBridge.NotifyMissingChartDownloadCompleted(target.Title);
             }
             else
             {
-                _mdenCandidateStatus = "自动下载未通过校验，请手动选择";
-                _notificationService.ShowFailure("MDEN 缺谱下载失败", result.ErrorMessage ?? "请在全局搜索中手动下载正确谱面。");
-                MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, result.ErrorMessage ?? "请在喵斯兔手动下载正确谱面。");
+                _mdenCandidateStatus = Tr("Mden_AutoDownloadVerifyFailed");
+                _notificationService.ShowFailure(Tr("Mden_AutoDownloadFailedTitle"), result.ErrorMessage ?? Tr("Mden_AutoDownloadManualCorrectChart"));
+                MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, result.ErrorMessage ?? Tr("Mden_AutoDownloadManualCorrectChartForMden"));
             }
 
             UpdateStatusMessage();
         }
         catch (Exception ex)
         {
-            _mdenCandidateStatus = "自动下载失败，请手动选择";
+            _mdenCandidateStatus = Tr("Mden_AutoDownloadFailed");
             RuntimeLog.Write("GlobalSearchVM", $"MDEN auto download failed: {ex}");
-            _notificationService.ShowFailure("MDEN 缺谱下载失败", ex.Message);
+            _notificationService.ShowFailure(Tr("Mden_AutoDownloadFailedTitle"), ex.Message);
             MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, ex.Message);
             UpdateStatusMessage();
         }
@@ -809,10 +809,10 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     private static async Task<string?> ValidateDownloadedMdenChartAsync(string filePath, string chartKey, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(chartKey))
-            return "缺少 MDEN 谱面 MD5，无法校验。";
+            return Tr("Mden_ValidateMissingMd5");
 
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
-            return "下载文件不存在。";
+            return Tr("Mden_ValidateFileMissing");
 
         using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, true);
         using var zip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
@@ -837,7 +837,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             }
         }
 
-        return "下载到的谱面不是房间里的同一张，请在喵斯兔手动下载。";
+        return Tr("Mden_ValidateChartMismatch");
     }
 
     private void ClearMdenCandidateLabels()
@@ -1138,11 +1138,27 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         if (_mdenSearchRequest != null)
         {
             result = string.IsNullOrWhiteSpace(_mdenCandidateStatus)
-                ? "来自 MDEN 缺谱搜索：" + result
-                : $"来自 MDEN 缺谱搜索：{_mdenCandidateStatus}；{result}";
+                ? Tr("Mden_SearchPrefix") + result
+                : $"{Tr("Mden_SearchPrefix")}{_mdenCandidateStatus}{Tr("Mden_StatusSeparator")}{result}";
         }
 
         return result;
+    }
+
+    private static string Tr(string key, params object[] args)
+    {
+        var template = I18nService.Instance[key];
+        if (args == null || args.Length == 0)
+            return template;
+
+        try
+        {
+            return string.Format(template, args);
+        }
+        catch (FormatException)
+        {
+            return template;
+        }
     }
 
     public void StopPlayback()
