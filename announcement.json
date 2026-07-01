@@ -12,10 +12,10 @@
         "cancel_button_text_en": "Don't Remind Again"
     },
     {
-        "id": "1.5.3",
+        "id": "1.5.4",
         "is_enabled": true,
-        "title": "喵斯兔v1.5.3更新!",
-        "title_en": "MuseDashTOOL 1.5.3 Update",
+        "title": "喵斯兔v1.5.4更新!",
+        "title_en": "MuseDashTOOL 1.5.4 Update",
         "content": "1、增加自动下载缺失谱面功能\n2、修复了一些问题",
         "content_en": "1、Add auto download feature\n2、Fixed some problems",
         "action_button_text": "进入新版喵斯兔",
