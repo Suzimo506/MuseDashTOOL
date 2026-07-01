@@ -837,7 +837,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     {
         var snapshot = Charts.ToList();
         var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.5.3");
+        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.5.4");
 
         foreach (var chart in snapshot)
         {
@@ -926,7 +926,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             // 请求音频文件字节数据
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.5.3");
+            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.5.4");
             using var req = new HttpRequestMessage(HttpMethod.Get, previewUrl);
             using var response = await client.SendAsync(req, ct);
             response.EnsureSuccessStatusCode();
