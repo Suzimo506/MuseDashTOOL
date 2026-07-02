@@ -65,7 +65,7 @@ public partial class ModManagerViewModel : ObservableObject
 
     // 生成“不再提醒”的 key：mod 名 + 远端版本
     private static string DismissKey(LocalMod m) =>
-        $"{m.Name}::{m.RemoteInfo?.Version ?? ""}"; 
+        ModUpdateCandidate.CreateDismissKey(m.Name, m.RemoteInfo?.Version ?? "");
 
     private List<LocalMod> _allLocalMods = new();
     private List<LocalMod> _allRemoteMods = new();

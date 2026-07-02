@@ -406,33 +406,8 @@
                             Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
                             Margin="24,0"/>
 
-                    <!-- Euterpe -->
-                    <Button Grid.Column="2" Theme="{StaticResource BottomLinkBtn}"
-                            Command="{Binding OpenUrlCommand}"
-                            CommandParameter="https://euterpe-org.com">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <Border Width="28" Height="28" CornerRadius="8"
-                                    Background="#18FF69B4" VerticalAlignment="Center">
-                                <Image Source="/Assets/EuterpeLogo.webp"
-                                       Width="16" Height="16"
-                                       RenderOptions.BitmapInterpolationMode="HighQuality"/>
-                            </Border>
-                            <StackPanel Spacing="1" VerticalAlignment="Center">
-                                <TextBlock Text="Euterpe" FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                                <TextBlock Text="{Binding [Str_336], Source={x:Static i18n:I18nService.Instance}}" FontSize="10"
-                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Button>
-
-                    <!-- 分隔线 -->
-                    <Border Grid.Column="3" Width="1" Height="28"
-                            Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
-                            Margin="24,0"/>
-
                     <!-- MDMC -->
-                    <Button Grid.Column="4" Theme="{StaticResource BottomLinkBtn}"
+                    <Button Grid.Column="2" Theme="{StaticResource BottomLinkBtn}"
                             Command="{Binding OpenUrlCommand}"
                             CommandParameter="https://mdmc.moe">
                         <StackPanel Orientation="Horizontal" Spacing="10">
@@ -452,12 +427,12 @@
                     </Button>
 
                     <!-- 分隔线 -->
-                    <Border Grid.Column="5" Width="1" Height="28"
+                    <Border Grid.Column="3" Width="1" Height="28"
                             Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
                             Margin="24,0"/>
 
                     <!-- MuseDashTOOL -->
-                    <Button Grid.Column="6" Theme="{StaticResource BottomLinkBtn}"
+                    <Button Grid.Column="4" Theme="{StaticResource BottomLinkBtn}"
                             Command="{Binding OpenUrlCommand}"
                             CommandParameter="https://space.bilibili.com/289883561?spm_id_from=333.1007.0.0">
                         <StackPanel Orientation="Horizontal" Spacing="10">
@@ -477,12 +452,12 @@
                     </Button>
 
                     <!-- 分隔线 -->
-                    <Border Grid.Column="7" Width="1" Height="28"
+                    <Border Grid.Column="5" Width="1" Height="28"
                             Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
                             Margin="24,0"/>
 
                     <!-- 打赏按钮 -->
-                    <Button Grid.Column="8" Theme="{StaticResource BottomLinkBtn}"
+                    <Button Grid.Column="6" Theme="{StaticResource BottomLinkBtn}"
                             Command="{Binding NavigateToCommand}"
                             CommandParameter="Sponsor"
                             VerticalAlignment="Center"
@@ -498,6 +473,29 @@
                                 <TextBlock Text="{Binding [Str_338], Source={x:Static i18n:I18nService.Instance}}" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{DynamicResource ThemeTextMainBrush}"/>
                                 <TextBlock Text="{Binding [Str_252], Source={x:Static i18n:I18nService.Instance}}" FontSize="10"
+                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 分隔线 -->
+                    <Border Grid.Column="7" Width="1" Height="28"
+                            Background="{DynamicResource ThemeTextTertiaryBrush}" Opacity="0.15"
+                            Margin="24,0"/>
+
+                    <!-- QQ Group -->
+                    <Button Grid.Column="8" Theme="{StaticResource BottomLinkBtn}"
+                            Command="{Binding CopyQqGroupCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="28" Height="28" CornerRadius="8"
+                                    Background="#18FF69B4" VerticalAlignment="Center">
+                                <PathIcon Data="M824.8 613.2c-16-51.4-34.4-94.6-62.7-165.3C766.5 262.2 689.3 112 511.5 112 331.7 112 256.2 265.2 261 447.9c-28.4 70.8-46.7 113.7-62.7 165.3-34 109.5-23 154.8-14.6 155.8 18 2.2 70.1-82.4 70.1-82.4 0 49 25.2 112.9 79.8 159-26.4 8.1-85.7 29.9-71.6 53.8 11.4 19.3 196.2 12.3 249.5 6.3 53.3 6 238.1 13 249.5-6.3 14.1-23.8-45.3-45.7-71.6-53.8 54.6-46.2 79.8-110.1 79.8-159 0 0 52.1 84.6 70.1 82.4 8.5-1.1 19.5-46.4-14.5-155.8z"
+                                          Width="14" Height="14" Foreground="#FF69B4"/>
+                            </Border>
+                            <StackPanel Spacing="1" VerticalAlignment="Center">
+                                <TextBlock Text="加入喵斯兔交流群" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                                <TextBlock Text="331568783" FontSize="10"
                                            Foreground="{DynamicResource ThemeTextTertiaryBrush}"/>
                             </StackPanel>
                         </StackPanel>

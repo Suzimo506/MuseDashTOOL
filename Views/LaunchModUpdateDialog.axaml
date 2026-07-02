@@ -1,0 +1,106 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MdModManager.Views.LaunchModUpdateDialog"
+        Title="模组更新提示"
+        Width="560"
+        Height="340"
+        MinWidth="560"
+        MinHeight="320"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource DialogBgBrush}"
+        Foreground="{DynamicResource ThemeTextMainBrush}">
+
+    <Grid RowDefinitions="*,Auto" Margin="24">
+        <Border Grid.Row="0"
+                Background="{DynamicResource ControlBgBrush}"
+                BorderBrush="{DynamicResource ThemeAccentBrush}"
+                BorderThickness="3,0,0,0"
+                CornerRadius="8"
+                Padding="18,14">
+            <Grid RowDefinitions="Auto,Auto,*">
+                <TextBlock Text="有以下模组可以更新了"
+                           FontSize="17"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                <TextBlock Grid.Row="1"
+                           Text="不更新可能会影响游戏。"
+                           Margin="0,8,0,12"
+                           FontSize="13"
+                           Foreground="{DynamicResource ThemeTextSubBrush}"/>
+                <ScrollViewer Grid.Row="2"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <TextBlock x:Name="UpdateListText"
+                               TextWrapping="Wrap"
+                               FontSize="14"
+                               LineHeight="23"
+                               Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="Auto,*,Auto,10,Auto,10,Auto"
+              Margin="0,18,0,0">
+            <CheckBox Grid.Column="0"
+                      x:Name="DontShowAgainCheckBox"
+                      Content="此次更新不再弹出该弹窗"
+                      Foreground="{DynamicResource ThemeTextSubBrush}"
+                      CornerRadius="6"
+                      FontSize="13"
+                      VerticalAlignment="Center"/>
+
+            <Button Grid.Column="2"
+                    Content="继续进入游戏"
+                    Width="110"
+                    Height="34"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ControlBgBrush}"
+                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                    CornerRadius="10"
+                    Click="OnContinueClick">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/>
+                    </Style>
+                </Button.Styles>
+            </Button>
+
+            <Button Grid.Column="4"
+                    Content="自动更新后进入游戏"
+                    Width="150"
+                    Height="34"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ThemeAccentBrush}"
+                    Foreground="White"
+                    CornerRadius="10"
+                    Click="OnUpdateClick">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="{DynamicResource ThemeAccentBrushPointerOver}"/>
+                    </Style>
+                </Button.Styles>
+            </Button>
+
+            <Button Grid.Column="6"
+                    Content="取消"
+                    Width="80"
+                    Height="34"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ControlBgBrush}"
+                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                    CornerRadius="10"
+                    Click="OnCancelClick">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/>
+                    </Style>
+                </Button.Styles>
+            </Button>
+        </Grid>
+    </Grid>
+</Window>

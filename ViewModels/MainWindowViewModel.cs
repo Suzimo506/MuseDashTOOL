@@ -18,6 +18,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly INavigationService? _navigationService;
     private readonly IAnnouncementService? _announcementService;
     private readonly IAuthService? _authService;
+    private readonly IModUpdateService? _modUpdateService;
     private bool _isInitialized;
     private MdenGlobalSearchRequest? _pendingGlobalSearchRequest;
 
@@ -146,7 +147,8 @@ public partial class MainWindowViewModel : ObservableObject
         ModStagingService stagingService,
         INavigationService navigationService,
         IAnnouncementService announcementService,
-        IAuthService authService)
+        IAuthService authService,
+        IModUpdateService modUpdateService)
     {
         _configService = configService;
         _gamePathService = gamePathService;
@@ -155,6 +157,7 @@ public partial class MainWindowViewModel : ObservableObject
         _navigationService = navigationService;
         _announcementService = announcementService;
         _authService = authService;
+        _modUpdateService = modUpdateService;
 
         // 当 HasPendingFiles 变化时，通知 UI 更新 HasStagedMods
         _stagingService.PropertyChanged += (_, e) =>
@@ -868,28 +871,12 @@ public partial class MainWindowViewModel : ObservableObject
             }
         }
 
-        try
+        if (!await HandleLaunchModUpdatesAsync())
         {
-            var processes = System.Diagnostics.Process.GetProcessesByName("MuseDash")
-                .Where(p => p.Id != Environment.ProcessId);
-            bool killedAny = false;
-            foreach (var process in processes)
-            {
-                if (!process.HasExited)
-                {
-                    process.Kill();
-                    killedAny = true;
-                }
-            }
-            if (killedAny)
-            {
-                await Task.Delay(1500); // 给进程留出关闭的时间
-            }
+            return;
         }
-        catch (System.Exception ex)
-        {
-            System.Console.WriteLine($"Error killing process: {ex.Message}");
-        }
+
+        await StopRunningGameAsync();
 
         try
         {
@@ -940,6 +927,93 @@ public partial class MainWindowViewModel : ObservableObject
 
         // 按钮冷却保护
         await Task.Delay(3000);
+    }
+
+    private async Task<bool> HandleLaunchModUpdatesAsync()
+    {
+        if (_modUpdateService == null || _notificationService == null || _configService == null)
+            return true;
+
+        IReadOnlyList<ModUpdateCandidate> updates;
+        try
+        {
+            updates = await _modUpdateService.GetLaunchUpdateCandidatesAsync(forceRefresh: true);
+        }
+        catch (Exception ex)
+        {
+            System.Console.WriteLine($"[LaunchGame] Mod update check failed: {ex.Message}");
+            return true;
+        }
+
+        if (!_modUpdateService.ShouldShowLaunchUpdatePrompt(updates))
+            return true;
+
+        if (Avalonia.Application.Current?.ApplicationLifetime is not Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ||
+            desktop.MainWindow is not MdModManager.Views.MainWindow mainWindow)
+        {
+            return true;
+        }
+
+        var (result, dontShowAgain) = await MdModManager.Views.LaunchModUpdateDialog.ShowDialogAsync(mainWindow, updates);
+        if (dontShowAgain)
+        {
+            await _modUpdateService.DismissLaunchUpdatePromptAsync(updates);
+        }
+
+        if (result == MdModManager.Views.LaunchModUpdateDialogResult.Cancel)
+            return false;
+
+        if (result == MdModManager.Views.LaunchModUpdateDialogResult.Continue)
+            return true;
+
+        DownloadNotification? notification = null;
+        try
+        {
+            await StopRunningGameAsync();
+            notification = _notificationService.ShowPersistentProgress("正在自动更新模组...");
+            await _modUpdateService.UpdateModsAsync(updates);
+            _notificationService.ShowSuccess("模组更新完成，正在进入游戏");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Console.WriteLine($"[LaunchGame] Auto mod update failed: {ex}");
+            _notificationService.ShowFailure("自动更新失败", ex.Message);
+            return false;
+        }
+        finally
+        {
+            if (notification != null)
+            {
+                _notificationService.RemoveNotification(notification);
+            }
+        }
+    }
+
+    private static async Task StopRunningGameAsync()
+    {
+        try
+        {
+            var processes = System.Diagnostics.Process.GetProcessesByName("MuseDash")
+                .Where(p => p.Id != Environment.ProcessId);
+            bool killedAny = false;
+            foreach (var process in processes)
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill();
+                    killedAny = true;
+                }
+            }
+            if (killedAny)
+            {
+                await Task.Delay(1500); // 给进程留出关闭的时间
+            }
+        }
+        catch (System.Exception ex)
+        {
+            System.Console.WriteLine($"Error killing process: {ex.Message}");
+        }
     }
 
     [RelayCommand]
