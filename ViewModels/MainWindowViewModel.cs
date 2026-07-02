@@ -19,6 +19,11 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IAnnouncementService? _announcementService;
     private readonly IAuthService? _authService;
     private readonly IModUpdateService? _modUpdateService;
+    private static readonly string[] LaunchCleanupModNames =
+    [
+        "Multiplayer",
+        "MuseDashEnsemble"
+    ];
     private bool _isInitialized;
     private MdenGlobalSearchRequest? _pendingGlobalSearchRequest;
 
@@ -877,6 +882,10 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         await StopRunningGameAsync();
+        if (!RemoveLaunchCleanupMods(gamePath))
+        {
+            return;
+        }
 
         try
         {
@@ -988,6 +997,73 @@ public partial class MainWindowViewModel : ObservableObject
                 _notificationService.RemoveNotification(notification);
             }
         }
+    }
+
+    private bool RemoveLaunchCleanupMods(string gamePath)
+    {
+        var modsPath = System.IO.Path.Combine(gamePath, "Mods");
+        if (!System.IO.Directory.Exists(modsPath))
+            return true;
+
+        var deletedItems = new List<string>();
+        foreach (var modName in LaunchCleanupModNames)
+        {
+            foreach (var fileName in new[] { $"{modName}.dll", $"{modName}.dll.disabled" })
+            {
+                try
+                {
+                    var filePath = FindExactChildFile(modsPath, fileName);
+                    if (filePath == null)
+                        continue;
+
+                    System.IO.File.Delete(filePath);
+                    deletedItems.Add(fileName);
+                }
+                catch (System.Exception ex)
+                {
+                    var message = $"无法删除 {fileName}：{ex.Message}";
+                    System.Console.WriteLine($"[LaunchGame] {message}");
+                    _notificationService?.ShowFailure("启动前清理模组失败", message);
+                    return false;
+                }
+            }
+
+            try
+            {
+                var directoryPath = FindExactChildDirectory(modsPath, modName);
+                if (directoryPath == null)
+                    continue;
+
+                System.IO.Directory.Delete(directoryPath, recursive: true);
+                deletedItems.Add(modName);
+            }
+            catch (System.Exception ex)
+            {
+                var message = $"无法删除 {modName}：{ex.Message}";
+                System.Console.WriteLine($"[LaunchGame] {message}");
+                _notificationService?.ShowFailure("启动前清理模组失败", message);
+                return false;
+            }
+        }
+
+        if (deletedItems.Count > 0)
+        {
+            System.Console.WriteLine($"[LaunchGame] 已清理启动前冲突模组：{string.Join(", ", deletedItems)}");
+        }
+
+        return true;
+    }
+
+    private static string? FindExactChildFile(string directoryPath, string fileName)
+    {
+        return System.IO.Directory.EnumerateFiles(directoryPath)
+            .FirstOrDefault(path => System.IO.Path.GetFileName(path).Equals(fileName, StringComparison.Ordinal));
+    }
+
+    private static string? FindExactChildDirectory(string directoryPath, string directoryName)
+    {
+        return System.IO.Directory.EnumerateDirectories(directoryPath)
+            .FirstOrDefault(path => System.IO.Path.GetFileName(path).Equals(directoryName, StringComparison.Ordinal));
     }
 
     private static async Task StopRunningGameAsync()
