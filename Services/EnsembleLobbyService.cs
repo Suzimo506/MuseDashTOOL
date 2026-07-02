@@ -30,10 +30,10 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
     private static readonly EnsembleLobbyNodeConfig[] FallbackOfficialNodes =
     {
         new() { Id = "fallback-chengdu", Name = "成都", Address = "42.193.20.197:10423", IsFallback = true },
-        new() { Id = "fallback-shanghai", Name = "上海", Address = "md.atri.wor1d:10423", IsFallback = true },
-        new() { Id = "fallback-shandong", Name = "山东", Address = "mdcn.xmjjs.top:50160", IsFallback = true },
-        new() { Id = "fallback-hongkong", Name = "香港", Address = "mdhk.xmjjs.top:10423", IsFallback = true },
-        new() { Id = "fallback-hubei", Name = "湖北", Address = "mdcn2.xmjjs.top:31498", IsFallback = true }
+        new() { Id = "fallback-shanghai", Name = "上海", Address = "mdsh.mden.top:10423", IsFallback = true },
+        new() { Id = "fallback-hongkong", Name = "香港", Address = "mdhk.mden.top:10423", IsFallback = true },
+        new() { Id = "fallback-hubei", Name = "湖北", Address = "mdhb.mden.top:31498", IsFallback = true },
+        new() { Id = "fallback-jiangsu", Name = "江苏", Address = "mdjs.mden.top:50160", IsFallback = true }
     };
 
     private static readonly EnsembleLobbyNodeConfig[] PinnedOfficialNodes =
