@@ -508,8 +508,15 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         room.WatcherCount = lobby.WatcherCount;
         room.CurrentBattleEntry = FormatEntry(lobby.CurrentBattleEntry);
         MergePlayers(room, lobby.Players ?? Array.Empty<MdtLobbyPlayerEntry>());
-        MergeChats(room, lobby.Chats ?? Array.Empty<MdtChatMessageEntry>());
-        MergeViewerChats(room, lobby.ViewerChats ?? Array.Empty<MdtViewerChatMessageEntry>());
+        if (lobby.Chats != null)
+        {
+            MergeChats(room, lobby.Chats);
+        }
+
+        if (lobby.ViewerChats != null)
+        {
+            MergeViewerChats(room, lobby.ViewerChats);
+        }
     }
 
     private static void MergePlayers(EnsembleLobbyRoom room, MdtLobbyPlayerEntry[] players)
