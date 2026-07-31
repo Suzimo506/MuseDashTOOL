@@ -10,6 +10,11 @@
 *.userosscache
 *.sln.docstates
 *.env
+*.env.*
+!.env.example
+*.local
+*.local.*
+*.secrets.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -407,13 +412,10 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# VS Code files for those working on multiple tools
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
+# Local editor and IDE state
+.vscode/
+.idea/
+.fleet/
 
 # Local History for Visual Studio Code
 .history/
@@ -434,6 +436,7 @@ Headquarters.dll
 Headquarters_Decompiled/
 Decompiled/
 .dotnet/
+.dotnet-home/
 .tmp/
 FavGirl/
 md-mods/
@@ -446,18 +449,14 @@ OptionSelect_Decompiled.cs
 musedash_Data/
 src/bin/
 src/obj/
-p u b l i s h _ o u t p u t / 
- 
- p u b l i s h _ o u t p u t / 
- 
- P i c t u r e s / 
- 
- ! P i c t u r e s / m a i n _ p r e v i e w . p n g 
- 
- 
 publish_output/
-Pictures/
-!Pictures/main_preview.png
+/Pictures/
+
+# Local runtime configuration
+/config.json
+/chart-upload-config.json
+/appsettings.Local.json
+/appsettings.*.local.json
 
 # AI Coding Rules
 CODING_STYLE.md
