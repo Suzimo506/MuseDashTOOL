@@ -629,19 +629,18 @@ public partial class ModManagerViewModel : ObservableObject
         await PerformDownloadAsync(mod.RemoteInfo, isUpdate: true, localMod: mod);
     }
 
-    /// <summary>打开 Mod 详情页 — .NET 6 特殊处理，其余跳转 Euterpe</summary>
+    /// <summary>打开 Mod 详情页</summary>
     [RelayCommand]
     private void OpenHomePage(LocalMod mod)
     {
-        // .NET 6 特殊处理
-        if (mod.RemoteInfo?.FileName == "dotnet6-runtime-placeholder")
+        var homePage = mod.RemoteInfo?.HomePage;
+        if (string.IsNullOrWhiteSpace(homePage))
         {
-            try { Process.Start(new ProcessStartInfo(mod.RemoteInfo.HomePage) { UseShellExecute = true }); }
-            catch (Exception ex) { Console.WriteLine($"[ModManagerViewModel] OpenHomePage (.NET 6) 操作异常: {ex}"); }
+            _notificationService.ShowFailure("跳转失败", "此 Mod 暂无仓库地址");
             return;
         }
 
-        try { Process.Start(new ProcessStartInfo("https://github.com") { UseShellExecute = true }); }
+        try { Process.Start(new ProcessStartInfo(homePage) { UseShellExecute = true }); }
         catch (Exception ex)
         {
             Console.WriteLine($"[ModManagerViewModel] OpenHomePage({mod.Name}) 操作异常: {ex}");

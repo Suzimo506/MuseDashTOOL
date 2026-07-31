@@ -21,6 +21,7 @@ public class ModCatalogService : IModCatalogService
     private readonly IConfigService _configService;
     private readonly HttpClient _httpClient;
     private List<ModInfo>? _cachedMods;
+    private static readonly JsonSerializerOptions CatalogJsonOptions = new();
 
     public ModCatalogService(IConfigService configService)
     {
@@ -39,14 +40,16 @@ public class ModCatalogService : IModCatalogService
 
         try
         {
-            string jsonData = StaticJsonData;
+            List<EuterpeModEntry>? list = null;
             try
             {
                 using var client = MdModManager.Helpers.HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(10));
                 var response = await client.GetStringAsync(BuildRemoteCatalogUrl(), cancellationToken);
-                if (!string.IsNullOrWhiteSpace(response))
+                if (!string.IsNullOrWhiteSpace(response) &&
+                    TryParseCatalog(response, out var remoteList) &&
+                    remoteList.Count > 0)
                 {
-                    jsonData = response;
+                    list = remoteList;
                 }
             }
             catch (Exception ex)
@@ -54,9 +57,8 @@ public class ModCatalogService : IModCatalogService
                 Console.WriteLine($"[ModCatalogService] 远程获取 JSON 失败: {ex.Message}，使用本地缓存");
             }
 
-            var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var list = JsonSerializer.Deserialize<List<EuterpeModEntry>>(jsonData, opts);
-            if (list == null) return new List<ModInfo>();
+            if (list == null && !TryParseCatalog(StaticJsonData, out list))
+                return new List<ModInfo>();
 
             _cachedMods = list.Select(e => new ModInfo
             {
@@ -69,6 +71,7 @@ public class ModCatalogService : IModCatalogService
                         ? e.FileNameSnake
                         : (e.Name ?? "") + ".dll",
                 DownloadLink = e.DownloadUrl ?? e.DownloadLink ?? "",
+                HomePage = ResolveHomePage(e),
                 Description = e.Description ?? "",
                 GameVersion = e.GameVersion ?? "*",
                 DependentMods = e.ModDependencies ?? e.ModDependenciesSnake ?? [],
@@ -82,6 +85,43 @@ public class ModCatalogService : IModCatalogService
         {
             Console.WriteLine($"[ModCatalogService] 解析异常: {ex.Message}");
             return new List<ModInfo>();
+        }
+    }
+
+    private static bool TryParseCatalog(string jsonData, out List<EuterpeModEntry> list)
+    {
+        list = new List<EuterpeModEntry>();
+
+        try
+        {
+            using var document = JsonDocument.Parse(jsonData);
+            var root = document.RootElement;
+            JsonElement modsElement;
+
+            if (root.ValueKind == JsonValueKind.Array)
+            {
+                modsElement = root;
+            }
+            else if (root.ValueKind == JsonValueKind.Object &&
+                     (root.TryGetProperty("Mods", out modsElement) || root.TryGetProperty("mods", out modsElement)) &&
+                     modsElement.ValueKind == JsonValueKind.Array)
+            {
+                // Supported wrapper shape.
+            }
+            else
+            {
+                Console.WriteLine("[ModCatalogService] JSON 根节点不是 Mod 数组");
+                return false;
+            }
+
+            list = JsonSerializer.Deserialize<List<EuterpeModEntry>>(modsElement.GetRawText(), CatalogJsonOptions)
+                   ?? new List<EuterpeModEntry>();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ModCatalogService] JSON 解析失败: {ex.Message}");
+            return false;
         }
     }
 
@@ -102,6 +142,69 @@ public class ModCatalogService : IModCatalogService
         [JsonPropertyName("libDependencies")] public string[]? LibDependencies { get; set; }
         [JsonPropertyName("mod_dependencies")] public string[]? ModDependenciesSnake { get; set; }
         [JsonPropertyName("lib_dependencies")] public string[]? LibDependenciesSnake { get; set; }
+
+        [JsonExtensionData] public Dictionary<string, JsonElement>? ExtraFields { get; set; }
+    }
+
+    private const string BnfourModsHomePage = "https://github.com/bnfour/md-mods";
+
+    private static readonly IReadOnlyDictionary<string, string> KnownModHomePages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["SelectiveEffects"] = "https://github.com/MDMods/SelectiveEffects",
+        ["Info+"] = "https://github.com/MDMods/MuseDashInfoPlus",
+        ["HiddenQol"] = "https://github.com/Asgragrt/HiddenQol",
+        ["MuseDashMirror"] = "https://github.com/MDMods/MuseDashMirror",
+        ["CharacterScoreboard"] = "https://github.com/Creepler13/CharacterScoreboard",
+        ["CurrentCombination"] = "https://github.com/MDMods/CurrentCombination",
+        ["MDRPC"] = "https://github.com/Braasileiro/MDRPC",
+        ["CustomHitSound"] = "https://github.com/MDMods/CustomHitSound",
+        ["ChartReview"] = "https://github.com/MDMods/ChartReview",
+        ["RankTarget"] = "https://github.com/Suzimo506/RankTarget",
+        ["CustomBackgrounds"] = "https://github.com/Suzimo506/CustomBackgrounds",
+        ["BetterNativeHook"] = "https://github.com/Balint817/BetterNativeHook",
+        ["SongDesc"] = "https://github.com/MDMods/SongDesc",
+        ["QuickSwitchCombination"] = "https://github.com/MDMods/QuickSwitchCombination",
+        ["RomajiSongName"] = "https://github.com/Asgragrt/RomajiSongName"
+    };
+
+    private static string ResolveHomePage(EuterpeModEntry entry)
+    {
+        if (entry.Author?.Contains("bnfour", StringComparison.OrdinalIgnoreCase) == true)
+            return BnfourModsHomePage;
+
+        if (!string.IsNullOrWhiteSpace(entry.Name) && KnownModHomePages.TryGetValue(entry.Name, out var knownHomePage))
+            return knownHomePage;
+
+        return ReadOptionalString(entry.ExtraFields, "repository", "homePage", "homepage", "home_page")
+            ?? "";
+    }
+
+    private static string? ReadOptionalString(IReadOnlyDictionary<string, JsonElement>? fields, params string[] keys)
+    {
+        if (fields == null)
+            return null;
+
+        foreach (var key in keys)
+        {
+            if (!fields.TryGetValue(key, out var element))
+                continue;
+
+            try
+            {
+                if (element.ValueKind == JsonValueKind.String)
+                {
+                    var value = element.GetString();
+                    if (!string.IsNullOrWhiteSpace(value))
+                        return value;
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private static string BuildRemoteCatalogUrl()
