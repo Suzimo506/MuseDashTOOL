@@ -34,6 +34,7 @@ public partial class MelonLoaderViewModel : ObservableObject
     private CancellationTokenSource? _installCts;
     private readonly IConfigService _configService;
     private readonly INotificationService _notificationService;
+    public event Action? OneClickInstallRequested;
 
     public MelonLoaderViewModel(IMelonLoaderService melonLoaderService, IConfigService configService, INotificationService notificationService)
     {
@@ -78,6 +79,12 @@ public partial class MelonLoaderViewModel : ObservableObject
     private async Task InstallAsync()
     {
         if (SelectedRelease == null) return;
+
+        if (await ShowManualDownloadGuideAsync())
+        {
+            OneClickInstallRequested?.Invoke();
+            return;
+        }
         
         var asset = SelectedRelease.Assets.FirstOrDefault(a => a.Name != null && a.Name.Equals("MelonLoader.x64.zip", StringComparison.OrdinalIgnoreCase))
                     ?? SelectedRelease.Assets.FirstOrDefault(a => a.Name != null && a.Name.Equals("MelonLoader.x86.zip", StringComparison.OrdinalIgnoreCase))
@@ -123,6 +130,19 @@ public partial class MelonLoaderViewModel : ObservableObject
             _installCts?.Dispose();
             _installCts = null;
         }
+    }
+
+    private async Task<bool> ShowManualDownloadGuideAsync()
+    {
+        const string message = "推荐前往使用一键安装自制谱，自动完成所有内容下载，可以直接启动游戏进行游玩，不推荐手动下载melonloader，是否立即前往设置界面？";
+
+        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+            && desktop.MainWindow is MdModManager.Views.MainWindow mainWindow)
+        {
+            return await mainWindow.ShowConfirmMessageBoxAsync(message, "立即前往", "继续下载");
+        }
+
+        return false;
     }
 
     [RelayCommand]

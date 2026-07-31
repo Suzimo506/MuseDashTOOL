@@ -4,7 +4,7 @@
     <TargetFramework>net9.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;publish_output\**;mod_sourcecode\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;publish_output\**;mod_sourcecode\**;Pictures\**</DefaultItemExcludes>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>MdModManager</RootNamespace>
@@ -13,10 +13,6 @@
     <Version>1.5.4</Version>
     <AssemblyVersion>1.5.4</AssemblyVersion>
     <FileVersion>1.5.4</FileVersion>
-    <PublishSingleFile>true</PublishSingleFile>
-    <PublishTrimmed>false</PublishTrimmed>
-    <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishSingleFile>true</PublishSingleFile>
     <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>true</SelfContained>
@@ -30,15 +26,15 @@
 
   <ItemGroup>
     <None Include="chart-upload-config.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('chart-upload-config.json')" />
-    <AvaloniaResource Include="Assets\**" Exclude="Assets\classdata.tpk;Assets\Preview.png" />
+    <AvaloniaResource Include="Assets\**" Exclude="Assets\classdata.tpk;Assets\Preview.png;Assets\Embedded\**" />
     <EmbeddedResource Include="Assets\classdata.tpk" />
     
     <!-- 嵌入核心资源，实现单文件独立运行 -->
     <EmbeddedResource Include="mirror-domains.json" Condition="Exists('mirror-domains.json')" />
-    <EmbeddedResource Include="Pictures\通过审议.png" />
-    <EmbeddedResource Include="Pictures\令人生草.jpg" />
-    <EmbeddedResource Include="Pictures\待定或有些小问题.png" />
-    <EmbeddedResource Include="Pictures\Normal.jpg" />
+    <EmbeddedResource Include="Assets\Embedded\Pictures\通过审议.png" LogicalName="MdModManager.Pictures.通过审议.png" />
+    <EmbeddedResource Include="Assets\Embedded\Pictures\令人生草.jpg" LogicalName="MdModManager.Pictures.令人生草.jpg" />
+    <EmbeddedResource Include="Assets\Embedded\Pictures\待定或有些小问题.png" LogicalName="MdModManager.Pictures.待定或有些小问题.png" />
+    <EmbeddedResource Include="Assets\Embedded\Pictures\Normal.jpg" LogicalName="MdModManager.Pictures.Normal.jpg" />
   </ItemGroup>
 
   <ItemGroup>

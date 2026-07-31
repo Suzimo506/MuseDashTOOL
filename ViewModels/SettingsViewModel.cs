@@ -20,6 +20,7 @@ public partial class SettingsViewModel : ObservableObject
 {
     private readonly IConfigService _configService;
     private static readonly HttpClient CustomChartInstallerHttp = HttpHelper.CreateOptimizedClient(TimeSpan.FromMinutes(15), TimeSpan.FromSeconds(20));
+    private static readonly SemaphoreSlim CustomChartInstallerLock = new(1, 1);
     private const string CustomChartInstallerFileName = "懒人自制谱安装包.zip";
 
     // 可用的下载源列表
@@ -132,6 +133,7 @@ public partial class SettingsViewModel : ObservableObject
     {
         _configService = configService;
         MelonLoaderVm = melonLoaderVm;
+        MelonLoaderVm.OneClickInstallRequested += OnOneClickInstallRequested;
         _notificationService = notificationService ?? CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default.GetService<INotificationService>();
         
         // 初始化静态帮助类的优选状态
@@ -741,6 +743,14 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void CloseMelonLoaderPanel() => IsMelonLoaderPanelVisible = false;
 
+    private async void OnOneClickInstallRequested()
+    {
+        IsColorPanelVisible = false;
+        IsAdvancedPanelVisible = false;
+        IsMelonLoaderPanelVisible = false;
+        await InstallCustomChartsFromGuideAsync();
+    }
+
     [RelayCommand]
     private void OpenAdvancedPanel()
     {
@@ -778,6 +788,24 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     public async System.Threading.Tasks.Task InstallCustomChartsFromGuideAsync(bool confirmBeforeInstall = false)
+    {
+        if (!await CustomChartInstallerLock.WaitAsync(0))
+        {
+            _notificationService?.ShowInfo("一键安装自制谱正在进行中");
+            return;
+        }
+
+        try
+        {
+            await InstallCustomChartsCoreAsync(confirmBeforeInstall);
+        }
+        finally
+        {
+            CustomChartInstallerLock.Release();
+        }
+    }
+
+    private async System.Threading.Tasks.Task InstallCustomChartsCoreAsync(bool confirmBeforeInstall)
     {
         if (string.IsNullOrWhiteSpace(_configService.Config.GamePath) || !Directory.Exists(_configService.Config.GamePath))
         {
@@ -851,12 +879,15 @@ public partial class SettingsViewModel : ObservableObject
             if (File.Exists(tempZipPath))
                 File.Delete(tempZipPath);
 
-            notification = _notificationService?.ShowPersistentProgress("正在清理旧版环境...");
+            notification = _notificationService?.ShowPersistentProgress("谱面迁移中");
             var mlService = CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default.GetService<IMelonLoaderService>();
             if (mlService != null)
             {
                 await mlService.UninstallAsync();
             }
+
+            var migrationResult = await CustomChartMigrationService.MigrateAsync(gamePath);
+            LogEuterpeMigration(migrationResult);
 
             if (notification != null) notification.Message = "正在下载自制谱安装包...";
             RuntimeLog.Write("SettingsViewModel", $"开始下载自制谱安装包：{downloadUrl}");
@@ -879,6 +910,17 @@ public partial class SettingsViewModel : ObservableObject
 
             _notificationService?.ShowSuccess("自制谱安装包安装完成");
             RuntimeLog.Write("SettingsViewModel", $"自制谱安装包已解压到游戏目录：{gamePath}");
+
+            if (migrationResult.Errors.Count > 0)
+            {
+                _notificationService?.ShowFailure(
+                    "谱面迁移未完全完成",
+                    $"已迁移 {migrationResult.MigratedChartCount} 个谱面，{migrationResult.Errors.Count} 个项目处理失败，原文件已保留");
+            }
+            else if (migrationResult.RemovedModCount > 0 || migrationResult.MigratedChartCount > 0)
+            {
+                _notificationService?.ShowSuccess($"谱面迁移完成：{migrationResult.MigratedChartCount} 个谱面");
+            }
         }
         catch (Exception ex)
         {
@@ -900,6 +942,19 @@ public partial class SettingsViewModel : ObservableObject
                 RuntimeLog.Write("SettingsViewModel", $"清理自制谱安装包临时文件失败：{ex.Message}");
             }
         }
+    }
+
+    private static void LogEuterpeMigration(CustomChartMigrationResult result)
+    {
+        if (result.RemovedModCount == 0 && result.MigratedChartCount == 0 && result.Errors.Count == 0)
+            return;
+
+        RuntimeLog.Write(
+            "SettingsViewModel",
+            $"Euterpe 迁移结果：删除模组 {result.RemovedModCount} 个，迁移谱面 {result.MigratedChartCount} 个，失败 {result.Errors.Count} 个");
+
+        foreach (var error in result.Errors)
+            RuntimeLog.Write("SettingsViewModel", error);
     }
 
     private static async System.Threading.Tasks.Task<bool> ConfirmCustomChartInstallerAsync()

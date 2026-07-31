@@ -297,6 +297,7 @@ public class ChartService : IChartService
                 if (epkEntry != null)
                 {
                     var infoEntry = archive.Entries.FirstOrDefault(e => e.Name.Equals("info.json", StringComparison.OrdinalIgnoreCase));
+                    var hasInfoJson = infoEntry != null;
                     if (infoEntry == null)
                     {
                         byte[] epkBytes;
@@ -373,8 +374,13 @@ public class ChartService : IChartService
                             {
                                 writer.Write(jsonString);
                             }
-                            epkEntry.Delete();
+                            hasInfoJson = true;
                         }
+                    }
+
+                    if (hasInfoJson)
+                    {
+                        epkEntry.Delete();
                     }
                 }
             }

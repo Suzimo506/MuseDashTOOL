@@ -133,9 +133,22 @@ public partial class MainWindow : Window
         await MessageBox.ShowDialogAsync(this, message);
     }
 
-    public async Task<bool> ShowConfirmMessageBoxAsync(string message, string? footerMessage = null)
+    public async Task<bool> ShowConfirmMessageBoxAsync(string message)
     {
-        return await MessageBox.ShowDialogAsync(this, message, showCancel: true, footerMessage: footerMessage);
+        return await MessageBox.ShowDialogAsync(this, message, showCancel: true);
+    }
+
+    public async Task<bool> ShowConfirmMessageBoxAsync(
+        string message,
+        string confirmText,
+        string cancelText)
+    {
+        return await MessageBox.ShowDialogAsync(
+            this,
+            message,
+            showCancel: true,
+            confirmText: confirmText,
+            cancelText: cancelText);
     }
 
     public async Task ShowMessageBoxWithImageAsync(string message, string imageAssetUri)

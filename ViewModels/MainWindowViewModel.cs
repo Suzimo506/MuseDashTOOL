@@ -303,7 +303,7 @@ public partial class MainWindowViewModel : ObservableObject
             }
         }
 
-        await ShowNewUserRequiredModsGuideAsync();
+        await AutoInstallRequiredCustomChartComponentsAsync();
 
         // 异步尝试获取公告，但不阻塞主进程
         _ = TryShowAnnouncementAsync();
@@ -817,36 +817,17 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private async Task ShowNewUserRequiredModsGuideAsync()
+    private async Task AutoInstallRequiredCustomChartComponentsAsync()
     {
         if (_configService == null || _gamePathService == null)
-            return;
-
-        if (_configService.Config.HasShownOneClickCustomChartsGuide)
             return;
 
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrWhiteSpace(gamePath) || !_gamePathService.IsValidGamePath(gamePath))
             return;
 
-        _configService.Config.HasShownOneClickCustomChartsGuide = true;
-        _configService.Config.HasHandledNewUserRequiredModsGuide = true;
-        await _configService.SaveAsync();
-
-        if (Avalonia.Application.Current?.ApplicationLifetime is not Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ||
-            desktop.MainWindow is not MdModManager.Views.MainWindow mainWindow)
-            return;
-
-        const string message =
-            "为了保证您的体验，是否一键安装必备模组？\n\n" +
-            "点击确认后：\n" +
-            "1、MelonLoader版本变为0.6.1（适配更多模组）\n" +
-            "2、一键安装自制谱模组与其他必备模组（包括测试版的联机模组）\n\n" +
-            "确认以后直接开始游戏即可。";
-        const string footerMessage = "如果您改变主意，随时可以前往设置点击一键安装自制谱";
-
-        var confirmed = await mainWindow.ShowConfirmMessageBoxAsync(message, footerMessage);
-        if (!confirmed)
+        var melonLoaderService = Ioc.Default.GetService<IMelonLoaderService>();
+        if (melonLoaderService?.IsRequiredVersionInstalled() == true)
             return;
 
         var settingsVm = Ioc.Default.GetRequiredService<SettingsViewModel>();

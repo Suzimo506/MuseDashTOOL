@@ -17,6 +17,7 @@ public interface IMelonLoaderService
 {
     Task<List<GitHubRelease>> GetReleasesAsync(CancellationToken cancellationToken = default);
     string? GetCurrentVersion();
+    bool IsRequiredVersionInstalled();
     Task InstallAsync(string downloadUrl, IProgress<double>? progress = null, CancellationToken cancellationToken = default);
     Task UninstallAsync();
 }
@@ -26,6 +27,7 @@ public class MelonLoaderService : IMelonLoaderService
     private readonly IConfigService _configService;
     private readonly HttpClient _httpClient;
     private const string ApiUrl = "https://api.github.com/repos/LavaGang/MelonLoader/releases";
+    private static readonly Version RequiredVersion = new(0, 6, 1);
 
     public MelonLoaderService(IConfigService configService)
     {
@@ -39,7 +41,9 @@ public class MelonLoaderService : IMelonLoaderService
         {
             var response = await _httpClient.GetStringAsync(ApiUrl, cancellationToken);
             var releases = JsonSerializer.Deserialize(response, AppJsonContext.Default.GitHubReleaseArray);
-            return new List<GitHubRelease>(releases ?? Array.Empty<GitHubRelease>());
+            return (releases ?? Array.Empty<GitHubRelease>())
+                .Where(IsAllowedDownloadVersion)
+                .ToList();
         }
         catch (OperationCanceledException)
         {
@@ -50,6 +54,23 @@ public class MelonLoaderService : IMelonLoaderService
             Console.WriteLine($"Failed to fetch ML releases: {ex}");
             return new List<GitHubRelease>();
         }
+    }
+
+    private static bool IsAllowedDownloadVersion(GitHubRelease release)
+    {
+        return TryParseReleaseVersion(release.TagName, out var version) && version <= RequiredVersion;
+    }
+
+    private static bool TryParseReleaseVersion(string tagName, out Version version)
+    {
+        var normalized = tagName.Trim().TrimStart('v', 'V');
+        var suffixIndex = normalized.IndexOfAny(['-', '+']);
+        if (suffixIndex >= 0)
+        {
+            normalized = normalized[..suffixIndex];
+        }
+
+        return Version.TryParse(normalized, out version!);
     }
 
     public string? GetCurrentVersion()
@@ -90,6 +111,17 @@ public class MelonLoaderService : IMelonLoaderService
         {
             return null;
         }
+    }
+
+    public bool IsRequiredVersionInstalled()
+    {
+        var currentVersion = GetCurrentVersion();
+        if (string.IsNullOrWhiteSpace(currentVersion) || !TryParseReleaseVersion(currentVersion, out var version))
+            return false;
+
+        return version.Major == RequiredVersion.Major &&
+               version.Minor == RequiredVersion.Minor &&
+               version.Build == RequiredVersion.Build;
     }
 
     public async Task InstallAsync(string downloadUrl, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
@@ -213,23 +245,43 @@ public class MelonLoaderService : IMelonLoaderService
 
         await Task.Run(() =>
         {
+            var version = Path.Combine(gamePath, "version.dll");
+            DeleteFile(version);
+
             var mlDir = Path.Combine(gamePath, "MelonLoader");
-            if (Directory.Exists(mlDir)) Directory.Delete(mlDir, true);
+            DeleteDirectory(mlDir);
 
             var dobby = Path.Combine(gamePath, "dobby.dll");
-            if (File.Exists(dobby)) File.Delete(dobby);
-
-            var version = Path.Combine(gamePath, "version.dll");
-            if (File.Exists(version)) File.Delete(version);
+            DeleteFile(dobby);
 
             var winhttp = Path.Combine(gamePath, "winhttp.dll");
-            if (File.Exists(winhttp)) File.Delete(winhttp);
+            DeleteFile(winhttp);
 
             var winmm = Path.Combine(gamePath, "winmm.dll");
-            if (File.Exists(winmm)) File.Delete(winmm);
+            DeleteFile(winmm);
 
             var notice = Path.Combine(gamePath, "NOTICE.txt");
-            if (File.Exists(notice)) File.Delete(notice);
+            DeleteFile(notice);
         });
+    }
+
+    private static void DeleteFile(string path)
+    {
+        if (!File.Exists(path))
+            return;
+
+        File.SetAttributes(path, FileAttributes.Normal);
+        File.Delete(path);
+    }
+
+    private static void DeleteDirectory(string path)
+    {
+        if (!Directory.Exists(path))
+            return;
+
+        foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+            File.SetAttributes(file, FileAttributes.Normal);
+
+        Directory.Delete(path, recursive: true);
     }
 }
