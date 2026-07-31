@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -26,24 +25,12 @@ public interface IEnsembleLobbyService : IDisposable
 
 public sealed class EnsembleLobbyService : IEnsembleLobbyService
 {
-    private const string ServerListUrl = "https://mden.top/api/?r=serverlist";
-    private static readonly EnsembleLobbyNodeConfig[] FallbackOfficialNodes =
+    private static readonly EnsembleLobbyNodeConfig[] OfficialNodes =
     {
-        new() { Id = "fallback-chengdu", Name = "成都", Address = "42.193.20.197:10423", IsFallback = true },
-        new() { Id = "fallback-shanghai", Name = "上海", Address = "mdsh.mden.top:10423", IsFallback = true },
-        new() { Id = "fallback-hongkong", Name = "香港", Address = "mdhk.mden.top:10423", IsFallback = true },
-        new() { Id = "fallback-hubei", Name = "湖北", Address = "mdhb.mden.top:31498", IsFallback = true },
-        new() { Id = "fallback-jiangsu", Name = "江苏", Address = "mdjs.mden.top:50160", IsFallback = true }
+        new() { Id = "official-chengdu", Name = "成都", Address = "42.193.20.197:10423" }
     };
 
-    private static readonly EnsembleLobbyNodeConfig[] PinnedOfficialNodes =
-    {
-        new() { Id = "pinned-chengdu", Name = "成都", Address = "42.193.20.197:10423" }
-    };
-
-    private readonly IConfigService _configService;
     private readonly ConcurrentDictionary<string, NodeConnection> _connections = new();
-    private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(6) };
 
     public event Action<string, MdtLobbySnapshot>? SnapshotReceived;
     public event Action<string, int, MdtChatMessageEntry>? ChatReceived;
@@ -52,19 +39,11 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
 
     public EnsembleLobbyService(IConfigService configService)
     {
-        _configService = configService;
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL-MDT/1.0");
     }
 
-    public async Task<IReadOnlyList<EnsembleLobbyNodeConfig>> GetNodesAsync(CancellationToken ct)
+    public Task<IReadOnlyList<EnsembleLobbyNodeConfig>> GetNodesAsync(CancellationToken ct)
     {
-        var nodes = await TryFetchOfficialNodesAsync(ct).ConfigureAwait(false);
-        if (nodes.Count > 0)
-        {
-            return MergeWithPinnedOfficialNodes(nodes);
-        }
-
-        return MergeFallbackWithConfiguredNodes(_configService.Config.EnsembleLobbyNodes);
+        return Task.FromResult<IReadOnlyList<EnsembleLobbyNodeConfig>>(GetOfficialNodes());
     }
 
     public async Task ConnectAsync(EnsembleLobbyNodeConfig node, string uid, CancellationToken ct)
@@ -192,30 +171,6 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
     public void Dispose()
     {
         _ = DisconnectAllAsync();
-        _httpClient.Dispose();
-    }
-
-    private async Task<IReadOnlyList<EnsembleLobbyNodeConfig>> TryFetchOfficialNodesAsync(CancellationToken ct)
-    {
-        try
-        {
-            var json = await _httpClient.GetStringAsync(ServerListUrl, ct).ConfigureAwait(false);
-            var response = JsonSerializer.Deserialize(json, EnsembleServerListJsonContext.Default.EnsembleServerListResponse);
-            return response?.Servers?
-                .Where(server => !string.IsNullOrWhiteSpace(server.Address))
-                .Select(server => new EnsembleLobbyNodeConfig
-                {
-                    Id = string.IsNullOrWhiteSpace(server.Id) ? server.Address : server.Id,
-                    Name = string.IsNullOrWhiteSpace(server.Name) ? server.Address : server.Name,
-                    Address = server.Address,
-                    IsFallback = false
-                })
-                .ToArray() ?? Array.Empty<EnsembleLobbyNodeConfig>();
-        }
-        catch
-        {
-            return Array.Empty<EnsembleLobbyNodeConfig>();
-        }
     }
 
     private async Task RemoveConnectionAsync(string key)
@@ -291,53 +246,11 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
         return (host, port);
     }
 
-    private static IReadOnlyList<EnsembleLobbyNodeConfig> GetFallbackOfficialNodes()
+    private static IReadOnlyList<EnsembleLobbyNodeConfig> GetOfficialNodes()
     {
-        return FallbackOfficialNodes
+        return OfficialNodes
             .Select(CloneNode)
             .ToArray();
-    }
-
-    private static IReadOnlyList<EnsembleLobbyNodeConfig> MergeFallbackWithConfiguredNodes(
-        IReadOnlyList<EnsembleLobbyNodeConfig>? configuredNodes)
-    {
-        var merged = GetFallbackOfficialNodes().ToList();
-        var addresses = merged
-            .Select(node => node.Address)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var configuredNode in configuredNodes ?? Array.Empty<EnsembleLobbyNodeConfig>())
-        {
-            if (configuredNode == null || string.IsNullOrWhiteSpace(configuredNode.Address)) continue;
-            if (addresses.Add(configuredNode.Address))
-            {
-                merged.Add(CloneNode(configuredNode));
-            }
-        }
-
-        return merged;
-    }
-
-    private static IReadOnlyList<EnsembleLobbyNodeConfig> MergeWithPinnedOfficialNodes(IReadOnlyList<EnsembleLobbyNodeConfig> nodes)
-    {
-        var merged = nodes
-            .Where(node => node != null && !string.IsNullOrWhiteSpace(node.Address))
-            .Select(CloneNode)
-            .ToList();
-
-        var addresses = merged
-            .Select(node => node.Address)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var pinnedNode in PinnedOfficialNodes)
-        {
-            if (addresses.Add(pinnedNode.Address))
-            {
-                merged.Add(CloneNode(pinnedNode));
-            }
-        }
-
-        return merged;
     }
 
     private static EnsembleLobbyNodeConfig CloneNode(EnsembleLobbyNodeConfig node)
@@ -637,27 +550,6 @@ public sealed class EnsembleLobbyService : IEnsembleLobbyService
 
     private static string L(string key) => I18nService.Instance[key];
 }
-
-public sealed class EnsembleServerEntry
-{
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = "";
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = "";
-
-    [JsonPropertyName("address")]
-    public string Address { get; set; } = "";
-}
-
-public sealed class EnsembleServerListResponse
-{
-    [JsonPropertyName("servers")]
-    public List<EnsembleServerEntry> Servers { get; set; } = new();
-}
-
-[JsonSerializable(typeof(EnsembleServerListResponse))]
-internal partial class EnsembleServerListJsonContext : JsonSerializerContext { }
 
 [JsonSerializable(typeof(ClientEnvelope))]
 [JsonSerializable(typeof(ServerEnvelope))]
