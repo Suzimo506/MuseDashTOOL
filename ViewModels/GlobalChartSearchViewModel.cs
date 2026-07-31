@@ -571,12 +571,12 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         try
         {
             _notificationService.ShowInfo(Tr("Mden_AutoDownloadStarting", target.Title));
-            MdenStatusBridge.NotifyMissingChartDownloadStarted(target.Title);
+            MdenStatusBridge.NotifyMissingChartDownloadStarted(target.Title, request.ChartKey, request.Difficulty);
             var chart = await BuildDownloadChartAsync(target);
             if (chart == null)
             {
                 _mdenCandidateStatus = Tr("Mden_AutoDownloadPrepareFailed");
-                MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, Tr("Mden_AutoDownloadPrepareFailedReason"));
+                MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, Tr("Mden_AutoDownloadPrepareFailedReason"), request.ChartKey, request.Difficulty);
                 UpdateStatusMessage();
                 return;
             }
@@ -589,13 +589,13 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             {
                 _mdenCandidateStatus = Tr("Mden_AutoDownloadVerified");
                 _notificationService.ShowSuccess(Tr("Mden_AutoDownloadVerifiedNotification"));
-                MdenStatusBridge.NotifyMissingChartDownloadCompleted(target.Title);
+                MdenStatusBridge.NotifyMissingChartDownloadCompleted(target.Title, request.ChartKey, request.Difficulty);
             }
             else
             {
                 _mdenCandidateStatus = Tr("Mden_AutoDownloadVerifyFailed");
                 _notificationService.ShowFailure(Tr("Mden_AutoDownloadFailedTitle"), result.ErrorMessage ?? Tr("Mden_AutoDownloadManualCorrectChart"));
-                MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, result.ErrorMessage ?? Tr("Mden_AutoDownloadManualCorrectChartForMden"));
+                MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, result.ErrorMessage ?? Tr("Mden_AutoDownloadManualCorrectChartForMden"), request.ChartKey, request.Difficulty);
             }
 
             UpdateStatusMessage();
@@ -605,7 +605,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             _mdenCandidateStatus = Tr("Mden_AutoDownloadFailed");
             RuntimeLog.Write("GlobalSearchVM", $"MDEN auto download failed: {ex}");
             _notificationService.ShowFailure(Tr("Mden_AutoDownloadFailedTitle"), ex.Message);
-            MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, ex.Message);
+            MdenStatusBridge.NotifyMissingChartDownloadFailed(target.Title, ex.Message, request.ChartKey, request.Difficulty);
             UpdateStatusMessage();
         }
     }

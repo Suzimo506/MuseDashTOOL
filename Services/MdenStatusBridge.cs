@@ -14,24 +14,24 @@ internal static class MdenStatusBridge
     private const int ConnectTimeoutMs = 300;
     private static readonly SemaphoreSlim SendLock = new(1, 1);
 
-    public static void NotifyMissingChartDownloadStarted(string title)
+    public static void NotifyMissingChartDownloadStarted(string title, string? chartKey = null, int difficulty = 0)
     {
-        SendMissingChartStatus("started", title, null);
+        SendMissingChartStatus("started", title, null, chartKey, difficulty);
     }
 
-    public static void NotifyMissingChartDownloadCompleted(string title)
+    public static void NotifyMissingChartDownloadCompleted(string title, string? chartKey = null, int difficulty = 0)
     {
-        SendMissingChartStatus("completed", title, null);
+        SendMissingChartStatus("completed", title, null, chartKey, difficulty);
     }
 
-    public static void NotifyMissingChartDownloadFailed(string title, string? reason)
+    public static void NotifyMissingChartDownloadFailed(string title, string? reason, string? chartKey = null, int difficulty = 0)
     {
-        SendMissingChartStatus("failed", title, reason);
+        SendMissingChartStatus("failed", title, reason, chartKey, difficulty);
     }
 
-    private static void SendMissingChartStatus(string status, string title, string? reason)
+    private static void SendMissingChartStatus(string status, string title, string? reason, string? chartKey, int difficulty)
     {
-        var uri = BuildUri(status, title, reason);
+        var uri = BuildUri(status, title, reason, chartKey, difficulty);
         _ = Task.Run(() => SendAsync(uri));
     }
 
@@ -59,13 +59,23 @@ internal static class MdenStatusBridge
         }
     }
 
-    private static string BuildUri(string status, string title, string? reason)
+    private static string BuildUri(string status, string title, string? reason, string? chartKey, int difficulty)
     {
         var parts = new List<string>
         {
             "status=" + Uri.EscapeDataString(status),
             "title=" + Uri.EscapeDataString(title ?? string.Empty)
         };
+
+        if (!string.IsNullOrWhiteSpace(chartKey))
+        {
+            parts.Add("chartKey=" + Uri.EscapeDataString(chartKey));
+        }
+
+        if (difficulty > 0)
+        {
+            parts.Add("difficulty=" + difficulty);
+        }
 
         if (!string.IsNullOrWhiteSpace(reason))
         {
