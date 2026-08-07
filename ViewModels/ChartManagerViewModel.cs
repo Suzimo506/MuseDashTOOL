@@ -1472,17 +1472,6 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task MoveCustomAlbumsToLibraryAsync()
     {
-        if (IsGameRunning())
-        {
-            var app = Avalonia.Application.Current;
-            var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-            if (mainWindow != null)
-            {
-                await MessageBox.ShowDialogAsync(mainWindow, Services.I18nService.Instance["Str_442"]);
-            }
-            return;
-        }
-
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrWhiteSpace(gamePath) || !System.IO.Directory.Exists(gamePath))
         {
@@ -1718,19 +1707,6 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     {
         if (item == null) return;
 
-        // 游戏运行时限制谱面移动
-        if (IsGameRunning())
-        {
-            IsMovePanelOpen = false;
-            var app = Avalonia.Application.Current;
-            var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-            if (mainWindow != null)
-            {
-                await MessageBox.ShowDialogAsync(mainWindow, Services.I18nService.Instance["Str_442"]);
-            }
-            return;
-        }
-
         IsMovePanelOpen = false;
 
         if (item.IsCreateNew)
@@ -1875,18 +1851,6 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     {
         if (chart == null || string.IsNullOrEmpty(targetCategory) || targetCategory == "全部") return;
 
-        // 游戏运行时限制谱面移动
-        if (IsGameRunning())
-        {
-            var app = Avalonia.Application.Current;
-            var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-            if (mainWindow != null)
-            {
-                await MessageBox.ShowDialogAsync(mainWindow, Services.I18nService.Instance["Str_442"]);
-            }
-            return;
-        }
-
         var gamePath = _configService.Config.GamePath;
         if (string.IsNullOrEmpty(gamePath)) return;
 
@@ -1926,18 +1890,6 @@ public partial class ChartManagerViewModel : ObservableObject, IDisposable
     private async Task MoveSelectedToCategoryAsync(string targetCategory)
     {
         if (string.IsNullOrEmpty(targetCategory) || targetCategory == "全部") return;
-
-        // 游戏运行时限制谱面移动
-        if (IsGameRunning())
-        {
-            var app = Avalonia.Application.Current;
-            var mainWindow = (app?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-            if (mainWindow != null)
-            {
-                await MessageBox.ShowDialogAsync(mainWindow, Services.I18nService.Instance["Str_442"]);
-            }
-            return;
-        }
 
         var toMove = _allCharts.Where(c => c.IsSelected).ToList();
         if (toMove.Count == 0) return;

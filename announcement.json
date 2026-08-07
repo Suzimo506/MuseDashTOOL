@@ -12,8 +12,20 @@
         "cancel_button_text_en": "Don't Remind Again"
     },
     {
-        "id": "1.5.4",
+        "id": "1.5.5",
         "is_enabled": true,
+        "title": "喵斯兔v1.5.5更新!",
+        "title_en": "MuseDashTOOL 1.5.5 Update",
+        "content": "1、不再强制要求安装某个 MelonLoader 版本，BetterMD 模组已适配最新 0.7.3 版本。\n2、对各个地方做了一些优化。\n3、修复了一些已知错误。",
+        "content_en": "1. No longer requires a specific MelonLoader version. BetterMD is now compatible with the latest 0.7.3 version.\n2. Made various optimizations throughout the app.\n3. Fixed known issues.",
+        "action_button_text": "进入新版喵斯兔",
+        "action_button_text_en": "Enter New MuseDashTOOL",
+        "cancel_button_text": "不再显示该弹窗",
+        "cancel_button_text_en": "Don't Show Again"
+    },
+    {
+        "id": "1.5.4",
+        "is_enabled": false,
         "title": "喵斯兔v1.5.4更新!",
         "title_en": "MuseDashTOOL 1.5.4 Update",
         "content": "1、增加自动下载缺失谱面功能\n2、修复了一些问题",

@@ -86,6 +86,8 @@ public class EuterpeSortOption
         Label = label;
         Value = value;
     }
+
+    public override string ToString() => Label;
 }
 
 public partial class EuterpeViewModel : ObservableObject, IDisposable
@@ -103,21 +105,96 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     private readonly HttpClient _httpClient;
     private readonly SemaphoreSlim _officialUserChartsLock = new(1, 1);
     private List<EuterpeChart>? _officialUserChartsCache;
+    private bool _suppressFilterReload;
 
     // 谱面集合
     public ObservableCollection<EuterpeChart> Charts { get; } = new();
 
     // 标签集合与选中标签
     public ObservableCollection<EuterpeTag> Tags { get; } = new();
+    public ObservableCollection<EuterpeTag> SelectedTags { get; } = new();
+    public ObservableCollection<EuterpeTag> FilteredTags { get; } = new();
     [ObservableProperty]
     private bool _isTagPanelOpen;
     [ObservableProperty]
     private EuterpeTag? _selectedTag;
+    [ObservableProperty]
+    private string _tagSearchText = string.Empty;
+    [ObservableProperty]
+    private bool _isAnyTagMatch;
+
+    public string SelectedTagSummary => SelectedTags.Count switch
+    {
+        0 => I18nService.Instance.CurrentLanguage == "en-US" ? "All tags" : "全部标签",
+        1 => SelectedTags[0].DisplayName,
+        _ => $"{SelectedTags[0].DisplayName} +{SelectedTags.Count - 1}"
+    };
+
+    public bool HasTagSearchResults => !string.IsNullOrWhiteSpace(TagSearchText) && FilteredTags.Count > 0;
+
+    // Euterpe 网页端 charts/search 支持的高级筛选参数。
+    [ObservableProperty] private string _ratingFilter = "all";
+    [ObservableProperty] private string _mapCountFilter = "any";
+    [ObservableProperty] private string _bpmFilter = "any";
+    [ObservableProperty] private string _sceneFilter = "any";
+    [ObservableProperty] private string _hasVideoFilter = "any";
+    [ObservableProperty] private string _hasTalkFilter = "any";
+    [ObservableProperty] private string _hasDemoFilter = "any";
+    [ObservableProperty] private string _hasMap4Filter = "any";
+    [ObservableProperty] private string _hasSceneEggFilter = "any";
+    [ObservableProperty] private string _creatorIsCuratorFilter = "any";
+    [ObservableProperty] private string _curatorPickedFilter = "any";
+    [ObservableProperty] private string _hasCommentsFilter = "any";
+    [ObservableProperty] private string _createdWithinDaysFilter = "any";
+    [ObservableProperty] private string _creatorLevelMinFilter = "any";
+    [ObservableProperty] private string _safeForStreamerFilter = "any";
+    [ObservableProperty] private string _likedByMeFilter = "any";
+    [ObservableProperty] private string _downloadedByMeFilter = "any";
+
+    public bool HasActiveFilters =>
+        SelectedTags.Count > 0 ||
+        IsAnyTagMatch ||
+        RatingFilter != "all" ||
+        MapCountFilter != "any" ||
+        BpmFilter != "any" ||
+        SceneFilter != "any" ||
+        HasVideoFilter != "any" ||
+        HasTalkFilter != "any" ||
+        HasDemoFilter != "any" ||
+        HasMap4Filter != "any" ||
+        HasSceneEggFilter != "any" ||
+        CreatorIsCuratorFilter != "any" ||
+        CuratorPickedFilter != "any" ||
+        HasCommentsFilter != "any" ||
+        CreatedWithinDaysFilter != "any" ||
+        CreatorLevelMinFilter != "any" ||
+        SafeForStreamerFilter != "any" ||
+        LikedByMeFilter != "any" ||
+        DownloadedByMeFilter != "any";
+
+    public EuterpeSortOption[] RatingFilterOptions { get; } = CreateOptions(
+        ("all", "不限", "Any"), ("0-4", "Lv. 1 - 4", "Lv. 1 - 4"), ("5-7", "Lv. 5 - 7", "Lv. 5 - 7"),
+        ("8-9", "Lv. 8 - 9", "Lv. 8 - 9"), ("10-10", "Lv. 10", "Lv. 10"), ("11-11", "Lv. 11", "Lv. 11"), ("12-15", "Lv. 12+", "Lv. 12+"));
+    public EuterpeSortOption[] MapCountFilterOptions { get; } = CreateOptions(("any", "不限", "Any"), ("1", "1 张", "1 map"), ("2", "2 张", "2 maps"), ("3", "3 张", "3 maps"), ("4", "4 张", "4 maps"));
+    public EuterpeSortOption[] BpmFilterOptions { get; } = CreateOptions(("any", "不限", "Any"), ("1-120", "120 BPM 以下", "Up to 120 BPM"), ("120-160", "120 - 160 BPM", "120 - 160 BPM"), ("160-200", "160 - 200 BPM", "160 - 200 BPM"), ("200-999", "200 BPM 以上", "200+ BPM"));
+    public EuterpeSortOption[] SceneFilterOptions { get; } = CreateOptions(("any", "不限", "Any"), ("scene_01", "太空站", "Space Station"), ("scene_02", "复古都市", "Retrocity"), ("scene_03", "城堡", "Castle"), ("scene_04", "雨夜", "Rainy Night"), ("scene_05", "糖果乐园", "Candyland"), ("scene_06", "东方", "Oriental"), ("scene_07", "律动", "Let's Groove"), ("scene_08", "东方 Project", "Touhou"), ("scene_09", "DJMAX", "DJMAX"), ("scene_10", "初音未来", "Miku"), ("scene_11", "愚人节", "24Fool"), ("scene_12", "华风", "Chinoiserie"));
+    public EuterpeSortOption[] BooleanFilterOptions { get; } = CreateOptions(("any", "不限", "Any"), ("true", "有", "Has"), ("false", "无", "No"));
+    public EuterpeSortOption[] SafeForStreamerFilterOptions { get; } = CreateOptions(("any", "不限", "Any"), ("true", "适合直播", "Safe for streamers"), ("false", "版权敏感", "Copyright sensitive"));
+    public EuterpeSortOption[] CreatedWithinDaysFilterOptions { get; } = CreateOptions(("any", "不限", "Any"), ("1", "一天内", "Within 1 day"), ("7", "一周内", "Within 7 days"), ("30", "一个月内", "Within 30 days"), ("90", "三个月内", "Within 90 days"), ("365", "一年内", "Within 1 year"));
+    public EuterpeSortOption[] CreatorLevelMinFilterOptions { get; } = CreateOptions(("any", "不限", "Any"), ("1", "Lv. 1+", "Lv. 1+"), ("2", "Lv. 2+", "Lv. 2+"), ("3", "Lv. 3+", "Lv. 3+"), ("4", "Lv. 4+", "Lv. 4+"), ("5", "Lv. 5+", "Lv. 5+"), ("6", "Lv. 6+", "Lv. 6+"));
+
+    private static EuterpeSortOption[] CreateOptions(params (string Value, string Chinese, string English)[] options)
+    {
+        var isEnglish = I18nService.Instance.CurrentLanguage == "en-US";
+        return options.Select(option => new EuterpeSortOption(isEnglish ? option.English : option.Chinese, option.Value)).ToArray();
+    }
 
     [RelayCommand]
     private void ToggleTagPanel()
     {
         IsTagPanelOpen = !IsTagPanelOpen;
+        if (IsTagPanelOpen)
+            RefreshFilteredTags();
     }
 
     [RelayCommand]
@@ -125,14 +202,124 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     {
         if (tag == null) return;
 
-        foreach (var t in Tags)
+        if (string.IsNullOrEmpty(tag.TagId))
         {
-            t.IsSelected = (t == tag);
+            ClearTagSelection();
+            return;
         }
 
-        SelectedTag = tag;
-        IsTagPanelOpen = false;
+        if (SelectedTags.Remove(tag))
+            tag.IsSelected = false;
+        else
+        {
+            SelectedTags.Add(tag);
+            tag.IsSelected = true;
+        }
 
+        SelectedTag = SelectedTags.FirstOrDefault();
+        OnPropertyChanged(nameof(SelectedTagSummary));
+        OnPropertyChanged(nameof(HasActiveFilters));
+        OnPropertyChanged(nameof(HasTagSearchResults));
+        if (!_suppressFilterReload)
+            ResetAndReload();
+    }
+
+    [RelayCommand]
+    private void ClearTagSelection()
+    {
+        foreach (var tag in SelectedTags)
+            tag.IsSelected = false;
+
+        SelectedTags.Clear();
+        SelectedTag = null;
+        OnPropertyChanged(nameof(SelectedTagSummary));
+        OnPropertyChanged(nameof(HasActiveFilters));
+        OnPropertyChanged(nameof(HasTagSearchResults));
+        if (!_suppressFilterReload)
+            ResetAndReload();
+    }
+
+    [RelayCommand]
+    private void ClearFilters()
+    {
+        _suppressFilterReload = true;
+        IsAnyTagMatch = false;
+        RatingFilter = "all";
+        MapCountFilter = "any";
+        BpmFilter = "any";
+        SceneFilter = "any";
+        HasVideoFilter = "any";
+        HasTalkFilter = "any";
+        HasDemoFilter = "any";
+        HasMap4Filter = "any";
+        HasSceneEggFilter = "any";
+        CreatorIsCuratorFilter = "any";
+        CuratorPickedFilter = "any";
+        HasCommentsFilter = "any";
+        CreatedWithinDaysFilter = "any";
+        CreatorLevelMinFilter = "any";
+        SafeForStreamerFilter = "any";
+        LikedByMeFilter = "any";
+        DownloadedByMeFilter = "any";
+        ClearTagSelection();
+        _suppressFilterReload = false;
+        OnPropertyChanged(nameof(HasActiveFilters));
+        ResetAndReload();
+    }
+
+    partial void OnTagSearchTextChanged(string value) => RefreshFilteredTags();
+
+    partial void OnIsAnyTagMatchChanged(bool value) => OnFiltersChanged();
+    partial void OnRatingFilterChanged(string value) => OnFiltersChanged();
+    partial void OnMapCountFilterChanged(string value) => OnFiltersChanged();
+    partial void OnBpmFilterChanged(string value) => OnFiltersChanged();
+    partial void OnSceneFilterChanged(string value) => OnFiltersChanged();
+    partial void OnHasVideoFilterChanged(string value) => OnFiltersChanged();
+    partial void OnHasTalkFilterChanged(string value) => OnFiltersChanged();
+    partial void OnHasDemoFilterChanged(string value) => OnFiltersChanged();
+    partial void OnHasMap4FilterChanged(string value) => OnFiltersChanged();
+    partial void OnHasSceneEggFilterChanged(string value) => OnFiltersChanged();
+    partial void OnCreatorIsCuratorFilterChanged(string value) => OnFiltersChanged();
+    partial void OnCuratorPickedFilterChanged(string value) => OnFiltersChanged();
+    partial void OnHasCommentsFilterChanged(string value) => OnFiltersChanged();
+    partial void OnCreatedWithinDaysFilterChanged(string value) => OnFiltersChanged();
+    partial void OnCreatorLevelMinFilterChanged(string value) => OnFiltersChanged();
+    partial void OnSafeForStreamerFilterChanged(string value) => OnFiltersChanged();
+    partial void OnLikedByMeFilterChanged(string value) => OnFiltersChanged();
+    partial void OnDownloadedByMeFilterChanged(string value) => OnFiltersChanged();
+
+    private void OnFiltersChanged()
+    {
+        OnPropertyChanged(nameof(HasActiveFilters));
+        if (!_suppressFilterReload)
+            ResetAndReload();
+    }
+
+    private void RefreshFilteredTags()
+    {
+        FilteredTags.Clear();
+        var query = TagSearchText.Trim();
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            OnPropertyChanged(nameof(HasTagSearchResults));
+            return;
+        }
+
+        var enableFuzzySearch = _configService.Config.EnableFuzzySearch;
+        foreach (var tag in Tags.Where(tag => !string.IsNullOrEmpty(tag.TagId)))
+        {
+            if (SearchHelper.IsMatch(tag.TagId, query, enableFuzzySearch) ||
+                tag.Translations?.Values.Any(translation => SearchHelper.IsMatch(translation, query, enableFuzzySearch)) == true)
+            {
+                FilteredTags.Add(tag);
+            }
+        }
+
+        OnPropertyChanged(nameof(HasTagSearchResults));
+    }
+
+    private void ResetAndReload()
+    {
         _cursors.Clear();
         _cursors.Add(null);
         CurrentPage = 1;
@@ -281,21 +468,10 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                     while (_cursors.Count < targetPage)
                     {
                         var currentFetchCursor = _cursors.Last();
-                        var sort = SortOptions[SelectedSortIndex].Value;
-                        var query = SearchText.Trim();
-                        var path = $"charts/search?size={PageSize}&sort={Uri.EscapeDataString(sort)}";
-                        if (!string.IsNullOrEmpty(query))
-                        {
-                            path += $"&q={Uri.EscapeDataString(query)}";
-                        }
-                        if (SelectedTag != null && !string.IsNullOrEmpty(SelectedTag.TagId))
-                        {
-                            path += $"&tags={Uri.EscapeDataString(SelectedTag.TagId)}&tag_match=all";
-                        }
-                        if (!string.IsNullOrEmpty(currentFetchCursor))
-                        {
-                            path += $"&cursor={Uri.EscapeDataString(currentFetchCursor)}";
-                        }
+                        var path = BuildSearchPath(
+                            SearchText.Trim(),
+                            SortOptions[SelectedSortIndex].Value,
+                            currentFetchCursor);
 
                         using var req = new HttpRequestMessage(HttpMethod.Get, path);
                         using var response = await _httpClient.SendAsync(req);
@@ -389,18 +565,14 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             Tags.Clear();
             Tags.Add(new EuterpeTag(string.Empty, string.Empty, 0, true, 0, new Dictionary<string, string> { { "zh", "全部标签" } }));
-            if (fetchedTags != null)
+            foreach (var tag in (fetchedTags ?? []).OfType<EuterpeTag>()
+                         .Where(tag => tag.IsActive && tag.Popularity > 0)
+                         .OrderBy(tag => tag.Category)
+                         .ThenBy(tag => tag.SortOrder))
             {
-                foreach (var tag in fetchedTags.Where(t => t.IsActive && t.Popularity > 0).OrderBy(t => t.Category).ThenBy(t => t.SortOrder))
-                {
-                    Tags.Add(tag);
-                }
+                Tags.Add(tag);
             }
-            if (Tags.Count > 0)
-            {
-                SelectedTag = Tags[0];
-                Tags[0].IsSelected = true;
-            }
+            RefreshFilteredTags();
         }
         catch (Exception ex)
         {
@@ -495,21 +667,10 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                 while (_cursors.Count < targetPage)
                 {
                     string? currentFetchCursor = _cursors.Last();
-                    string sort = SortOptions[SelectedSortIndex].Value;
-                    string query = SearchText.Trim();
-                    string path = $"charts/search?size={PageSize}&sort={Uri.EscapeDataString(sort)}";
-                    if (!string.IsNullOrEmpty(query))
-                    {
-                        path += $"&q={Uri.EscapeDataString(query)}";
-                    }
-                    if (SelectedTag != null && !string.IsNullOrEmpty(SelectedTag.TagId))
-                    {
-                        path += $"&tags={Uri.EscapeDataString(SelectedTag.TagId)}&tag_match=all";
-                    }
-                    if (!string.IsNullOrEmpty(currentFetchCursor))
-                    {
-                        path += $"&cursor={Uri.EscapeDataString(currentFetchCursor)}";
-                    }
+                    string path = BuildSearchPath(
+                        SearchText.Trim(),
+                        SortOptions[SelectedSortIndex].Value,
+                        currentFetchCursor);
 
                     using HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, path);
                     using HttpResponseMessage response = await _httpClient.SendAsync(req);
@@ -568,20 +729,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             var cursor = _cursors[CurrentPage - 1];
 
-            // 构造请求 URL 编码
-            var path = $"charts/search?size={PageSize}&sort={Uri.EscapeDataString(sort)}";
-            if (!string.IsNullOrEmpty(query))
-            {
-                path += $"&q={Uri.EscapeDataString(query)}";
-            }
-            if (SelectedTag != null && !string.IsNullOrEmpty(SelectedTag.TagId))
-            {
-                path += $"&tags={Uri.EscapeDataString(SelectedTag.TagId)}&tag_match=all";
-            }
-            if (!string.IsNullOrEmpty(cursor))
-            {
-                path += $"&cursor={Uri.EscapeDataString(cursor)}";
-            }
+            var path = BuildSearchPath(query, sort, cursor);
 
             using var req = new HttpRequestMessage(HttpMethod.Get, path);
             using var response = await _httpClient.SendAsync(req, ct);
@@ -593,7 +741,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             if (result != null)
             {
                 Charts.Clear();
-                foreach (var item in result.Items)
+                foreach (var item in (result.Items ?? []).OfType<EuterpeChart>())
                 {
                     Charts.Add(item);
                 }
@@ -643,7 +791,70 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
     private bool ShouldUseMergedSearch(string? query)
         => !string.IsNullOrWhiteSpace(query) &&
-           (SelectedTag == null || string.IsNullOrEmpty(SelectedTag.TagId));
+           !HasActiveFilters;
+
+    private string BuildSearchPath(string query, string sort, string? cursor)
+    {
+        var parameters = new List<string>
+        {
+            $"size={PageSize}",
+            $"sort={Uri.EscapeDataString(sort)}"
+        };
+
+        AddParameter(parameters, "q", query);
+        AddRangeParameters(parameters, "rating", RatingFilter, "all");
+        AddParameter(parameters, "map_count", MapCountFilter == "any" ? null : MapCountFilter);
+        AddParameter(parameters, "scene", SceneFilter == "any" ? null : SceneFilter);
+        AddBooleanParameter(parameters, "has_video", HasVideoFilter);
+        AddRangeParameters(parameters, "bpm", BpmFilter, "any");
+
+        if (SelectedTags.Count > 0)
+        {
+            AddParameter(parameters, "tags", string.Join(',', SelectedTags.Select(tag => tag.TagId)));
+            AddParameter(parameters, "tag_match", IsAnyTagMatch ? "any" : "all");
+        }
+
+        AddBooleanParameter(parameters, "has_talk", HasTalkFilter);
+        AddBooleanParameter(parameters, "has_demo", HasDemoFilter);
+        AddBooleanParameter(parameters, "has_map4", HasMap4Filter);
+        AddBooleanParameter(parameters, "has_scene_egg", HasSceneEggFilter);
+        AddBooleanParameter(parameters, "creator_is_curator", CreatorIsCuratorFilter);
+        AddBooleanParameter(parameters, "curator_picked", CuratorPickedFilter);
+        AddBooleanParameter(parameters, "has_comments", HasCommentsFilter);
+        AddParameter(parameters, "created_within_days", CreatedWithinDaysFilter == "any" ? null : CreatedWithinDaysFilter);
+        AddParameter(parameters, "creator_level_min", CreatorLevelMinFilter == "any" ? null : CreatorLevelMinFilter);
+        AddBooleanParameter(parameters, "safe_for_streamer", SafeForStreamerFilter);
+        AddBooleanParameter(parameters, "liked_by_me", LikedByMeFilter);
+        AddBooleanParameter(parameters, "downloaded_by_me", DownloadedByMeFilter);
+        AddParameter(parameters, "cursor", cursor);
+
+        return "charts/search?" + string.Join('&', parameters);
+    }
+
+    private static void AddRangeParameters(List<string> parameters, string name, string value, string emptyValue)
+    {
+        if (value == emptyValue)
+            return;
+
+        var range = value.Split('-', 2);
+        if (range.Length != 2)
+            return;
+
+        AddParameter(parameters, $"{name}_min", range[0]);
+        AddParameter(parameters, $"{name}_max", range[1]);
+    }
+
+    private static void AddBooleanParameter(List<string> parameters, string name, string value)
+    {
+        if (value != "any")
+            AddParameter(parameters, name, value);
+    }
+
+    private static void AddParameter(List<string> parameters, string name, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            parameters.Add($"{name}={Uri.EscapeDataString(value)}");
+    }
 
     private async Task<List<EuterpeChart>> SearchMergedChartsAsync(string query, string sort, CancellationToken ct)
     {
@@ -708,7 +919,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             if (result == null)
                 break;
 
-            allCharts.AddRange(result.Items);
+            allCharts.AddRange((result.Items ?? []).OfType<EuterpeChart>());
             cursor = result.NextCursor;
         }
         while (!string.IsNullOrEmpty(cursor));
@@ -755,7 +966,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                 if (result == null)
                     break;
 
-                charts.AddRange(result.Items);
+                charts.AddRange((result.Items ?? []).OfType<EuterpeChart>());
                 cursor = result.NextCursor;
             }
             while (!string.IsNullOrEmpty(cursor));
@@ -837,7 +1048,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     {
         var snapshot = Charts.ToList();
         var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.5.4");
+        client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.5.5");
 
         foreach (var chart in snapshot)
         {
@@ -926,7 +1137,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             // 请求音频文件字节数据
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.5.4");
+            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.5.5");
             using var req = new HttpRequestMessage(HttpMethod.Get, previewUrl);
             using var response = await client.SendAsync(req, ct);
             response.EnsureSuccessStatusCode();

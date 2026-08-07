@@ -53,10 +53,8 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _viewerChatCooldownText = "";
 
     public IReadOnlyList<string> Phrases => PhraseKeys.Select(L).ToArray();
-    public bool HasSelectedNode => SelectedNode != null;
     public bool SelectedNodeHasRooms => SelectedNode?.HasRooms == true;
     public bool HasSelectedRoom => SelectedRoom != null;
-    public bool IsUsingFallbackNodes => Nodes.Any(node => node.IsFallback);
     public bool HasMdtIdentity => !string.IsNullOrWhiteSpace(_museDashUid);
     public bool CanSendPhrase => HasMdtIdentity && SelectedRoom?.CanSendChat == true && DateTimeOffset.Now >= _nextAllowedSendTime;
     public bool CanSendViewerChat =>
@@ -92,7 +90,7 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         _cts?.Dispose();
         _cts = CancellationTokenSource.CreateLinkedTokenSource(externalToken);
         IsLoading = true;
-        StatusText = L("OnlineLobby_ConnectingNodes");
+        StatusText = L("OnlineLobby_NodeConnecting");
         RefreshMdtIdentity();
 
         try
@@ -155,17 +153,6 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         _watchingLobbyId = null;
         await _lobbyService.DisconnectAllAsync();
         await InitializeAsync(CancellationToken.None);
-    }
-
-    [RelayCommand]
-    private void SelectNode(EnsembleLobbyNode node)
-    {
-        if (node == null) return;
-        SelectedNode = node;
-        if (SelectedRoom?.Node != node)
-        {
-            SelectedRoom = null;
-        }
     }
 
     [RelayCommand]
@@ -294,12 +281,6 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
     partial void OnSelectedNodeChanged(EnsembleLobbyNode? value)
     {
-        foreach (var node in Nodes)
-        {
-            node.IsSelected = node == value;
-        }
-
-        OnPropertyChanged(nameof(HasSelectedNode));
         OnPropertyChanged(nameof(SelectedNodeHasRooms));
     }
 
@@ -444,50 +425,8 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
     private void UpdateLobbyStatusText()
     {
-        var nodeCount = Nodes.Count;
-        OnPropertyChanged(nameof(IsUsingFallbackNodes));
-        if (nodeCount == 0)
-        {
-            StatusText = L("OnlineLobby_NoNodes");
-            return;
-        }
-
-        var fallbackPrefix = IsUsingFallbackNodes ? L("OnlineLobby_FallbackPrefix") : "";
-        var roomCount = Nodes.Sum(item => item.Rooms.Count);
-        if (roomCount > 0)
-        {
-            StatusText = $"{fallbackPrefix}{string.Format(L("OnlineLobby_SyncedRooms"), roomCount)}";
-            return;
-        }
-
-        var connectedCount = Nodes.Count(item => item.IsConnected);
-        if (connectedCount > 0)
-        {
-            StatusText = $"{fallbackPrefix}{string.Format(L("OnlineLobby_ConnectedNoRooms"), connectedCount, nodeCount)}";
-            return;
-        }
-
-        var connectingCount = Nodes.Count(IsConnectingNode);
-        if (connectingCount > 0)
-        {
-            StatusText = $"{fallbackPrefix}{string.Format(L("OnlineLobby_ConnectingNodesCount"), connectingCount, nodeCount)}";
-            return;
-        }
-
-        var failedCount = Nodes.Count(IsFailedNode);
-        StatusText = failedCount > 0
-            ? $"{fallbackPrefix}{string.Format(L("OnlineLobby_NoAvailableNodes"), failedCount, nodeCount)}"
-            : $"{fallbackPrefix}{string.Format(L("OnlineLobby_FoundNodes"), nodeCount)}";
-    }
-
-    private static bool IsConnectingNode(EnsembleLobbyNode node)
-    {
-        return node.StatusState is EnsembleLobbyNodeStatus.Connecting or EnsembleLobbyNodeStatus.Waiting;
-    }
-
-    private static bool IsFailedNode(EnsembleLobbyNode node)
-    {
-        return node.StatusState == EnsembleLobbyNodeStatus.Failed;
+        StatusText = (SelectedNode ?? Nodes.FirstOrDefault())?.StatusText
+                     ?? L("OnlineLobby_NoNodes");
     }
 
     private void ApplyRoom(EnsembleLobbyRoom room, MdtLobbyEntry lobby)
@@ -934,10 +873,18 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
     {
         if (string.IsNullOrWhiteSpace(entry)) return L("OnlineLobby_NoSongSelected");
 
-        var parts = entry.Split('#', 4);
-        if (parts.Length < 4) return entry;
+        var parts = entry.Split('#');
+        if (parts.Length >= 4 && int.TryParse(parts[1], out var difficulty))
+        {
+            return $"{DecodeEntryPart(parts[3])} #{difficulty}";
+        }
 
-        return $"{DecodeEntryPart(parts[3])} #{parts[1]}";
+        if (parts.Length >= 4 && int.TryParse(parts[^1], out difficulty))
+        {
+            return $"{DecodeEntryPart(parts[0])} #{difficulty}";
+        }
+
+        return DecodeEntryPart(parts[0]);
     }
 
     private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

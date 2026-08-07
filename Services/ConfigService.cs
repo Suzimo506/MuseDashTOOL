@@ -28,7 +28,7 @@ public class ConfigService : IConfigService
         _configFolderPath = Path.Combine(appData, "MdModManager");
         _configFilePath = Path.Combine(_configFolderPath, "config.json");
         // 初始化默认配置的版本号
-        Config.LastRunVersion = typeof(AppConfig).Assembly.GetName().Version?.ToString() ?? "1.5.4";
+        Config.LastRunVersion = typeof(AppConfig).Assembly.GetName().Version?.ToString() ?? "1.5.5";
     }
 
     public void Load()
@@ -110,7 +110,7 @@ public class ConfigService : IConfigService
         }
 
         // 版本更新时重置教程弹窗
-        var currentVersion = typeof(AppConfig).Assembly.GetName().Version?.ToString() ?? "1.5.4";
+        var currentVersion = typeof(AppConfig).Assembly.GetName().Version?.ToString() ?? "1.5.5";
         if (config.LastRunVersion != currentVersion)
         {
             config.SuppressWelcomeTutorial = false;

@@ -110,7 +110,8 @@ public class AlbumCollectionService : IAlbumCollectionService
         "EX谱面（谱师：XXX7）",
         "MC谱师（中二的救赎）",
         "Yufans精选集",
-        "happy幕城"
+        "happy幕城",
+        "不是给佬的厕所"
     };
 
     public static readonly HashSet<string> PersonalRepositoryNames = new(PersonalRepositoryDisplayOrder, StringComparer.OrdinalIgnoreCase);
@@ -138,7 +139,8 @@ public class AlbumCollectionService : IAlbumCollectionService
         ["EX谱面（谱师：XXX7）"] = "",
         ["MC谱师（中二的救赎）"] = "",
         ["Yufans精选集"] = "https://b23.tv/2mevXQH",
-        ["happy幕城"] = "https://www.douyin.com/user/MS4wLjABAAAAs2paLu0-J3BOooU1QXRqHEgN4rVcPBTDBKg3PTphtsa6HU3xWmsHlojmI8Sp2_AD?from_tab_name=main"
+        ["happy幕城"] = "https://www.douyin.com/user/MS4wLjABAAAAs2paLu0-J3BOooU1QXRqHEgN4rVcPBTDBKg3PTphtsa6HU3xWmsHlojmI8Sp2_AD?from_tab_name=main",
+        ["不是给佬的厕所"] = ""
     };
 
     public static bool IsPersonalRepositoryName(string? name)

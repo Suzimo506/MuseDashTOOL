@@ -265,6 +265,10 @@ public partial class ModManagerViewModel : ObservableObject
                     && !string.IsNullOrEmpty(gv)
                     && gv != "*"
                     && gv != _gameVersion;
+                m.IsDeprecated = BetterMdConflictService.IsBetterMdIncompatible(
+                    m.Name,
+                    m.FileName,
+                    Path.GetFileNameWithoutExtension(m.FileName));
 
                 // 检测配置文件 (UserData/*.cfg 或 UserData/*.xml 或 UserData/[ModName]/)
                 if (userDataPath != null && Directory.Exists(userDataPath))
@@ -331,7 +335,11 @@ public partial class ModManagerViewModel : ObservableObject
                     RemoteInfo = r,
                     IsLocallyInstalled = isInstalled,
                     LocalInstalledVersion = isInstalled ? localVersion : null,
-                    IsIncompatible = isIncompatible
+                    IsIncompatible = isIncompatible,
+                    IsDeprecated = BetterMdConflictService.IsBetterMdIncompatible(
+                        r.Name,
+                        r.FileName,
+                        Path.GetFileNameWithoutExtension(r.FileName))
                 };
             }).ToList();
 
@@ -463,6 +471,7 @@ public partial class ModManagerViewModel : ObservableObject
         {
             sourceList = _allRemoteMods;
             IsUpdateTabEmpty = false;
+            sourceList = sourceList.OrderBy(m => m.IsIncompatible ? 2 : m.IsDeprecated ? 1 : 0);
         }
 
         if (!string.IsNullOrWhiteSpace(SearchText))

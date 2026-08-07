@@ -443,12 +443,12 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
 
-            <!-- 标签筛选按钮 -->
+            <!-- 高级筛选按钮 -->
             <Button Grid.Column="2" Command="{Binding ToggleTagPanelCommand}" Theme="{StaticResource TagFilterBtn}" Margin="10,0,0,0" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <PathIcon Data="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 8.25c-.97 0-1.75-.78-1.75-1.75s.78-1.75 1.75-1.75 1.75.78 1.75 1.75-.78 1.75-1.75 1.75z" Width="12" Height="12" Foreground="{Binding $parent[Button].Foreground}"/>
                     <TextBlock Text="{Binding [Str_127], Source={x:Static i18n:I18nService.Instance}}" Foreground="{Binding $parent[Button].Foreground}" FontSize="13" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding SelectedTag.DisplayName, FallbackValue='全部标签'}" Foreground="{Binding $parent[Button].Foreground}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding SelectedTagSummary}" Foreground="{Binding $parent[Button].Foreground}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
 
@@ -676,7 +676,7 @@
         </Grid>
     </Grid>
 
-    <!-- 标签遮罩弹窗面板 -->
+    <!-- 筛选遮罩弹窗面板 -->
     <Grid Name="TagOverlayGrid" IsVisible="{Binding IsTagPanelOpen}" Background="#C509050F" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <!-- 点击背景空白区域关闭弹窗 -->
             <Button Background="Transparent" BorderThickness="0" Command="{Binding ToggleTagPanelCommand}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -687,7 +687,7 @@
                 </Button.Template>
             </Button>
             
-            <Border Classes="ModalCard" Margin="24" CornerRadius="18" BorderThickness="1.5" MaxWidth="640" MaxHeight="450" HorizontalAlignment="Center" VerticalAlignment="Center" ClipToBounds="True">
+            <Border Classes="ModalCard" Margin="24" CornerRadius="18" BorderThickness="1.5" MaxWidth="940" MaxHeight="640" HorizontalAlignment="Center" VerticalAlignment="Center" ClipToBounds="True">
                 <Border.BorderBrush>
                     <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
                         <GradientStop Color="#FFFF00FF" Offset="0"/>
@@ -703,28 +703,60 @@
                 <Grid RowDefinitions="Auto,*">
                     <!-- 头部 -->
                     <Border Grid.Row="0" Padding="20,16" BorderThickness="0,0,0,1" BorderBrush="#22FFFFFF">
-                        <Grid ColumnDefinitions="*,Auto">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
                             <TextBlock Text="{Binding [Str_137], Source={x:Static i18n:I18nService.Instance}}" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Command="{Binding ToggleTagPanelCommand}" Theme="{StaticResource RobustPlainIconBtn}" ToolTip.Tip="{Binding [Str_093], Source={x:Static i18n:I18nService.Instance}}">
+                            <Button Grid.Column="1" Command="{Binding ClearFiltersCommand}" Theme="{StaticResource RobustPlainIconBtn}" ToolTip.Tip="清除所有筛选" Margin="0,0,8,0">
+                                <PathIcon Data="M18.3 5.71a7.93 7.93 0 0 0-5.6-2.33 7.95 7.95 0 0 0-7.96 7.96h-2.1l3.3 3.3 3.3-3.3H7.12a5.6 5.6 0 1 1 1.64 3.98l-1.7 1.7A7.96 7.96 0 1 0 18.3 5.71z" Width="17" Height="17" Foreground="#88FFFFFF"/>
+                            </Button>
+                            <Button Grid.Column="2" Command="{Binding ToggleTagPanelCommand}" Theme="{StaticResource RobustPlainIconBtn}" ToolTip.Tip="{Binding [Str_093], Source={x:Static i18n:I18nService.Instance}}">
                                 <TextBlock Text="✕" FontSize="18" Foreground="#88FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Button>
                         </Grid>
                     </Border>
                     
-                    <!-- 标签 Chip 集合列表 -->
-                    <ScrollViewer Grid.Row="1" MaxHeight="350" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <ItemsControl ItemsSource="{Binding Tags}" Padding="16">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="models:EuterpeTag">
-                                    <Button Classes="TagChip" Classes.selected="{Binding IsSelected}" Content="{Binding DisplayName}" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).SelectTagCommand}" CommandParameter="{Binding}" Margin="4"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Spacing="14" Margin="20,16,20,20">
+                            <WrapPanel Orientation="Horizontal">
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="定数" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding RatingFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding RatingFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="地图数量" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding MapCountFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding MapCountFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="BPM" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BpmFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding BpmFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="评分精选" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BooleanFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding CuratorPickedFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="上传者等级" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding CreatorLevelMinFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding CreatorLevelMinFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="上传者是评委" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BooleanFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding CreatorIsCuratorFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="创建时间" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding CreatedWithinDaysFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding CreatedWithinDaysFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="背景视频" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BooleanFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding HasVideoFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="有 Talk" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BooleanFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding HasTalkFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="有试听" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BooleanFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding HasDemoFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="有隐藏谱" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BooleanFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding HasMap4Filter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="场景" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding SceneFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding SceneFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="有彩蛋场景" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BooleanFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding HasSceneEggFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="版权敏感" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding SafeForStreamerFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding SafeForStreamerFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="有评论" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BooleanFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding HasCommentsFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="我点赞过" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BooleanFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding LikedByMeFilter}"/></StackPanel>
+                                <StackPanel Width="168" Margin="0,0,12,12" Spacing="5"><TextBlock Text="我下载过" FontSize="11" Foreground="#8A8594"/><ComboBox ItemsSource="{Binding BooleanFilterOptions}" SelectedValueBinding="{Binding Value, DataType=vm:EuterpeSortOption}" SelectedValue="{Binding DownloadedByMeFilter}"/></StackPanel>
+                            </WrapPanel>
+
+                            <Border BorderBrush="#22FFFFFF" BorderThickness="0,1,0,0" Padding="0,14,0,0">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="标签" FontSize="13" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                        <CheckBox Grid.Column="1" Content="匹配任意已选标签" IsChecked="{Binding IsAnyTagMatch}" Foreground="#B8B2C4" FontSize="11" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <TextBox Name="TagSearchTextBox" Text="{Binding TagSearchText}" Watermark="搜索标签（支持模糊匹配）" Padding="10,8"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Button Classes="TagChip" Content="全部标签" Command="{Binding ClearTagSelectionCommand}"/>
+                                        <ItemsControl ItemsSource="{Binding SelectedTags}">
+                                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate><DataTemplate x:DataType="models:EuterpeTag"><Button Classes="TagChip" Classes.selected="{Binding IsSelected}" Content="{Binding DisplayName}" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).SelectTagCommand}" CommandParameter="{Binding}" Margin="0,0,4,0"/></DataTemplate></ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding FilteredTags}" IsVisible="{Binding HasTagSearchResults}">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate><DataTemplate x:DataType="models:EuterpeTag"><Button Classes="TagChip" Classes.selected="{Binding IsSelected}" Content="{Binding DisplayName}" Command="{Binding $parent[UserControl].((vm:EuterpeViewModel)DataContext).SelectTagCommand}" CommandParameter="{Binding}" Margin="0,0,4,4"/></DataTemplate></ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </ScrollViewer>
                 </Grid>
             </Border>

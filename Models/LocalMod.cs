@@ -185,6 +185,10 @@ public partial class LocalMod : ObservableObject
     [ObservableProperty]
     private bool _isIncompatible;
 
+    /// <summary>该 mod 与 BetterMD 冲突，已不再适用。</summary>
+    [ObservableProperty]
+    private bool _isDeprecated;
+
     /// <summary>下载列表中对应的本地已安装版本（用于版本比较状态显示）</summary>
     public string? LocalInstalledVersion { get; set; }
 

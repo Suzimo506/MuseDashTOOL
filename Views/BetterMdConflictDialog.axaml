@@ -1,0 +1,56 @@
+<Window xmlns:i18n="using:MdModManager.Services" xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MdModManager.Views.BetterMdConflictDialog"
+        Title="{Binding [BetterMdConflict_Title], Source={x:Static i18n:I18nService.Instance}}"
+        Width="520" Height="360"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource DialogBgBrush}"
+        Foreground="{DynamicResource ThemeTextMainBrush}">
+
+    <Grid RowDefinitions="Auto, *, Auto" Margin="24">
+        <TextBlock Grid.Row="0"
+                   Text="{Binding [BetterMdConflict_Message], Source={x:Static i18n:I18nService.Instance}}"
+                   TextWrapping="Wrap"
+                   FontSize="14"
+                   LineHeight="22"
+                   Foreground="{DynamicResource ThemeTextMainBrush}" />
+
+        <Border Grid.Row="1"
+                Margin="0,16"
+                Background="{DynamicResource ControlBgBrush}"
+                BorderBrush="{DynamicResource SoftDangerBrush}"
+                BorderThickness="3,0,0,0"
+                CornerRadius="8"
+                Padding="16,12">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <TextBlock x:Name="ConflictListText"
+                           TextWrapping="Wrap"
+                           FontSize="14"
+                           LineHeight="23"
+                           Foreground="{DynamicResource ThemeTextMainBrush}" />
+            </ScrollViewer>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*, Auto, 10, Auto">
+            <Button Grid.Column="1"
+                    Content="{Binding [BetterMdConflict_Cancel], Source={x:Static i18n:I18nService.Instance}}"
+                    Width="92" Height="34"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ControlBgBrush}"
+                    Foreground="{DynamicResource ThemeTextMainBrush}"
+                    CornerRadius="10"
+                    Click="OnCancelClick" />
+            <Button Grid.Column="3"
+                    Content="{Binding [BetterMdConflict_Disable], Source={x:Static i18n:I18nService.Instance}}"
+                    Width="112" Height="34"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Background="{DynamicResource ThemeAccentBrush}"
+                    Foreground="White"
+                    CornerRadius="10"
+                    Click="OnConfirmClick" />
+        </Grid>
+    </Grid>
+</Window>

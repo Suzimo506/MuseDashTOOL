@@ -157,6 +157,7 @@ public class ModCatalogService : IModCatalogService
         ["CharacterScoreboard"] = "https://github.com/Creepler13/CharacterScoreboard",
         ["CurrentCombination"] = "https://github.com/MDMods/CurrentCombination",
         ["MDRPC"] = "https://github.com/Braasileiro/MDRPC",
+        ["CustomHitEffect"] = "https://github.com/KARPED1EM/CustomHitEffect",
         ["CustomHitSound"] = "https://github.com/MDMods/CustomHitSound",
         ["ChartReview"] = "https://github.com/MDMods/ChartReview",
         ["RankTarget"] = "https://github.com/Suzimo506/RankTarget",

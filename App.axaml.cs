@@ -157,6 +157,7 @@ public partial class App : Application
         services.AddSingleton<IMelonLoaderService, MelonLoaderService>();
         services.AddSingleton<IModCatalogService, ModCatalogService>();
         services.AddSingleton<ILocalModService, LocalModService>();
+        services.AddSingleton<BetterMdConflictService>();
         services.AddSingleton<IModUpdateService, ModUpdateService>();
         services.AddSingleton<INotificationService, NotificationService>();
         services.AddSingleton<IConfigFileService, ConfigFileService>();

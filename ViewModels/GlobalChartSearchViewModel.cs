@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
-using System.Security.Cryptography;
 using System.Globalization;
 using System.Text;
 using System.Threading;
@@ -581,9 +579,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
                 return;
             }
 
-            var result = await _downloadManagerService.EnqueueDownloadAndWaitAsync(
-                chart,
-                (path, ct) => ValidateDownloadedMdenChartAsync(path, request.ChartKey!, ct));
+            var result = await _downloadManagerService.EnqueueDownloadAndWaitAsync(chart);
 
             if (result.Success)
             {
@@ -804,40 +800,6 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         }
 
         return builder.ToString().Normalize(NormalizationForm.FormC);
-    }
-
-    private static async Task<string?> ValidateDownloadedMdenChartAsync(string filePath, string chartKey, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(chartKey))
-            return Tr("Mden_ValidateMissingMd5");
-
-        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
-            return Tr("Mden_ValidateFileMissing");
-
-        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, true);
-        using var zip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
-        foreach (var entry in zip.Entries)
-        {
-            ct.ThrowIfCancellationRequested();
-            var ext = Path.GetExtension(entry.Name);
-            if (!string.Equals(ext, ".bms", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(ext, ".bme", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(ext, ".bml", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            await using var entryStream = entry.Open();
-            using var md5 = MD5.Create();
-            var hash = await md5.ComputeHashAsync(entryStream, ct);
-            var actual = Convert.ToHexString(hash).ToLowerInvariant();
-            if (string.Equals(actual, chartKey, StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-        }
-
-        return Tr("Mden_ValidateChartMismatch");
     }
 
     private void ClearMdenCandidateLabels()

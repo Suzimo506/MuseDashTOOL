@@ -41,7 +41,7 @@ public sealed class EuterpeTag : ObservableObject
         SortOrder = sortOrder;
         IsActive = isActive;
         Popularity = popularity;
-        Translations = translations;
+        Translations = translations ?? new();
     }
 
     // 翻译名称，默认获取中文翻译，若无则回退为英文或 tag_id 本身

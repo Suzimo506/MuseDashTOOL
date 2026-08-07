@@ -19,12 +19,14 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IAnnouncementService? _announcementService;
     private readonly IAuthService? _authService;
     private readonly IModUpdateService? _modUpdateService;
+    private readonly BetterMdConflictService? _betterMdConflictService;
     private static readonly string[] LaunchCleanupModNames =
     [
         "Multiplayer",
         "MuseDashEnsemble"
     ];
     private bool _isInitialized;
+    private bool _hasCheckedBetterMdConflicts;
     private MdenGlobalSearchRequest? _pendingGlobalSearchRequest;
 
     [ObservableProperty]
@@ -153,7 +155,8 @@ public partial class MainWindowViewModel : ObservableObject
         INavigationService navigationService,
         IAnnouncementService announcementService,
         IAuthService authService,
-        IModUpdateService modUpdateService)
+        IModUpdateService modUpdateService,
+        BetterMdConflictService betterMdConflictService)
     {
         _configService = configService;
         _gamePathService = gamePathService;
@@ -163,6 +166,7 @@ public partial class MainWindowViewModel : ObservableObject
         _announcementService = announcementService;
         _authService = authService;
         _modUpdateService = modUpdateService;
+        _betterMdConflictService = betterMdConflictService;
 
         // 当 HasPendingFiles 变化时，通知 UI 更新 HasStagedMods
         _stagingService.PropertyChanged += (_, e) =>
@@ -303,7 +307,9 @@ public partial class MainWindowViewModel : ObservableObject
             }
         }
 
-        await AutoInstallRequiredCustomChartComponentsAsync();
+        await CheckBetterMdConflictsAsync();
+
+        await ConvertLegacyCustomChartsAsync();
 
         // 异步尝试获取公告，但不阻塞主进程
         _ = TryShowAnnouncementAsync();
@@ -354,6 +360,67 @@ public partial class MainWindowViewModel : ObservableObject
         if (pendingGlobalSearch != null)
         {
             await NavigateToGlobalChartSearchWithRequestAsync(pendingGlobalSearch);
+        }
+    }
+
+    private async Task CheckBetterMdConflictsAsync()
+    {
+        if (_hasCheckedBetterMdConflicts || _configService == null || _gamePathService == null || _betterMdConflictService == null)
+            return;
+
+        _hasCheckedBetterMdConflicts = true;
+        var gamePath = _configService.Config.GamePath;
+        if (!_gamePathService.IsValidGamePath(gamePath))
+            return;
+
+        var conflicts = await _betterMdConflictService.FindConflictsAsync(gamePath);
+        if (conflicts.Count == 0 || Avalonia.Application.Current?.ApplicationLifetime is not Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ||
+            desktop.MainWindow is not Avalonia.Controls.Window mainWindow)
+        {
+            return;
+        }
+
+        if (!await MdModManager.Views.BetterMdConflictDialog.ShowDialogAsync(mainWindow, conflicts))
+            return;
+
+        var result = await _betterMdConflictService.DisableAsync(conflicts);
+        if (result.DisabledCount > 0)
+        {
+            _notificationService?.ShowSuccess(string.Format(I18nService.Instance["BetterMdConflict_Disabled"], result.DisabledCount));
+        }
+
+        if (result.FailedMods.Count > 0)
+        {
+            _notificationService?.ShowFailure(I18nService.Instance["BetterMdConflict_DisableFailed"], string.Join(", ", result.FailedMods));
+        }
+    }
+
+    private async Task ConvertLegacyCustomChartsAsync()
+    {
+        if (_configService == null || _gamePathService == null)
+            return;
+
+        var gamePath = _configService.Config.GamePath;
+        if (string.IsNullOrWhiteSpace(gamePath) || !_gamePathService.IsValidGamePath(gamePath))
+            return;
+
+        if (!CustomChartMigrationService.HasLegacyChartDirectories(gamePath))
+            return;
+
+        var result = await CustomChartMigrationService.ConvertLegacyChartsAsync(gamePath);
+        RuntimeLog.Write(
+            "MainWindowViewModel",
+            $"旧版谱面转换结果：成功 {result.MigratedChartCount} 个，失败 {result.Errors.Count} 个");
+
+        if (result.Errors.Count > 0)
+        {
+            _notificationService?.ShowFailure(
+                "谱面转换未完全完成",
+                $"已转换 {result.MigratedChartCount} 个谱面，{result.Errors.Count} 个项目处理失败，原文件已保留");
+        }
+        else if (result.MigratedChartCount > 0)
+        {
+            _notificationService?.ShowSuccess($"谱面转换完成：{result.MigratedChartCount} 个谱面");
         }
     }
 
@@ -815,23 +882,6 @@ public partial class MainWindowViewModel : ObservableObject
                 _notificationService.ShowInfo("欢迎回来", 1500);
             }
         }
-    }
-
-    private async Task AutoInstallRequiredCustomChartComponentsAsync()
-    {
-        if (_configService == null || _gamePathService == null)
-            return;
-
-        var gamePath = _configService.Config.GamePath;
-        if (string.IsNullOrWhiteSpace(gamePath) || !_gamePathService.IsValidGamePath(gamePath))
-            return;
-
-        var melonLoaderService = Ioc.Default.GetService<IMelonLoaderService>();
-        if (melonLoaderService?.IsRequiredVersionInstalled() == true)
-            return;
-
-        var settingsVm = Ioc.Default.GetRequiredService<SettingsViewModel>();
-        await settingsVm.InstallCustomChartsFromGuideAsync();
     }
 
     [RelayCommand]
@@ -1467,7 +1517,7 @@ public partial class MainWindowViewModel : ObservableObject
     // ──────────────────────────────────────────────────────────
 
     /// <summary>当前程序版本号（与 UpdateService.CurrentVersion 保持一致）</summary>
-    private const string CurrentAppVersion = "1.5.4";
+    private const string CurrentAppVersion = "1.5.5";
 
     /// <summary>初始化所有红点提示状态</summary>
     private void InitializeBadges()

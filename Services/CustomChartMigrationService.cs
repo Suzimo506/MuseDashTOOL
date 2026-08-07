@@ -18,22 +18,36 @@ public static class CustomChartMigrationService
 
     public static Task<CustomChartMigrationResult> MigrateAsync(string gamePath)
     {
-        return Task.Run(() => Migrate(gamePath));
+        return Task.Run(() => Migrate(gamePath, cleanLegacyEnvironment: true));
     }
 
-    private static CustomChartMigrationResult Migrate(string gamePath)
+    public static bool HasLegacyChartDirectories(string gamePath)
+    {
+        var euterpeRoot = Path.Combine(gamePath, EuterpeChartsFolderName);
+        return ChartFolderNames.Any(folderName => Directory.Exists(Path.Combine(euterpeRoot, folderName)));
+    }
+
+    public static Task<CustomChartMigrationResult> ConvertLegacyChartsAsync(string gamePath)
+    {
+        return Task.Run(() => Migrate(gamePath, cleanLegacyEnvironment: false));
+    }
+
+    private static CustomChartMigrationResult Migrate(string gamePath, bool cleanLegacyEnvironment)
     {
         var result = new CustomChartMigrationResult();
-        try
+        if (cleanLegacyEnvironment)
         {
-            RemoveEuterpeMods(gamePath, result);
-        }
-        catch (Exception ex)
-        {
-            result.Errors.Add($"扫描 Euterpe.dll 失败：{ex.Message}");
-        }
+            try
+            {
+                RemoveEuterpeMods(gamePath, result);
+            }
+            catch (Exception ex)
+            {
+                result.Errors.Add($"扫描 Euterpe.dll 失败：{ex.Message}");
+            }
 
-        RemoveEuterpeTempDirectory(gamePath, result);
+            RemoveEuterpeTempDirectory(gamePath, result);
+        }
 
         var euterpeRoot = Path.Combine(gamePath, EuterpeChartsFolderName);
         if (!Directory.Exists(euterpeRoot))

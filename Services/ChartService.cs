@@ -298,6 +298,9 @@ public class ChartService : IChartService
                 {
                     var infoEntry = archive.Entries.FirstOrDefault(e => e.Name.Equals("info.json", StringComparison.OrdinalIgnoreCase));
                     var hasInfoJson = infoEntry != null;
+                    var hasVideo = archive.Entries.Any(e => e.Name.Equals("video.mp4", StringComparison.OrdinalIgnoreCase));
+                    var hasCinemaJson = archive.Entries.Any(e => e.Name.Equals("cinema.json", StringComparison.OrdinalIgnoreCase));
+                    var backgroundVideoOpacity = 1f;
                     if (infoEntry == null)
                     {
                         byte[] epkBytes;
@@ -312,6 +315,12 @@ public class ChartService : IChartService
                         {
                             if (jsonNode is JsonObject rootObj && rootObj["meta"] is JsonObject metaObj)
                             {
+                                if (metaObj["background_video_opacity"] is JsonValue opacityValue &&
+                                    opacityValue.TryGetValue<float>(out var opacity))
+                                {
+                                    backgroundVideoOpacity = opacity;
+                                }
+
                                 var nameStr = metaObj["name"]?.ToString();
                                 if (nameStr != null) rootObj["name"] = JsonValue.Create(nameStr);
 
@@ -376,6 +385,18 @@ public class ChartService : IChartService
                             }
                             hasInfoJson = true;
                         }
+                    }
+
+                    if (hasVideo && !hasCinemaJson)
+                    {
+                        var cinemaEntry = archive.CreateEntry("cinema.json");
+                        using var cinemaStream = cinemaEntry.Open();
+                        using var cinemaWriter = new StreamWriter(cinemaStream, System.Text.Encoding.UTF8);
+                        cinemaWriter.Write(new JsonObject
+                        {
+                            ["file_name"] = "video.mp4",
+                            ["opacity"] = backgroundVideoOpacity
+                        }.ToJsonString());
                     }
 
                     if (hasInfoJson)

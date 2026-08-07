@@ -110,7 +110,7 @@ public class AppConfig
     public bool EnableBatchDownloadDuplicateCheck { get; set; } = true;
 
     /// <summary>下载谱面时默认保存到 CustomAlbums_Library 候选区</summary>
-    public bool DownloadChartsToLibraryByDefault { get; set; } = true;
+    public bool DownloadChartsToLibraryByDefault { get; set; } = false;
 
     // Euterpe 已点赞的谱面 cid 列表
     public System.Collections.Generic.List<long> EuterpeLikedCids { get; set; } = new();

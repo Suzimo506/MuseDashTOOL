@@ -314,6 +314,15 @@
         <Style Selector="Border.BadgeIncompatible TextBlock">
             <Setter Property="Foreground" Value="Red"/>
         </Style>
+
+        <!-- 已废弃徽章 -->
+        <Style Selector="Border.BadgeDeprecated">
+            <Setter Property="Background" Value="#1AFFC107"/>
+            <Setter Property="BorderBrush" Value="#40FFC107"/>
+        </Style>
+        <Style Selector="Border.BadgeDeprecated TextBlock">
+            <Setter Property="Foreground" Value="#FFC107"/>
+        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*" PointerPressed="OnBackgroundPointerPressed" Background="Transparent">
@@ -577,6 +586,11 @@
                                                     <!-- 下载列表：未安装徽章 -->
                                                     <Border Classes="Badge BadgeNotInstalled" IsVisible="{Binding ShowNotInstalledBadge}">
                                                         <TextBlock Classes="BadgeText" Text="{Binding [Str_183], Source={x:Static i18n:I18nService.Instance}}"/>
+                                                    </Border>
+
+                                                    <!-- BetterMD 不兼容的已废弃模组 -->
+                                                    <Border Classes="Badge BadgeDeprecated" IsVisible="{Binding IsDeprecated}">
+                                                        <TextBlock Classes="BadgeText" Text="已废弃"/>
                                                     </Border>
                                                     
                                                     <!-- 不兼容徽章 -->

@@ -100,67 +100,7 @@
                     BorderThickness="1"
                     CornerRadius="8"
                     Padding="14">
-                <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
-                    <ScrollViewer x:Name="NodeScrollViewer"
-                                  HorizontalScrollBarVisibility="Hidden"
-                                  VerticalScrollBarVisibility="Disabled"
-                                  PointerWheelChanged="OnNodeScrollWheelChanged">
-                        <ItemsControl ItemsSource="{Binding Nodes}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="4"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="models:EnsembleLobbyNode">
-                                    <Button Command="{Binding $parent[UserControl].DataContext.SelectNodeCommand}"
-                                            CommandParameter="{Binding}"
-                                            Width="160"
-                                            HorizontalContentAlignment="Stretch"
-                                            MinHeight="54"
-                                            Padding="0"
-                                            Background="Transparent"
-                                            BorderThickness="0">
-                                        <Border Background="{Binding TabBackgroundBrush}"
-                                                BorderBrush="{Binding TabBorderBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="8"
-                                                Padding="6,5">
-                                            <StackPanel Spacing="2">
-                                                <TextBlock Text="{Binding Name}"
-                                                           FontSize="11"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{Binding TabTextBrush}"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           HorizontalAlignment="Center"/>
-                                                <TextBlock Text="{Binding RoomCountText}"
-                                                           FontSize="9"
-                                                           Foreground="{DynamicResource ThemeTextTertiaryBrush}"
-                                                           HorizontalAlignment="Center"/>
-                                                <TextBlock Text="{Binding StatusText}"
-                                                           FontSize="9"
-                                                           Foreground="{Binding StatusBrush}"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           HorizontalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-
-                    <Border Grid.Row="1"
-                            HorizontalAlignment="Right"
-                            CornerRadius="8"
-                            Padding="8,3"
-                            Background="#12000000">
-                        <TextBlock Text="{Binding SelectedNode.RoomCountText}"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource ThemeTextSubBrush}"/>
-                    </Border>
-
-                    <Grid Grid.Row="2">
+                <Grid>
                         <TextBlock Text="{Binding [OnlineLobby_NoRooms], Source={x:Static i18n:I18nService.Instance}}"
                                    IsVisible="{Binding !SelectedNodeHasRooms}"
                                    FontSize="12"
@@ -214,7 +154,6 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </ScrollViewer>
-                    </Grid>
                 </Grid>
             </Border>
 

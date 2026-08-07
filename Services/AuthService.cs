@@ -88,7 +88,7 @@ public sealed class AuthService : IAuthService
         _authState = authState;
         var handler = new XRequestIdHandler(new HttpClientHandler());
         _httpClient = new HttpClient(handler) { BaseAddress = new Uri(BaseUrl) };
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.5.4");
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MuseDashTOOL/1.5.5");
     }
 
     public async Task LoginAsync()

@@ -17,7 +17,6 @@ public interface IMelonLoaderService
 {
     Task<List<GitHubRelease>> GetReleasesAsync(CancellationToken cancellationToken = default);
     string? GetCurrentVersion();
-    bool IsRequiredVersionInstalled();
     Task InstallAsync(string downloadUrl, IProgress<double>? progress = null, CancellationToken cancellationToken = default);
     Task UninstallAsync();
 }
@@ -27,7 +26,6 @@ public class MelonLoaderService : IMelonLoaderService
     private readonly IConfigService _configService;
     private readonly HttpClient _httpClient;
     private const string ApiUrl = "https://api.github.com/repos/LavaGang/MelonLoader/releases";
-    private static readonly Version RequiredVersion = new(0, 6, 1);
 
     public MelonLoaderService(IConfigService configService)
     {
@@ -41,9 +39,7 @@ public class MelonLoaderService : IMelonLoaderService
         {
             var response = await _httpClient.GetStringAsync(ApiUrl, cancellationToken);
             var releases = JsonSerializer.Deserialize(response, AppJsonContext.Default.GitHubReleaseArray);
-            return (releases ?? Array.Empty<GitHubRelease>())
-                .Where(IsAllowedDownloadVersion)
-                .ToList();
+            return new List<GitHubRelease>(releases ?? Array.Empty<GitHubRelease>());
         }
         catch (OperationCanceledException)
         {
@@ -54,23 +50,6 @@ public class MelonLoaderService : IMelonLoaderService
             Console.WriteLine($"Failed to fetch ML releases: {ex}");
             return new List<GitHubRelease>();
         }
-    }
-
-    private static bool IsAllowedDownloadVersion(GitHubRelease release)
-    {
-        return TryParseReleaseVersion(release.TagName, out var version) && version <= RequiredVersion;
-    }
-
-    private static bool TryParseReleaseVersion(string tagName, out Version version)
-    {
-        var normalized = tagName.Trim().TrimStart('v', 'V');
-        var suffixIndex = normalized.IndexOfAny(['-', '+']);
-        if (suffixIndex >= 0)
-        {
-            normalized = normalized[..suffixIndex];
-        }
-
-        return Version.TryParse(normalized, out version!);
     }
 
     public string? GetCurrentVersion()
@@ -111,17 +90,6 @@ public class MelonLoaderService : IMelonLoaderService
         {
             return null;
         }
-    }
-
-    public bool IsRequiredVersionInstalled()
-    {
-        var currentVersion = GetCurrentVersion();
-        if (string.IsNullOrWhiteSpace(currentVersion) || !TryParseReleaseVersion(currentVersion, out var version))
-            return false;
-
-        return version.Major == RequiredVersion.Major &&
-               version.Minor == RequiredVersion.Minor &&
-               version.Build == RequiredVersion.Build;
     }
 
     public async Task InstallAsync(string downloadUrl, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
