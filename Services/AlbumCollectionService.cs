@@ -111,6 +111,7 @@ public class AlbumCollectionService : IAlbumCollectionService
         "MC谱师（中二的救赎）",
         "Yufans精选集",
         "happy幕城",
+        "小火-Aioser的个人仓库",
         "不是给佬的厕所"
     };
 

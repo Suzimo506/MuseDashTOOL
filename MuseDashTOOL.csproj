@@ -10,9 +10,9 @@
     <RootNamespace>MdModManager</RootNamespace>
     <AssemblyName>MuseDashTOOL</AssemblyName>
     <ApplicationIcon>Assets\MuseDashTOOL.ico</ApplicationIcon>
-    <Version>1.5.5</Version>
-    <AssemblyVersion>1.5.5</AssemblyVersion>
-    <FileVersion>1.5.5</FileVersion>
+    <Version>1.5.5.1</Version>
+    <AssemblyVersion>1.5.5.1</AssemblyVersion>
+    <FileVersion>1.5.5.1</FileVersion>
     <PublishSingleFile>true</PublishSingleFile>
     <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>true</SelfContained>
@@ -65,4 +65,4 @@
   </ItemGroup>
 </Project>
 
-<!-- v1.5.5 -->
+<!-- v1.5.5.1 -->

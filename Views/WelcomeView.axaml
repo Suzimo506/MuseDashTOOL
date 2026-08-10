@@ -485,7 +485,8 @@
 
                     <!-- QQ Group -->
                     <Button Grid.Column="8" Theme="{StaticResource BottomLinkBtn}"
-                            Command="{Binding CopyQqGroupCommand}">
+                            Command="{Binding OpenUrlCommand}"
+                            CommandParameter="https://qun.qq.com/universal-share/share?ac=1&amp;authKey=YhHRlhAB7QZyQ3FcX4Sy2QOD1XdUyMu26%2FRGmr8IBvYxvSv5hnl7YKB%2FjQ0Z5l2K&amp;busi_data=eyJncm91cENvZGUiOiIzMzE1Njg3ODMiLCJ0b2tlbiI6IlMyUktWUXFJU1lVelZaUENLYktvWWtvY2FyRVZnK1ZRMW14amRGRlFyMndKS2JpcFIyRFlMd1hkSHh4WDNWSU0iLCJ1aW4iOiIxOTc1ODM4NjAyIn0%3D&amp;data=nL9sb2jFJvI5JGoPB-pW8rqOIE09UChRBB6KDjicxobhAjZhLFkuz1FK-iqA5CEEiPM-jVsvOCYbH1hnJ_9o-Q&amp;svctype=4&amp;tempid=h5_group_info">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <Border Width="28" Height="28" CornerRadius="8"
                                     Background="#18FF69B4" VerticalAlignment="Center">

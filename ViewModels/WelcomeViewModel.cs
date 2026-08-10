@@ -12,8 +12,6 @@ namespace MdModManager.ViewModels;
 // 欢迎页视图模型
 public partial class WelcomeViewModel : ViewModelBase
 {
-    private const string QqGroupNumber = "331568783";
-
     private readonly IConfigService? _configService;
     private readonly IGamePathService? _gamePathService;
     private readonly ILocalModService? _localModService;
@@ -294,34 +292,6 @@ public partial class WelcomeViewModel : ViewModelBase
         catch
         {
             // 忽略打开失败的异常
-        }
-    }
-
-    // 复制喵斯兔交流群号
-    [RelayCommand]
-    private async Task CopyQqGroupAsync()
-    {
-        try
-        {
-            if (Avalonia.Application.Current?.ApplicationLifetime is not Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                _notificationService?.ShowFailure("复制失败", "无法访问剪贴板");
-                return;
-            }
-
-            var clipboard = desktop.MainWindow?.Clipboard;
-            if (clipboard == null)
-            {
-                _notificationService?.ShowFailure("复制失败", "无法访问剪贴板");
-                return;
-            }
-
-            await clipboard.SetTextAsync(QqGroupNumber);
-            _notificationService?.ShowSuccess("群号已复制，请打开QQ添加");
-        }
-        catch (Exception ex)
-        {
-            _notificationService?.ShowFailure("复制失败", ex.Message);
         }
     }
 

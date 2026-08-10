@@ -192,7 +192,7 @@
                                 </StackPanel>
                             </Button>
                             
-                            <Button Command="{Binding CopyTextCommand}" CommandParameter="331568783" Height="34" Padding="16,0" Background="{DynamicResource ControlBgBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" ToolTip.Tip="{Binding [Str_271], Source={x:Static i18n:I18nService.Instance}}">
+                            <Button Command="{Binding OpenUrlCommand}" CommandParameter="https://qun.qq.com/universal-share/share?ac=1&amp;authKey=YhHRlhAB7QZyQ3FcX4Sy2QOD1XdUyMu26%2FRGmr8IBvYxvSv5hnl7YKB%2FjQ0Z5l2K&amp;busi_data=eyJncm91cENvZGUiOiIzMzE1Njg3ODMiLCJ0b2tlbiI6IlMyUktWUXFJU1lVelZaUENLYktvWWtvY2FyRVZnK1ZRMW14amRGRlFyMndKS2JpcFIyRFlMd1hkSHh4WDNWSU0iLCJ1aW4iOiIxOTc1ODM4NjAyIn0%3D&amp;data=nL9sb2jFJvI5JGoPB-pW8rqOIE09UChRBB6KDjicxobhAjZhLFkuz1FK-iqA5CEEiPM-jVsvOCYbH1hnJ_9o-Q&amp;svctype=4&amp;tempid=h5_group_info" Height="34" Padding="16,0" Background="{DynamicResource ControlBgBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" ToolTip.Tip="加入群聊">
                                 <Button.Styles>
                                     <Style Selector="Button:pointerover">
                                         <Setter Property="Background" Value="{DynamicResource ControlHoverBgBrush}"/>
