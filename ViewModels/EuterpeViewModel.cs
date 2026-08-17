@@ -49,16 +49,6 @@ public class ManifestSlugEntry
     public Dictionary<string, ManifestVersionEntry> Versions { get; set; } = new();
 }
 
-// 谱面打包下载响应实体
-public class BuildZipResponse
-{
-    [JsonPropertyName("path")]
-    public string Path { get; set; } = string.Empty;
-
-    [JsonPropertyName("filename")]
-    public string Filename { get; set; } = string.Empty;
-}
-
 // AOT 兼容的 JSON 序列化上下文
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
 [JsonSerializable(typeof(EuterpeChart))]
@@ -69,7 +59,6 @@ public class BuildZipResponse
 [JsonSerializable(typeof(ManifestSlugEntry))]
 [JsonSerializable(typeof(ManifestVersionEntry))]
 [JsonSerializable(typeof(Dictionary<string, ManifestVersionEntry>))]
-[JsonSerializable(typeof(BuildZipResponse))]
 [JsonSerializable(typeof(EuterpeTag))]
 [JsonSerializable(typeof(List<EuterpeTag>))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
@@ -94,6 +83,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 {
     private const int PageSize = 15;
     private const int SearchFetchSize = 50;
+    private const int SearchFetchPages = 2;
     private const long EuterpeOfficialUserUid = 0;
     private const string EuterpeBrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 
@@ -103,9 +93,12 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     private readonly INotificationService _notificationService;
     private readonly IDownloadManagerService _downloadManagerService;
     private readonly HttpClient _httpClient;
+    private readonly HttpClient _downloadHttpClient;
     private readonly SemaphoreSlim _officialUserChartsLock = new(1, 1);
     private List<EuterpeChart>? _officialUserChartsCache;
+    private CancellationTokenSource? _filterReloadCts;
     private bool _suppressFilterReload;
+    private bool _isInitialized;
 
     // 谱面集合
     public ObservableCollection<EuterpeChart> Charts { get; } = new();
@@ -154,23 +147,23 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     public bool HasActiveFilters =>
         SelectedTags.Count > 0 ||
         IsAnyTagMatch ||
-        RatingFilter != "all" ||
-        MapCountFilter != "any" ||
-        BpmFilter != "any" ||
-        SceneFilter != "any" ||
-        HasVideoFilter != "any" ||
-        HasTalkFilter != "any" ||
-        HasDemoFilter != "any" ||
-        HasMap4Filter != "any" ||
-        HasSceneEggFilter != "any" ||
-        CreatorIsCuratorFilter != "any" ||
-        CuratorPickedFilter != "any" ||
-        HasCommentsFilter != "any" ||
-        CreatedWithinDaysFilter != "any" ||
-        CreatorLevelMinFilter != "any" ||
-        SafeForStreamerFilter != "any" ||
-        LikedByMeFilter != "any" ||
-        DownloadedByMeFilter != "any";
+        IsFilterEnabled(RatingFilter, "all") ||
+        IsFilterEnabled(MapCountFilter, "any") ||
+        IsFilterEnabled(BpmFilter, "any") ||
+        IsFilterEnabled(SceneFilter, "any") ||
+        IsFilterEnabled(HasVideoFilter, "any") ||
+        IsFilterEnabled(HasTalkFilter, "any") ||
+        IsFilterEnabled(HasDemoFilter, "any") ||
+        IsFilterEnabled(HasMap4Filter, "any") ||
+        IsFilterEnabled(HasSceneEggFilter, "any") ||
+        IsFilterEnabled(CreatorIsCuratorFilter, "any") ||
+        IsFilterEnabled(CuratorPickedFilter, "any") ||
+        IsFilterEnabled(HasCommentsFilter, "any") ||
+        IsFilterEnabled(CreatedWithinDaysFilter, "any") ||
+        IsFilterEnabled(CreatorLevelMinFilter, "any") ||
+        IsFilterEnabled(SafeForStreamerFilter, "any") ||
+        IsFilterEnabled(LikedByMeFilter, "any") ||
+        IsFilterEnabled(DownloadedByMeFilter, "any");
 
     public EuterpeSortOption[] RatingFilterOptions { get; } = CreateOptions(
         ("all", "不限", "Any"), ("0-4", "Lv. 1 - 4", "Lv. 1 - 4"), ("5-7", "Lv. 5 - 7", "Lv. 5 - 7"),
@@ -298,7 +291,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     private void RefreshFilteredTags()
     {
         FilteredTags.Clear();
-        var query = TagSearchText.Trim();
+        var query = TagSearchText?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(query))
         {
             OnPropertyChanged(nameof(HasTagSearchResults));
@@ -320,10 +313,28 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
     private void ResetAndReload()
     {
+        if (!_isInitialized)
+            return;
+
         _cursors.Clear();
         _cursors.Add(null);
         CurrentPage = 1;
-        _ = ReloadAsync();
+        _filterReloadCts?.Cancel();
+        _filterReloadCts?.Dispose();
+        _filterReloadCts = new CancellationTokenSource();
+        _ = ReloadAfterFilterChangeAsync(_filterReloadCts.Token);
+    }
+
+    private async Task ReloadAfterFilterChangeAsync(CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(300), ct);
+            await ReloadAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     // 页面状态
@@ -373,7 +384,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                 _cursors.Clear();
                 _cursors.Add(null);
                 CurrentPage = 1;
-                _ = ReloadAsync();
+                if (_isInitialized)
+                    _ = ReloadAsync();
             }
         }
     }
@@ -461,42 +473,11 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             if (targetPage > _cursors.Count)
             {
-                IsLoading = true;
-                StatusMessage = "正在获取分页游标…";
-                try
-                {
-                    while (_cursors.Count < targetPage)
-                    {
-                        var currentFetchCursor = _cursors.Last();
-                        var path = BuildSearchPath(
-                            SearchText.Trim(),
-                            SortOptions[SelectedSortIndex].Value,
-                            currentFetchCursor);
-
-                        using var req = new HttpRequestMessage(HttpMethod.Get, path);
-                        using var response = await _httpClient.SendAsync(req);
-                        response.EnsureSuccessStatusCode();
-
-                        var json = await response.Content.ReadAsStringAsync();
-                        var result = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.EuterpeSearchResponse);
-
-                        if (result != null && !string.IsNullOrEmpty(result.NextCursor))
-                        {
-                            _cursors.Add(result.NextCursor);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _notificationService.ShowFailure("获取分页游标失败", ex.Message);
-                    IsLoading = false;
-                    UpdateStatusMessage();
-                    return;
-                }
+                JumpPageText = CurrentPage.ToString();
+                _notificationService.ShowFailure(
+                    "无法直接跳转",
+                    "Euterpe 使用游标分页，只能通过下一页逐步访问；已阻止连续请求以避免触发限流。");
+                return;
             }
 
             CurrentPage = Math.Min(targetPage, _cursors.Count);
@@ -532,6 +513,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         INotificationService notificationService,
         IDownloadManagerService downloadManagerService,
         AuthHeaderHandler authHeaderHandler,
+        EuterpeTokenQueryHandler tokenQueryHandler,
         IChartIndexService chartIndexService)
     {
         _authService = authService;
@@ -542,6 +524,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         _chartIndexService = chartIndexService;
 
         _httpClient = new HttpClient(authHeaderHandler) { BaseAddress = new Uri("https://euterpe-org.com/api/") };
+        _downloadHttpClient = new HttpClient(tokenQueryHandler);
         // Euterpe 搜索接口只有浏览器 UA 会返回网页同款谱面集合。
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(EuterpeBrowserUserAgent);
     }
@@ -559,7 +542,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         {
             using var req = new HttpRequestMessage(HttpMethod.Get, "tags");
             using var response = await _httpClient.SendAsync(req, ct);
-            response.EnsureSuccessStatusCode();
+            await EuterpeHttpError.EnsureSuccessAsync(response, "加载 Euterpe 标签", ct);
             var json = await response.Content.ReadAsStringAsync(ct);
             var fetchedTags = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.ListEuterpeTag);
 
@@ -576,9 +559,11 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            _notificationService.ShowFailure("加载标签失败", ex.Message);
+            RuntimeLog.Write("EuterpeViewModel", $"Loading tags failed: {ex}");
+            _notificationService.ShowFailure("加载标签失败", EuterpeHttpError.ToUserMessage(ex, "加载 Euterpe 标签"));
         }
 
+        _isInitialized = true;
         await ReloadAsync(ct);
     }
 
@@ -660,42 +645,10 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
         if (targetPage > _cursors.Count)
         {
-            IsLoading = true;
-            StatusMessage = "正在获取分页游标…";
-            try
-            {
-                while (_cursors.Count < targetPage)
-                {
-                    string? currentFetchCursor = _cursors.Last();
-                    string path = BuildSearchPath(
-                        SearchText.Trim(),
-                        SortOptions[SelectedSortIndex].Value,
-                        currentFetchCursor);
-
-                    using HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, path);
-                    using HttpResponseMessage response = await _httpClient.SendAsync(req);
-                    response.EnsureSuccessStatusCode();
-
-                    string json = await response.Content.ReadAsStringAsync();
-                    EuterpeSearchResponse? result = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.EuterpeSearchResponse);
-
-                    if (result != null && !string.IsNullOrEmpty(result.NextCursor))
-                    {
-                        _cursors.Add(result.NextCursor);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _notificationService.ShowFailure("获取分页游标失败", ex.Message);
-                IsLoading = false;
-                UpdateStatusMessage();
-                return;
-            }
+            _notificationService.ShowFailure(
+                "无法直达末页",
+                "Euterpe 使用游标分页，请通过下一页逐步访问；已阻止连续请求以避免触发限流。");
+            return;
         }
 
         CurrentPage = Math.Min(targetPage, _cursors.Count);
@@ -718,7 +671,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         try
         {
             var sort = SortOptions[SelectedSortIndex].Value;
-            var query = SearchText.Trim();
+            var query = SearchText?.Trim() ?? string.Empty;
             if (ShouldUseMergedSearch(query))
             {
                 var mergedSearchCharts = await SearchMergedChartsAsync(query, sort, ct);
@@ -733,7 +686,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             using var req = new HttpRequestMessage(HttpMethod.Get, path);
             using var response = await _httpClient.SendAsync(req, ct);
-            response.EnsureSuccessStatusCode();
+            await EuterpeHttpError.EnsureSuccessAsync(response, "获取 Euterpe 谱面", ct);
 
             var json = await response.Content.ReadAsStringAsync(ct);
             var result = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.EuterpeSearchResponse);
@@ -747,7 +700,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                 }
 
                 // 从本地缓存恢复点赞状态
-                var likedSet = new HashSet<long>(_configService.Config.EuterpeLikedCids);
+                var likedSet = new HashSet<long>(_configService.Config.EuterpeLikedCids ?? []);
                 foreach (var c in Charts)
                 {
                     if (likedSet.Contains(c.Cid))
@@ -769,9 +722,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                     TotalPages = CurrentPage + 1;
                 }
 
-                // 异步预载封面大图与标签列表
+                // 异步预载封面；逐张请求标签会快速触发 Euterpe 的 API 限流。
                 _ = LoadCoversAsync(ct);
-                _ = LoadTagsAsync(ct);
             }
 
             RequestedScrollY = 0;
@@ -779,8 +731,10 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            StatusMessage = "加载失败：" + ex.Message;
-            _notificationService.ShowFailure("获取谱面失败", ex.Message);
+            RuntimeLog.Write("EuterpeViewModel", $"Loading charts failed: {ex}");
+            var message = EuterpeHttpError.ToUserMessage(ex, "获取 Euterpe 谱面");
+            StatusMessage = message;
+            _notificationService.ShowFailure("获取谱面失败", message);
         }
         finally
         {
@@ -803,8 +757,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
         AddParameter(parameters, "q", query);
         AddRangeParameters(parameters, "rating", RatingFilter, "all");
-        AddParameter(parameters, "map_count", MapCountFilter == "any" ? null : MapCountFilter);
-        AddParameter(parameters, "scene", SceneFilter == "any" ? null : SceneFilter);
+        AddParameter(parameters, "map_count", IsFilterEnabled(MapCountFilter, "any") ? MapCountFilter : null);
+        AddParameter(parameters, "scene", IsFilterEnabled(SceneFilter, "any") ? SceneFilter : null);
         AddBooleanParameter(parameters, "has_video", HasVideoFilter);
         AddRangeParameters(parameters, "bpm", BpmFilter, "any");
 
@@ -821,8 +775,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         AddBooleanParameter(parameters, "creator_is_curator", CreatorIsCuratorFilter);
         AddBooleanParameter(parameters, "curator_picked", CuratorPickedFilter);
         AddBooleanParameter(parameters, "has_comments", HasCommentsFilter);
-        AddParameter(parameters, "created_within_days", CreatedWithinDaysFilter == "any" ? null : CreatedWithinDaysFilter);
-        AddParameter(parameters, "creator_level_min", CreatorLevelMinFilter == "any" ? null : CreatorLevelMinFilter);
+        AddParameter(parameters, "created_within_days", IsFilterEnabled(CreatedWithinDaysFilter, "any") ? CreatedWithinDaysFilter : null);
+        AddParameter(parameters, "creator_level_min", IsFilterEnabled(CreatorLevelMinFilter, "any") ? CreatorLevelMinFilter : null);
         AddBooleanParameter(parameters, "safe_for_streamer", SafeForStreamerFilter);
         AddBooleanParameter(parameters, "liked_by_me", LikedByMeFilter);
         AddBooleanParameter(parameters, "downloaded_by_me", DownloadedByMeFilter);
@@ -831,12 +785,15 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         return "charts/search?" + string.Join('&', parameters);
     }
 
-    private static void AddRangeParameters(List<string> parameters, string name, string value, string emptyValue)
+    private static bool IsFilterEnabled(string? value, string defaultValue)
+        => !string.IsNullOrWhiteSpace(value) && !string.Equals(value, defaultValue, StringComparison.Ordinal);
+
+    private static void AddRangeParameters(List<string> parameters, string name, string? value, string emptyValue)
     {
-        if (value == emptyValue)
+        if (!IsFilterEnabled(value, emptyValue))
             return;
 
-        var range = value.Split('-', 2);
+        var range = value!.Split('-', 2);
         if (range.Length != 2)
             return;
 
@@ -844,9 +801,9 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         AddParameter(parameters, $"{name}_max", range[1]);
     }
 
-    private static void AddBooleanParameter(List<string> parameters, string name, string value)
+    private static void AddBooleanParameter(List<string> parameters, string name, string? value)
     {
-        if (value != "any")
+        if (IsFilterEnabled(value, "any"))
             AddParameter(parameters, name, value);
     }
 
@@ -901,9 +858,11 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     {
         var allCharts = new List<EuterpeChart>();
         string? cursor = null;
+        var page = 0;
 
         do
         {
+            page++;
             var path = $"charts/search?size={SearchFetchSize}&sort={Uri.EscapeDataString(sort)}&q={Uri.EscapeDataString(query)}";
             if (!string.IsNullOrEmpty(cursor))
             {
@@ -912,7 +871,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             using var req = new HttpRequestMessage(HttpMethod.Get, path);
             using var response = await _httpClient.SendAsync(req, ct);
-            response.EnsureSuccessStatusCode();
+            await EuterpeHttpError.EnsureSuccessAsync(response, "获取 Euterpe 谱面", ct);
 
             var json = await response.Content.ReadAsStringAsync(ct);
             var result = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.EuterpeSearchResponse);
@@ -922,7 +881,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             allCharts.AddRange((result.Items ?? []).OfType<EuterpeChart>());
             cursor = result.NextCursor;
         }
-        while (!string.IsNullOrEmpty(cursor));
+        while (!string.IsNullOrEmpty(cursor) && page < SearchFetchPages);
 
         return allCharts;
     }
@@ -948,9 +907,11 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
             var charts = new List<EuterpeChart>();
             string? cursor = null;
+            var page = 0;
 
             do
             {
+                page++;
                 var path = $"users/{EuterpeOfficialUserUid}/charts?size={SearchFetchSize}";
                 if (!string.IsNullOrEmpty(cursor))
                 {
@@ -959,7 +920,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
                 using var req = new HttpRequestMessage(HttpMethod.Get, path);
                 using var response = await _httpClient.SendAsync(req, ct);
-                response.EnsureSuccessStatusCode();
+                await EuterpeHttpError.EnsureSuccessAsync(response, "加载 Euterpe 谱面索引", ct);
 
                 var json = await response.Content.ReadAsStringAsync(ct);
                 var result = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.EuterpeSearchResponse);
@@ -969,7 +930,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                 charts.AddRange((result.Items ?? []).OfType<EuterpeChart>());
                 cursor = result.NextCursor;
             }
-            while (!string.IsNullOrEmpty(cursor));
+            while (!string.IsNullOrEmpty(cursor) && page < SearchFetchPages);
 
             _officialUserChartsCache = charts;
             return _officialUserChartsCache;
@@ -991,7 +952,7 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             Charts.Add(item);
         }
 
-        var likedSet = new HashSet<long>(_configService.Config.EuterpeLikedCids);
+                var likedSet = new HashSet<long>(_configService.Config.EuterpeLikedCids ?? []);
         foreach (var c in Charts)
         {
             if (likedSet.Contains(c.Cid))
@@ -1003,7 +964,6 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         _cursors.Add(null);
 
         _ = LoadCoversAsync(CancellationToken.None);
-        _ = LoadTagsAsync(CancellationToken.None);
     }
 
     private static bool IsEuterpeChartMatch(EuterpeChart chart, string query, bool enableFuzzy)
@@ -1029,7 +989,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
     private static double GetMaxRating(EuterpeChart chart)
     {
-        return chart.Maps
+        return (chart.Maps ?? [])
+            .OfType<MapSlotInfo>()
             .Select(m => double.TryParse(m.Rating, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var rating) ? rating : 0)
             .DefaultIfEmpty(0)
             .Max();
@@ -1037,7 +998,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
 
     private static double GetMinRating(EuterpeChart chart)
     {
-        return chart.Maps
+        return (chart.Maps ?? [])
+            .OfType<MapSlotInfo>()
             .Select(m => double.TryParse(m.Rating, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var rating) ? rating : double.MaxValue)
             .DefaultIfEmpty(double.MaxValue)
             .Min();
@@ -1068,37 +1030,6 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         }
     }
 
-    // 异步拉取并缓冲本页所有谱面的标签
-    private async Task LoadTagsAsync(CancellationToken ct)
-    {
-        var snapshot = Charts.ToList();
-
-        foreach (var chart in snapshot)
-        {
-            if (ct.IsCancellationRequested) break;
-
-            try
-            {
-                using var req = new HttpRequestMessage(HttpMethod.Get, $"charts/{chart.Cid}/tags");
-                using var response = await _httpClient.SendAsync(req, ct);
-                if (response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync(ct);
-                    var tags = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.ListEuterpeTag);
-                    if (tags != null)
-                    {
-                        chart.Tags = tags;
-                        chart.HasTags = tags.Count > 0;
-                    }
-                }
-            }
-            catch
-            {
-                // 加载标签失败时忽略
-            }
-        }
-    }
-
     // 切换试听音频
     [RelayCommand]
     private async Task TogglePreviewAsync(EuterpeChart chart)
@@ -1125,22 +1056,12 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             PreviewStatusText = $"正在缓冲 {chart.Name} 试听音频";
             UpdateStatusMessage();
 
-            // 获取令牌
-            var token = await _authService.GetAccessTokenAsync();
-
-            // 构造音频文件直连地址
             var previewUrl = $"https://dl.euterpe-org.com/files/charts/{chart.Cid}/demo.ogg";
-            if (!string.IsNullOrEmpty(token))
-            {
-                previewUrl += $"?t={Uri.EscapeDataString(token)}";
-            }
 
             // 请求音频文件字节数据
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "MuseDashTOOL/1.5.5");
             using var req = new HttpRequestMessage(HttpMethod.Get, previewUrl);
-            using var response = await client.SendAsync(req, ct);
-            response.EnsureSuccessStatusCode();
+            using var response = await _downloadHttpClient.SendAsync(req, ct);
+            await EuterpeHttpError.EnsureSuccessAsync(response, "加载 Euterpe 试听", ct);
             var bytes = await response.Content.ReadAsByteArrayAsync(ct);
 
             if (ct.IsCancellationRequested) return;
@@ -1235,13 +1156,13 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
             var method = isLiked ? HttpMethod.Delete : HttpMethod.Post;
             using var req = new HttpRequestMessage(method, $"charts/{chart.Cid}/like");
             using var response = await _httpClient.SendAsync(req);
-            response.EnsureSuccessStatusCode();
+            await EuterpeHttpError.EnsureSuccessAsync(response, "更新 Euterpe 点赞状态");
 
             chart.IsLiked = !isLiked;
             chart.LikeCount += isLiked ? -1 : 1;
 
             // 同步本地缓存
-            var likedCids = _configService.Config.EuterpeLikedCids;
+            var likedCids = _configService.Config.EuterpeLikedCids ??= [];
             if (chart.IsLiked)
             {
                 if (!likedCids.Contains(chart.Cid))
@@ -1255,7 +1176,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            _notificationService.ShowFailure("点赞交互失败", ex.Message);
+            RuntimeLog.Write("EuterpeViewModel", $"Updating like state failed: {ex}");
+            _notificationService.ShowFailure("点赞交互失败", EuterpeHttpError.ToUserMessage(ex, "更新 Euterpe 点赞状态"));
         }
     }
 
@@ -1293,27 +1215,6 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var token = await _authService.GetAccessTokenAsync();
-
-            var buildZipPath = $"workspace/charts/{chart.Cid}/build-zip";
-            using var buildReq = new HttpRequestMessage(HttpMethod.Post, buildZipPath);
-            using var buildResponse = await _httpClient.SendAsync(buildReq);
-            buildResponse.EnsureSuccessStatusCode();
-
-            var json = await buildResponse.Content.ReadAsStringAsync();
-            var buildZipResult = JsonSerializer.Deserialize(json, EuterpeChartJsonContext.Default.BuildZipResponse);
-            if (buildZipResult == null || string.IsNullOrEmpty(buildZipResult.Path))
-            {
-                throw new Exception("未找到可用的谱面下载版本");
-            }
-
-            var zipDownloadUrl = buildZipResult.Path;
-            if (zipDownloadUrl.Contains("euterpe-org.com", StringComparison.OrdinalIgnoreCase) && !zipDownloadUrl.Contains("t="))
-            {
-                var connector = zipDownloadUrl.Contains('?') ? "&" : "?";
-                zipDownloadUrl += $"{connector}t={Uri.EscapeDataString(token)}";
-            }
-
             var mdmc = new MdmcChart
             {
                 Id = chart.Cid.ToString(),
@@ -1321,14 +1222,14 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
                 Artist = chart.Author,
                 Bpm = chart.Bpm.ToString(),
                 CustomCoverUrl = chart.CoverUrl,
-                CustomDownloadUrl = zipDownloadUrl,
+                CustomDownloadUrl = EuterpeChartDownloadService.CreateTaskUrl(chart.Cid),
                 SourceCategoryName = "Euterpe",
                 IsCommunitySource = true,
-                Sheets = chart.Maps.Select(m => new MdmcSheet
+                Sheets = (chart.Maps ?? []).OfType<MapSlotInfo>().Select(m => new MdmcSheet
                 {
-                    Difficulty = m.Rating,
+                    Difficulty = m.Rating ?? string.Empty,
                     RankedDifficulty = int.TryParse(m.Rating, out var rd) ? rd : 0,
-                    Charter = string.Join(", ", m.Charters)
+                    Charter = string.Join(", ", m.Charters ?? [])
                 }).ToList()
             };
 
@@ -1340,7 +1241,8 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            _notificationService.ShowFailure("投递下载失败", ex.Message);
+            RuntimeLog.Write("EuterpeDownload", $"Failed to enqueue chart {chart.Cid}: {ex}");
+            _notificationService.ShowFailure("投递下载失败", EuterpeHttpError.ToUserMessage(ex, "投递下载"));
         }
     }
 
@@ -1480,11 +1382,17 @@ public partial class EuterpeViewModel : ObservableObject, IDisposable
         _listCts?.Dispose();
         _listCts = null;
 
+        _filterReloadCts?.Cancel();
+        _filterReloadCts?.Dispose();
+        _filterReloadCts = null;
+
         _loadCts?.Cancel();
         _loadCts?.Dispose();
         _loadCts = null;
 
         StopPlayback();
+        _downloadHttpClient.Dispose();
+        _httpClient.Dispose();
         Charts.Clear();
     }
 }

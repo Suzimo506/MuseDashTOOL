@@ -47,8 +47,8 @@ public interface IAuthService
     // 获取并自动刷新可用令牌
     Task<string> GetAccessTokenAsync();
 
-    // 强制请求刷新会话令牌
-    Task<string> RenewAccessTokenAsync();
+    // 刷新调用方观察到的失效令牌；并发请求只刷新一次
+    Task<string> RenewAccessTokenAsync(string staleToken);
 
     // 启动时自动恢复本地有效会话
     Task<bool> RestoreSessionAsync();

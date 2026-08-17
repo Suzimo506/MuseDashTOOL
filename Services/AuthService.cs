@@ -308,11 +308,16 @@ public sealed class AuthService : IAuthService
         }
     }
 
-    public async Task<string> RenewAccessTokenAsync()
+    public async Task<string> RenewAccessTokenAsync(string staleToken)
     {
         await _lock.AcquireAsync();
         try
         {
+            if (!string.Equals(_authState.AccessToken, staleToken, StringComparison.Ordinal))
+            {
+                return _authState.AccessToken ?? string.Empty;
+            }
+
             return await RefreshInternalAsync();
         }
         finally
@@ -342,7 +347,7 @@ public sealed class AuthService : IAuthService
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                token = await RenewAccessTokenAsync();
+                token = await RenewAccessTokenAsync(token);
                 using var retryRequest = new HttpRequestMessage(HttpMethod.Get, "me");
                 retryRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 response = await _httpClient.SendAsync(retryRequest);

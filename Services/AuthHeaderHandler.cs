@@ -20,6 +20,8 @@ public sealed class AuthHeaderHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        EuterpeRateLimitGate.ThrowIfBlocked();
+
         // 自动注入 X-Request-Id 请求头
         if (!request.Headers.Contains("X-Request-Id"))
         {
@@ -50,7 +52,8 @@ public sealed class AuthHeaderHandler : DelegatingHandler
         response.Dispose();
 
         // 401 提示凭证可能过期，尝试静默刷新并重试一次
-        token = await authService.RenewAccessTokenAsync().ConfigureAwait(false);
+        RuntimeLog.Write("EuterpeAuth", $"API request returned 401: {request.Method} {request.RequestUri}");
+        token = await authService.RenewAccessTokenAsync(token).ConfigureAwait(false);
         if (!string.IsNullOrEmpty(token))
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

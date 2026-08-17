@@ -33,8 +33,8 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     private readonly INotificationService _notificationService;
     private readonly IDownloadManagerService _downloadManagerService;
     private readonly IChartIndexService _chartIndexService;
-    private readonly IAuthService _authService;
     private readonly AuthState _authState;
+    private readonly HttpClient _euterpeDownloadHttp;
 
     private readonly List<GlobalChartSearchResult> _allResults = new();
     private readonly List<GlobalChartSearchResult> _filteredResults = new();
@@ -119,7 +119,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         INotificationService notificationService,
         IDownloadManagerService downloadManagerService,
         IChartIndexService chartIndexService,
-        IAuthService authService,
+        EuterpeTokenQueryHandler tokenQueryHandler,
         AuthState authState)
     {
         _searchService = searchService;
@@ -127,8 +127,8 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         _notificationService = notificationService;
         _downloadManagerService = downloadManagerService;
         _chartIndexService = chartIndexService;
-        _authService = authService;
         _authState = authState;
+        _euterpeDownloadHttp = new HttpClient(tokenQueryHandler);
     }
 
     partial void OnCurrentPageChanged(int value)
@@ -430,15 +430,6 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
 
         try
         {
-            var token = await _authService.GetAccessTokenAsync();
-            var buildZip = await _searchService.BuildEuterpeZipAsync(result.EuterpeChart.Cid);
-            var zipDownloadUrl = buildZip.Path;
-            if (zipDownloadUrl.Contains("euterpe-org.com", StringComparison.OrdinalIgnoreCase) && !zipDownloadUrl.Contains("t="))
-            {
-                var connector = zipDownloadUrl.Contains('?') ? "&" : "?";
-                zipDownloadUrl += $"{connector}t={Uri.EscapeDataString(token)}";
-            }
-
             var chart = new MdmcChart
             {
                 Id = result.EuterpeChart.Cid.ToString(),
@@ -447,21 +438,22 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
                 Bpm = result.EuterpeChart.Bpm.ToString(),
                 Charter = result.EuterpeChart.CharterInfo,
                 CustomCoverUrl = result.EuterpeChart.CoverUrl,
-                CustomDownloadUrl = zipDownloadUrl,
+                CustomDownloadUrl = EuterpeChartDownloadService.CreateTaskUrl(result.EuterpeChart.Cid),
                 SourceCategoryName = "Euterpe",
                 IsCommunitySource = true,
-                Sheets = result.EuterpeChart.Maps.Select(m => new MdmcSheet
+                Sheets = (result.EuterpeChart.Maps ?? []).OfType<MapSlotInfo>().Select(m => new MdmcSheet
                 {
-                    Difficulty = m.Rating,
+                    Difficulty = m.Rating ?? string.Empty,
                     RankedDifficulty = int.TryParse(m.Rating, out var rd) ? rd : 0,
-                    Charter = string.Join(", ", m.Charters)
+                    Charter = string.Join(", ", m.Charters ?? [])
                 }).ToList()
             };
             return chart;
         }
         catch (Exception ex)
         {
-            _notificationService.ShowFailure("Euterpe 下载失败", ex.Message);
+            RuntimeLog.Write("GlobalSearchVM", $"Failed to prepare Euterpe chart {result.EuterpeChart.Cid}: {ex}");
+            _notificationService.ShowFailure("Euterpe 下载失败", EuterpeHttpError.ToUserMessage(ex, "准备 Euterpe 下载"));
             return null;
         }
     }
@@ -836,10 +828,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             }
             else if (result.EuterpeChart != null)
             {
-                var token = await _authService.GetAccessTokenAsync();
                 url = $"https://dl.euterpe-org.com/files/charts/{result.EuterpeChart.Cid}/demo.ogg";
-                if (!string.IsNullOrEmpty(token))
-                    url += $"?t={Uri.EscapeDataString(token)}";
             }
             else
             {
@@ -849,8 +838,12 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             PreviewStatusText = $"正在缓冲 {result.Title} 试听文件";
             UpdateStatusMessage();
 
-            using var response = await PreviewHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-            response.EnsureSuccessStatusCode();
+            var client = result.EuterpeChart != null ? _euterpeDownloadHttp : PreviewHttp;
+            using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            if (result.EuterpeChart != null)
+                await EuterpeHttpError.EnsureSuccessAsync(response, "加载 Euterpe 试听", ct);
+            else
+                response.EnsureSuccessStatusCode();
             var bytes = await response.Content.ReadAsByteArrayAsync(ct);
             if (ct.IsCancellationRequested)
                 return;
@@ -989,6 +982,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     {
         _searchCts?.Cancel();
         StopPlayback();
+        _euterpeDownloadHttp.Dispose();
         _allResults.Clear();
         _filteredResults.Clear();
         Results.Clear();

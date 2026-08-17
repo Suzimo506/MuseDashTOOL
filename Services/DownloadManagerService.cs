@@ -22,6 +22,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     private readonly INotificationService _notificationService;
     private readonly IChartIndexService _chartIndexService;
     private readonly IChartService _chartService;
+    private readonly IEuterpeChartDownloadService _euterpeChartDownloadService;
     // 默认客户端用于界面小文件（如封面），超时较短以保证响应速度
     private readonly HttpClient _http = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(4));
     // 下载专用客户端，超时放宽到 15 秒以应对慢速网络
@@ -39,12 +40,14 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         IConfigService configService,
         INotificationService notificationService,
         IChartIndexService chartIndexService,
-        IChartService chartService)
+        IChartService chartService,
+        IEuterpeChartDownloadService euterpeChartDownloadService)
     {
         _configService = configService;
         _notificationService = notificationService;
         _chartIndexService = chartIndexService;
         _chartService = chartService;
+        _euterpeChartDownloadService = euterpeChartDownloadService;
     }
 
     public void EnqueueDownload(MdmcChart chart)
@@ -383,6 +386,24 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
     private async Task DownloadToFileAsync(DownloadTaskItem item, CancellationToken ct)
     {
+        if (EuterpeChartDownloadService.TryGetCid(item.Chart.DownloadUrl, out var euterpeCid))
+        {
+            var progress = new Progress<EuterpeChartDownloadProgress>(value =>
+            {
+                item.DownloadedBytes = value.DownloadedBytes;
+                item.TotalBytes = value.TotalBytes;
+                item.Progress = value.TotalFiles == 0 ? 0 : (double)value.CompletedFiles / value.TotalFiles * 100;
+                item.DownloadInfo = $"{value.CompletedFiles} / {value.TotalFiles} 个文件";
+            });
+            await _euterpeChartDownloadService.DownloadToMdmAsync(
+                euterpeCid,
+                item.PartialDownloadPath,
+                progress,
+                ct);
+            item.Progress = 100;
+            return;
+        }
+
         if (item.DownloadedBytes > 0)
         {
             var partialFile = new FileInfo(item.PartialDownloadPath);

@@ -32,6 +32,14 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private object? _currentPage;
 
+    // Native WebView2 windows cannot participate in Avalonia's layout transform.
+    public double ContentScale => CurrentPage is EuterpeWebViewModel ? 1.0 : FontScale;
+
+    partial void OnCurrentPageChanged(object? value)
+    {
+        OnPropertyChanged(nameof(ContentScale));
+    }
+
     private CancellationTokenSource? _currentPageCts;
 
     [ObservableProperty]
@@ -118,6 +126,11 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private double _fontScale = 1.0;
+
+    partial void OnFontScaleChanged(double value)
+    {
+        OnPropertyChanged(nameof(ContentScale));
+    }
 
     [ObservableProperty]
     private double _navButtonLetterSpacing = 0.0;
@@ -336,8 +349,8 @@ public partial class MainWindowViewModel : ObservableObject
             await chvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is ChartUploadViewModel cuvm)
             await cuvm.InitializeAsync(_currentPageCts.Token);
-        else if (CurrentPage is EuterpeViewModel etvm)
-            await etvm.InitializeAsync(_currentPageCts.Token);
+        else if (CurrentPage is EuterpeWebViewModel euterpeWebVm)
+            await euterpeWebVm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is GlobalChartSearchViewModel gsvm)
             await gsvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is OnlineLobbyViewModel olvm)
@@ -1262,41 +1275,10 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public async Task NavigateToEuterpeDownloadAsync()
     {
-        // 检查游戏内是否登录以防没有UID
-        if (!MuseDashAccountService.HasLoginUid())
-        {
-            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
-                desktop.MainWindow is MdModManager.Views.MainWindow mainWindow)
-            {
-                await mainWindow.ShowMessageBoxAsync("请先在喵斯快跑内登陆账号，再来下载Euterpe谱面吧~");
-            }
-            return;
-        }
-
-        var state = Ioc.Default.GetRequiredService<AuthState>();
-        if (state.CurrentUser == null)
-        {
-            if (_authService == null) return;
-            _notificationService?.ShowInfo("正在拉起浏览器登录 Euterpe...");
-            try
-            {
-                await _authService.LoginAsync();
-            }
-            catch (Exception ex)
-            {
-                RuntimeLog.Write("MainWindowViewModel", "登录授权失败 " + ex.Message);
-                _notificationService?.ShowFailure("登录失败", $"无法完成 Euterpe 登录 {ex.Message}");
-                return;
-            }
-
-            if (state.CurrentUser == null) return;
-            _notificationService?.ShowSuccess($"Euterpe 登录成功\n欢迎回来，{state.CurrentUser.Nickname}");
-        }
-
         CleanupCurrentPage();
         IsChartDownloadMenuExpanded = true;
 
-        var vm = Ioc.Default.GetRequiredService<EuterpeViewModel>();
+        var vm = Ioc.Default.GetRequiredService<EuterpeWebViewModel>();
         CurrentPage = vm;
         await vm.InitializeAsync(_currentPageCts!.Token);
     }

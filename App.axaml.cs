@@ -149,6 +149,7 @@ public partial class App : Application
         services.AddTransient<AlbumDetailViewModel>();
         services.AddTransient<CommunityCategoryDetailViewModel>();
         services.AddTransient<EuterpeViewModel>();
+        services.AddTransient<EuterpeWebViewModel>();
         services.AddTransient<OnlineLobbyViewModel>();
 
         // Services
@@ -168,6 +169,7 @@ public partial class App : Application
         services.AddSingleton<IChartUploadConfigService, ChartUploadConfigService>();
         services.AddSingleton<IChartUploadService, ChartUploadService>();
         services.AddSingleton<IDownloadManagerService, DownloadManagerService>();
+        services.AddSingleton<IEuterpeChartDownloadService, EuterpeChartDownloadService>();
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<ModStagingService>();
         services.AddSingleton<IUpdateService, UpdateService>();
@@ -182,6 +184,7 @@ public partial class App : Application
         services.AddSingleton<AuthState>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddTransient<AuthHeaderHandler>();
+        services.AddTransient<EuterpeTokenQueryHandler>();
         services.AddSingleton<DeepLinkService>();
         services.AddSingleton<ITelemetryService, TelemetryService>();
 

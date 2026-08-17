@@ -162,7 +162,3 @@ public sealed record MdenGlobalSearchRequest(
     int Difficulty,
     string? Artist,
     string? Charter);
-
-public sealed record EuterpeBuildZipResponse(
-    [property: JsonPropertyName("path")] string Path,
-    [property: JsonPropertyName("filename")] string Filename);

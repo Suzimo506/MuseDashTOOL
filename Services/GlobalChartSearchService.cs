@@ -15,7 +15,6 @@ namespace MdModManager.Services;
 public interface IGlobalChartSearchService
 {
     Task<IReadOnlyList<GlobalChartSearchServiceResult>> SearchAsync(string query, CancellationToken ct = default);
-    Task<EuterpeBuildZipResponse> BuildEuterpeZipAsync(long cid, CancellationToken ct = default);
 }
 
 public sealed class GlobalChartSearchService : IGlobalChartSearchService
@@ -69,20 +68,6 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
             await euterpeTask,
             await qqTask
         };
-    }
-
-    public async Task<EuterpeBuildZipResponse> BuildEuterpeZipAsync(long cid, CancellationToken ct = default)
-    {
-        using var buildReq = new HttpRequestMessage(HttpMethod.Post, $"workspace/charts/{cid}/build-zip");
-        using var response = await _euterpeClient.SendAsync(buildReq, ct);
-        response.EnsureSuccessStatusCode();
-
-        var json = await response.Content.ReadAsStringAsync(ct);
-        var result = JsonSerializer.Deserialize(json, GlobalChartSearchJsonContext.Default.EuterpeBuildZipResponse);
-        if (result == null || string.IsNullOrWhiteSpace(result.Path))
-            throw new InvalidOperationException("未找到可用的谱面下载版本");
-
-        return result;
     }
 
     private async Task<GlobalChartSearchServiceResult> SearchMdmcAsync(string query, CancellationToken ct)
@@ -265,14 +250,14 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
 
             using var request = new HttpRequestMessage(HttpMethod.Get, path);
             using var response = await _euterpeClient.SendAsync(request, ct);
-            response.EnsureSuccessStatusCode();
+            await EuterpeHttpError.EnsureSuccessAsync(response, "搜索 Euterpe 谱面", ct);
 
             var json = await response.Content.ReadAsStringAsync(ct);
             var result = JsonSerializer.Deserialize(json, GlobalChartSearchJsonContext.Default.EuterpeSearchResponse);
             if (result == null)
                 break;
 
-            allCharts.AddRange(result.Items);
+            allCharts.AddRange((result.Items ?? []).OfType<EuterpeChart>());
             cursor = result.NextCursor;
         }
         while (!string.IsNullOrEmpty(cursor) && page < EuterpeSearchPages);
@@ -317,9 +302,11 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
 
             var charts = new List<EuterpeChart>();
             string? cursor = null;
+            var page = 0;
 
             do
             {
+                page++;
                 var path = $"users/{EuterpeOfficialUserUid}/charts?size={EuterpeFetchSize}";
                 if (!string.IsNullOrEmpty(cursor))
                 {
@@ -328,17 +315,17 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
 
                 using var request = new HttpRequestMessage(HttpMethod.Get, path);
                 using var response = await _euterpeClient.SendAsync(request, ct);
-                response.EnsureSuccessStatusCode();
+                await EuterpeHttpError.EnsureSuccessAsync(response, "加载 Euterpe 谱面索引", ct);
 
                 var json = await response.Content.ReadAsStringAsync(ct);
                 var result = JsonSerializer.Deserialize(json, GlobalChartSearchJsonContext.Default.EuterpeSearchResponse);
                 if (result == null)
                     break;
 
-                charts.AddRange(result.Items);
+                charts.AddRange((result.Items ?? []).OfType<EuterpeChart>());
                 cursor = result.NextCursor;
             }
-            while (!string.IsNullOrEmpty(cursor));
+            while (!string.IsNullOrEmpty(cursor) && page < EuterpeSearchPages);
 
             OfficialUserChartsCache = charts;
             return OfficialUserChartsCache;
@@ -491,5 +478,4 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
 [JsonSerializable(typeof(List<EuterpeChart>))]
 [JsonSerializable(typeof(MapSlotInfo))]
 [JsonSerializable(typeof(List<MapSlotInfo>))]
-[JsonSerializable(typeof(EuterpeBuildZipResponse))]
 internal partial class GlobalChartSearchJsonContext : JsonSerializerContext;
