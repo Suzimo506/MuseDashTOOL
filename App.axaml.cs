@@ -149,7 +149,6 @@ public partial class App : Application
         services.AddTransient<AlbumDetailViewModel>();
         services.AddTransient<CommunityCategoryDetailViewModel>();
         services.AddTransient<EuterpeViewModel>();
-        services.AddTransient<EuterpeWebViewModel>();
         services.AddTransient<OnlineLobbyViewModel>();
 
         // Services

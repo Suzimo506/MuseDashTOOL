@@ -535,7 +535,7 @@
                     Background="{Binding ContentBackground}">
                 <LayoutTransformControl Margin="20,55,35,35">
                     <LayoutTransformControl.LayoutTransform>
-                        <ScaleTransform ScaleX="{Binding ContentScale}" ScaleY="{Binding ContentScale}"/>
+                        <ScaleTransform ScaleX="{Binding FontScale}" ScaleY="{Binding FontScale}"/>
                     </LayoutTransformControl.LayoutTransform>
                     <ContentControl Content="{Binding CurrentPage}"/>
                 </LayoutTransformControl>
