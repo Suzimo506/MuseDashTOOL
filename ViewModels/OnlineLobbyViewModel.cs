@@ -30,7 +30,6 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
     private readonly IEnsembleLobbyService _lobbyService;
     private readonly INotificationService _notificationService;
-    private readonly INavigationService _navigationService;
     private CancellationTokenSource? _cts;
     private DispatcherTimer? _cooldownTimer;
     private DispatcherTimer? _viewerChatCooldownTimer;
@@ -68,12 +67,10 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
 
     public OnlineLobbyViewModel(
         IEnsembleLobbyService lobbyService,
-        INotificationService notificationService,
-        INavigationService navigationService)
+        INotificationService notificationService)
     {
         _lobbyService = lobbyService;
         _notificationService = notificationService;
-        _navigationService = navigationService;
         RefreshMdtIdentity();
 
         _lobbyService.SnapshotReceived += OnSnapshotReceived;
@@ -166,12 +163,6 @@ public partial class OnlineLobbyViewModel : ViewModelBase, IDisposable
         SelectedRoom = room;
     }
 
-    [RelayCommand]
-    private void OpenOnlineModDownload()
-    {
-        _navigationService.RequestNavigateToModDownload("Ensemble");
-        _notificationService.ShowInfo(L("OnlineLobby_ModDownloadOpened"));
-    }
 
     [RelayCommand]
     private async Task SendPhraseAsync(string phrase)

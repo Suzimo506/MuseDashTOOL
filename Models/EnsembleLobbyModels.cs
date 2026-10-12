@@ -319,14 +319,14 @@ public partial class EnsembleLobbyPlayer : ObservableObject
         OnPropertyChanged(nameof(JudgeText));
     }
 
-    private static string ResolveGirlName(int index)
+    internal static string ResolveGirlName(int index)
     {
         return index >= 0 && index < GirlNames.Length
             ? GirlNames[index]
             : string.Format(I18nService.Instance["OnlineLobby_UnknownGirl"], index);
     }
 
-    private static string ResolveElfinName(int index)
+    internal static string ResolveElfinName(int index)
     {
         if (index == -1)
             return I18nService.Instance["OnlineLobby_NoElfin"];

@@ -8,7 +8,6 @@ namespace MdModManager.Models;
 
 public partial class ChartInfo : ObservableObject
 {
-    public const string CandidateCategoryDisplayName = "候选区";
     /// <summary>mdm 文件的完整路径</summary>
     public string FilePath { get; set; } = string.Empty;
 
@@ -72,11 +71,6 @@ public partial class ChartInfo : ObservableObject
     [ObservableProperty]
     private bool _isSelected;
 
-    /// <summary>是否来自 CustomAlbums_Library 候选区</summary>
-    public bool IsLibraryCandidate { get; set; }
-
-    /// <summary>候选区内的子分类名称</summary>
-    public string CandidateSubCategory { get; set; } = string.Empty;
 
     // 衍生曲师文本
     public string DisplayArtist
@@ -130,17 +124,12 @@ public partial class ChartInfo : ObservableObject
     {
         get
         {
-            if (IsLibraryCandidate) return CandidateCategoryDisplayName;
             if (string.IsNullOrEmpty(FilePath)) return "未分类";
             var parent = Path.GetFileName(Path.GetDirectoryName(FilePath));
             return parent == "Custom_Albums" ? "未分类" : (parent ?? "未分类");
         }
     }
 
-    [JsonIgnore]
-    public string CandidateDisplayCategory => IsLibraryCandidate && !string.IsNullOrWhiteSpace(CandidateSubCategory)
-        ? $"{CandidateCategoryDisplayName} / {CandidateSubCategory}"
-        : CategoryName;
 
     /// <summary>难度标签文字（逗号连接）</summary>
     public string DifficultyText => Difficulties.Count > 0

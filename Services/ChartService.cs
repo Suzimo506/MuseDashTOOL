@@ -41,9 +41,7 @@ public class ChartService : IChartService
     {
         _brokenCharts.Clear();
         var albumsDir = Path.Combine(gamePath, "Custom_Albums");
-        var libraryDir = Path.Combine(gamePath, "CustomAlbums_Library");
         var allFiles = new List<string>();
-        var candidateFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         if (Directory.Exists(albumsDir))
         {
@@ -60,14 +58,6 @@ public class ChartService : IChartService
             }
         }
 
-        if (Directory.Exists(libraryDir))
-        {
-            foreach (var file in Directory.GetFiles(libraryDir, "*.mdm", SearchOption.AllDirectories))
-            {
-                allFiles.Add(file);
-                candidateFiles.Add(file);
-            }
-        }
 
         if (allFiles.Count == 0)
             yield break;
@@ -173,8 +163,6 @@ public class ChartService : IChartService
                     updatedEntries.Add(entry);
                 }
 
-                info.IsLibraryCandidate = candidateFiles.Contains(file);
-                info.CandidateSubCategory = info.IsLibraryCandidate ? GetLibrarySubCategory(libraryDir, file) : string.Empty;
 
                 // Mark as new if it wasn't in the startup snapshot
                 if (!takeSnapshot &&
@@ -213,20 +201,6 @@ public class ChartService : IChartService
     }
 
 
-    private static string GetLibrarySubCategory(string libraryDir, string filePath)
-    {
-        try
-        {
-            var parent = Path.GetDirectoryName(filePath);
-            if (string.IsNullOrEmpty(parent)) return string.Empty;
-            var relative = Path.GetRelativePath(libraryDir, parent);
-            return relative == "." ? string.Empty : relative.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
-        }
-        catch
-        {
-            return string.Empty;
-        }
-    }
     // 解析单个自制谱文件并返回其元数据
     public ChartInfo? LoadSingleChart(string filePath)
     {

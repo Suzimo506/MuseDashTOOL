@@ -347,6 +347,20 @@ public partial class MainWindowViewModel : ObservableObject
         if (hasValidGamePath)
         {
             await CheckBetterMdConflictsAsync();
+            try
+            {
+                var migration = await Task.Run(() => LegacyLibraryMigrationService.Migrate(_configService!.Config.GamePath));
+                if (migration.Errors.Count > 0)
+                {
+                    RuntimeLog.Write("LibraryMigration", string.Join("\n", migration.Errors));
+                    _notificationService?.ShowFailure("旧谱面迁移未完全完成", "迁移失败的原文件已保留，请检查文件权限。");
+                }
+            }
+            catch (Exception ex)
+            {
+                RuntimeLog.Write("LibraryMigration", ex.ToString());
+                _notificationService?.ShowFailure("旧谱面迁移失败", "原文件已保留：" + ex.Message);
+            }
             await ConvertLegacyCustomChartsAsync();
         }
 
@@ -373,6 +387,8 @@ public partial class MainWindowViewModel : ObservableObject
             await cmvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is ChartManagerViewModel chvm)
             await chvm.InitializeAsync(_currentPageCts.Token);
+        else if (CurrentPage is ReplayManagerViewModel rpvm)
+            await rpvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is ChartUploadViewModel cuvm)
             await cuvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is EuterpeViewModel etvm)
@@ -445,6 +461,13 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (!CustomChartMigrationService.HasLegacyChartDirectories(gamePath))
             return;
+
+        var owner = (Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (owner == null) return;
+        var confirmed = await MdModManager.Views.MessageBox.ShowDialogAsync(owner,
+            I18nService.Instance["ChartMigration_Ask"], true,
+            I18nService.Instance["Common_Yes"], I18nService.Instance["Common_No"]);
+        if (!confirmed) return;
 
         var result = await CustomChartMigrationService.ConvertLegacyChartsAsync(gamePath);
         RuntimeLog.Write(
@@ -683,6 +706,12 @@ public partial class MainWindowViewModel : ObservableObject
             Avalonia.Application.Current.Resources["NavButtonMainBrush"] = NavButtonMainBrush;
             Avalonia.Application.Current.Resources["NavButtonSubBrush"]  = NavButtonSubBrush;
             Avalonia.Application.Current.Resources["CardBgBrush"]        = cardBg;
+            // Card text follows the card material, including pale cards over a custom image.
+            // Explicit user text colors still take precedence.
+            Avalonia.Application.Current.Resources["CardTextMainBrush"] = rightMainBrush ??
+                (isLightTheme ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#4C1D36")) : ThemeTextMainBrush);
+            Avalonia.Application.Current.Resources["CardTextSubBrush"] = rightSubBrush ??
+                (isLightTheme ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8C5874")) : ThemeTextSubBrush);
             Avalonia.Application.Current.Resources["CardHoverBgBrush"]   = cardHoverBg;
             Avalonia.Application.Current.Resources["ModCardBgBrush"]     = modCardBg;
             Avalonia.Application.Current.Resources["ControlBgBrush"]     = controlBg;
@@ -1227,6 +1256,8 @@ public partial class MainWindowViewModel : ObservableObject
         
         if (CurrentPage is ChartManagerViewModel chartVm)
             chartVm.Dispose();
+        else if (CurrentPage is ReplayManagerViewModel replayVm)
+            replayVm.Dispose();
         else if (CurrentPage is EuterpeViewModel etVm)
             etVm.Dispose();
         else if (CurrentPage is GlobalChartSearchViewModel globalSearchVm)
@@ -1283,6 +1314,17 @@ public partial class MainWindowViewModel : ObservableObject
         IsChartDownloadMenuExpanded = false; // 关闭谱面下载菜单
 
         var vm = Ioc.Default.GetRequiredService<ChartManagerViewModel>();
+        CurrentPage = vm;
+        await vm.InitializeAsync(_currentPageCts!.Token);
+    }
+
+    [RelayCommand]
+    private async Task NavigateToReplayManagerAsync()
+    {
+        if (IsNavigationBlocked()) return;
+        CleanupCurrentPage();
+        IsChartDownloadMenuExpanded = false;
+        var vm = Ioc.Default.GetRequiredService<ReplayManagerViewModel>();
         CurrentPage = vm;
         await vm.InitializeAsync(_currentPageCts!.Token);
     }
@@ -1545,7 +1587,7 @@ public partial class MainWindowViewModel : ObservableObject
     // ──────────────────────────────────────────────────────────
 
     /// <summary>当前程序版本号（与 UpdateService.CurrentVersion 保持一致）</summary>
-    private const string CurrentAppVersion = "1.5.5.1";
+    private const string CurrentAppVersion = "1.5.6";
 
     /// <summary>初始化所有红点提示状态</summary>
     private void InitializeBadges()

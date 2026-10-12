@@ -52,23 +52,7 @@
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <Button Command="{Binding OpenOnlineModDownloadCommand}"
-                        Height="36"
-                        Padding="12,0"
-                        Background="{DynamicResource ControlBgBrush}"
-                        BorderBrush="{DynamicResource ControlBorderBrush}"
-                        BorderThickness="1"
-                        ToolTip.Tip="{Binding [OnlineLobby_DownloadMod], Source={x:Static i18n:I18nService.Instance}}">
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <PathIcon Width="14"
-                                  Height="14"
-                                  Foreground="{DynamicResource ThemeTextMainBrush}"
-                                  Data="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7z"/>
-                        <TextBlock Text="{Binding [OnlineLobby_DownloadMod], Source={x:Static i18n:I18nService.Instance}}"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource ThemeTextMainBrush}"/>
-                    </StackPanel>
-                </Button>
+
                 <Border Height="36"
                         MinWidth="118"
                         Padding="12,0"

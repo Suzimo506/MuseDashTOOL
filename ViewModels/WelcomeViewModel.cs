@@ -196,8 +196,7 @@ public partial class WelcomeViewModel : ViewModelBase
             try
             {
                 var customAlbumsDir = Path.Combine(gamePath, "Custom_Albums");
-                var libraryDir = Path.Combine(gamePath, "CustomAlbums_Library");
-                TotalCharts = CountMdmFilesRecursively(customAlbumsDir) + CountMdmFilesRecursively(libraryDir);
+                TotalCharts = CountMdmFilesRecursively(customAlbumsDir);
             }
             catch
             {

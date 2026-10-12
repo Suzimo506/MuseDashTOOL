@@ -151,6 +151,8 @@ public partial class App : Application
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<ConfigManagerViewModel>();
         services.AddTransient<ChartManagerViewModel>();
+        services.AddTransient<ReplayManagerViewModel>();
+        services.AddSingleton<ReplayService>();
         services.AddTransient<ChartUploadViewModel>();
         services.AddSingleton<ChartDownloadViewModel>();
         services.AddTransient<GlobalChartSearchViewModel>();

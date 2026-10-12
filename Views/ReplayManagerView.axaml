@@ -1,0 +1,88 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MdModManager.ViewModels"
+             xmlns:models="using:MdModManager.Models"
+             xmlns:i18n="using:MdModManager.Services"
+             x:Class="MdModManager.Views.ReplayManagerView"
+             x:DataType="vm:ReplayManagerViewModel"
+             DragDrop.AllowDrop="True">
+    <!-- Extend the incumbent tool UI: compact metadata cards, bounded pages, import/delete only. -->
+    <UserControl.Styles>
+        <Style Selector="Button">
+            <Setter Property="Foreground" Value="{DynamicResource CardTextMainBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource ControlBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}"/>
+        </Style>
+    </UserControl.Styles>
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="12">
+        <TextBlock Text="{Binding [Replay_Title], Source={x:Static i18n:I18nService.Instance}}"
+                   FontSize="28" FontWeight="Bold" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+        <TextBlock Grid.Row="1" Text="{Binding [Replay_Help], Source={x:Static i18n:I18nService.Instance}}"
+                   FontSize="13" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="Wrap"/>
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+            <TextBox Text="{Binding SearchText, Mode=TwoWay}" Watermark="{Binding [Replay_Search], Source={x:Static i18n:I18nService.Instance}}"
+                     Foreground="{DynamicResource CardTextMainBrush}" Background="{DynamicResource ControlBgBrush}" BorderBrush="{DynamicResource ControlBorderBrush}"/>
+            <Button Grid.Column="1" Click="OnImportClick" IsEnabled="{Binding CanEdit}"
+                    Content="{Binding [Replay_Import], Source={x:Static i18n:I18nService.Instance}}"/>
+            <Button Grid.Column="2" Command="{Binding RefreshCommand}" IsEnabled="{Binding CanEdit}"
+                    Content="{Binding [OnlineLobby_Refresh], Source={x:Static i18n:I18nService.Instance}}"/>
+        </Grid>
+        <Grid Grid.Row="3">
+            <ScrollViewer Name="ReplayScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Replays}" Margin="0,0,8,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:ReplayInfo">
+                            <Border Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource FloatingPanelBorder}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,0,0,10">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="7" ColumnSpacing="20">
+                                    <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource CardTextMainBrush}" ToolTip.Tip="{Binding Title}"/>
+                                    <Button Grid.Column="1" Grid.RowSpan="2" Tag="{Binding}" Click="OnDeleteClick"
+                                            Content="{Binding [Replay_Delete], Source={x:Static i18n:I18nService.Instance}}"
+                                            VerticalAlignment="Top" ToolTip.Tip="{Binding FilePath}"/>
+                                    <TextBlock Grid.Row="1" Text="{Binding ChartDetails}" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource CardTextSubBrush}" FontSize="12"/>
+                                    <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="{Binding Player}" Foreground="{DynamicResource CardTextMainBrush}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Character}" FontSize="12" Foreground="{DynamicResource CardTextSubBrush}" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" IsVisible="{Binding IsValid}">
+                                            <TextBlock Text="{Binding Score}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource CardTextMainBrush}"/>
+                                            <TextBlock Text="{Binding Accuracy}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccentBrush}"/>
+                                            <Border Background="{DynamicResource ControlBgBrush}" CornerRadius="4" Padding="7,3">
+                                                <TextBlock Text="{Binding ResultBadge}" FontSize="12" Foreground="{DynamicResource CardTextMainBrush}"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding Judgements}" FontSize="12" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource CardTextSubBrush}" IsVisible="{Binding IsValid}"/>
+                                    <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding Error}" FontSize="12" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource CardTextSubBrush}" IsVisible="{Binding !IsValid}"/>
+                                    <Grid Grid.Row="4" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <TextBlock Text="{Binding Recorded}" FontSize="12" Foreground="{DynamicResource CardTextSubBrush}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding SizeText}" FontSize="12" Foreground="{DynamicResource CardTextSubBrush}"/>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <TextBlock Text="{Binding [Replay_Empty], Source={x:Static i18n:I18nService.Instance}}" IsVisible="{Binding IsEmpty}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource ThemeTextSubBrush}"/>
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Height="3" VerticalAlignment="Top"
+                         Foreground="{DynamicResource ThemeAccentBrush}"/>
+        </Grid>
+        <Grid Grid.Row="4" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <TextBlock Text="{Binding Status}" FontSize="12" Foreground="{DynamicResource ThemeTextSubBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                <Button Command="{Binding PreviousCommand}" IsEnabled="{Binding CanPrevious}" Content="‹"
+                        ToolTip.Tip="{Binding [Replay_Previous], Source={x:Static i18n:I18nService.Instance}}"/>
+                <TextBlock Text="{Binding PageText}" VerticalAlignment="Center" Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                <Button Command="{Binding NextCommand}" IsEnabled="{Binding CanNext}" Content="›"
+                        ToolTip.Tip="{Binding [Replay_Next], Source={x:Static i18n:I18nService.Instance}}"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

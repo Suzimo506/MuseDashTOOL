@@ -1,0 +1,11 @@
+# 回放管理维护说明
+
+入口位于「谱面管理」下方，导航图标使用用户提供的 SVG 路径。页面展示本地回放元数据，支持搜索、刷新、文件选择或拖放导入，以及确认后删除；不提供播放功能。文件目录为游戏目录下的 `UserData/BetterMD/Replays/Local`。
+
+页面继承现有 Avalonia 主题：卡片使用动态资源 `CardBgBrush`，控件使用 `ControlBgBrush`，卡片主／次文字使用 `CardTextMainBrush`／`CardTextSubBrush`。背景图、明暗主题和自定义右面板文字颜色由现有主题更新逻辑统一处理。有背景图时，透明度写入背景画刷的颜色 Alpha，而非整张卡片的 `Opacity`，避免文字与按钮一起变淡。卡片正文为元数据列表，不构成新的全局设计体系。
+
+列表在后台流式提取卡片元数据，不将大型输入／状态数组反序列化到内存，也不将列表读取当作完整回放校验。缓存按文件路径、大小和修改时间复用，删除后清理对应条目。界面每页最多展示 16 张卡片；搜索回到第一页，翻页及重新生成列表后滚动位置回到顶部。读取失败的文件仍显示错误信息并保留删除入口。
+
+导入仅接受 `.mdrp`，兼容未压缩 JSON 与 `MDRPGZ1` 压缩封装，要求 `formatVersion = 9`、`inputEncoding = native-steps-v6`。先复制到目标目录的临时文件，再校验元数据、完整 JSON 语法及封装的长度与 SHA-256，成功后移动入库；这不验证游戏输入的可播放性。名称冲突时，相同字节跳过，不同内容添加序号；自制谱回放名称补充 `C-` 标记。失败或取消会清理临时文件。删除限制在本地回放目录的普通 `.mdrp` 文件，拒绝目录外文件及重解析点。
+
+验证入口为 `artifacts/replay-check/Program.cs`，使用 Avalonia.Headless 与 Skia 加载真实 AXAML，检查导入拒绝条件、重复／冲突文件、删除边界、缓存、分页、搜索和滚动复位。截图位于 `artifacts/replay-check/screenshots/`：`replay-desktop.png`（1200×800）、`replay-compact.png`（1000×680）、`replay-background.png`（背景图与自定义文字颜色）、`replay-background-light.png`（浅色主题与背景图）。Headless 验证未覆盖 Windows 原生文件选择器、操作系统拖放交互或真实桌面窗口合成，也未验证游戏播放。

@@ -10,11 +10,7 @@ public static class ChartDownloadPathHelper
         if (string.IsNullOrWhiteSpace(config.GamePath))
             return string.Empty;
 
-        var folderName = config.DownloadChartsToLibraryByDefault
-            ? "CustomAlbums_Library"
-            : "Custom_Albums";
-
-        var directory = Path.Combine(config.GamePath, folderName);
+        var directory = Path.Combine(config.GamePath, "Custom_Albums");
         Directory.CreateDirectory(directory);
         return directory;
     }
