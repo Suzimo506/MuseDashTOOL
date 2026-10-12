@@ -11,8 +11,6 @@
   "Replay_Difficulty": "难度",
   "Replay_Level": "定数",
   "Replay_Invalid": "文件异常",
-  "Replay_NotCleared": "未通关",
-  "Replay_Cleared": "已通关",
   "Replay_NoGame": "请先选择有效的游戏目录。",
   "Replay_LoadFailed": "读取回放失败：",
   "Replay_Loading": "正在读取回放…",

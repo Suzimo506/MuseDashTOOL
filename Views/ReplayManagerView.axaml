@@ -48,11 +48,14 @@
                                             <TextBlock Text="{Binding Character}" FontSize="12" Foreground="{DynamicResource CardTextSubBrush}" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" IsVisible="{Binding IsValid}">
-                                            <TextBlock Text="{Binding Score}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource CardTextMainBrush}"/>
-                                            <TextBlock Text="{Binding Accuracy}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccentBrush}"/>
-                                            <Border Background="{DynamicResource ControlBgBrush}" CornerRadius="4" Padding="7,3">
-                                                <TextBlock Text="{Binding ResultBadge}" FontSize="12" Foreground="{DynamicResource CardTextMainBrush}"/>
-                                            </Border>
+                                            <TextBlock Text="{Binding Score}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource CardTextMainBrush}" VerticalAlignment="Top"/>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Accuracy}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccentBrush}"/>
+                                                <Border Background="{DynamicResource ControlBgBrush}" CornerRadius="4" Padding="7,3"
+                                                        HorizontalAlignment="Right" IsVisible="{Binding HasResultBadge}">
+                                                    <TextBlock Text="{Binding ResultBadge}" FontSize="12" Foreground="{DynamicResource CardTextMainBrush}"/>
+                                                </Border>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Grid>
                                     <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding Judgements}" FontSize="12" TextWrapping="Wrap"

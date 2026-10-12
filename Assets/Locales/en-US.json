@@ -11,8 +11,6 @@
   "Replay_Difficulty": "Difficulty",
   "Replay_Level": "Level",
   "Replay_Invalid": "Invalid file",
-  "Replay_NotCleared": "Not cleared",
-  "Replay_Cleared": "Cleared",
   "Replay_NoGame": "Select a valid game directory first.",
   "Replay_LoadFailed": "Failed to load replays: ",
   "Replay_Loading": "Loading replays…",

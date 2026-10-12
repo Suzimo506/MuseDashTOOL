@@ -39,9 +39,10 @@ public sealed class ReplayInfo
     }.Where(s => !string.IsNullOrWhiteSpace(s)));
     public string Character => Card == null ? "" : $"{EnsembleLobbyPlayer.ResolveGirlName(Card.CharacterIndex)} / {EnsembleLobbyPlayer.ResolveElfinName(Card.ElfinIndex)}";
     public string Judgements => Card == null ? "" : $"Perfect {Card.Result.Perfect} · Great {Card.Result.Great} · Miss {Card.Result.Miss} · Max Combo {Card.Result.MaxCombo}";
-    public string ResultBadge => Card == null ? L("Replay_Invalid") : !Card.Cleared ? L("Replay_NotCleared") :
+    public string ResultBadge => Card == null || !Card.Cleared ? "" :
         Card.Result.Miss == 0 && Card.Result.Great == 0 && Card.Result.Early == 0 && Card.Result.Late == 0 ? "AP" :
-        Card.Result.Miss == 0 ? "FC" : L("Replay_Cleared");
+        Card.Result.Miss == 0 ? "FC" : "";
+    public bool HasResultBadge => ResultBadge.Length > 0;
     public string SizeText => $"{FileSize / 1048576d:F2} MB";
     public string SearchText => $"{Title} {Player} {Card?.ChartUid} {Card?.Chart?.Composer} {Card?.Chart?.Charter} {Path.GetFileName(FilePath)}";
     private static string L(string key) => I18nService.Instance[key];
