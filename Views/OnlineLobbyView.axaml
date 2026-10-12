@@ -45,7 +45,8 @@
                 <TextBlock Text="{Binding [OnlineLobby_Title], Source={x:Static i18n:I18nService.Instance}}"
                            FontSize="28"
                            FontWeight="Bold"
-                           Foreground="{DynamicResource ThemeTextMainBrush}"/>
+                           HorizontalAlignment="Left"
+                           Foreground="{DynamicResource PageTitleGradientBrush}"/>
                 <TextBlock Text="{Binding StatusText}"
                            FontSize="13"
                            Foreground="{DynamicResource ThemeTextSubBrush}"/>

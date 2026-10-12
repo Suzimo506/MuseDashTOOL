@@ -28,19 +28,16 @@ public partial class ReplayManagerViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _searchText = "";
     [ObservableProperty] private string _status = "";
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(PageText))]
     [NotifyPropertyChangedFor(nameof(CanPrevious))]
     [NotifyPropertyChangedFor(nameof(CanNext))]
     private int _currentPage = 1;
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(PageText))]
     [NotifyPropertyChangedFor(nameof(CanNext))]
     private int _totalPages = 1;
     [ObservableProperty] private bool _isEmpty = true;
     public bool CanPrevious => !IsBusy && CurrentPage > 1;
     public bool CanNext => !IsBusy && CurrentPage < TotalPages;
     public bool CanEdit => !IsBusy;
-    public string PageText => $"{CurrentPage} / {TotalPages}";
     private static string L(string key) => I18nService.Instance[key];
 
     public ReplayManagerViewModel(ReplayService service, IConfigService config, IGamePathService gamePath)
@@ -115,6 +112,8 @@ public partial class ReplayManagerViewModel : ObservableObject, IDisposable
 
     [RelayCommand] private void Previous() { if (CanPrevious) { CurrentPage--; ShowPage(); } }
     [RelayCommand] private void Next() { if (CanNext) { CurrentPage++; ShowPage(); } }
+    [RelayCommand] private void First() { if (CanPrevious) { CurrentPage = 1; ShowPage(); } }
+    [RelayCommand] private void Last() { if (CanNext) { CurrentPage = TotalPages; ShowPage(); } }
 
     public async Task ImportAsync(IEnumerable<string> paths)
     {

@@ -17,6 +17,52 @@
     <Application.Resources>
         <ColorPaletteResources x:Key="Dark" Accent="#d4237a" RegionColor="#1E1E1E" ErrorText="Red" />
 
+        <LinearGradientBrush x:Key="PageTitleGradientBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#FF00FF" Offset="0"/>
+            <GradientStop Color="#FF69B4" Offset="1"/>
+        </LinearGradientBrush>
+
+        <ControlTheme x:Key="PagingIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            CornerRadius="6"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#RootBorder">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.8"/>
+            </Style>
+            <Style Selector="^:pressed">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="RenderTransform" Value="scale(0.92)"/>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#RootBorder">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.6"/>
+            </Style>
+            <Style Selector="^:disabled /template/ Border#RootBorder">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Opacity" Value="0.45"/>
+            </Style>
+        </ControlTheme>
+
         <SolidColorBrush x:Key="ThemeTextMainBrush" Color="#F6EEF3"/>
         <SolidColorBrush x:Key="ThemeTextSubBrush" Color="#C8B7C1"/>
         <SolidColorBrush x:Key="ThemeTextTertiaryBrush" Color="#8D7886"/>
