@@ -63,6 +63,19 @@ public partial class ReplayManagerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private Task RefreshAsync() => RefreshCoreAsync(_lifetime.Token);
 
+    [RelayCommand]
+    private void OpenFolder()
+    {
+        if (_disposed || IsBusy || !TryGetGamePath(out var gamePath)) return;
+        try
+        {
+            var directory = ReplayService.GetDirectory(gamePath);
+            Directory.CreateDirectory(directory);
+            Helpers.ProcessHelper.OpenFolder(directory);
+        }
+        catch (Exception ex) { Status = L("Replay_OpenFolderFailed") + ex.Message; }
+    }
+
     private async Task RefreshCoreAsync(CancellationToken cancellation)
     {
         if (IsBusy || _disposed) return;

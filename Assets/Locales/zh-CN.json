@@ -5,6 +5,8 @@
   "Replay_Help": "管理 BetterMD 本地回放：导入或拖入 .mdrp 文件，也可删除回放。播放请在游戏内进行。",
   "Replay_Search": "搜索歌曲、玩家或谱师",
   "Replay_Import": "导入回放",
+  "Replay_OpenFolder": "打开回放文件夹",
+  "Replay_OpenFolderFailed": "打开回放文件夹失败：",
   "Replay_Delete": "删除",
   "Replay_DeleteAsk": "确定删除回放《{0}》吗？删除后无法恢复。",
   "Replay_UnknownPlayer": "未知玩家",

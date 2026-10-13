@@ -5,6 +5,8 @@
   "Replay_Help": "Manage BetterMD local replays: import or drop .mdrp files, or delete replays. Play them in the game.",
   "Replay_Search": "Search song, player or charter",
   "Replay_Import": "Import replays",
+  "Replay_OpenFolder": "Open replay folder",
+  "Replay_OpenFolderFailed": "Failed to open replay folder: ",
   "Replay_Delete": "Delete",
   "Replay_DeleteAsk": "Delete replay \"{0}\"? This cannot be undone.",
   "Replay_UnknownPlayer": "Unknown player",
