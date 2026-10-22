@@ -33,8 +33,6 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     private readonly INotificationService _notificationService;
     private readonly IDownloadManagerService _downloadManagerService;
     private readonly IChartIndexService _chartIndexService;
-    private readonly AuthState _authState;
-    private readonly HttpClient _euterpeDownloadHttp;
 
     private readonly List<GlobalChartSearchResult> _allResults = new();
     private readonly List<GlobalChartSearchResult> _filteredResults = new();
@@ -50,7 +48,6 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     public ObservableCollection<GlobalChartSearchResult> Results { get; } = new();
     public ObservableCollection<GlobalChartSearchSourceState> SourceStates { get; } = new()
     {
-        new(GlobalChartSource.Euterpe, "Euterpe"),
         new(GlobalChartSource.QQGroup, "QQ群谱面"),
         new(GlobalChartSource.Mdmc, "MDMC")
     };
@@ -73,7 +70,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     private string _searchText = string.Empty;
 
     [ObservableProperty]
-    private string _statusMessage = "输入关键词，同时搜索 Euterpe、QQ群谱面与 MDMC";
+    private string _statusMessage = "输入关键词，同时搜索 QQ群谱面与 MDMC";
 
     [ObservableProperty]
     private string _previewStatusText = string.Empty;
@@ -118,17 +115,13 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         IConfigService configService,
         INotificationService notificationService,
         IDownloadManagerService downloadManagerService,
-        IChartIndexService chartIndexService,
-        EuterpeTokenQueryHandler tokenQueryHandler,
-        AuthState authState)
+        IChartIndexService chartIndexService)
     {
         _searchService = searchService;
         _configService = configService;
         _notificationService = notificationService;
         _downloadManagerService = downloadManagerService;
         _chartIndexService = chartIndexService;
-        _authState = authState;
-        _euterpeDownloadHttp = new HttpClient(tokenQueryHandler);
     }
 
     partial void OnCurrentPageChanged(int value)
@@ -175,7 +168,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         {
             ClearResults();
             SearchText = string.Empty;
-            StatusMessage = "输入关键词，同时搜索 Euterpe、QQ群谱面与 MDMC";
+            StatusMessage = "输入关键词，同时搜索 QQ群谱面与 MDMC";
             return;
         }
 
@@ -260,7 +253,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         SearchDraftText = string.Empty;
         SearchText = string.Empty;
         ClearResults();
-        StatusMessage = "输入关键词，同时搜索 Euterpe、QQ群谱面与 MDMC";
+        StatusMessage = "输入关键词，同时搜索 QQ群谱面与 MDMC";
     }
 
     [RelayCommand]
@@ -403,17 +396,18 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         DuplicateDialogItems.Clear();
     }
 
-    private async Task ExecuteDownloadAsync(GlobalChartSearchResult result)
+    private Task ExecuteDownloadAsync(GlobalChartSearchResult result)
     {
-        var chart = await BuildDownloadChartAsync(result);
-        if (chart == null)
-            return;
-
-        _downloadManagerService.EnqueueDownload(chart);
-        _notificationService.ShowSuccess($"已添加到下载列表: 《{chart.Title}》");
+        var chart = BuildDownloadChart(result);
+        if (chart != null)
+        {
+            _downloadManagerService.EnqueueDownload(chart);
+            _notificationService.ShowSuccess($"已添加到下载列表: 《{chart.Title}》");
+        }
+        return Task.CompletedTask;
     }
 
-    private async Task<MdmcChart?> BuildDownloadChartAsync(GlobalChartSearchResult result)
+    private MdmcChart? BuildDownloadChart(GlobalChartSearchResult result)
     {
         if (result.MdmcChart != null)
         {
@@ -428,43 +422,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             return chart;
         }
 
-        if (result.EuterpeChart == null)
-            return null;
-
-        if (_authState.CurrentUser == null)
-        {
-            _notificationService.ShowFailure("Euterpe 未登录", "请先登录 Euterpe 后再下载谱面。");
-            return null;
-        }
-
-        try
-        {
-            var chart = new MdmcChart
-            {
-                Id = result.EuterpeChart.Cid.ToString(),
-                Title = result.EuterpeChart.Name,
-                Artist = result.EuterpeChart.Author,
-                Bpm = result.EuterpeChart.Bpm.ToString(),
-                Charter = result.EuterpeChart.CharterInfo,
-                CustomCoverUrl = result.EuterpeChart.CoverUrl,
-                CustomDownloadUrl = EuterpeChartDownloadService.CreateTaskUrl(result.EuterpeChart.Cid),
-                SourceCategoryName = "Euterpe",
-                IsCommunitySource = true,
-                Sheets = (result.EuterpeChart.Maps ?? []).OfType<MapSlotInfo>().Select(m => new MdmcSheet
-                {
-                    Difficulty = m.Rating ?? string.Empty,
-                    RankedDifficulty = int.TryParse(m.Rating, out var rd) ? rd : 0,
-                    Charter = string.Join(", ", m.Charters ?? [])
-                }).ToList()
-            };
-            return chart;
-        }
-        catch (Exception ex)
-        {
-            RuntimeLog.Write("GlobalSearchVM", $"Failed to prepare Euterpe chart {result.EuterpeChart.Cid}: {ex}");
-            _notificationService.ShowFailure("Euterpe 下载失败", EuterpeHttpError.ToUserMessage(ex, "准备 Euterpe 下载"));
-            return null;
-        }
+        return null;
     }
 
     private MdenCandidateDecision? BuildMdenCandidateDecision()
@@ -571,7 +529,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         {
             _notificationService.ShowInfo(Tr("Mden_AutoDownloadStarting", target.Title));
             MdenStatusBridge.NotifyMissingChartDownloadStarted(target.Title, request.ChartKey, request.Difficulty);
-            var chart = await BuildDownloadChartAsync(target);
+            var chart = BuildDownloadChart(target);
             if (chart == null)
             {
                 _mdenCandidateStatus = Tr("Mden_AutoDownloadPrepareFailed");
@@ -649,15 +607,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
         return true;
     }
 
-    private bool CanAutoDownloadMdenCandidate(GlobalChartSearchResult result)
-    {
-        if (result.MdmcChart != null)
-        {
-            return true;
-        }
-
-        return result.EuterpeChart != null && _authState.CurrentUser != null;
-    }
+    private static bool CanAutoDownloadMdenCandidate(GlobalChartSearchResult result) => result.MdmcChart != null;
 
     private static string BuildMdenCandidateGroupKey(GlobalChartSearchResult result, MdenGlobalSearchRequest request)
     {
@@ -736,18 +686,6 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             }
         }
 
-        if (result.EuterpeChart?.Maps != null)
-        {
-            foreach (var map in result.EuterpeChart.Maps)
-            {
-                if (map.Charters == null) continue;
-                foreach (var charter in map.Charters)
-                {
-                    if (!string.IsNullOrWhiteSpace(charter))
-                        yield return charter;
-                }
-            }
-        }
     }
 
     private static IEnumerable<string> SplitNames(string? value)
@@ -835,10 +773,6 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
                     url = GitHubMirrorHelper.ApplyMirror(manualUrl, _configService.Config.DownloadSource);
                 }
             }
-            else if (result.EuterpeChart != null)
-            {
-                url = $"https://dl.euterpe-org.com/files/charts/{result.EuterpeChart.Cid}/demo.ogg";
-            }
             else
             {
                 return;
@@ -847,12 +781,8 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
             PreviewStatusText = $"正在缓冲 {result.Title} 试听文件";
             UpdateStatusMessage();
 
-            var client = result.EuterpeChart != null ? _euterpeDownloadHttp : PreviewHttp;
-            using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-            if (result.EuterpeChart != null)
-                await EuterpeHttpError.EnsureSuccessAsync(response, "加载 Euterpe 试听", ct);
-            else
-                response.EnsureSuccessStatusCode();
+            using var response = await PreviewHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            response.EnsureSuccessStatusCode();
             var bytes = await response.Content.ReadAsByteArrayAsync(ct);
             if (ct.IsCancellationRequested)
                 return;
@@ -927,8 +857,6 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     {
         if (result.MdmcChart != null)
             result.MdmcChart.IsPlaying = isPlaying;
-        if (result.EuterpeChart != null)
-            result.EuterpeChart.IsPlaying = isPlaying;
         result.RefreshPlaybackState();
     }
 
@@ -991,7 +919,6 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
     {
         _searchCts?.Cancel();
         StopPlayback();
-        _euterpeDownloadHttp.Dispose();
         _allResults.Clear();
         _filteredResults.Clear();
         Results.Clear();
@@ -1070,7 +997,7 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
 
         if (!HasSearched)
         {
-            StatusMessage = "输入关键词，同时搜索 Euterpe、QQ群谱面与 MDMC";
+            StatusMessage = "输入关键词，同时搜索 QQ群谱面与 MDMC";
             return;
         }
 
@@ -1164,7 +1091,6 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
 
     private static int SourceOrder(GlobalChartSource source) => source switch
     {
-        GlobalChartSource.Euterpe => 0,
         GlobalChartSource.QQGroup => 1,
         GlobalChartSource.Mdmc => 2,
         _ => 9
@@ -1214,7 +1140,6 @@ public sealed partial class GlobalChartSearchViewModel : ObservableObject, IDisp
                 ChartCoverSourceResolver.ReleaseChartCache(result.MdmcChart);
                 result.MdmcChart.ReleaseResources();
             }
-            result.EuterpeChart?.CoverImage?.Dispose();
         }
 
         _allResults.Clear();

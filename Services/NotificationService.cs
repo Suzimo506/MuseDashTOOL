@@ -127,7 +127,6 @@ public class NotificationService : INotificationService
         {
             { "欢迎回来", "Welcome Back" },
             { "未检测到游戏，请手动选择路径", "Game not found, please select path manually" },
-            { "正在拉起浏览器登录 Euterpe...", "Opening browser to login to Euterpe..." },
             { "运行日志已保存到桌面！", "Log saved to Desktop!" },
             { "复制成功", "Copied successfully" },
             { "复制失败", "Copy failed" },
@@ -156,7 +155,6 @@ public class NotificationService : INotificationService
             { "失败：", "Failed: " },
             { "网络异常", "Network error" },
             { "未找到受支持的字体文件", "No supported font files found" },
-            { "已成功注销 Euterpe 账号", "Euterpe account logged out successfully" },
             { "文件损坏，尝试重新下载中", "File corrupted, retrying download" },
             { "已中止下载", "Download aborted" },
             { "镜像域名已更新", "Mirror domain updated" },

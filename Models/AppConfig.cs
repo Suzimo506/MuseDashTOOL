@@ -109,10 +109,6 @@ public class AppConfig
     /// <summary>启用批量下载去重提示</summary>
     public bool EnableBatchDownloadDuplicateCheck { get; set; } = true;
 
-
-    // Euterpe 已点赞的谱面 cid 列表
-    public System.Collections.Generic.List<long> EuterpeLikedCids { get; set; } = new();
-
     /// <summary>应用语言</summary>
     public string Language { get; set; } = System.Globalization.CultureInfo.CurrentUICulture.Name == "zh-CN" ? "zh-CN" : "en-US";
 

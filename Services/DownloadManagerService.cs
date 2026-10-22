@@ -22,13 +22,10 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
     private readonly INotificationService _notificationService;
     private readonly IChartIndexService _chartIndexService;
     private readonly IChartService _chartService;
-    private readonly IEuterpeChartDownloadService _euterpeChartDownloadService;
     // 默认客户端用于界面小文件（如封面），超时较短以保证响应速度
     private readonly HttpClient _http = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(4));
     // 下载专用客户端，超时放宽到 15 秒以应对慢速网络
     private readonly HttpClient _downloadHttp = HttpHelper.CreateOptimizedClient(TimeSpan.FromSeconds(600), TimeSpan.FromSeconds(15));
-    // 直连下载专用客户端
-    private readonly HttpClient _directDownloadHttp = HttpHelper.CreateDirectClient(TimeSpan.FromSeconds(600), TimeSpan.FromSeconds(15));
     // 并发控制器：最多同时下载 10 个谱面
     private readonly SemaphoreSlim _concurrencySemaphore = new(10, 10);
     private readonly ConcurrentDictionary<DownloadTaskItem, DownloadCompletionRequest> _completionRequests = new();
@@ -40,14 +37,12 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         IConfigService configService,
         INotificationService notificationService,
         IChartIndexService chartIndexService,
-        IChartService chartService,
-        IEuterpeChartDownloadService euterpeChartDownloadService)
+        IChartService chartService)
     {
         _configService = configService;
         _notificationService = notificationService;
         _chartIndexService = chartIndexService;
         _chartService = chartService;
-        _euterpeChartDownloadService = euterpeChartDownloadService;
     }
 
     public void EnqueueDownload(MdmcChart chart)
@@ -227,10 +222,8 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
             UpdateDownloadInfo(item);
 
             int retryCount = 0;
-            var isEuterpeDownload = EuterpeChartDownloadService.TryGetCid(item.Chart.DownloadUrl, out _);
             var useOptimizedIpStrategy = UsesOptimizedIpStrategy(item.Chart.DownloadUrl);
-            // Euterpe 服务内部已限定为“文件服务一次、ZIP 构建一次”，不能再由通用下载器重复请求。
-            var maxRetryCount = isEuterpeDownload ? 0 : (useOptimizedIpStrategy ? 10 : 3);
+            var maxRetryCount = useOptimizedIpStrategy ? 10 : 3;
 
             while (retryCount <= maxRetryCount)
             {
@@ -388,24 +381,6 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
     private async Task DownloadToFileAsync(DownloadTaskItem item, CancellationToken ct)
     {
-        if (EuterpeChartDownloadService.TryGetCid(item.Chart.DownloadUrl, out var euterpeCid))
-        {
-            var progress = new Progress<EuterpeChartDownloadProgress>(value =>
-            {
-                item.DownloadedBytes = value.DownloadedBytes;
-                item.TotalBytes = value.TotalBytes;
-                item.Progress = value.TotalFiles == 0 ? 0 : (double)value.CompletedFiles / value.TotalFiles * 100;
-                item.DownloadInfo = $"{value.CompletedFiles} / {value.TotalFiles} 个文件";
-            });
-            await _euterpeChartDownloadService.DownloadToMdmAsync(
-                euterpeCid,
-                item.PartialDownloadPath,
-                progress,
-                ct);
-            item.Progress = 100;
-            return;
-        }
-
         if (item.DownloadedBytes > 0)
         {
             var partialFile = new FileInfo(item.PartialDownloadPath);
@@ -430,9 +405,7 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
                 request.Headers.IfRange = ifRange;
         }
 
-        // Euterpe 下载使用直连客户端
-        var client = item.Chart.DownloadUrl.Contains("euterpe-org.com", StringComparison.OrdinalIgnoreCase) ? _directDownloadHttp : _downloadHttp;
-        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        using var response = await _downloadHttp.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
         RuntimeLog.Write("DownloadManager", $"Download response: title='{item.Chart.Title}', status={(int)response.StatusCode} {response.StatusCode}, url='{item.Chart.DownloadUrl}'");
 
         if (item.DownloadedBytes > 0 && response.StatusCode == HttpStatusCode.OK)
@@ -663,10 +636,6 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
         if (!HttpHelper.UseOptimizedIps || string.IsNullOrWhiteSpace(downloadUrl))
             return false;
 
-        // Euterpe 域名不使用优选 IP 策略
-        if (downloadUrl.Contains("euterpe-org.com", StringComparison.OrdinalIgnoreCase))
-            return false;
-
         if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri))
             return false;
 
@@ -820,7 +789,6 @@ public class DownloadManagerService : IDownloadManagerService, IDisposable
 
         _http.Dispose();
         _downloadHttp.Dispose();
-        _directDownloadHttp.Dispose();
     }
 
     private sealed class DownloadCompletionRequest

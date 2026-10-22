@@ -1,10 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using MdModManager.Helpers;
@@ -21,34 +17,15 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
 {
     private const int MdmcFetchPages = 3;
     private const int MdmcPageSize = 15;
-    private const int EuterpeFetchSize = 50;
-    private const int EuterpeSearchPages = 2;
-    private const long EuterpeOfficialUserUid = 0;
-    private const string EuterpeUserAgent = EuterpeClientIdentity.UserAgent;
-    private static readonly TimeSpan OfficialUserChartsQuickWait = TimeSpan.FromMilliseconds(800);
-    private static readonly SemaphoreSlim OfficialUserChartsLock = new(1, 1);
-    private static readonly string[] EuterpeSearchSorts = { "recommended" };
-    private static List<EuterpeChart>? OfficialUserChartsCache;
-    private static Task? OfficialUserChartsWarmupTask;
-
     private readonly IChartDownloadService _chartDownloadService;
     private readonly IAlbumCollectionService _albumCollectionService;
-    private readonly AuthState _authState;
-    private readonly HttpClient _euterpeClient;
 
     public GlobalChartSearchService(
         IChartDownloadService chartDownloadService,
-        IAlbumCollectionService albumCollectionService,
-        AuthState authState,
-        AuthHeaderHandler authHeaderHandler)
+        IAlbumCollectionService albumCollectionService)
     {
         _chartDownloadService = chartDownloadService;
         _albumCollectionService = albumCollectionService;
-        _authState = authState;
-        _euterpeClient = new HttpClient(authHeaderHandler) { BaseAddress = new Uri("https://euterpe-org.com/api/") };
-        // Euterpe 搜索接口只有浏览器 UA 会返回网页同款谱面集合。
-        _euterpeClient.DefaultRequestHeaders.UserAgent.ParseAdd(EuterpeUserAgent);
-        StartOfficialUserChartsWarmup();
     }
 
     public async Task<IReadOnlyList<GlobalChartSearchServiceResult>> SearchAsync(string query, CancellationToken ct = default)
@@ -58,14 +35,12 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
             return Array.Empty<GlobalChartSearchServiceResult>();
 
         var mdmcTask = SearchMdmcAsync(trimmedQuery, ct);
-        var euterpeTask = SearchEuterpeAsync(trimmedQuery, ct);
         var qqTask = SearchQqGroupAsync(trimmedQuery, ct);
 
-        await Task.WhenAll(mdmcTask, euterpeTask, qqTask);
+        await Task.WhenAll(mdmcTask, qqTask);
         return new[]
         {
             await mdmcTask,
-            await euterpeTask,
             await qqTask
         };
     }
@@ -118,230 +93,6 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
                 GlobalChartSourceStatus.Error,
                 "MDMC 搜索失败：" + ex.Message);
         }
-    }
-
-    private async Task<GlobalChartSearchServiceResult> SearchEuterpeAsync(string query, CancellationToken ct)
-    {
-        const string sourceName = "Euterpe";
-        if (_authState.CurrentUser == null)
-        {
-            return new GlobalChartSearchServiceResult(
-                GlobalChartSource.Euterpe,
-                sourceName,
-                Array.Empty<GlobalChartSearchResult>(),
-                GlobalChartSourceStatus.Warning,
-                "Euterpe 未登录，无法搜索和下载谱面。");
-        }
-
-        try
-        {
-            var (items, officialIndexPending) = await SearchMergedEuterpeChartsAsync(query, ct);
-
-            var results = items
-                .Select(chart => new GlobalChartSearchResult
-                {
-                    Source = GlobalChartSource.Euterpe,
-                    SourceName = sourceName,
-                    EuterpeChart = chart
-                })
-                .ToList();
-
-            if (officialIndexPending)
-            {
-                return new GlobalChartSearchServiceResult(
-                    GlobalChartSource.Euterpe,
-                    sourceName,
-                    results,
-                    GlobalChartSourceStatus.Warning,
-                    results.Count == 0
-                        ? "Euterpe 官方账号谱面索引仍在加载，稍后重试可搜索更多收录谱面。"
-                        : $"找到 {results.Count} 张谱面，Euterpe 官方账号谱面索引仍在加载。");
-            }
-
-            return BuildResult(GlobalChartSource.Euterpe, sourceName, results);
-        }
-        catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-        {
-            return new GlobalChartSearchServiceResult(
-                GlobalChartSource.Euterpe,
-                sourceName,
-                Array.Empty<GlobalChartSearchResult>(),
-                GlobalChartSourceStatus.Warning,
-                "Euterpe 登录已失效，请重新登录后再搜索。");
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            RuntimeLog.Write("GlobalChartSearchService", $"Euterpe search failed: {ex}");
-            return new GlobalChartSearchServiceResult(
-                GlobalChartSource.Euterpe,
-                sourceName,
-                Array.Empty<GlobalChartSearchResult>(),
-                GlobalChartSourceStatus.Error,
-                "Euterpe 搜索失败：" + ex.Message);
-        }
-    }
-
-    private async Task<(List<EuterpeChart> Charts, bool OfficialIndexPending)> SearchMergedEuterpeChartsAsync(string query, CancellationToken ct)
-    {
-        StartOfficialUserChartsWarmup();
-
-        var publicCharts = await SearchPublicEuterpeChartsAsync(query, ct);
-        if (OfficialUserChartsCache == null && OfficialUserChartsWarmupTask != null)
-        {
-            var completedTask = await Task.WhenAny(
-                OfficialUserChartsWarmupTask,
-                Task.Delay(OfficialUserChartsQuickWait, ct));
-            ct.ThrowIfCancellationRequested();
-            if (completedTask == OfficialUserChartsWarmupTask)
-                await OfficialUserChartsWarmupTask;
-        }
-
-        var merged = new Dictionary<long, EuterpeChart>();
-        foreach (var chart in publicCharts)
-        {
-            merged.TryAdd(chart.Cid, chart);
-        }
-
-        var officialCharts = OfficialUserChartsCache;
-        if (officialCharts == null)
-            return (merged.Values.ToList(), true);
-
-        foreach (var chart in officialCharts.Where(chart => IsEuterpeChartMatch(chart, query)))
-        {
-            merged.TryAdd(chart.Cid, chart);
-        }
-
-        return (merged.Values.ToList(), false);
-    }
-
-    private async Task<List<EuterpeChart>> SearchPublicEuterpeChartsAsync(string query, CancellationToken ct)
-    {
-        var merged = new Dictionary<long, EuterpeChart>();
-        foreach (var sort in EuterpeSearchSorts)
-        {
-            var charts = await SearchPublicEuterpeChartsBySortAsync(query, sort, ct);
-            foreach (var chart in charts)
-            {
-                merged.TryAdd(chart.Cid, chart);
-            }
-        }
-
-        return merged.Values.ToList();
-    }
-
-    private async Task<List<EuterpeChart>> SearchPublicEuterpeChartsBySortAsync(string query, string sort, CancellationToken ct)
-    {
-        var allCharts = new List<EuterpeChart>();
-        string? cursor = null;
-        var page = 0;
-
-        do
-        {
-            page++;
-            var path = $"charts/search?size={EuterpeFetchSize}&sort={Uri.EscapeDataString(sort)}&q={Uri.EscapeDataString(query)}";
-            if (!string.IsNullOrEmpty(cursor))
-            {
-                path += $"&cursor={Uri.EscapeDataString(cursor)}";
-            }
-
-            using var request = new HttpRequestMessage(HttpMethod.Get, path);
-            using var response = await _euterpeClient.SendAsync(request, ct);
-            await EuterpeHttpError.EnsureSuccessAsync(response, "搜索 Euterpe 谱面", ct);
-
-            var json = await response.Content.ReadAsStringAsync(ct);
-            var result = JsonSerializer.Deserialize(json, GlobalChartSearchJsonContext.Default.EuterpeSearchResponse);
-            if (result == null)
-                break;
-
-            allCharts.AddRange((result.Items ?? []).OfType<EuterpeChart>());
-            cursor = result.NextCursor;
-        }
-        while (!string.IsNullOrEmpty(cursor) && page < EuterpeSearchPages);
-
-        return allCharts;
-    }
-
-    private void StartOfficialUserChartsWarmup()
-    {
-        if (_authState.CurrentUser == null)
-            return;
-
-        if (OfficialUserChartsCache != null)
-            return;
-
-        if (OfficialUserChartsWarmupTask is { IsCompleted: false })
-            return;
-
-        OfficialUserChartsWarmupTask = Task.Run(async () =>
-        {
-            try
-            {
-                await LoadOfficialUserChartsAsync(CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                RuntimeLog.Write("GlobalChartSearchService", $"Euterpe official user chart cache failed: {ex}");
-            }
-        });
-    }
-
-    private async Task<List<EuterpeChart>> LoadOfficialUserChartsAsync(CancellationToken ct)
-    {
-        if (OfficialUserChartsCache != null)
-            return OfficialUserChartsCache;
-
-        await OfficialUserChartsLock.WaitAsync(ct);
-        try
-        {
-            if (OfficialUserChartsCache != null)
-                return OfficialUserChartsCache;
-
-            var charts = new List<EuterpeChart>();
-            string? cursor = null;
-            var page = 0;
-
-            do
-            {
-                page++;
-                var path = $"users/{EuterpeOfficialUserUid}/charts?size={EuterpeFetchSize}";
-                if (!string.IsNullOrEmpty(cursor))
-                {
-                    path += $"&cursor={Uri.EscapeDataString(cursor)}";
-                }
-
-                using var request = new HttpRequestMessage(HttpMethod.Get, path);
-                using var response = await _euterpeClient.SendAsync(request, ct);
-                await EuterpeHttpError.EnsureSuccessAsync(response, "加载 Euterpe 谱面索引", ct);
-
-                var json = await response.Content.ReadAsStringAsync(ct);
-                var result = JsonSerializer.Deserialize(json, GlobalChartSearchJsonContext.Default.EuterpeSearchResponse);
-                if (result == null)
-                    break;
-
-                charts.AddRange((result.Items ?? []).OfType<EuterpeChart>());
-                cursor = result.NextCursor;
-            }
-            while (!string.IsNullOrEmpty(cursor) && page < EuterpeSearchPages);
-
-            OfficialUserChartsCache = charts;
-            return OfficialUserChartsCache;
-        }
-        finally
-        {
-            OfficialUserChartsLock.Release();
-        }
-    }
-
-    private static bool IsEuterpeChartMatch(EuterpeChart chart, string query)
-    {
-        return SearchHelper.IsMatch(chart.Name, query, true) ||
-               SearchHelper.IsMatch(chart.Author, query, true) ||
-               SearchHelper.IsMatch(chart.OwnerNickname, query, true) ||
-               SearchHelper.IsMatch(chart.CharterInfo, query, true);
     }
 
     private async Task<GlobalChartSearchServiceResult> SearchQqGroupAsync(string query, CancellationToken ct)
@@ -471,11 +222,3 @@ public sealed class GlobalChartSearchService : IGlobalChartSearchService
         return sheets;
     }
 }
-
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
-[JsonSerializable(typeof(EuterpeSearchResponse))]
-[JsonSerializable(typeof(EuterpeChart))]
-[JsonSerializable(typeof(List<EuterpeChart>))]
-[JsonSerializable(typeof(MapSlotInfo))]
-[JsonSerializable(typeof(List<MapSlotInfo>))]
-internal partial class GlobalChartSearchJsonContext : JsonSerializerContext;

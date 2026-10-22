@@ -270,9 +270,6 @@ public partial class WelcomeViewModel : ViewModelBase
             case "Settings":
                 await mainVm.NavigateToSettingsCommand.ExecuteAsync(null);
                 break;
-            case "Euterpe":
-                await mainVm.NavigateToEuterpeDownloadCommand.ExecuteAsync(null);
-                break;
             case "Sponsor":
                 await mainVm.NavigateToSponsorCommand.ExecuteAsync(true);
                 break;

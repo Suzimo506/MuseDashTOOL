@@ -8,7 +8,6 @@ namespace MdModManager.Models;
 public enum GlobalChartSource
 {
     Mdmc,
-    Euterpe,
     QQGroup
 }
 
@@ -58,21 +57,18 @@ public sealed partial class GlobalChartSearchResult : ObservableObject
     public required string SourceName { get; init; }
     public string SourceDetail { get; init; } = string.Empty;
     public MdmcChart? MdmcChart { get; init; }
-    public EuterpeChart? EuterpeChart { get; init; }
 
-    public string Title => MdmcChart?.Title ?? EuterpeChart?.Name ?? string.Empty;
-    public string Artist => MdmcChart?.Artist ?? EuterpeChart?.Author ?? string.Empty;
-    public string Charter => MdmcChart?.Charter ?? EuterpeChart?.CharterInfo ?? string.Empty;
+    public string Title => MdmcChart?.Title ?? string.Empty;
+    public string Artist => MdmcChart?.Artist ?? string.Empty;
+    public string Charter => MdmcChart?.Charter ?? string.Empty;
     public string TitleRomanized => MdmcChart?.TitleRomanized ?? string.Empty;
-    public string Bpm => MdmcChart?.Bpm ?? (EuterpeChart?.Bpm > 0 ? EuterpeChart.Bpm.ToString() : string.Empty);
-    public int LikesCount => MdmcChart?.LikesCount ?? EuterpeChart?.LikeCount ?? 0;
-    public int DownloadCount => EuterpeChart?.DownloadCount ?? 0;
+    public string Bpm => MdmcChart?.Bpm ?? string.Empty;
+    public int LikesCount => MdmcChart?.LikesCount ?? 0;
     public bool Ranked => MdmcChart?.Ranked ?? false;
     public bool HasLikesCount => LikesCount > 0;
     public bool ShowLikesBadge => Source != GlobalChartSource.QQGroup && HasLikesCount;
     public bool IsMdmcLikeResult => MdmcChart != null;
-    public bool IsEuterpeResult => EuterpeChart != null;
-    public bool IsPlaying => MdmcChart?.IsPlaying ?? EuterpeChart?.IsPlaying ?? false;
+    public bool IsPlaying => MdmcChart?.IsPlaying ?? false;
     public string RepositoryName => Source == GlobalChartSource.QQGroup ? SourceDetail : string.Empty;
     public bool HasRepositoryBadge => !string.IsNullOrWhiteSpace(RepositoryName);
     public bool HasMdenCandidateLabel => !string.IsNullOrWhiteSpace(MdenCandidateLabel);
@@ -81,7 +77,7 @@ public sealed partial class GlobalChartSearchResult : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasMdenCandidateLabel))]
     private string _mdenCandidateLabel = string.Empty;
 
-    public string? DisplayCoverSource => MdmcChart?.DisplayCoverSource ?? EuterpeChart?.CoverUrl;
+    public string? DisplayCoverSource => MdmcChart?.DisplayCoverSource;
     public bool HasDisplayCoverSource => !string.IsNullOrWhiteSpace(DisplayCoverSource);
     public bool HasStaticDisplayCoverSource => MdmcChart?.HasStaticDisplayCoverSource ?? HasDisplayCoverSource;
     public bool HasAnimatedDisplayCoverSource => MdmcChart?.HasAnimatedDisplayCoverSource ?? false;
@@ -114,9 +110,6 @@ public sealed partial class GlobalChartSearchResult : ObservableObject
         {
             if (MdmcChart != null)
                 return MdmcChart.DifficultyLabels;
-
-            if (EuterpeChart != null)
-                return EuterpeChart.DifficultyLabels;
 
             return Array.Empty<string>();
         }

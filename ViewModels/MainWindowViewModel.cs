@@ -17,7 +17,6 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ModStagingService? _stagingService;
     private readonly INavigationService? _navigationService;
     private readonly IAnnouncementService? _announcementService;
-    private readonly IAuthService? _authService;
     private readonly IModUpdateService? _modUpdateService;
     private readonly BetterMdConflictService? _betterMdConflictService;
     private static readonly string[] LaunchCleanupModNames =
@@ -52,12 +51,6 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>当暂存目录有未安装 Mod 文件时为 true，用于侧栏显示 !!!</summary>
     public bool HasStagedMods => _stagingService?.HasPendingFiles ?? false;
-
-    // Euterpe 按钮显示的文本
-    public string EuterpeButtonText => "Eu谱面";
-
-    // Euterpe 按钮的提示信息
-    public string EuterpeButtonToolTip => MdModManager.Services.I18nService.Instance.CurrentLanguage == "en-US" ? "Manage Euterpe Account" : "点击管理 Euterpe 账号";
 
     [ObservableProperty]
     private Avalonia.Media.Imaging.Bitmap? _customBackgroundBitmap;
@@ -156,7 +149,6 @@ public partial class MainWindowViewModel : ObservableObject
         ModStagingService stagingService,
         INavigationService navigationService,
         IAnnouncementService announcementService,
-        IAuthService authService,
         IModUpdateService modUpdateService,
         BetterMdConflictService betterMdConflictService)
     {
@@ -166,7 +158,6 @@ public partial class MainWindowViewModel : ObservableObject
         _stagingService = stagingService;
         _navigationService = navigationService;
         _announcementService = announcementService;
-        _authService = authService;
         _modUpdateService = modUpdateService;
         _betterMdConflictService = betterMdConflictService;
 
@@ -187,17 +178,6 @@ public partial class MainWindowViewModel : ObservableObject
             if (e.PropertyName == "Item")
             {
                 CheckAndShowNotification();
-            }
-        };
-
-        // 监听登录状态变化以刷新界面
-        var authState = Ioc.Default.GetRequiredService<AuthState>();
-        authState.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(AuthState.CurrentUser))
-            {
-                OnPropertyChanged(nameof(EuterpeButtonText));
-                OnPropertyChanged(nameof(EuterpeButtonToolTip));
             }
         };
 
@@ -391,8 +371,6 @@ public partial class MainWindowViewModel : ObservableObject
             await rpvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is ChartUploadViewModel cuvm)
             await cuvm.InitializeAsync(_currentPageCts.Token);
-        else if (CurrentPage is EuterpeViewModel etvm)
-            await etvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is GlobalChartSearchViewModel gsvm)
             await gsvm.InitializeAsync(_currentPageCts.Token);
         else if (CurrentPage is OnlineLobbyViewModel olvm)
@@ -721,16 +699,6 @@ public partial class MainWindowViewModel : ObservableObject
             // 普通主题下的渐变背景与背景图下的毛玻璃材质
             if (!showTransparentCards)
             {
-                var euterpeNormalBg = new Avalonia.Media.LinearGradientBrush
-                {
-                    StartPoint = new Avalonia.RelativePoint(0, 0, Avalonia.RelativeUnit.Relative),
-                    EndPoint = new Avalonia.RelativePoint(1, 1, Avalonia.RelativeUnit.Relative),
-                    GradientStops = new Avalonia.Media.GradientStops
-                    {
-                        new Avalonia.Media.GradientStop(Avalonia.Media.Color.Parse("#251F2E"), 0),
-                        new Avalonia.Media.GradientStop(Avalonia.Media.Color.Parse("#16131C"), 1)
-                    }
-                };
                 var welcomeNormalBg = new Avalonia.Media.LinearGradientBrush
                 {
                     StartPoint = new Avalonia.RelativePoint(0, 0, Avalonia.RelativeUnit.Relative),
@@ -741,12 +709,10 @@ public partial class MainWindowViewModel : ObservableObject
                         new Avalonia.Media.GradientStop(Avalonia.Media.Color.Parse("#20161E"), 1)
                     }
                 };
-                Avalonia.Application.Current.Resources["EuterpeTopPanelBgBrush"] = euterpeNormalBg;
                 Avalonia.Application.Current.Resources["WelcomeStatusBgBrush"] = welcomeNormalBg;
             }
             else
             {
-                Avalonia.Application.Current.Resources["EuterpeTopPanelBgBrush"] = cardBg;
                 Avalonia.Application.Current.Resources["WelcomeStatusBgBrush"] = cardBg;
             }
             
@@ -1258,8 +1224,6 @@ public partial class MainWindowViewModel : ObservableObject
             chartVm.Dispose();
         else if (CurrentPage is ReplayManagerViewModel replayVm)
             replayVm.Dispose();
-        else if (CurrentPage is EuterpeViewModel etVm)
-            etVm.Dispose();
         else if (CurrentPage is GlobalChartSearchViewModel globalSearchVm)
             globalSearchVm.Dispose();
         else if (CurrentPage is OnlineLobbyViewModel onlineLobbyVm)
@@ -1336,37 +1300,6 @@ public partial class MainWindowViewModel : ObservableObject
         IsChartDownloadMenuExpanded = true;
 
         var vm = Ioc.Default.GetRequiredService<ChartDownloadViewModel>();
-        CurrentPage = vm;
-        await vm.InitializeAsync(_currentPageCts!.Token);
-    }
-
-    [RelayCommand]
-    public async Task NavigateToEuterpeDownloadAsync()
-    {
-        var state = Ioc.Default.GetRequiredService<AuthState>();
-        if (state.CurrentUser == null)
-        {
-            if (_authService == null) return;
-            _notificationService?.ShowInfo("正在拉起浏览器登录 Euterpe...");
-            try
-            {
-                await _authService.LoginAsync();
-            }
-            catch (Exception ex)
-            {
-                RuntimeLog.Write("MainWindowViewModel", "登录授权失败 " + ex.Message);
-                _notificationService?.ShowFailure("登录失败", $"无法完成 Euterpe 登录 {ex.Message}");
-                return;
-            }
-
-            if (state.CurrentUser == null) return;
-            _notificationService?.ShowSuccess($"Euterpe 登录成功\n欢迎回来，{state.CurrentUser.Nickname}");
-        }
-
-        CleanupCurrentPage();
-        IsChartDownloadMenuExpanded = true;
-
-        var vm = Ioc.Default.GetRequiredService<EuterpeViewModel>();
         CurrentPage = vm;
         await vm.InitializeAsync(_currentPageCts!.Token);
     }

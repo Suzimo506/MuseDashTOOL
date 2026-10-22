@@ -24,8 +24,8 @@
 
 - 🚀 **Blazing Fast**: Deeply optimized file scanning and list loading logic.
 - 📦 **Mod Management**: One-click import, enable/disable, batch deletion, online mod catalog, and online-play dependency downloads.
-- 🎵 **Chart Management**: Fast download and preview for MDMC charts; preview, like, and download Euterpe charts; plus integrated QQ group chart packs and local charter collections.
-- 🔎 **Global Search**: Search MDMC, Euterpe, and QQ group chart sources together to quickly find charts.
+- 🎵 **Chart Management**: Fast download and preview for MDMC charts, plus integrated QQ group chart packs and local charter collections.
+- 🔎 **Global Search**: Search MDMC and QQ group chart sources together to quickly find charts.
 - 📁 **Chart Grouping**: Create and manage chart groups freely, organize charts across categories, and optionally download new charts to the candidate library by default.
 - 🌐 **Online Lobby**: View Ensemble online nodes and rooms, inspect players, viewer chat, and in-game replies, and jump directly to online mod downloads.
 - 🔧 **Config Editor**: Built-in intuitive mod configuration editor, no need to manually edit JSON/cfg files.

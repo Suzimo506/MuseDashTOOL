@@ -100,18 +100,6 @@ public partial class App : Application
                 deepLinkService.HandleStartupArgs(desktop.Args);
             }
 
-            var telemetryService = Ioc.Default.GetRequiredService<ITelemetryService>();
-            var authState = Ioc.Default.GetRequiredService<AuthState>();
-            authState.PropertyChanged += (_, e) =>
-            {
-                if (e.PropertyName == nameof(AuthState.CurrentUser) && authState.CurrentUser != null)
-                {
-                    _ = telemetryService.BindVanillaAccountAsync();
-                }
-            };
-
-            _ = telemetryService.TrackSessionAsync();
-            _ = Ioc.Default.GetRequiredService<IAuthService>().RestoreSessionAsync();
             _ = Ioc.Default.GetService<IUpdateService>()?.CheckAndApplyUpdateAsync();
         }
         catch (Exception ex)
@@ -161,7 +149,6 @@ public partial class App : Application
         services.AddSingleton<AlbumCollectionViewModel>();
         services.AddTransient<AlbumDetailViewModel>();
         services.AddTransient<CommunityCategoryDetailViewModel>();
-        services.AddTransient<EuterpeViewModel>();
         services.AddTransient<OnlineLobbyViewModel>();
 
         // Services
@@ -181,7 +168,6 @@ public partial class App : Application
         services.AddSingleton<IChartUploadConfigService, ChartUploadConfigService>();
         services.AddSingleton<IChartUploadService, ChartUploadService>();
         services.AddSingleton<IDownloadManagerService, DownloadManagerService>();
-        services.AddSingleton<IEuterpeChartDownloadService, EuterpeChartDownloadService>();
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<ModStagingService>();
         services.AddSingleton<IUpdateService, UpdateService>();
@@ -193,12 +179,7 @@ public partial class App : Application
         services.AddSingleton<IMirrorDomainService, MirrorDomainService>();
         services.AddSingleton<IEnsembleLobbyService, EnsembleLobbyService>();
 
-        services.AddSingleton<AuthState>();
-        services.AddSingleton<IAuthService, AuthService>();
-        services.AddTransient<AuthHeaderHandler>();
-        services.AddTransient<EuterpeTokenQueryHandler>();
         services.AddSingleton<DeepLinkService>();
-        services.AddSingleton<ITelemetryService, TelemetryService>();
 
         Ioc.Default.ConfigureServices(services.BuildServiceProvider());
     }
